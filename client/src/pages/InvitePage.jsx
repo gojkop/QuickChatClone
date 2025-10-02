@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import QuestionComposer from '@/components/question/QuestionComposer';
+import PriceProposal from '@/components/invite/PriceProposal';
 import ReviewModal from '@/components/question/ReviewModal';
 
 function InvitePage() {
   const [expertHandle, setExpertHandle] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [questionData, setQuestionData] = useState(null);
+  const [priceProposal, setPriceProposal] = useState({ type: 'expert-decides', amount: null });
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -27,7 +29,8 @@ function InvitePage() {
     console.log("Sending invite with:", {
       expertHandle,
       question: questionData,
-      contact: contactInfo
+      contact: contactInfo,
+      priceProposal
     });
     
     // Navigate to invite-specific success page with expert name
@@ -58,6 +61,11 @@ function InvitePage() {
 
           {/* Question Composer */}
           <QuestionComposer onReady={handleQuestionReady} />
+
+          {/* Price Proposal - Invite Flow Only */}
+          <div className="mt-6">
+            <PriceProposal onPriceChange={setPriceProposal} />
+          </div>
         </div>
       </main>
 
