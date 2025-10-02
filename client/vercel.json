@@ -11,6 +11,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://x8ki-letl-twmt.n7.xano.io/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
