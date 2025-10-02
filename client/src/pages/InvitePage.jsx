@@ -30,8 +30,8 @@ function InvitePage() {
       contact: contactInfo
     });
     
-    // Navigate to success page
-    navigate('/question-sent');
+    // Navigate to invite-specific success page with expert name
+    navigate(`/invite-sent?expert=${encodeURIComponent(expertHandle)}`);
   };
 
   const handleEditQuestion = () => {

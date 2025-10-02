@@ -15,6 +15,7 @@ import FaqPage from '@/pages/FaqPage';
 import TermsPage from '@/pages/TermsPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import InvitePage from '@/pages/InvitePage';
+import InviteSentPage from '@/pages/InviteSentPage'; // NEW
 import AskQuestionPage from '@/pages/AskQuestionPage';
 import QuestionSentPage from '@/pages/QuestionSentPage';
 
