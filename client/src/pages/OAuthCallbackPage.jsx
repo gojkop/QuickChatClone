@@ -1,16 +1,12 @@
+// client/src/pages/OAuthCallbackPage.jsx
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
-
-// Optional: use app's Auth if present
-let useAuth;
-try {
-  ({ useAuth } = require("../context/AuthContext.jsx"));
-} catch {}
+import apiClient from "../api";         // default export from api/index.js
+import { authService } from "../api";   // saves qc_token
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate();
-  const { login } = useAuthSafe();
 
   useEffect(() => {
     (async () => {
@@ -24,12 +20,21 @@ export default function OAuthCallbackPage() {
       }
 
       try {
-        const { token, user, ...rest } = await AuthAPI.continueGoogleOAuth({
-          code,
-          state
-        });
+        // 1) Exchange code -> token
+        const { token } = await AuthAPI.continueGoogleOAuth({ code, state });
+        if (token) authService.saveAuthToken(token); // stores 'qc_token'
 
-        login(token, user, rest);
+        // 2) Ensure default expert profile exists (POST)
+        try {
+          await apiClient.post("/me/bootstrap"); // auth via Bearer qc_token
+        } catch (err) {
+          // If Xano returns a benign conflict like HANDLE_TAKEN, ignore:
+          if (!(err?.response && [400, 401, 403, 404, 409].includes(err.response.status))) {
+            console.warn("bootstrap warning:", err);
+          }
+        }
+
+        // 3) Proceed to expert area
         navigate("/expert", { replace: true });
       } catch (e) {
         console.error("OAuth continue failed", e);
@@ -39,17 +44,4 @@ export default function OAuthCallbackPage() {
   }, [navigate]);
 
   return <div style={{ padding: 24 }}>Finalizing sign-in…</div>;
-}
-
-function useAuthSafe() {
-  try {
-    const hook = useAuth?.();
-    if (hook && typeof hook.login === "function") return hook;
-  } catch {}
-  return {
-    login: (token, user) => {
-      if (token) localStorage.setItem("auth_token", token);
-      if (user) localStorage.setItem("me", JSON.stringify(user));
-    }
-  };
 }
