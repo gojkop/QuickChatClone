@@ -80,6 +80,5 @@ export const authService = {
     }
   }
 };
-
 // 5) Export the configured axios instance as default
 export default apiClient;
