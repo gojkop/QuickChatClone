@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
-function PriceProposal({ onPriceChange }) {
-  const [priceOption, setPriceOption] = useState('expert-decides'); // 'propose' or 'expert-decides'
+function PriceProposal({ onPriceChange, compact = false }) {
+  const [priceOption, setPriceOption] = useState('expert-decides');
   const [proposedPrice, setProposedPrice] = useState(75);
 
   const handleOptionChange = (option) => {
@@ -21,6 +21,109 @@ function PriceProposal({ onPriceChange }) {
     }
   };
 
+  // Compact version - single row with dropdown-style interaction
+  if (compact) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">Price Proposal</h3>
+          <span className="text-xs text-gray-500">Optional</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {/* Let Expert Decide */}
+          <button
+            type="button"
+            onClick={() => handleOptionChange('expert-decides')}
+            className={`relative flex flex-col items-start p-3 border-2 rounded-lg cursor-pointer transition-all text-left ${
+              priceOption === 'expert-decides' 
+                ? 'border-indigo-600 bg-indigo-50' 
+                : 'border-gray-300 hover:border-gray-400 bg-white'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                priceOption === 'expert-decides' 
+                  ? 'border-indigo-600 bg-indigo-600' 
+                  : 'border-gray-300'
+              }`}>
+                {priceOption === 'expert-decides' && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                )}
+              </div>
+              <span className="text-sm font-semibold text-gray-900">Expert Decides</span>
+            </div>
+            <p className="text-xs text-gray-600 mt-1">
+              They'll set their own price
+            </p>
+          </button>
+
+          {/* Propose Price */}
+          <button
+            type="button"
+            onClick={() => handleOptionChange('propose')}
+            className={`relative flex flex-col items-start p-3 border-2 rounded-lg cursor-pointer transition-all text-left ${
+              priceOption === 'propose' 
+                ? 'border-violet-600 bg-violet-50' 
+                : 'border-gray-300 hover:border-gray-400 bg-white'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                priceOption === 'propose' 
+                  ? 'border-violet-600 bg-violet-600' 
+                  : 'border-gray-300'
+              }`}>
+                {priceOption === 'propose' && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                )}
+              </div>
+              <span className="text-sm font-semibold text-gray-900">Propose Price</span>
+            </div>
+            <p className="text-xs text-gray-600 mt-1">
+              Suggest an amount
+            </p>
+          </button>
+        </div>
+
+        {/* Price Input - Shows when "Propose Price" is selected */}
+        {priceOption === 'propose' && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 font-semibold text-sm">
+                €
+              </span>
+              <input
+                type="number"
+                value={proposedPrice}
+                onChange={(e) => handlePriceChange(e.target.value)}
+                min="25"
+                step="25"
+                className="w-full pl-8 pr-12 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-violet-300 focus:border-violet-500 focus:outline-none transition font-semibold text-sm"
+              />
+              <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-xs">
+                EUR
+              </span>
+            </div>
+            <div className="flex justify-between mt-2 px-1">
+              {[50, 75, 100, 150].map(amount => (
+                <button
+                  key={amount}
+                  type="button"
+                  onClick={() => handlePriceChange(amount)}
+                  className="text-xs text-gray-500 hover:text-violet-600 transition px-1"
+                >
+                  €{amount}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Full version (original) - for other potential uses
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
       <h3 className="text-xl font-bold text-gray-900 mb-2">Price Proposal</h3>
@@ -46,7 +149,6 @@ function PriceProposal({ onPriceChange }) {
             className="sr-only"
           />
           
-          {/* Radio indicator */}
           <div className="absolute top-5 right-5">
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
               priceOption === 'expert-decides' 
@@ -89,7 +191,6 @@ function PriceProposal({ onPriceChange }) {
             className="sr-only"
           />
           
-          {/* Radio indicator */}
           <div className="absolute top-5 right-5">
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
               priceOption === 'propose' 
@@ -111,7 +212,6 @@ function PriceProposal({ onPriceChange }) {
             <span className="font-bold text-gray-900">Propose Price</span>
           </div>
           
-          {/* Price Input */}
           <div className={`mt-3 transition-opacity ${priceOption === 'propose' ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-semibold">
@@ -131,38 +231,17 @@ function PriceProposal({ onPriceChange }) {
               </span>
             </div>
             <div className="flex justify-between mt-2 px-1">
-              <button
-                type="button"
-                onClick={() => handlePriceChange(50)}
-                disabled={priceOption !== 'propose'}
-                className="text-xs text-gray-500 hover:text-violet-600 disabled:hover:text-gray-500 transition"
-              >
-                €50
-              </button>
-              <button
-                type="button"
-                onClick={() => handlePriceChange(75)}
-                disabled={priceOption !== 'propose'}
-                className="text-xs text-gray-500 hover:text-violet-600 disabled:hover:text-gray-500 transition"
-              >
-                €75
-              </button>
-              <button
-                type="button"
-                onClick={() => handlePriceChange(100)}
-                disabled={priceOption !== 'propose'}
-                className="text-xs text-gray-500 hover:text-violet-600 disabled:hover:text-gray-500 transition"
-              >
-                €100
-              </button>
-              <button
-                type="button"
-                onClick={() => handlePriceChange(150)}
-                disabled={priceOption !== 'propose'}
-                className="text-xs text-gray-500 hover:text-violet-600 disabled:hover:text-gray-500 transition"
-              >
-                €150
-              </button>
+              {[50, 75, 100, 150].map(amount => (
+                <button
+                  key={amount}
+                  type="button"
+                  onClick={() => handlePriceChange(amount)}
+                  disabled={priceOption !== 'propose'}
+                  className="text-xs text-gray-500 hover:text-violet-600 disabled:hover:text-gray-500 transition"
+                >
+                  €{amount}
+                </button>
+              ))}
             </div>
           </div>
         </label>
