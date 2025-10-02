@@ -14,7 +14,7 @@ function InviteForm() {
   };
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold tracking-tight">Have a question for a specific expert?</h2>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
