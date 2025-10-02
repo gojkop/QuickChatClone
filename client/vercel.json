@@ -1,20 +1,11 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/oauth/google/init",
-      "destination": "https://x8ki-letl-twmt.n7.xano.io/api:fALBm5Ej/oauth/google/init"
-    },
-    {
-      "source": "/api/oauth/google/continue",
-      "destination": "https://x8ki-letl-twmt.n7.xano.io/api:fALBm5Ej/oauth/google/continue"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "https://x8ki-letl-twmt.n7.xano.io/:path*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+  "version": 2,
+  "routes": [
+    { "src": "^/api/oauth/google/init$", "dest": "https://x8ki-letl-twmt.n7.xano.io/api:fALBm5Ej/oauth/google/init" },
+    { "src": "^/api/oauth/google/continue$", "dest": "https://x8ki-letl-twmt.n7.xano.io/api:fALBm5Ej/oauth/google/continue" },
+    { "src": "^/api/(.*)$", "dest": "https://x8ki-letl-twmt.n7.xano.io/$1" },
+
+    { "handle": "filesystem" },
+    { "src": "^(?!/api/).*", "dest": "/index.html" }
   ]
 }
