@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext } from 'react';
 // CORRECTED: Using absolute import path from the 'src' directory.
-import { authService } from '@/api';
+import { authService } from '@/api/quickchat-api';
 
 // Create the context
 const AuthContext = createContext(null);
