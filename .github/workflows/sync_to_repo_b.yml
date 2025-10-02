@@ -1,0 +1,50 @@
+# .github/workflows/sync_to_repo_b.yml
+
+name: Sync to Repo B
+
+# This workflow runs whenever there is a push to the 'main' branch of Repo A
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Check out the contents of the current repository (Repo A)
+      - name: Checkout Repo A
+        uses: actions/checkout@v4
+        with:
+          repository: bogdantancic/quickchat-dev # CHANGE THIS
+          path: repo-a
+
+      # Step 2: Check out the contents of the destination repository (Repo B)
+      # using the PAT for authentication.
+      - name: Checkout Repo B
+        uses: actions/checkout@v4
+        with:
+          repository: bogdantancic/quickchat-deploy # CHANGE THIS
+          token: ${{ secrets.REPO_B_PAT }} # Uses the secret you created
+          path: repo-b
+
+      # Step 3: Sync files from Repo A to Repo B.
+      # The --delete flag removes files in Repo B that are no longer in Repo A.
+      - name: Sync files
+        run: |
+          rsync -av --delete ./repo-a/ ./repo-b/ --exclude '.git/' --exclude '.github/'
+
+      # Step 4: Commit and push the changes to Repo B if there are any
+      - name: Commit and Push to Repo B
+        run: |
+          cd repo-b
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          # Check if there are any changes to commit
+          if ! git diff --quiet; then
+            git add .
+            git commit -m "🔄 Automated sync from Repo A"
+            git push
+          else
+            echo "No changes to sync."
+          fi
