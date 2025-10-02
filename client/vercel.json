@@ -1,4 +1,3 @@
-// client/vercel.json  (REPLACE ENTIRE FILE)
 {
   "rewrites": [
     {
