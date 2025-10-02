@@ -55,14 +55,15 @@ export const authService = {
   },
 
   // INIT: Get Google OAuth URL
+  const apiClient = axios.create({ baseURL: "/api", withCredentials: true });
+  const XANO = import.meta.env.VITE_XANO_API_BASE_URL; // add to Vite env
+
   async initGoogleOAuth() {
-    try {
-      const response = await apiClient.post('/oauth/google/init');
-      return response.data; // { authUrl }
-    } catch (error) {
-      console.error("Error initiating Google OAuth:", error);
-      throw error;
-    }
+   const redirect_uri = `${window.location.origin}/auth/callback`;
+   const r = await axios.get(`${XANO}/api:fALBm5Ej/oauth/google/init`, {
+     params: { redirect_uri }
+   });
+    return r.data; // { authUrl }
   },
 
   // CONTINUE: Exchange code for token (simplified - no Stripe)
