@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function PriceProposal({ onPriceChange, compact = false }) {
+function PriceProposal({ onPriceChange }) {
   const [priceOption, setPriceOption] = useState('expert-decides');
   const [proposedPrice, setProposedPrice] = useState(75);
 
@@ -21,136 +21,26 @@ function PriceProposal({ onPriceChange, compact = false }) {
     }
   };
 
-  // Compact version - single row with dropdown-style interaction
-  if (compact) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">Price Proposal</h3>
-          <span className="text-xs text-gray-500">Optional</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          {/* Let Expert Decide */}
-          <button
-            type="button"
-            onClick={() => handleOptionChange('expert-decides')}
-            className={`relative flex flex-col items-start p-3 border-2 rounded-lg cursor-pointer transition-all text-left ${
-              priceOption === 'expert-decides' 
-                ? 'border-indigo-600 bg-indigo-50' 
-                : 'border-gray-300 hover:border-gray-400 bg-white'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                priceOption === 'expert-decides' 
-                  ? 'border-indigo-600 bg-indigo-600' 
-                  : 'border-gray-300'
-              }`}>
-                {priceOption === 'expert-decides' && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
-                )}
-              </div>
-              <span className="text-sm font-semibold text-gray-900">Expert Decides</span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              They'll set their own price
-            </p>
-          </button>
-
-          {/* Propose Price */}
-          <button
-            type="button"
-            onClick={() => handleOptionChange('propose')}
-            className={`relative flex flex-col items-start p-3 border-2 rounded-lg cursor-pointer transition-all text-left ${
-              priceOption === 'propose' 
-                ? 'border-violet-600 bg-violet-50' 
-                : 'border-gray-300 hover:border-gray-400 bg-white'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                priceOption === 'propose' 
-                  ? 'border-violet-600 bg-violet-600' 
-                  : 'border-gray-300'
-              }`}>
-                {priceOption === 'propose' && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
-                )}
-              </div>
-              <span className="text-sm font-semibold text-gray-900">Propose Price</span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              Suggest an amount
-            </p>
-          </button>
-        </div>
-
-        {/* Price Input - Shows when "Propose Price" is selected */}
-        {priceOption === 'propose' && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 font-semibold text-sm">
-                €
-              </span>
-              <input
-                type="number"
-                value={proposedPrice}
-                onChange={(e) => handlePriceChange(e.target.value)}
-                min="25"
-                step="25"
-                className="w-full pl-8 pr-12 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-violet-300 focus:border-violet-500 focus:outline-none transition font-semibold text-sm"
-              />
-              <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-xs">
-                EUR
-              </span>
-            </div>
-            <div className="flex justify-between mt-2 px-1">
-              {[50, 75, 100, 150].map(amount => (
-                <button
-                  key={amount}
-                  type="button"
-                  onClick={() => handlePriceChange(amount)}
-                  className="text-xs text-gray-500 hover:text-violet-600 transition px-1"
-                >
-                  €{amount}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Full version (original) - for other potential uses
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
-      <h3 className="text-xl font-bold text-gray-900 mb-2">Price Proposal</h3>
-      <p className="text-gray-600 text-sm mb-6">
-        Suggest a price for your question, or let the expert decide
-      </p>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900">Price Proposal</h3>
+        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Optional</span>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Let Expert Decide */}
-        <label 
-          className={`relative flex flex-col p-5 border-2 rounded-xl cursor-pointer transition-all ${
+      <div className="grid grid-cols-2 gap-4">
+        {/* Expert Decides */}
+        <button
+          type="button"
+          onClick={() => handleOptionChange('expert-decides')}
+          className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all text-left ${
             priceOption === 'expert-decides' 
-              ? 'border-indigo-600 bg-indigo-50 shadow-sm' 
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-indigo-600 bg-indigo-50' 
+              : 'border-gray-300 hover:border-gray-400 bg-white'
           }`}
         >
-          <input
-            type="radio"
-            name="price-option"
-            value="expert-decides"
-            checked={priceOption === 'expert-decides'}
-            onChange={() => handleOptionChange('expert-decides')}
-            className="sr-only"
-          />
-          
-          <div className="absolute top-5 right-5">
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
               priceOption === 'expert-decides' 
                 ? 'border-indigo-600 bg-indigo-600' 
                 : 'border-gray-300'
@@ -159,40 +49,25 @@ function PriceProposal({ onPriceChange, compact = false }) {
                 <div className="w-2 h-2 rounded-full bg-white"></div>
               )}
             </div>
+            <span className="text-sm font-bold text-gray-900">Expert Decides</span>
           </div>
-
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center flex-shrink-0">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <span className="font-bold text-gray-900">Expert Decides</span>
-          </div>
-          <p className="text-sm text-gray-600 mt-2">
-            The expert will set their own price when accepting your invitation
+          <p className="text-xs text-gray-600 leading-relaxed">
+            They'll set their own price when accepting
           </p>
-        </label>
+        </button>
 
         {/* Propose Price */}
-        <label 
-          className={`relative flex flex-col p-5 border-2 rounded-xl cursor-pointer transition-all ${
+        <button
+          type="button"
+          onClick={() => handleOptionChange('propose')}
+          className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all text-left ${
             priceOption === 'propose' 
-              ? 'border-violet-600 bg-violet-50 shadow-sm' 
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-violet-600 bg-violet-50' 
+              : 'border-gray-300 hover:border-gray-400 bg-white'
           }`}
         >
-          <input
-            type="radio"
-            name="price-option"
-            value="propose"
-            checked={priceOption === 'propose'}
-            onChange={() => handleOptionChange('propose')}
-            className="sr-only"
-          />
-          
-          <div className="absolute top-5 right-5">
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
               priceOption === 'propose' 
                 ? 'border-violet-600 bg-violet-600' 
                 : 'border-gray-300'
@@ -201,51 +76,54 @@ function PriceProposal({ onPriceChange, compact = false }) {
                 <div className="w-2 h-2 rounded-full bg-white"></div>
               )}
             </div>
+            <span className="text-sm font-bold text-gray-900">Propose Price</span>
           </div>
-
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span className="font-bold text-gray-900">Propose Price</span>
-          </div>
-          
-          <div className={`mt-3 transition-opacity ${priceOption === 'propose' ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-semibold">
-                €
-              </span>
-              <input
-                type="number"
-                value={proposedPrice}
-                onChange={(e) => handlePriceChange(e.target.value)}
-                disabled={priceOption !== 'propose'}
-                min="25"
-                step="25"
-                className="w-full pl-9 pr-16 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-violet-300 focus:border-violet-500 focus:outline-none transition disabled:bg-gray-100 font-semibold text-lg"
-              />
-              <span className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 text-sm">
-                EUR
-              </span>
-            </div>
-            <div className="flex justify-between mt-2 px-1">
-              {[50, 75, 100, 150].map(amount => (
-                <button
-                  key={amount}
-                  type="button"
-                  onClick={() => handlePriceChange(amount)}
-                  disabled={priceOption !== 'propose'}
-                  className="text-xs text-gray-500 hover:text-violet-600 disabled:hover:text-gray-500 transition"
-                >
-                  €{amount}
-                </button>
-              ))}
-            </div>
-          </div>
-        </label>
+          <p className="text-xs text-gray-600 leading-relaxed">
+            Suggest a specific amount
+          </p>
+        </button>
       </div>
+
+      {/* Price Input - Shows when "Propose Price" is selected */}
+      {priceOption === 'propose' && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Your proposed price
+          </label>
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-semibold">
+              €
+            </span>
+            <input
+              type="number"
+              value={proposedPrice}
+              onChange={(e) => handlePriceChange(e.target.value)}
+              min="25"
+              step="25"
+              className="w-full pl-9 pr-16 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-violet-300 focus:border-violet-500 focus:outline-none transition font-semibold"
+            />
+            <span className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 text-sm">
+              EUR
+            </span>
+          </div>
+          <div className="flex gap-2 mt-3">
+            {[50, 75, 100, 150].map(amount => (
+              <button
+                key={amount}
+                type="button"
+                onClick={() => handlePriceChange(amount)}
+                className={`flex-1 text-xs py-2 rounded-lg border transition ${
+                  proposedPrice === amount
+                    ? 'bg-violet-100 border-violet-300 text-violet-700 font-semibold'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                €{amount}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

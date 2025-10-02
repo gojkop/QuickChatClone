@@ -54,17 +54,17 @@ function ReviewModal({ isOpen, questionData, expertHandle, priceProposal, onClos
           <div className="p-6 space-y-6">
             {/* Expert & Price Info Card */}
             <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-indigo-600 font-semibold mb-1">Inviting to QuickChat:</p>
-                  <p className="text-xl font-bold text-indigo-900">{expertHandle}</p>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-indigo-600 font-semibold mb-1">Inviting to QuickChat</p>
+                  <p className="text-2xl font-bold text-indigo-900">{expertHandle}</p>
                 </div>
                 
-                {/* Price Proposal Display */}
+                {/* Price Proposal Badge */}
                 {priceProposal && (
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-3 border border-indigo-200 shadow-sm">
-                    <div className="text-xs text-gray-600 mb-1">Your price proposal</div>
-                    <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-600 mb-1">Price proposal</div>
+                    <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-indigo-200 shadow-sm">
                       {priceProposal.type === 'expert-decides' ? (
                         <>
                           <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,12 +84,6 @@ function ReviewModal({ isOpen, questionData, expertHandle, priceProposal, onClos
                   </div>
                 )}
               </div>
-              
-              {priceProposal && priceProposal.type === 'expert-decides' && (
-                <p className="text-xs text-indigo-700 mt-3 bg-white/50 rounded px-3 py-2">
-                  The expert will set their price when they accept your invitation
-                </p>
-              )}
             </div>
 
             {/* Question Title */}
