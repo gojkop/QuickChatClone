@@ -182,9 +182,9 @@ function PricingPage() {
                 { feature: 'White Label', starter: false, pro: true },
                 { feature: 'Priority Support', starter: false, pro: true }
               ].map((row, idx) => (
-                <div key={idx} className="grid grid-cols-3 gap-4 p-6 border-b border-gray-100 last:border-b-0">
+                <div key={idx} className="grid grid-cols-3 gap-4 p-6 border-b border-gray-100 last:border-b-0 items-center">
                   <div className="text-sm text-gray-700">{row.feature}</div>
-                  <div className="text-sm text-center">
+                  <div className="text-sm flex items-center justify-center">
                     {typeof row.starter === 'boolean' ? (
                       row.starter ? 
                         <CheckIcon /> : 
@@ -193,7 +193,7 @@ function PricingPage() {
                       <span className="font-semibold text-gray-900">{row.starter}</span>
                     )}
                   </div>
-                  <div className="text-sm text-center">
+                  <div className="text-sm flex items-center justify-center">
                     {typeof row.pro === 'boolean' ? (
                       row.pro ? 
                         <CheckIcon /> : 
