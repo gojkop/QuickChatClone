@@ -1,25 +1,30 @@
 // client/src/api/index.js
-// use your existing apiClient if you have one; otherwise use axios directly
 import axios from "axios";
 
-export const authService = {
-  // ...leave other functions untouched...
+// 1) Define a single axios instance for your app
+const apiClient = axios.create({
+  baseURL: "/api",
+  withCredentials: true,
+});
 
-  // INIT now uses GET and takes no arguments
+// 2) Export it (default) so other files can import apiClient
+export default apiClient;
+
+// 3) Use the same instance inside authService
+export const authService = {
+  // INIT via GET (no args)
   async initGoogleOAuth() {
-    const { data } = await axios.get("/api/oauth/google/init");
+    const { data } = await apiClient.get("/oauth/google/init");
     return data; // { authUrl }
   },
 
-  // CONTINUE (for completeness)
+  // CONTINUE via GET (?code=...)
   async continueGoogleOAuth(code) {
-    const { data } = await axios.get("/api/oauth/google/continue", {
+    const { data } = await apiClient.get("/oauth/google/continue", {
       params: { code },
-      withCredentials: true,
     });
     return data; // { token, name, email }
   },
+
+  // (keep your other token helpers here if you had them)
 };
-
-
-export default apiClient;
