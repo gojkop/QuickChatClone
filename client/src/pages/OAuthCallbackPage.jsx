@@ -1,16 +1,11 @@
+// client/src/pages/OAuthCallbackPage.jsx
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
-
-// Optional: use app's Auth if present
-let useAuth;
-try {
-  ({ useAuth } = require("../context/AuthContext.jsx"));
-} catch {}
+import { authService } from "../api";
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate();
-  const { login } = useAuthSafe();
 
   useEffect(() => {
     (async () => {
@@ -24,12 +19,8 @@ export default function OAuthCallbackPage() {
       }
 
       try {
-        const { token, user, ...rest } = await AuthAPI.continueGoogleOAuth({
-          code,
-          state
-        });
-
-        login(token, user, rest);
+        const { token } = await AuthAPI.continueGoogleOAuth({ code, state });
+        if (token) authService.saveAuthToken(token); // saves under qc_token
         navigate("/expert", { replace: true });
       } catch (e) {
         console.error("OAuth continue failed", e);
@@ -39,17 +30,4 @@ export default function OAuthCallbackPage() {
   }, [navigate]);
 
   return <div style={{ padding: 24 }}>Finalizing sign-in…</div>;
-}
-
-function useAuthSafe() {
-  try {
-    const hook = useAuth?.();
-    if (hook && typeof hook.login === "function") return hook;
-  } catch {}
-  return {
-    login: (token, user) => {
-      if (token) localStorage.setItem("auth_token", token);
-      if (user) localStorage.setItem("me", JSON.stringify(user));
-    }
-  };
 }
