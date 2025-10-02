@@ -10,6 +10,10 @@ body {
   color: #1F2937; /* text-gray-800 */
 }
 
+/* ========================================
+   EXISTING ANIMATIONS (PRESERVED)
+   ======================================== */
+
 /* LIVE ELEMENT: Animated "Pouring Colors" Gradient Text */
 @keyframes animated-gradient {
     0% { background-position: 0% 50%; }
@@ -34,4 +38,151 @@ body {
 
 .cta-pulse {
     animation: subtle-pulse 3s ease-in-out infinite;
+}
+
+/* ========================================
+   NEW LANDING PAGE ENHANCEMENTS
+   ======================================== */
+
+/* Gradient shift for hero "brain-pick" text with underline */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Float animation for decorative background elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Slow pulse for decorative blobs */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Smooth scrolling for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Grid pattern background for final CTA section */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(128, 128, 128, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(128, 128, 128, 0.05) 1px, transparent 1px);
+  background-size: 14px 24px;
+}
+
+/* Enhanced backdrop blur support for Safari and other browsers */
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  .backdrop-blur-sm {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+}
+
+/* ========================================
+   CUSTOM SCROLLBAR (OPTIONAL)
+   ======================================== */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4F46E5; /* Brand Indigo */
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4338ca; /* Darker indigo on hover */
+}
+
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+
+/* Ensure smooth transitions globally */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hardware acceleration for animated elements */
+.animate-pulse,
+.animate-float,
+.cta-pulse,
+.animated-gradient-text {
+  will-change: transform, opacity;
+}
+
+/* ========================================
+   ACCESSIBILITY IMPROVEMENTS
+   ======================================== */
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid #4F46E5;
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ========================================
+   PRINT STYLES (OPTIONAL)
+   ======================================== */
+
+@media print {
+  .animated-gradient-text {
+    -webkit-text-fill-color: #4F46E5;
+    color: #4F46E5;
+  }
+  
+  .cta-pulse {
+    animation: none;
+  }
 }
