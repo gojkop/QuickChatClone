@@ -10,7 +10,7 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build",
+    "build": "rm -rf node_modules/.vite && vite build",
     "serve": "vite preview"
   },
   "eslintConfig": {
