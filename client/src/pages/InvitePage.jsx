@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import QuestionComposer from '@/components/question/QuestionComposer';
 import PriceProposal from '@/components/invite/PriceProposal';
@@ -12,6 +12,7 @@ function InvitePage() {
   
   const location = useLocation();
   const navigate = useNavigate();
+  const questionComposerRef = useRef();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -19,10 +20,19 @@ function InvitePage() {
     setExpertHandle(expert);
   }, [location.search]);
   
+  const handleContinueToReview = () => {
+    // Get and validate question data from QuestionComposer
+    if (questionComposerRef.current) {
+      const data = questionComposerRef.current.validateAndGetData();
+      if (data) {
+        setQuestionData(data);
+        setShowReviewModal(true);
+      }
+    }
+  };
+
   const handleQuestionReady = (data) => {
-    // Store question data and open review modal
     setQuestionData(data);
-    setShowReviewModal(true);
   };
 
   const handleSendInvite = (contactInfo) => {
@@ -59,33 +69,33 @@ function InvitePage() {
             </p>
           </div>
 
-          {/* Question Composer */}
-          <QuestionComposer onReady={handleQuestionReady} />
+          {/* Question Composer - in its own card */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
+            <QuestionComposer 
+              ref={questionComposerRef}
+              onReady={handleQuestionReady} 
+              hideButton={true}
+            />
+          </div>
 
-          {/* Price Proposal - Compact version close to the button */}
-          <div className="mt-4 space-y-3">
+          {/* Price Proposal + Continue Button - grouped together */}
+          <div className="mt-6 space-y-4">
             <PriceProposal 
               onPriceChange={setPriceProposal}
-              compact={true}
             />
             
-            {/* Price Summary Preview */}
-            <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-lg p-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-700 font-medium">Price proposal:</span>
-                <span className="font-bold text-indigo-700">
-                  {priceProposal.type === 'expert-decides' 
-                    ? 'Expert will decide' 
-                    : `€${priceProposal.amount}`}
-                </span>
-              </div>
-            </div>
+            <button
+              onClick={handleContinueToReview}
+              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
+            >
+              Continue to Review
+            </button>
           </div>
         </div>
       </main>
 
       {/* Review Modal */}
-      {showReviewModal && (
+      {showReviewModal && questionData && (
         <ReviewModal
           isOpen={showReviewModal}
           questionData={questionData}
