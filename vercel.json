@@ -1,0 +1,26 @@
+{
+  // Build the client and tell Vercel where the static output is
+  "buildCommand": "npm --prefix client ci && npm --prefix client run build",
+  "outputDirectory": "client/dist",
+  "framework": "vite",
+
+  // Keep /api/* as serverless functions, and SPA-rewrite everything else to index.html
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+
+  // Nice-to-have: cache static assets aggressively
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ],
+
+  // Optional quality-of-life
+  "cleanUrls": true,
+  "trailingSlash": false
+}
