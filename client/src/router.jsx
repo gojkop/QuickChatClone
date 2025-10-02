@@ -1,9 +1,8 @@
-// client/src/router.jsx  (REPLACE ENTIRE FILE)
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SignInPage from "./pages/SignInPage";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
-import ExpertDashboardPage from "./pages/ExpertDashboardPage"; // <-- your existing page
+import ExpertDashboardPage from "./pages/ExpertDashboardPage";
 
 function RequireAuth({ children }) {
   const token = localStorage.getItem("auth_token");

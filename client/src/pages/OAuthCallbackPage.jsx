@@ -1,8 +1,12 @@
-// client/src/pages/OAuthCallbackPage.jsx  (REPLACE ENTIRE FILE)
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
-import { useAuth } from "../state/auth"; // if you already have your own provider, this will be used
+
+// Optional: use app's Auth if present
+let useAuth;
+try {
+  ({ useAuth } = require("../context/AuthContext.jsx"));
+} catch {}
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate();
@@ -25,25 +29,21 @@ export default function OAuthCallbackPage() {
           state
         });
 
-        // Persist and update app state
         login(token, user, rest);
-
-        // Redirect to expert area
         navigate("/expert", { replace: true });
       } catch (e) {
         console.error("OAuth continue failed", e);
         navigate("/signin?error=oauth_failed", { replace: true });
       }
     })();
-  }, [navigate, login]);
+  }, [navigate]);
 
   return <div style={{ padding: 24 }}>Finalizing sign-in…</div>;
 }
 
-/** Safe wrapper: uses app's useAuth() if available, otherwise falls back to localStorage */
 function useAuthSafe() {
   try {
-    const hook = useAuth();
+    const hook = useAuth?.();
     if (hook && typeof hook.login === "function") return hook;
   } catch {}
   return {
