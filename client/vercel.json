@@ -1,18 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/oauth/google/init",
-      "destination": "https://x8ki-letl-twmt.n7.xano.io/api:fALBm5Ej/oauth/google/init"
-    },
-    {
-      "source": "/api/oauth/google/continue",
-      "destination": "https://x8ki-letl-twmt.n7.xano.io/api:fALBm5Ej/oauth/google/continue"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "https://x8ki-letl-twmt.n7.xano.io/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
