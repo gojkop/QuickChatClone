@@ -62,9 +62,24 @@ function InvitePage() {
           {/* Question Composer */}
           <QuestionComposer onReady={handleQuestionReady} />
 
-          {/* Price Proposal - Invite Flow Only */}
-          <div className="mt-6">
-            <PriceProposal onPriceChange={setPriceProposal} />
+          {/* Price Proposal - Compact version close to the button */}
+          <div className="mt-4 space-y-3">
+            <PriceProposal 
+              onPriceChange={setPriceProposal}
+              compact={true}
+            />
+            
+            {/* Price Summary Preview */}
+            <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-lg p-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-700 font-medium">Price proposal:</span>
+                <span className="font-bold text-indigo-700">
+                  {priceProposal.type === 'expert-decides' 
+                    ? 'Expert will decide' 
+                    : `€${priceProposal.amount}`}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -75,6 +90,7 @@ function InvitePage() {
           isOpen={showReviewModal}
           questionData={questionData}
           expertHandle={expertHandle}
+          priceProposal={priceProposal}
           onClose={() => setShowReviewModal(false)}
           onEdit={handleEditQuestion}
           onSend={handleSendInvite}

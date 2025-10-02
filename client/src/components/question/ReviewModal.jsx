@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function ReviewModal({ isOpen, questionData, expertHandle, onClose, onEdit, onSend }) {
+function ReviewModal({ isOpen, questionData, expertHandle, priceProposal, onClose, onEdit, onSend }) {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -38,7 +38,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, onClose, onEdit, onSe
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
             <h2 className="text-2xl font-bold text-gray-900">Review Your Question</h2>
             <button
               onClick={onClose}
@@ -52,10 +52,44 @@ function ReviewModal({ isOpen, questionData, expertHandle, onClose, onEdit, onSe
 
           {/* Content */}
           <div className="p-6 space-y-6">
-            {/* Expert Info */}
-            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-              <p className="text-sm text-indigo-600 font-semibold">Inviting to QuickChat:</p>
-              <p className="text-lg font-bold text-indigo-900">{expertHandle}</p>
+            {/* Expert & Price Info Card */}
+            <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-indigo-600 font-semibold mb-1">Inviting to QuickChat:</p>
+                  <p className="text-xl font-bold text-indigo-900">{expertHandle}</p>
+                </div>
+                
+                {/* Price Proposal Display */}
+                {priceProposal && (
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-3 border border-indigo-200 shadow-sm">
+                    <div className="text-xs text-gray-600 mb-1">Your price proposal</div>
+                    <div className="flex items-center gap-2">
+                      {priceProposal.type === 'expert-decides' ? (
+                        <>
+                          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span className="font-bold text-gray-900">Expert decides</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="font-bold text-gray-900">€{priceProposal.amount}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {priceProposal && priceProposal.type === 'expert-decides' && (
+                <p className="text-xs text-indigo-700 mt-3 bg-white/50 rounded px-3 py-2">
+                  The expert will set their price when they accept your invitation
+                </p>
+              )}
             </div>
 
             {/* Question Title */}
@@ -130,7 +164,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, onClose, onEdit, onSe
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              <span>Edit Question</span>
+              <span>Edit Question or Price</span>
             </button>
 
             {/* Divider */}
@@ -196,30 +230,4 @@ function ReviewModal({ isOpen, questionData, expertHandle, onClose, onEdit, onSe
                 Cancel
               </button>
               <button
-                onClick={handleSend}
-                disabled={isSubmitting || !email}
-                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Sending...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Send Invitation</span>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default ReviewModal;
+                onClick
