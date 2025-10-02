@@ -3,13 +3,13 @@ import axios from "axios";
 
 const AUTH_TOKEN_KEY = 'qc_token';
 
-// 1) Create a single axios instance for your app
+// Create axios instance
 const apiClient = axios.create({
   baseURL: "/api",
   withCredentials: true,
 });
 
-// 2) Interceptor to add the auth token to every request
+// Add auth token to requests
 apiClient.interceptors.request.use(config => {
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
   if (token) {
@@ -20,19 +20,18 @@ apiClient.interceptors.request.use(config => {
   return Promise.reject(error);
 });
 
-// 3) Interceptor to handle 401 Unauthorized responses
+// Handle 401 responses
 apiClient.interceptors.response.use(
   response => response,
   error => {
     if (error.response && error.response.status === 401) {
-      // If token is invalid, log the user out
       authService.logout();
     }
     return Promise.reject(error);
   }
 );
 
-// 4) Auth service with all methods
+// Auth service
 export const authService = {
   saveAuthToken(token) {
     if (token) {
@@ -50,13 +49,12 @@ export const authService = {
 
   logout() {
     localStorage.removeItem(AUTH_TOKEN_KEY);
-    // Redirect to sign-in page, but only if not already there
     if (!window.location.pathname.endsWith('/signin')) {
       window.location.href = '/signin';
     }
   },
 
-  // INIT: Get Google OAuth URL (no redirect_uri needed - server handles it)
+  // INIT: Get Google OAuth URL
   async initGoogleOAuth() {
     try {
       const response = await apiClient.post('/oauth/google/init');
@@ -67,7 +65,7 @@ export const authService = {
     }
   },
 
-  // CONTINUE: Exchange code for token
+  // CONTINUE: Exchange code for token (simplified - no Stripe)
   async continueGoogleOAuth(code) {
     try {
       const response = await apiClient.get('/oauth/google/continue', {
@@ -80,5 +78,5 @@ export const authService = {
     }
   }
 };
-// 5) Export the configured axios instance as default
+
 export default apiClient;
