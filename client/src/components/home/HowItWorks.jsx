@@ -13,7 +13,7 @@ const HowItWorksStep = ({ icon, title, description }) => (
 
 function HowItWorks() {
   return (
-    <section className="py-20 md:py-24 bg-white">
+    <section className="py-20 md:py-24">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">How It Works</h2>
         <p className="mt-3 max-w-2xl mx-auto text-lg text-gray-600">A simple, three-step process to reclaim your time.</p>

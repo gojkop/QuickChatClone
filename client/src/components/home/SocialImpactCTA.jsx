@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 function SocialImpactCTA() {
   return (
-    <section className="py-20 bg-slate-50 relative overflow-hidden">
+    <section className="py-20 relative overflow-hidden">
       {/* Decorative background shapes */}
       <div className="absolute top-0 left-0 w-64 h-64 bg-yellow-200 opacity-30 rounded-full blur-3xl -translate-x-12 -translate-y-12"></div>
       <div className="absolute bottom-0 right-0 w-64 h-64 bg-teal-200 opacity-30 rounded-full blur-3xl translate-x-12 translate-y-12"></div>
