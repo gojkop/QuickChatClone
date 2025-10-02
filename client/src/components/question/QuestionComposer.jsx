@@ -96,6 +96,11 @@ function QuestionComposer({ onReady }) {
     const streamToRecord = liveStreamRef.current;
     const mimeType = recordingMode === 'video' ? 'video/webm' : 'audio/webm';
     
+    // Keep video element connected during recording for video mode
+    if (recordingMode === 'video' && videoRef.current) {
+      videoRef.current.srcObject = streamToRecord;
+    }
+    
     mediaRecorderRef.current = new MediaRecorder(streamToRecord, { mimeType });
     const chunks = [];
     
@@ -273,6 +278,24 @@ function QuestionComposer({ onReady }) {
       case 'recording':
         return (
           <div className="border-2 border-red-500 rounded-xl overflow-hidden bg-red-50">
+            {/* Show video preview during recording */}
+            {recordingMode === 'video' && (
+              <video 
+                ref={videoRef}
+                className="w-full bg-gray-900 aspect-video"
+                autoPlay
+                muted
+                playsInline
+              />
+            )}
+            {recordingMode === 'audio' && (
+              <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-full bg-red-600 mx-auto mb-4 animate-pulse"></div>
+                  <p className="text-white font-semibold">Recording Audio...</p>
+                </div>
+              </div>
+            )}
             <div className="p-6 text-center">
               <div className="inline-flex items-center gap-3 mb-4">
                 <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>

@@ -27,7 +27,7 @@ import ProtectedRoute from '@/components/common/ProtectedRoute';
 const AppLayout = () => {
   const location = useLocation();
   // Hide navbar/footer only on OAuth callback page
-  const hideLayout = ['/auth/callback'].includes(location.pathname);
+  const hideLayout = ['/auth/callback', '/invite-sent'].includes(location.pathname);
 
   return (
     <div className="App bg-brand-light-gray min-h-screen flex flex-col">
@@ -42,6 +42,7 @@ const AppLayout = () => {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/invite" element={<InvitePage />} />
+          <Route path="/invite-sent" element={<InviteSentPage />} /> {/* NEW */}
           <Route path="/ask" element={<AskQuestionPage />} />
           <Route path="/question-sent" element={<QuestionSentPage />} />
           <Route path="/u/:handle" element={<PublicProfilePage />} />
