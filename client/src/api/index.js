@@ -3,40 +3,37 @@ import axios from "axios";
 
 const AUTH_TOKEN_KEY = 'qc_token';
 
-// Create axios instance
+// Create axios instance for same-origin /api (proxied to Xano via vercel.json rewrites)
 const apiClient = axios.create({
   baseURL: "/api",
   withCredentials: true,
 });
 
-// Add auth token to requests
-apiClient.interceptors.request.use(config => {
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, error => {
-  return Promise.reject(error);
-});
+// Attach token on each request if present
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-// Handle 401 responses
+// Auto-logout on 401
 apiClient.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
       authService.logout();
     }
     return Promise.reject(error);
   }
 );
 
-// Auth service
+// Centralized auth helpers
 export const authService = {
   saveAuthToken(token) {
-    if (token) {
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
-    }
+    if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
   },
 
   getAuthToken() {
@@ -54,29 +51,26 @@ export const authService = {
     }
   },
 
-  // INIT: Get Google OAuth URL
-  const apiClient = axios.create({ baseURL: "/api", withCredentials: true });
-  const XANO = import.meta.env.VITE_XANO_API_BASE_URL; // add to Vite env
+  // === OAuth (Option A via rewrites) ===
 
+  // 1) Get Google consent URL from Xano (proxied by Vercel rewrite)
   async initGoogleOAuth() {
-   const redirect_uri = `${window.location.origin}/auth/callback`;
-   const r = await axios.get(`${XANO}/api:fALBm5Ej/oauth/google/init`, {
-     params: { redirect_uri }
-   });
-    return r.data; // { authUrl }
+    const redirect_uri = `${window.location.origin}/auth/callback`;
+    const { data } = await apiClient.get('/oauth/google/init', {
+      params: { redirect_uri }
+    });
+    return data; // { authUrl }
   },
 
-  // CONTINUE: Exchange code for token (simplified - no Stripe)
-  async continueGoogleOAuth(code) {
-    try {
-      const response = await apiClient.get('/oauth/google/continue', {
-        params: { code }
-      });
-      return response.data; // { token, name, email }
-    } catch (error) {
-      console.error("Error continuing Google OAuth:", error);
-      throw error;
-    }
+  // 2) Exchange code -> token on callback
+  async continueGoogleOAuth({ code, state }) {
+    const redirect_uri = `${window.location.origin}/auth/callback`;
+    const { data } = await apiClient.get('/oauth/google/continue', {
+      params: { code, state, redirect_uri }
+    });
+    // Optional: persist token here if your flow expects it
+    if (data?.token) this.saveAuthToken(data.token);
+    return data; // { token, user, ... }
   }
 };
 
