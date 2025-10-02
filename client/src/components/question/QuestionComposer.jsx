@@ -136,8 +136,9 @@ function QuestionComposer({ onReady }) {
   };
 
   const handleProceedToReview = () => {
-    if (!mediaBlob) {
-      alert('Please record your question first.');
+    // Only title is mandatory
+    if (!title.trim()) {
+      alert('Please enter a question title.');
       return;
     }
     
