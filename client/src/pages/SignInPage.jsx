@@ -28,7 +28,7 @@ function SignInPage() {
     try {
       // The redirect URI points to the page that will handle the token exchange after Google redirects back.
       // This matches the technical flow document.
-      const redirectUri = `${window.location.origin}/connect_stripe`;
+      const redirectUri = `${window.location.origin}/connect_stripe`; // keep as-is to match OAUTH_REDIRECT_PATH
       const { authUrl } = await authService.initGoogleOAuth(redirectUri);
 
       if (authUrl) {
