@@ -7,7 +7,7 @@ export const authService = {
 
   // INIT now uses GET and takes no arguments
   async initGoogleOAuth() {
-    const { data } = await axios.get("/api/oauth/google/init");
+    const { data } = await apiClient.get("/oauth/google/init");
     return data; // { authUrl }
   },
 
