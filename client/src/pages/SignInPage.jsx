@@ -51,7 +51,7 @@ export default function SignInPage() {
                 {error}
               </div>
             )}</p>}
-            <p className="mt-6 text-xs text-gray-400">By continuing you agree to the Terms and Privacy Policy.</p>
+            <p className="mt-6 text-xs text-gray-400">By continuing you agree to the Terms and Privacy Policy. </p>
           </div>
         </div>
       </div>
