@@ -1,13 +1,22 @@
+// client/src/components/common/SideMenu.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import logo from '@/assets/images/logo-quickchat.png';
 
-function SideMenu({ isOpen, onClose }) {
+function SideMenu({ isOpen, onClose, userInfo }) {
   const { isAuthenticated, logout } = useAuth();
 
   const handleSignOut = () => {
     logout();
+    onClose();
+  };
+
+  const handleCopyProfileLink = () => {
+    // Replace with actual handle from user data
+    const profileUrl = `${window.location.origin}/u/sarah_marketing`;
+    navigator.clipboard.writeText(profileUrl);
+    // Optional: Add toast notification here
     onClose();
   };
 
@@ -20,6 +29,13 @@ function SideMenu({ isOpen, onClose }) {
         { to: '/invite', label: 'Invite an Expert', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg> }
       ]
     }
+  ];
+
+  // Account menu items for authenticated users
+  const accountItems = [
+    { to: '/expert', label: 'Dashboard', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
+    { to: '/expert#settings', label: 'Settings', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+    { to: '/u/sarah_marketing', label: 'View Public Profile', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> },
   ];
 
   return (
@@ -49,30 +65,72 @@ function SideMenu({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* User Section - if authenticated */}
-        {isAuthenticated && (
-          <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-gray-100">
-            <Link 
-              to="/expert" 
+        {/* Quick Actions Panel - Only for authenticated users */}
+        {isAuthenticated && userInfo && (
+          <div className="px-4 py-4 bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 border-b border-gray-200">
+            <div className="px-3 mb-2 text-xs font-bold text-gray-600 uppercase tracking-wider">
+              Quick Actions
+            </div>
+            
+            {/* Pending Questions Alert */}
+            {userInfo.pendingQuestions > 0 ? (
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3 mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                    <span className="text-sm font-bold text-red-900">
+                      {userInfo.pendingQuestions} pending question{userInfo.pendingQuestions !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+                <Link
+                  to="/expert"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 transition"
+                >
+                  Answer now
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+              </div>
+            ) : (
+              /* Stats when no pending questions */
+              <div className="bg-white/70 backdrop-blur-sm rounded-lg p-3 border border-indigo-100">
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div>
+                    <div className="text-lg font-black bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                      $2.8k
+                    </div>
+                    <div className="text-xs text-gray-600 mt-0.5">This Month</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      8h
+                    </div>
+                    <div className="text-xs text-gray-600 mt-0.5">Avg Response</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Dashboard Link */}
+            <Link
+              to="/expert"
               onClick={onClose}
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/50 transition-colors"
+              className="mt-2 flex items-center justify-center gap-2 w-full py-2 px-3 bg-white border border-indigo-200 rounded-lg text-sm font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                ME
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-gray-900 truncate">My Dashboard</div>
-                <div className="text-xs text-gray-500">View your stats</div>
-              </div>
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
+              Go to Dashboard
             </Link>
           </div>
         )}
 
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-6">
+          {/* Product Section */}
           {menuItems.map((section, idx) => (
             <div key={idx} className="mb-6">
               <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -97,13 +155,53 @@ function SideMenu({ isOpen, onClose }) {
             </div>
           ))}
 
-          {/* Auth Section */}
-          <div className="mb-6">
-            <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Account
+          {/* My Account Section - Only for authenticated users */}
+          {isAuthenticated && (
+            <div className="mb-6">
+              <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                My Account
+              </div>
+              <ul className="space-y-1">
+                {accountItems.map((item, idx) => (
+                  <li key={idx}>
+                    <Link
+                      to={item.to}
+                      onClick={onClose}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group"
+                    >
+                      <span className="text-gray-400 group-hover:text-indigo-600 transition-colors">
+                        {item.icon}
+                      </span>
+                      <span className="font-medium text-sm">{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
+                
+                {/* Copy Profile Link Button */}
+                <li>
+                  <button
+                    onClick={handleCopyProfileLink}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group"
+                  >
+                    <span className="text-gray-400 group-hover:text-indigo-600 transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </span>
+                    <span className="font-medium text-sm">Copy Profile Link</span>
+                  </button>
+                </li>
+              </ul>
             </div>
-            <ul className="space-y-1">
-              {!isAuthenticated ? (
+          )}
+
+          {/* Account Section - Sign In/Out */}
+          {!isAuthenticated && (
+            <div className="mb-6">
+              <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Account
+              </div>
+              <ul className="space-y-1">
                 <li>
                   <Link
                     to="/signin"
@@ -116,29 +214,17 @@ function SideMenu({ isOpen, onClose }) {
                     <span className="font-semibold text-sm">Sign In</span>
                   </Link>
                 </li>
-              ) : (
-                <li>
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors group"
-                  >
-                    <svg className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span className="font-medium text-sm">Sign Out</span>
-                  </button>
-                </li>
-              )}
-            </ul>
-          </div>
+              </ul>
+            </div>
+          )}
         </nav>
 
-        {/* Footer Links */}
+        {/* Footer Links & Sign Out */}
         <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
           <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
             Support
           </div>
-          <ul className="space-y-1">
+          <ul className="space-y-1 mb-3">
             <li>
               <Link
                 to="/faq"
@@ -176,6 +262,19 @@ function SideMenu({ isOpen, onClose }) {
               </Link>
             </li>
           </ul>
+
+          {/* Sign Out Button */}
+          {isAuthenticated && (
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors border border-red-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span className="font-semibold text-sm">Sign Out</span>
+            </button>
+          )}
         </div>
       </aside>
     </div>
