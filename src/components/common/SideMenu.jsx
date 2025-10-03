@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import logo from '@/assets/images/logo-quickchat.png';
 
-function SideMenu({ isOpen, onClose, userInfo }) {
+function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
   const { isAuthenticated, logout } = useAuth();
 
   const handleSignOut = () => {
@@ -38,6 +38,22 @@ function SideMenu({ isOpen, onClose, userInfo }) {
     { to: '/u/sarah_marketing', label: 'View Public Profile', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> },
   ];
 
+  // Loading Skeleton for Quick Actions
+  const QuickActionsLoading = () => (
+    <div className="px-4 py-4 bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 border-b border-gray-200">
+      <div className="px-3 mb-2 text-xs font-bold text-gray-600 uppercase tracking-wider">
+        Quick Actions
+      </div>
+      <div className="bg-white/70 backdrop-blur-sm rounded-lg p-3 border border-indigo-100">
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+        </div>
+      </div>
+      <div className="mt-2 h-10 bg-white border border-indigo-200 rounded-lg animate-pulse"></div>
+    </div>
+  );
+
   return (
     <div className={`fixed inset-0 z-50 transition-all duration-300 ease-out ${isOpen ? '' : 'pointer-events-none'}`}>
       {/* Backdrop with blur */}
@@ -66,66 +82,70 @@ function SideMenu({ isOpen, onClose, userInfo }) {
         </div>
 
         {/* Quick Actions Panel - Only for authenticated users */}
-        {isAuthenticated && userInfo && (
-          <div className="px-4 py-4 bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 border-b border-gray-200">
-            <div className="px-3 mb-2 text-xs font-bold text-gray-600 uppercase tracking-wider">
-              Quick Actions
-            </div>
-            
-            {/* Pending Questions Alert */}
-            {userInfo.pendingQuestions > 0 ? (
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3 mb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                    <span className="text-sm font-bold text-red-900">
-                      {userInfo.pendingQuestions} pending question{userInfo.pendingQuestions !== 1 ? 's' : ''}
-                    </span>
+        {isAuthenticated && (
+          isLoadingProfile ? (
+            <QuickActionsLoading />
+          ) : userInfo ? (
+            <div className="px-4 py-4 bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 border-b border-gray-200">
+              <div className="px-3 mb-2 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                Quick Actions
+              </div>
+              
+              {/* Pending Questions Alert */}
+              {userInfo.pendingQuestions > 0 ? (
+                <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                      <span className="text-sm font-bold text-red-900">
+                        {userInfo.pendingQuestions} pending question{userInfo.pendingQuestions !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    to="/expert"
+                    onClick={onClose}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 transition"
+                  >
+                    Answer now
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </Link>
+                </div>
+              ) : (
+                /* Stats when no pending questions */
+                <div className="bg-white/70 backdrop-blur-sm rounded-lg p-3 border border-indigo-100">
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div>
+                      <div className="text-lg font-black bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                        $2.8k
+                      </div>
+                      <div className="text-xs text-gray-600 mt-0.5">This Month</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        8h
+                      </div>
+                      <div className="text-xs text-gray-600 mt-0.5">Avg Response</div>
+                    </div>
                   </div>
                 </div>
-                <Link
-                  to="/expert"
-                  onClick={onClose}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 transition"
-                >
-                  Answer now
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Link>
-              </div>
-            ) : (
-              /* Stats when no pending questions */
-              <div className="bg-white/70 backdrop-blur-sm rounded-lg p-3 border border-indigo-100">
-                <div className="grid grid-cols-2 gap-3 text-center">
-                  <div>
-                    <div className="text-lg font-black bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                      $2.8k
-                    </div>
-                    <div className="text-xs text-gray-600 mt-0.5">This Month</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      8h
-                    </div>
-                    <div className="text-xs text-gray-600 mt-0.5">Avg Response</div>
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Quick Dashboard Link */}
-            <Link
-              to="/expert"
-              onClick={onClose}
-              className="mt-2 flex items-center justify-center gap-2 w-full py-2 px-3 bg-white border border-indigo-200 rounded-lg text-sm font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              Go to Dashboard
-            </Link>
-          </div>
+              {/* Quick Dashboard Link */}
+              <Link
+                to="/expert"
+                onClick={onClose}
+                className="mt-2 flex items-center justify-center gap-2 w-full py-2 px-3 bg-white border border-indigo-200 rounded-lg text-sm font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Go to Dashboard
+              </Link>
+            </div>
+          ) : null
         )}
 
         {/* Main Navigation */}
@@ -156,7 +176,7 @@ function SideMenu({ isOpen, onClose, userInfo }) {
           ))}
 
           {/* My Account Section - Only for authenticated users */}
-          {isAuthenticated && (
+          {isAuthenticated && !isLoadingProfile && (
             <div className="mb-6">
               <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
                 My Account
@@ -264,7 +284,7 @@ function SideMenu({ isOpen, onClose, userInfo }) {
           </ul>
 
           {/* Sign Out Button */}
-          {isAuthenticated && (
+          {isAuthenticated && !isLoadingProfile && (
             <button
               onClick={handleSignOut}
               className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors border border-red-200"
