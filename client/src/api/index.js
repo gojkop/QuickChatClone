@@ -14,7 +14,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// 👇 tweak this block
+
 apiClient.interceptors.response.use(
   (res) => res,
   (error) => {
