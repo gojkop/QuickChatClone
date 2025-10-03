@@ -1,71 +1,78 @@
 // api/upload/document.js
-// Serverless function for document uploads to Vercel Blob
+// Upload documents to Cloudflare R2
 
-import { put } from '@vercel/blob';
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const formidable = require('formidable');
+const fs = require('fs').promises;
+const path = require('path');
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
+const s3Client = new S3Client({
+  region: 'auto',
+  endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
   },
-};
+});
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  try {
-    // Get file from multipart form data
-    const contentType = req.headers['content-type'];
-    if (!contentType || !contentType.includes('multipart/form-data')) {
-      return res.status(400).json({ error: 'Must be multipart/form-data' });
+  const form = formidable({ 
+    maxFileSize: 10 * 1024 * 1024, // 10MB
+    keepExtensions: true 
+  });
+
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      console.error('Form parse error:', err);
+      return res.status(400).json({ message: 'Failed to parse upload' });
     }
 
-    // For serverless, you'll need to use a library like 'formidable' or 'busboy'
-    // to parse multipart data. Here's a simple example:
-    
-    // Install: npm install formidable
-    const formidable = require('formidable');
-    const fs = require('fs').promises;
-    
-    const form = formidable({ maxFileSize: 10 * 1024 * 1024 }); // 10MB
-    
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        return res.status(400).json({ error: 'Failed to parse form data' });
-      }
+    const file = files.file;
+    if (!file) {
+      return res.status(400).json({ message: 'No file provided' });
+    }
 
-      const file = files.file;
-      if (!file) {
-        return res.status(400).json({ error: 'No file provided' });
-      }
-
-      // Read file buffer
+    try {
+      // Read file
       const fileBuffer = await fs.readFile(file.filepath);
       
-      // Upload to Vercel Blob
+      // Generate unique key
       const folder = fields.folder || 'documents';
-      const filename = `${folder}/${Date.now()}-${file.originalFilename}`;
-      
-      const blob = await put(filename, fileBuffer, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
+      const timestamp = Date.now();
+      const originalName = file.originalFilename || 'file';
+      const sanitizedName = originalName.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const key = `${folder}/${timestamp}-${sanitizedName}`;
+
+      // Upload to R2
+      const command = new PutObjectCommand({
+        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+        Key: key,
+        Body: fileBuffer,
+        ContentType: file.mimetype || 'application/octet-stream',
       });
+
+      await s3Client.send(command);
 
       // Clean up temp file
       await fs.unlink(file.filepath);
 
-      return res.status(200).json({
+      // Return public URL
+      const url = `https://pub-${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.dev/${key}`;
+
+      res.status(200).json({
         success: true,
-        url: blob.url,
+        url,
+        key,
         filename: file.originalFilename,
         size: file.size,
       });
-    });
-  } catch (error) {
-    console.error('Upload error:', error);
-    return res.status(500).json({ error: 'Failed to upload file' });
-  }
-}
+    } catch (error) {
+      console.error('Upload error:', error);
+      res.status(500).json({ message: 'Upload failed', error: error.message });
+    }
+  });
+};

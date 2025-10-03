@@ -24,8 +24,12 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
     setFormData(prev => ({ ...prev, [id]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleAvatarChange = (avatarData) => {
-    setFormData(prev => ({ ...prev, avatar_url: avatarData }));
+  const handleAvatarChange = (uploadResult) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      avatar_url: uploadResult.url,
+      avatar_key: uploadResult.key // Store the key for potential deletion later
+    }));
   };
 
   const handleCharityPercentageChange = (percentage) => {
@@ -37,6 +41,18 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
   };
 
   const handleSave = async (e) => {
+    const payload = {
+      price_cents: Number(formData.priceUsd) * 100,
+      sla_hours: Number(formData.slaHours),
+      bio: formData.bio,
+      public: formData.isPublic,
+      handle: formData.handle,
+      currency: 'USD',
+      avatar_url: formData.avatar_url,       // NEW
+      avatar_key: formData.avatar_key,       // NEW
+      charity_percentage: formData.charity_percentage || 0,
+      selected_charity: formData.selected_charity || null
+    };
     e.preventDefault();
     setIsLoading(true);
     setError('');
