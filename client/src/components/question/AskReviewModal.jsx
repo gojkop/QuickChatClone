@@ -61,7 +61,6 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm text-indigo-600 font-semibold mb-1">Asking a question to</p>
-                  {/* IMPROVEMENT 1: Display expert's name */}
                   <p className="text-2xl font-bold text-indigo-900">{expert.user?.name || expert.handle}</p>
                 </div>
                 
@@ -76,7 +75,36 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
               </div>
             </div>
 
-            {/* IMPROVEMENT 2: Detailed Question Review Section */}
+            {/* --- FIX STARTS HERE --- */}
+            {/* Recording Preview */}
+            {questionData.mediaBlob && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Your {questionData.recordingMode === 'video' ? 'Video' : 'Audio'} Question
+                </label>
+                <div className="bg-gray-900 rounded-lg overflow-hidden">
+                  {questionData.recordingMode === 'video' ? (
+                    <video
+                      src={URL.createObjectURL(questionData.mediaBlob)}
+                      controls
+                      className="w-full"
+                    />
+                  ) : (
+                    <div className="p-4">
+                      <audio
+                        src={URL.createObjectURL(questionData.mediaBlob)}
+                        controls
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {/* --- FIX ENDS HERE --- */}
+
+
+            {/* Detailed Question Review Section */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-3">Your Question Summary</label>
               <div className="space-y-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -86,28 +114,12 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                   <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Title</span>
                   <p className="text-gray-900 text-sm font-medium">{questionData.title}</p>
                 </div>
-
-                {/* Recording */}
-                {questionData.mediaBlob && (
-                  <div className="flex items-start">
-                    <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">
-                      {questionData.recordingMode === 'video' ? 'Video' : 'Audio'}
-                    </span>
-                    <div className="text-sm font-medium text-green-700 flex items-center gap-2">
-                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                       <span>Recording Added</span>
-                    </div>
-                  </div>
-                )}
                 
                 {/* Additional Context */}
                 <div className="flex items-start">
                   <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Context</span>
                   {questionData.text ? (
-                     <div className="text-sm font-medium text-green-700 flex items-center gap-2">
-                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                       <span>Added</span>
-                    </div>
+                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{questionData.text}</p>
                   ) : (
                     <span className="text-sm text-gray-500">Not Added</span>
                   )}
