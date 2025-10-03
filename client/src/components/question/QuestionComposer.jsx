@@ -108,7 +108,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     setRecordingState('asking');
     try {
       const constraints = recordingMode === 'video' 
-        ? { audio: true, video: true }
+        ? { audio: true, video: { facingMode: 'user' } }
         : { audio: true, video: false };
       
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -120,7 +120,17 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       }
     } catch (error) {
       console.error("Permission Error:", error);
-      setRecordingState('denied');
+      
+      // Check if it's a permission error vs other errors
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setRecordingState('denied');
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        // No camera/mic found
+        setRecordingState('no-device');
+      } else {
+        // Generic error
+        setRecordingState('denied');
+      }
     }
   };
 
@@ -259,13 +269,57 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
             <svg className="w-12 h-12 text-amber-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <p className="font-semibold text-amber-800 mb-2">Camera/microphone access denied</p>
-            <p className="text-sm text-amber-700 mb-4">Please allow access in your browser settings</p>
+            <p className="font-semibold text-amber-800 mb-2">Camera/microphone access needed</p>
+            
+            {/* Detect iOS (all browsers on iPhone use WebKit) */}
+            {/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream ? (
+              <div className="text-left max-w-md mx-auto">
+                <p className="text-sm text-amber-700 mb-3">
+                  On iPhone, you need to enable camera/microphone in Settings (this applies to all browsers):
+                </p>
+                <ol className="text-sm text-amber-700 space-y-2 mb-4 list-decimal list-inside bg-white rounded-lg p-4 border border-amber-200">
+                  <li>Open iPhone <strong>Settings</strong> app</li>
+                  <li>Scroll down and find your browser (<strong>Safari</strong>, <strong>Chrome</strong>, etc.)</li>
+                  <li>Tap on it to open browser settings</li>
+                  <li>Find <strong>Camera</strong> and set to <strong>"Ask"</strong> or <strong>"Allow"</strong></li>
+                  <li>Find <strong>Microphone</strong> and set to <strong>"Ask"</strong> or <strong>"Allow"</strong></li>
+                  <li><strong>Close this tab completely</strong> and reopen the page</li>
+                </ol>
+                <div className="bg-blue-50 rounded-lg p-3 mb-4 border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-900 mb-1">💡 Important:</p>
+                  <p className="text-xs text-blue-800">
+                    iPhone doesn't show a permission popup. You must enable in Settings first, then fully close and reopen this page.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-amber-700 mb-4">Please allow access to your camera and microphone when prompted by your browser</p>
+            )}
+            
             <button 
               onClick={initiatePreview}
-              className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition"
+              className="px-6 py-3 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition"
             >
               Try Again
+            </button>
+          </div>
+        );
+
+      case 'no-device':
+        return (
+          <div className="text-center p-8 border-2 border-red-400 rounded-xl bg-red-50">
+            <svg className="w-12 h-12 text-red-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            <p className="font-semibold text-red-800 mb-2">No camera or microphone found</p>
+            <p className="text-sm text-red-700 mb-4">
+              Please make sure your device has a working camera and microphone
+            </p>
+            <button 
+              onClick={() => setRecordingState('initial')}
+              className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition"
+            >
+              Go Back
             </button>
           </div>
         );
@@ -294,42 +348,45 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
               </div>
             )}
             
-            <div className="p-4 bg-white flex items-center justify-between gap-4">
-              <button 
-                onClick={handleRerecord}
-                className="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition"
-              >
-                Cancel
-              </button>
-              
-              <button
-                onClick={toggleRecordingMode}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-              >
-                {recordingMode === 'video' ? (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                    <span>Audio Only</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <span>Video</span>
-                  </>
-                )}
-              </button>
-              
-              <button
-                onClick={startRecording}
-                className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
-              >
-                <div className="w-3 h-3 rounded-full bg-white"></div>
-                <span>Record</span>
-              </button>
+            <div className="p-3 sm:p-4 bg-white">
+              {/* Mobile: Stacked layout, Desktop: Row layout */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <button 
+                  onClick={handleRerecord}
+                  className="order-3 sm:order-1 px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition text-sm"
+                >
+                  Cancel
+                </button>
+                
+                <button
+                  onClick={toggleRecordingMode}
+                  className="order-2 flex items-center justify-center gap-2 px-4 py-2 text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm"
+                >
+                  {recordingMode === 'video' ? (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                      <span>Audio Only</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <span>Video</span>
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  onClick={startRecording}
+                  className="order-1 sm:order-3 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-lg"
+                >
+                  <div className="w-3 h-3 rounded-full bg-white"></div>
+                  <span>Start Recording</span>
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -354,17 +411,17 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                 </div>
               </div>
             )}
-            <div className="p-6 text-center">
-              <div className="inline-flex items-center gap-3 mb-4">
-                <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
-                <span className="text-red-700 font-bold text-lg">Recording...</span>
+            <div className="p-4 sm:p-6 text-center">
+              <div className="inline-flex items-center gap-3 mb-3 sm:mb-4">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-600 animate-pulse"></div>
+                <span className="text-red-700 font-bold text-base sm:text-lg">Recording...</span>
               </div>
-              <div className="text-4xl font-black text-red-600 mb-4" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <div className="text-3xl sm:text-4xl font-black text-red-600 mb-3 sm:mb-4" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 0:{timer < 10 ? `0${timer}` : timer}
               </div>
               <button
                 onClick={stopRecording}
-                className="px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
               >
                 Stop Recording
               </button>
@@ -399,14 +456,14 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                 <audio 
                   src={mediaBlobUrl}
                   controls
-                  className="w-full max-w-md"
+                  className="w-full max-w-md px-4"
                   preload="auto"
                 />
               </div>
             )}
             
-            <div className="p-4 bg-green-50 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-green-700">
+            <div className="p-3 sm:p-4 bg-green-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-2 text-green-700 justify-center sm:justify-start">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -414,7 +471,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
               </div>
               <button
                 onClick={handleRerecord}
-                className="px-4 py-2 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
+                className="w-full sm:w-auto px-4 py-2 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
               >
                 Re-record
               </button>
@@ -447,6 +504,24 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         <label className="block text-sm font-semibold text-gray-900 mb-2">
           Record Your Question (max 90s)
         </label>
+        
+        {/* iOS-specific tip - show only on iOS devices before recording */}
+        {/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream && recordingState === 'initial' && (
+          <div className="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex gap-2">
+              <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="text-xs font-semibold text-blue-900 mb-1">📱 iPhone users - Important!</p>
+                <p className="text-xs text-blue-800">
+                  Before recording, make sure camera/microphone permissions are enabled in your iPhone Settings → [Your Browser] → Camera & Microphone
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {renderRecorder()}
       </div>
 
