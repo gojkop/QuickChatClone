@@ -62,13 +62,16 @@ function Navbar() {
 
   // User Avatar Component
   const UserAvatar = ({ size = 28, avatarUrl }) => {
-    if (avatarUrl) {
+    const [imageError, setImageError] = useState(false);
+
+    if (avatarUrl && !imageError) {
       return (
         <img 
           src={avatarUrl} 
-          alt="User avatar" 
+          alt="" 
           className="rounded-full object-cover flex-shrink-0"
           style={{ width: size, height: size }}
+          onError={() => setImageError(true)}
         />
       );
     }
