@@ -40,7 +40,7 @@ export default function SignInPage() {
       <div className="max-w-md w-full space-y-8 text-center">
         <img src={logo} alt="QuickChat" className="h-10 w-auto mb-2" />
         <h1 className="text-2xl font-bold text-gray-900">Expert Sign In</h1>
-        <p className="text-sm text-gray-600">Monetize every “quick question”.</p>
+        <p className="text-sm text-gray-600">Monetize every "quick question".</p>
 
         <div className="bg-white shadow-xl rounded-2xl border border-gray-100 p-6">
           <button
