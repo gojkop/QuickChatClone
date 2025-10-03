@@ -7,7 +7,11 @@ const formatPrice = (cents, currency = 'USD') => {
   const symbols = { USD: '$', EUR: '€', GBP: '£' };
   const symbol = symbols[currency] || '$';
   const amount = (cents || 0) / 100;
-  return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
+  // Use toFixed(2) to show cents for donation amount
+  if (amount % 1 !== 0) {
+      return `${symbol}${amount.toFixed(2)}`;
+  }
+  return `${symbol}${amount.toFixed(0)}`;
 };
 
 // Default Avatar Component (no changes needed)
@@ -33,8 +37,8 @@ const DefaultAvatar = ({ size = 120 }) => (
   </div>
 );
 
-// REVISED: Simplified Social Impact Badge to match the new design
-const SocialImpactBadge = ({ charityPercentage, selectedCharity }) => {
+// --- NEW: Social Impact Card with Donation Calculation ---
+const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, currency }) => {
   const charityInfo = {
     'unicef': { name: 'UNICEF', icon: '💖' },
     'doctors-without-borders': { name: 'Doctors Without Borders', icon: '🏥' },
@@ -49,10 +53,16 @@ const SocialImpactBadge = ({ charityPercentage, selectedCharity }) => {
     return null;
   }
 
+  const donationAmount = (priceCents * charityPercentage) / 100;
+
   return (
-    <div className="flex items-center gap-2 text-sm text-gray-600">
-        <span>{charity.icon}</span>
-        <span>Supporting <span className="font-semibold text-gray-800">{charity.name}</span></span>
+    <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 rounded-lg p-4 border border-orange-200">
+        <div className="flex items-center gap-3">
+            <span className="text-2xl">{charity.icon}</span>
+            <p className="text-sm text-gray-700 leading-snug">
+                A <span className="font-bold">{charityPercentage}% donation</span> ({formatPrice(donationAmount, currency)}) of your payment will go to <span className="font-bold text-gray-900">{charity.name}</span>.
+            </p>
+        </div>
     </div>
   );
 };
@@ -120,7 +130,7 @@ function PublicProfilePage() {
             
             <div className="h-24 bg-gradient-to-br from-indigo-100 to-violet-100"></div>
 
-            <div className="p-6">
+            <div className="p-6 space-y-5">
               <div className="flex items-start gap-4 -mt-16">
                 {profile.avatar_url ? (
                   <img 
@@ -133,21 +143,13 @@ function PublicProfilePage() {
                 )}
                 <div className="pt-14 flex-1">
                   <div className="flex items-center justify-end gap-3">
-                    {profile.socials?.twitter && (
-                      <a href={profile.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-                      </a>
-                    )}
-                    {profile.socials?.website && (
-                      <a href={profile.socials.website} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                      </a>
-                    )}
+                    {profile.socials?.twitter && ( <a href={profile.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600">...</a> )}
+                    {profile.socials?.website && ( <a href={profile.socials.website} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600">...</a> )}
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4">
+              <div>
                 <h1 className="text-2xl font-bold text-gray-900">{profile.user?.name || 'Expert'}</h1>
                 <p className="text-sm text-gray-500 font-medium">@{profile.handle}</p>
                 {profile.tagline && (
@@ -156,11 +158,11 @@ function PublicProfilePage() {
               </div>
 
               {profile.bio && (
-                <p className="mt-4 text-gray-600 text-sm leading-relaxed">{profile.bio}</p>
+                <p className="text-gray-600 text-sm leading-relaxed">{profile.bio}</p>
               )}
 
               {profile.tags && profile.tags.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2">
                   {profile.tags.map(tag => (
                     <span key={tag} className="px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-full">
                       {tag}
@@ -169,7 +171,7 @@ function PublicProfilePage() {
                 </div>
               )}
               
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between gap-4">
                  <div className="flex items-center gap-4">
                     <div className="text-center">
                       <div className="text-xs text-gray-500">Response</div>
@@ -181,11 +183,15 @@ function PublicProfilePage() {
                       <div className="font-bold text-gray-900">{formatPrice(profile.price_cents, profile.currency)}</div>
                     </div>
                  </div>
-                 <SocialImpactBadge
-                    charityPercentage={profile.charity_percentage}
-                    selectedCharity={profile.selected_charity}
-                  />
               </div>
+
+              {/* --- NEW Social Impact Card Placement --- */}
+              <SocialImpactCard
+                charityPercentage={profile.charity_percentage}
+                selectedCharity={profile.selected_charity}
+                priceCents={profile.price_cents}
+                currency={profile.currency}
+              />
             </div>
             
             <div className="p-6 bg-gray-50/50 border-t border-gray-100">
@@ -198,7 +204,6 @@ function PublicProfilePage() {
             </div>
           </div>
         
-          {/* RE-ADD: Trust Signals */}
           <div className="pt-6">
             <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs text-gray-500">
               <div className="flex items-center gap-1.5">
