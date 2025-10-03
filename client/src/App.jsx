@@ -2,7 +2,6 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { Analytics } from '@vercel/analytics/react';
 
 // Import Page Components
 import HomePage from '@/pages/HomePage';
@@ -20,6 +19,7 @@ import InviteSentPage from '@/pages/InviteSentPage'; // NEW
 import AskQuestionPage from '@/pages/AskQuestionPage';
 import QuestionSentPage from '@/pages/QuestionSentPage';
 
+
 // Import Common Components
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
@@ -27,7 +27,7 @@ import ProtectedRoute from '@/components/common/ProtectedRoute';
 
 const AppLayout = () => {
   const location = useLocation();
-  // Hide navbar/footer only on OAuth callback page (and invite-sent)
+  // Hide navbar/footer only on OAuth callback page
   const hideLayout = ['/auth/callback', '/invite-sent'].includes(location.pathname);
 
   return (
@@ -72,8 +72,6 @@ function App() {
   return (
     <AuthProvider>
       <AppLayout />
-      {/* Track only in production to avoid double events in dev */}
-      {import.meta.env.PROD && <Analytics />}
     </AuthProvider>
   );
 }
