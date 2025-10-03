@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import DeliveryPreview from '@/components/invite/DeliveryPreview';
 
 function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProposal, onClose, onEdit, onSend }) {
-  const [email, setEmail] = useState(expertInfo?.type === 'email' ? expertInfo.identifier : '');
+  const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -10,8 +10,8 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
   if (!isOpen || !questionData) return null;
 
   const handleSend = async () => {
-    // Only require email if expert type is not email (since we already have it)
-    if (expertInfo?.type !== 'email' && (!email || !email.includes('@'))) {
+    // Always require email for asker notifications
+    if (!email || !email.includes('@')) {
       alert('Please enter a valid email address for notifications');
       return;
     }
@@ -178,30 +178,25 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-bold text-gray-900 mb-2">Your Contact Information</h3>
               <p className="text-sm text-gray-600 mb-4">
-                {expertInfo?.type === 'email' 
-                  ? "We'll notify you when they respond"
-                  : "We'll send you an email notification when they respond"
-                }
+                We'll send you confirmation and notify you when they respond
               </p>
               
-              {/* Email (Required only if not already provided) */}
-              {expertInfo?.type !== 'email' && (
-                <div className="mb-4">
-                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Your Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
-                    placeholder="your.email@example.com"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">For response notifications</p>
-                </div>
-              )}
+              {/* Email (Always required for asker notifications) */}
+              <div className="mb-4">
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Your Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
+                  placeholder="your.email@example.com"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">For confirmation and response notifications</p>
+              </div>
 
               {/* Name Fields (Optional) */}
               <div className="grid grid-cols-2 gap-4">
@@ -246,7 +241,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
               </button>
               <button
                 onClick={handleSend}
-                disabled={isSubmitting || (expertInfo?.type !== 'email' && !email)}
+                disabled={isSubmitting || !email}
                 className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]"
               >
                 {isSubmitting ? (

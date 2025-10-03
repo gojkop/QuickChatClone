@@ -12,6 +12,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   const [recordingState, setRecordingState] = useState('initial');
   const [recordingMode, setRecordingMode] = useState('video');
   const [mediaBlob, setMediaBlob] = useState(null);
+  const [mediaBlobUrl, setMediaBlobUrl] = useState(null);
   const [timer, setTimer] = useState(MAX_RECORDING_SECONDS);
 
   // Refs
@@ -29,8 +30,12 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
+      // Cleanup blob URL
+      if (mediaBlobUrl) {
+        URL.revokeObjectURL(mediaBlobUrl);
+      }
     };
-  }, []);
+  }, [mediaBlobUrl]);
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -129,6 +134,9 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     mediaRecorderRef.current.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
       setMediaBlob(blob);
+      // Create and store blob URL
+      const url = URL.createObjectURL(blob);
+      setMediaBlobUrl(url);
       setRecordingState('review');
       cleanupStream();
     };
@@ -157,7 +165,12 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
 
   const handleRerecord = () => {
     cleanupStream();
+    // Cleanup old blob URL
+    if (mediaBlobUrl) {
+      URL.revokeObjectURL(mediaBlobUrl);
+    }
     setMediaBlob(null);
+    setMediaBlobUrl(null);
     setRecordingState('initial');
   };
 
@@ -338,17 +351,21 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
           <div className="border-2 border-green-500 rounded-xl overflow-hidden">
             {recordingMode === 'video' ? (
               <video 
-                src={URL.createObjectURL(mediaBlob)}
-                className="w-full bg-gray-900 aspect-video"
+                key={mediaBlobUrl}
+                src={mediaBlobUrl}
+                className="w-full aspect-video bg-black"
                 controls
                 playsInline
+                preload="metadata"
               />
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                 <audio 
-                  src={URL.createObjectURL(mediaBlob)}
+                  key={mediaBlobUrl}
+                  src={mediaBlobUrl}
                   controls
                   className="w-full max-w-md"
+                  preload="metadata"
                 />
               </div>
             )}
