@@ -22,11 +22,10 @@ function ExpertDashboardPage() {
         const response = await apiClient.post('/me/bootstrap');
         const expertProfile = response.data.expert_profile || {};
         
-        // --- FIX IS HERE ---
-        // Prepare data for the form, making sure to include the user object
+        // ✅ FIX: Include the user object from the response
         const processedProfile = {
           ...expertProfile,
-          user: response.data.user, // Include the user object from the response
+          user: response.data.user, // ← CRITICAL FIX: Add this line
           priceUsd: dollarsFromCents(expertProfile.price_cents),
           slaHours: expertProfile.sla_hours,
           isPublic: expertProfile.public,
