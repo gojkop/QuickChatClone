@@ -15,9 +15,12 @@ export const AuthAPI = {
   },
 
   async continueGoogleOAuth({ code, state }) {
-    const redirect_uri = `${window.location.origin}/auth/callback`;
+    // IMPORTANT: Xano's continue endpoint doesn't need redirect_uri
+    // Only send code (and state if Xano expects it)
     const r = await api.get("/oauth/google/continue", {
-      params: { code, state, redirect_uri }
+      params: { code }
+      // Removed: redirect_uri - causes Xano "ERROR_CODE_ACCESS_DENIED"
+      // Removed: state - only include if Xano specifically requires it
     });
     // Expected: { token, user, ... }
     return r.data;
