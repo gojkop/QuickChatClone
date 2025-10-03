@@ -1,5 +1,6 @@
 // src/components/dashboard/AvatarUpload.jsx
 import React, { useState } from 'react';
+import apiClient from '@/api';
 
 function AvatarUpload({ currentAvatar, onChange }) {
   const [preview, setPreview] = useState(currentAvatar);
@@ -26,26 +27,22 @@ function AvatarUpload({ currentAvatar, onChange }) {
     reader.onloadend = () => setPreview(reader.result);
     reader.readAsDataURL(file);
 
-    // Upload to Cloudinary via backend API
+    // Upload to Xano backend
     setIsUploading(true);
     setError(null);
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', 'quickchat/profiles');
+      formData.append('image', file);
 
-      const response = await fetch('/api/upload/profile-picture', {
-        method: 'POST',
-        body: formData,
+      // Use apiClient which already has correct base URL and auth headers
+      const response = await apiClient.post('/upload/profile-picture', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
-      }
-
-      const result = await response.json();
+      const result = response.data;
       
       // Pass URL back to parent (which will save to Xano)
       onChange({
@@ -55,7 +52,7 @@ function AvatarUpload({ currentAvatar, onChange }) {
       setPreview(result.url);
     } catch (err) {
       console.error('Upload failed:', err);
-      setError(err.message || 'Upload failed. Please try again.');
+      setError(err.response?.data?.error || 'Upload failed. Please try again.');
       setPreview(currentAvatar); // Revert preview
     } finally {
       setIsUploading(false);
