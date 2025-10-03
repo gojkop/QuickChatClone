@@ -17,6 +17,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
 
   // Refs
   const videoRef = useRef(null);
+  const reviewVideoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const liveStreamRef = useRef(null);
   const timerIntervalRef = useRef(null);
@@ -36,6 +37,13 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       }
     };
   }, [mediaBlobUrl]);
+
+  // Ensure review video loads when blob URL is ready
+  useEffect(() => {
+    if (reviewVideoRef.current && mediaBlobUrl && recordingState === 'review') {
+      reviewVideoRef.current.load();
+    }
+  }, [mediaBlobUrl, recordingState]);
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -351,21 +359,20 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
           <div className="border-2 border-green-500 rounded-xl overflow-hidden">
             {recordingMode === 'video' ? (
               <video 
-                key={mediaBlobUrl}
+                ref={reviewVideoRef}
                 src={mediaBlobUrl}
                 className="w-full aspect-video bg-black"
                 controls
                 playsInline
-                preload="metadata"
+                preload="auto"
               />
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                 <audio 
-                  key={mediaBlobUrl}
                   src={mediaBlobUrl}
                   controls
                   className="w-full max-w-md"
-                  preload="metadata"
+                  preload="auto"
                 />
               </div>
             )}

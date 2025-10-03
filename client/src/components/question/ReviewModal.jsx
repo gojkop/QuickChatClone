@@ -176,10 +176,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
 
             {/* Contact Information Section */}
             <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Your Contact Information</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                We'll send you confirmation and notify you when they respond
-              </p>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Your Contact Information</h3>
               
               {/* Email (Always required for asker notifications) */}
               <div className="mb-4">
