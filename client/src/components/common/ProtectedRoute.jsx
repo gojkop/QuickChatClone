@@ -1,17 +1,26 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+// client/src/components/common/ProtectedRoute.jsx
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { authService } from "@/api"; // from client/src/api/index.js
 
-function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+export default function ProtectedRoute({ children }) {
+  const location = useLocation();
+  const authed = authService.isAuthenticated();
 
-  if (!isAuthenticated) {
-    // Redirect them to the /signin page, but save the current location they were
-    // trying to go to so we can send them there after they log in.
-    return <Navigate to="/signin" replace />;
+  // Avoid redirects during OAuth or on the callback route itself
+  const inProgress =
+    typeof window !== "undefined" &&
+    sessionStorage.getItem("qc_auth_in_progress") === "1";
+  const onCallback = location.pathname.startsWith("/auth/callback");
+
+  if (onCallback || inProgress) {
+    // Render nothing (or a tiny loader) while the flow finishes
+    return null;
+  }
+
+  if (!authed) {
+    return <Navigate to="/signin" replace state={{ from: location }} />;
   }
 
   return children;
 }
-
-export default ProtectedRoute;

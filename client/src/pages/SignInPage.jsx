@@ -1,17 +1,27 @@
 // client/src/pages/SignInPage.jsx
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
+import { authService } from "../api";
 import logo from "@/assets/images/logo-quickchat.png";
 
 export default function SignInPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+
+  // ⬇️ If token already present, skip this page
+  React.useEffect(() => {
+    if (authService.isAuthenticated()) {
+      navigate("/expert", { replace: true });
+    }
+  }, [navigate]);
 
   const onGoogleClick = async () => {
     setError("");
     setLoading(true);
     try {
-      // mark the flow so interceptors/guards don't fight us
+      // prevent guards/interceptors from redirecting mid-flow
       sessionStorage.setItem("qc_auth_in_progress", "1");
 
       const { authUrl } = await AuthAPI.initGoogleOAuth();
