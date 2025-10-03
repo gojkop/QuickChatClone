@@ -37,7 +37,7 @@ const DefaultAvatar = ({ size = 120 }) => (
   </div>
 );
 
-// --- NEW: Social Impact Card with Donation Calculation ---
+// Social Impact Card with Donation Calculation (no changes needed)
 const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, currency }) => {
   const charityInfo = {
     'unicef': { name: 'UNICEF', icon: '💖' },
@@ -142,9 +142,18 @@ function PublicProfilePage() {
                   <div className="w-24 h-24 flex-shrink-0"><DefaultAvatar size={96} /></div>
                 )}
                 <div className="pt-14 flex-1">
-                  <div className="flex items-center justify-end gap-3">
-                    {profile.socials?.twitter && ( <a href={profile.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600">...</a> )}
-                    {profile.socials?.website && ( <a href={profile.socials.website} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600">...</a> )}
+                   {/* --- FIX 1: Social Icons --- */}
+                  <div className="flex items-center justify-end gap-4">
+                    {profile.socials?.twitter && (
+                      <a href={profile.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                      </a>
+                    )}
+                    {profile.socials?.website && (
+                      <a href={profile.socials.website} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -171,21 +180,18 @@ function PublicProfilePage() {
                 </div>
               )}
               
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between gap-4">
-                 <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500">Response</div>
-                      <div className="font-bold text-gray-900">{profile.sla_hours}h</div>
-                    </div>
-                    <div className="h-8 border-l border-gray-200"></div>
-                     <div className="text-center">
-                      <div className="text-xs text-gray-500">Price</div>
-                      <div className="font-bold text-gray-900">{formatPrice(profile.price_cents, profile.currency)}</div>
-                    </div>
+              {/* --- FIX 2: Redesigned Info Box --- */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 grid grid-cols-2 items-center gap-4">
+                 <div className="text-center">
+                   <div className="text-xs text-gray-500">Response</div>
+                   <div className="font-bold text-gray-900">{profile.sla_hours}h</div>
+                 </div>
+                 <div className="text-center border-l border-gray-200">
+                   <div className="text-xs text-gray-500">Price</div>
+                   <div className="font-bold text-gray-900">{formatPrice(profile.price_cents, profile.currency)}</div>
                  </div>
               </div>
 
-              {/* --- NEW Social Impact Card Placement --- */}
               <SocialImpactCard
                 charityPercentage={profile.charity_percentage}
                 selectedCharity={profile.selected_charity}
