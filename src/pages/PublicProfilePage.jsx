@@ -87,12 +87,16 @@ function PublicProfilePage() {
       setError('');
       try {
         const response = await apiClient.get(`/public/profile?handle=${handle}`);
+        console.log('Public profile API response:', response.data);
+        
         if (!response.data || !response.data.public) {
           throw new Error('This profile is private or does not exist.');
         }
         
         const profileData = {
           ...response.data,
+          // Ensure avatar_url is properly extracted
+          avatar_url: response.data.avatar_url || null,
           tagline: "Former VP Marketing at 3 Unicorns", 
           tags: ["SaaS", "B2B Marketing", "Growth", "PLG"], 
           socials: {
@@ -102,6 +106,9 @@ function PublicProfilePage() {
           charity_percentage: response.data.charity_percentage || 25,
           selected_charity: response.data.selected_charity || 'unicef',
         };
+        
+        console.log('Processed profile data:', profileData);
+        console.log('Avatar URL:', profileData.avatar_url);
         
         setProfile(profileData);
       } catch (err) {
@@ -141,10 +148,19 @@ function PublicProfilePage() {
                     className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg" 
                     src={profile.avatar_url}
                     alt={`${profile.user?.name || 'Expert'}'s avatar`}
+                    onError={(e) => {
+                      console.error('Image failed to load:', profile.avatar_url);
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
                   />
-                ) : (
-                  <div className="w-24 h-24 flex-shrink-0"><DefaultAvatar size={96} /></div>
-                )}
+                ) : null}
+                <div 
+                  className="w-24 h-24 flex-shrink-0" 
+                  style={{ display: profile.avatar_url ? 'none' : 'block' }}
+                >
+                  <DefaultAvatar size={96} />
+                </div>
                 <div className="pt-14 flex-1">
                   <div className="flex items-center justify-end gap-4">
                     {profile.socials?.twitter && (
@@ -241,9 +257,7 @@ function PublicProfilePage() {
   };
 
   return (
-    // --- FIX IS HERE ---
     <div className="min-h-screen bg-gray-50 flex justify-center items-start sm:items-center p-4 pt-28 sm:p-6">
-    {/* --- END OF FIX --- */}
       <div className="w-full max-w-md">
         {renderContent()}
         
