@@ -40,10 +40,21 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
 
   // Ensure review video loads when blob URL is ready
   useEffect(() => {
-    if (reviewVideoRef.current && mediaBlobUrl && recordingState === 'review') {
-      reviewVideoRef.current.load();
+    if (reviewVideoRef.current && mediaBlobUrl && recordingState === 'review' && recordingMode === 'video') {
+      console.log('Loading video with URL:', mediaBlobUrl);
+      const videoEl = reviewVideoRef.current;
+      
+      videoEl.onloadedmetadata = () => {
+        console.log('Video metadata loaded. Duration:', videoEl.duration);
+      };
+      
+      videoEl.onerror = (e) => {
+        console.error('Video error:', e, videoEl.error);
+      };
+      
+      videoEl.load();
     }
-  }, [mediaBlobUrl, recordingState]);
+  }, [mediaBlobUrl, recordingState, recordingMode]);
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -129,7 +140,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     setTimer(MAX_RECORDING_SECONDS);
     
     const streamToRecord = liveStreamRef.current;
-    const mimeType = recordingMode === 'video' ? 'video/webm' : 'audio/webm';
+    const mimeType = recordingMode === 'video' ? 'video/webm;codecs=vp8,opus' : 'audio/webm';
     
     if (recordingMode === 'video' && videoRef.current) {
       videoRef.current.srcObject = streamToRecord;
@@ -138,18 +149,25 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     mediaRecorderRef.current = new MediaRecorder(streamToRecord, { mimeType });
     const chunks = [];
     
-    mediaRecorderRef.current.ondataavailable = e => chunks.push(e.data);
+    mediaRecorderRef.current.ondataavailable = e => {
+      if (e.data && e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+    
     mediaRecorderRef.current.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
+      console.log('Recording stopped. Blob size:', blob.size, 'type:', blob.type);
       setMediaBlob(blob);
       // Create and store blob URL
       const url = URL.createObjectURL(blob);
+      console.log('Created blob URL:', url);
       setMediaBlobUrl(url);
       setRecordingState('review');
       cleanupStream();
     };
 
-    mediaRecorderRef.current.start();
+    mediaRecorderRef.current.start(100); // Collect data every 100ms
 
     timerIntervalRef.current = setInterval(() => {
       setTimer(prev => {
@@ -358,14 +376,24 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         return (
           <div className="border-2 border-green-500 rounded-xl overflow-hidden">
             {recordingMode === 'video' ? (
-              <video 
-                ref={reviewVideoRef}
-                src={mediaBlobUrl}
-                className="w-full aspect-video bg-black"
-                controls
-                playsInline
-                preload="auto"
-              />
+              <div className="relative">
+                {!mediaBlobUrl && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                    <div className="text-center text-white">
+                      <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                      <p>Processing video...</p>
+                    </div>
+                  </div>
+                )}
+                <video 
+                  ref={reviewVideoRef}
+                  src={mediaBlobUrl}
+                  className="w-full aspect-video bg-black"
+                  controls
+                  playsInline
+                  preload="auto"
+                />
+              </div>
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                 <audio 
