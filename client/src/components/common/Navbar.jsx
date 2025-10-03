@@ -22,13 +22,34 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Get user info and notifications (MOCK DATA - will come from API)
+  // Get user info and notifications
   const getUserInfo = () => {
     if (!isAuthenticated) return null;
     
+    // Try to get real user data from auth context or localStorage
+    // Priority: 1. Full name, 2. Handle, 3. Email username, 4. Default
+    const storedName = localStorage.getItem('qc_user_name');
+    const storedHandle = localStorage.getItem('qc_user_handle');
+    const storedEmail = localStorage.getItem('qc_user_email');
+    
+    // Determine display name
+    let displayName = 'Expert'; // Default fallback
+    
+    if (storedName) {
+      displayName = storedName;
+    } else if (storedHandle) {
+      displayName = storedHandle;
+    } else if (storedEmail) {
+      // Extract name from email (before @)
+      displayName = storedEmail.split('@')[0];
+    }
+    
+    // MOCK pending questions count - replace with API call
+    const pendingQuestions = 3; // From database: response.data.expert_profile.pending_questions_count
+    
     return {
-      name: 'Sarah Williams',
-      pendingQuestions: 3, // From database
+      name: displayName,
+      pendingQuestions: pendingQuestions,
     };
   };
 
