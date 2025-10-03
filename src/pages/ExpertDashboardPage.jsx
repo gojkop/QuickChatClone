@@ -19,17 +19,17 @@ function ExpertDashboardPage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // Using the bootstrap endpoint as in the original expert.html
         const response = await apiClient.post('/me/bootstrap');
         const expertProfile = response.data.expert_profile || {};
         
-        // Prepare data for the form
+        // --- FIX IS HERE ---
+        // Prepare data for the form, making sure to include the user object
         const processedProfile = {
           ...expertProfile,
+          user: response.data.user, // Include the user object from the response
           priceUsd: dollarsFromCents(expertProfile.price_cents),
           slaHours: expertProfile.sla_hours,
           isPublic: expertProfile.public,
-          // New fields with defaults
           avatar_url: expertProfile.avatar_url || null,
           charity_percentage: expertProfile.charity_percentage || 0,
           selected_charity: expertProfile.selected_charity || null,
@@ -49,6 +49,7 @@ function ExpertDashboardPage() {
   const handleSaveSettings = (updatedProfile) => {
     // Process updated profile from modal to match display format
     const processedProfile = {
+      ...profile, // Start with existing profile to preserve user object
       ...updatedProfile,
       priceUsd: dollarsFromCents(updatedProfile.price_cents || updatedProfile.priceUsd * 100),
       slaHours: updatedProfile.sla_hours || updatedProfile.slaHours,
