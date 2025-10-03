@@ -19,8 +19,8 @@ function ExpertDashboardPage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await apiClient.post('/me/bootstrap');
-        console.log('Bootstrap response:', response.data); // <- ADD THIS LINE
+        const response = await apiClient.get('/me/profile');
+        console.log('Profile response:', response.data);
         
         const expertProfile = response.data.expert_profile || {};
         
@@ -36,7 +36,7 @@ function ExpertDashboardPage() {
           total_donated: expertProfile.total_donated || 0
         };
         
-        console.log('Processed profile:', processedProfile); // <- ADD THIS LINE
+        console.log('Processed profile:', processedProfile);
         setProfile(processedProfile);
       } catch (err) {
         console.error("Failed to fetch profile:", err);
