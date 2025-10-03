@@ -86,7 +86,7 @@ function PublicProfilePage() {
       setIsLoading(true);
       setError('');
       try {
-        const response = await apiClient.get(`/3B14WLbJ/public/profile?handle=${handle}`);
+        const response = await apiClient.get(`/public/profile?handle=${handle}`);
         if (!response.data || !response.data.public) {
           throw new Error('This profile is private or does not exist.');
         }

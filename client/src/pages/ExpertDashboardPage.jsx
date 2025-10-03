@@ -20,7 +20,7 @@ function ExpertDashboardPage() {
     const fetchProfile = async () => {
       try {
         // Using the bootstrap endpoint as in the original expert.html
-        const response = await apiClient.post('/3B14WLbJ/me/bootstrap');
+        const response = await apiClient.post('/me/bootstrap');
         const expertProfile = response.data.expert_profile || {};
         
         // Prepare data for the form

@@ -66,7 +66,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       }
 
       // Using the App Group API endpoint from expert.html
-      const response = await apiClient.put('/3B14WLbJ/me/profile', payload);
+      const response = await apiClient.put('/me/profile', payload);
       
       // Merge the response with local storage data
       const updatedProfile = {
