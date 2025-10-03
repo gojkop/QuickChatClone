@@ -10,7 +10,6 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
   if (!isOpen || !questionData) return null;
 
   const handleSend = async () => {
-    // Always require email for asker notifications
     if (!email || !email.includes('@')) {
       alert('Please enter a valid email address for notifications');
       return;
@@ -18,7 +17,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
 
     setIsSubmitting(true);
     
-    // Simulate sending (mock)
+    // In a real app, this would be an API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     onSend({
@@ -41,7 +40,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-            <h2 className="text-2xl font-bold text-gray-900">Review Your Question</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Review Your Invitation</h2>
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
@@ -62,25 +61,14 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                   <p className="text-2xl font-bold text-indigo-900">{expertHandle}</p>
                 </div>
                 
-                {/* Price Proposal Badge */}
                 {priceProposal && (
                   <div className="text-right">
                     <div className="text-xs text-gray-600 mb-1">Price proposal</div>
                     <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-indigo-200 shadow-sm">
                       {priceProposal.type === 'expert-decides' ? (
-                        <>
-                          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                          </svg>
-                          <span className="font-bold text-gray-900">Expert decides</span>
-                        </>
+                        <span className="font-bold text-gray-900">Expert decides</span>
                       ) : (
-                        <>
-                          <svg className="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="font-bold text-gray-900">€{priceProposal.amount}</span>
-                        </>
+                        <span className="font-bold text-gray-900">€{priceProposal.amount}</span>
                       )}
                     </div>
                   </div>
@@ -88,69 +76,55 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
               </div>
             </div>
 
-            {/* Question Title */}
-            {questionData.title && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Question Title</label>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <p className="text-gray-900">{questionData.title}</p>
+            {/* --- NEW Question Summary Block --- */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-3">Your Question Summary</label>
+              <div className="space-y-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                
+                {/* Title */}
+                <div className="flex items-start">
+                  <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Title</span>
+                  <p className="text-gray-900 text-sm font-medium">{questionData.title}</p>
                 </div>
-              </div>
-            )}
 
-            {/* Recording Preview */}
-            {questionData.mediaBlob && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Your {questionData.recordingMode === 'video' ? 'Video' : 'Audio'} Question
-                </label>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-                  {questionData.recordingMode === 'video' ? (
-                    <video
-                      src={URL.createObjectURL(questionData.mediaBlob)}
-                      controls
-                      className="w-full"
-                    />
-                  ) : (
-                    <div className="p-8 flex items-center justify-center bg-gray-900">
-                      <audio
-                        src={URL.createObjectURL(questionData.mediaBlob)}
-                        controls
-                        className="w-full max-w-md"
-                      />
+                {/* Recording */}
+                {questionData.mediaBlob && (
+                  <div className="flex items-start">
+                    <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">
+                      {questionData.recordingMode === 'video' ? 'Video' : 'Audio'}
+                    </span>
+                    <div className="text-sm font-medium text-green-700 flex items-center gap-2">
+                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                       <span>Recording Added</span>
                     </div>
+                  </div>
+                )}
+                
+                {/* Additional Context */}
+                <div className="flex items-start">
+                  <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Context</span>
+                  {questionData.text ? (
+                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{questionData.text}</p>
+                  ) : (
+                    <span className="text-sm text-gray-500">Not Added</span>
+                  )}
+                </div>
+
+                {/* Attached Files */}
+                <div className="flex items-start">
+                  <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Files</span>
+                  {questionData.files && questionData.files.length > 0 ? (
+                    <ul className="text-sm list-disc pl-5">
+                      {questionData.files.map((file, index) => (
+                        <li key={index} className="text-gray-800">{file.name}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-sm text-gray-500">No Files Attached</span>
                   )}
                 </div>
               </div>
-            )}
-
-            {/* Text Context */}
-            {questionData.text && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Additional Context</label>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <p className="text-gray-700 whitespace-pre-wrap">{questionData.text}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Attached Files */}
-            {questionData.files && questionData.files.length > 0 && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Attached Files</label>
-                <div className="space-y-2">
-                  {questionData.files.map((file, index) => (
-                    <div key={index} className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span className="text-sm text-gray-700 flex-1 truncate">{file.name}</span>
-                      <span className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            </div>
 
             {/* Edit Button */}
             <button
@@ -163,11 +137,9 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
               <span>Edit Question or Price</span>
             </button>
 
-            {/* Divider */}
+            {/* Delivery Preview Section */}
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">How They'll Receive the Invitation</h3>
-              
-              {/* Delivery Preview */}
               <DeliveryPreview 
                 expertInfo={expertInfo}
                 priceProposal={priceProposal}
@@ -177,7 +149,6 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
             {/* Contact Information Section */}
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Your Contact Information</h3>
-              
               {/* Email (Always required for asker notifications) */}
               <div className="mb-4">
                 <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -188,39 +159,32 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                   placeholder="your.email@example.com"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">For confirmation and response notifications</p>
               </div>
 
               {/* Name Fields (Optional) */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2">
-                    First Name <span className="text-gray-400 font-normal">(Optional)</span>
-                  </label>
+                  <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
                   <input
                     type="text"
                     id="firstName"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
-                    placeholder="John"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                   />
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Last Name <span className="text-gray-400 font-normal">(Optional)</span>
-                  </label>
+                  <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
                   <input
                     type="text"
                     id="lastName"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
-                    placeholder="Doe"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                   />
                 </div>
               </div>
@@ -229,35 +193,13 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
 
           {/* Footer */}
           <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 rounded-b-2xl">
-            <div className="flex items-center justify-between gap-4">
-              <button
-                onClick={onClose}
-                className="px-6 py-3 text-gray-700 font-semibold hover:bg-gray-100 rounded-lg transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSend}
-                disabled={isSubmitting || !email}
-                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Sending...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>
-                      {expertInfo?.type === 'email' ? 'Send Email Invitation' : 'Complete Invitation'}
-                    </span>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </>
-                )}
-              </button>
-            </div>
+            <button
+              onClick={handleSend}
+              disabled={isSubmitting || !email}
+              className="w-full flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg"
+            >
+              {isSubmitting ? 'Sending...' : 'Send Invitation'}
+            </button>
           </div>
         </div>
       </div>
