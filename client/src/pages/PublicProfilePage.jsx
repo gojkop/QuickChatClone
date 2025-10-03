@@ -14,7 +14,7 @@ const formatPrice = (cents, currency = 'USD') => {
   return `${symbol}${amount.toFixed(0)}`;
 };
 
-// Default Avatar Component (no changes needed)
+// Default Avatar Component
 const DefaultAvatar = ({ size = 120 }) => (
   <div 
     className="rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg"
@@ -37,7 +37,7 @@ const DefaultAvatar = ({ size = 120 }) => (
   </div>
 );
 
-// Social Impact Card with Donation Calculation (no changes needed)
+// Social Impact Card with Donation Calculation
 const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, currency }) => {
   const charityInfo = {
     'unicef': { name: 'UNICEF', icon: '💖' },
@@ -120,8 +120,12 @@ function PublicProfilePage() {
   };
 
   const renderContent = () => {
-    if (isLoading) { /* ... loading spinner ... */ }
-    if (error) { /* ... error message ... */ }
+    if (isLoading) {
+        return <div className="text-center p-12">Loading...</div>
+    }
+    if (error) {
+        return <div className="text-center p-12 text-red-500">{error}</div>
+    }
 
     if (profile) {
       return (
@@ -142,7 +146,6 @@ function PublicProfilePage() {
                   <div className="w-24 h-24 flex-shrink-0"><DefaultAvatar size={96} /></div>
                 )}
                 <div className="pt-14 flex-1">
-                   {/* --- FIX 1: Social Icons --- */}
                   <div className="flex items-center justify-end gap-4">
                     {profile.socials?.twitter && (
                       <a href={profile.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -180,7 +183,6 @@ function PublicProfilePage() {
                 </div>
               )}
               
-              {/* --- FIX 2: Redesigned Info Box --- */}
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 grid grid-cols-2 items-center gap-4">
                  <div className="text-center">
                    <div className="text-xs text-gray-500">Response</div>
@@ -239,7 +241,9 @@ function PublicProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6">
+    // --- FIX IS HERE ---
+    <div className="min-h-screen bg-gray-50 flex justify-center p-4 sm:p-6 pt-28 sm:pt-32">
+    {/* --- END OF FIX --- */}
       <div className="w-full max-w-md">
         {renderContent()}
         
