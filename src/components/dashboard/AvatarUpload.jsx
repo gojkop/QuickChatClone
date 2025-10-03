@@ -23,7 +23,7 @@ const handleFileChange = async (e) => {
   setError(null);
 
   try {
-    const { uploadProfilePicture } = await import('@/lib/cloudflare');
+    const { uploadProfilePicture } = await import('@/lib/cloudflare.js');
     const userId = 'temp-user-id'; // Replace with actual user ID from props or context
     
     const result = await uploadProfilePicture(file, userId);
