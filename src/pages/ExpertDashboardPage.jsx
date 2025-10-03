@@ -17,36 +17,38 @@ function ExpertDashboardPage() {
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await apiClient.get('/me/profile');
-        console.log('Profile response:', response.data);
-        
-        const expertProfile = response.data.expert_profile || {};
-        
-        const processedProfile = {
-          ...expertProfile,
-          user: response.data.user,
-          priceUsd: dollarsFromCents(expertProfile.price_cents),
-          slaHours: expertProfile.sla_hours,
-          isPublic: expertProfile.public,
-          avatar_url: expertProfile.avatar_url || null,
-          charity_percentage: expertProfile.charity_percentage || 0,
-          selected_charity: expertProfile.selected_charity || null,
-          total_donated: expertProfile.total_donated || 0
-        };
-        
-        console.log('Processed profile:', processedProfile);
-        setProfile(processedProfile);
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
-        setError("Could not load your profile. Please try refreshing the page.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
+  const fetchProfile = async () => {
+    console.log('=== FETCHING EXPERT PROFILE ===');
+    try {
+      const response = await apiClient.get('/me/profile');
+      console.log('✅ Profile API response:', response.data);
+      console.log('📊 Expert Profile data:', {
+        id: response.data.expert_profile?.id,
+        user_id: response.data.expert_profile?.user_id,
+        handle: response.data.expert_profile?.handle,
+        avatar_url: response.data.expert_profile?.avatar_url
+      });
+      console.log('👤 User data:', {
+        id: response.data.user?.id,
+        name: response.data.user?.name,
+        email: response.data.user?.email,
+        avatar_url: response.data.user?.avatar_url
+      });
+      
+      // ... rest of your existing code
+    } catch (err) {
+      console.error('❌ Failed to fetch profile:', err);
+      console.error('Error details:', {
+        status: err.response?.status,
+        data: err.response?.data
+      });
+      setError("Could not load your profile. Please try refreshing the page.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchProfile();
+}, []);
 
   const handleSaveSettings = (updatedProfile) => {
     // Process updated profile from modal to match display format
