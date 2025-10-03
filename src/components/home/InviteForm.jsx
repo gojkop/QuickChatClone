@@ -9,7 +9,7 @@ function InviteForm() {
     e.preventDefault();
     if (expertIdentifier.trim()) {
       // Navigate to the invite page with the identifier as a query parameter
-      navigate(`/ask-anyone?expert=${encodeURIComponent(expertIdentifier)}`);
+      navigate(`/invite?expert=${encodeURIComponent(expertIdentifier)}`);
     }
   };
 
