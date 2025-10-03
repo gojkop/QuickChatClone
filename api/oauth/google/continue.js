@@ -32,8 +32,9 @@ export default async function handler(req, res) {
     console.log('OAuth continue - redirect_uri:', redirect_uri);
 
     // Exchange code for token at Xano
+    // NOTE: Xano's continue endpoint might not need redirect_uri, or it needs to match exactly what was used in init
     const r = await axios.get(`${XANO_API_BASE_URL}/api:fALBm5Ej/oauth/google/continue`, {
-      params: { code, redirect_uri }, 
+      params: { code }, // Only send code, not redirect_uri
       validateStatus: () => true
     });
 
