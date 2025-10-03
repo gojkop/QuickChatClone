@@ -40,12 +40,16 @@ function Navbar() {
         const expertData = response.data?.expert_profile || {};
         
         console.log('Navbar - User data:', userData);
-        console.log('Navbar - Avatar URL:', userData.avatar_url);
+        console.log('Navbar - Expert data:', expertData);
+        console.log('Navbar - Expert Avatar URL:', expertData.avatar_url);
+        
+        // Avatar is stored on expert_profile, not user
+        const avatarUrl = expertData.avatar_url || null;
         
         setUserProfile({
           name: userData.name || 'Expert',
           email: userData.email,
-          avatar_url: userData.avatar_url,
+          avatar_url: avatarUrl,
           pendingQuestions: 3, // TODO: Replace with actual count from API
         });
       } catch (err) {
