@@ -11,6 +11,7 @@ function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -29,8 +30,11 @@ function Navbar() {
     const fetchUserProfile = async () => {
       if (!isAuthenticated) {
         setUserProfile(null);
+        setIsLoadingProfile(false);
         return;
       }
+
+      setIsLoadingProfile(true);
 
       try {
         const response = await apiClient.get('/me/profile');
@@ -63,6 +67,8 @@ function Navbar() {
           avatar_url: null,
           pendingQuestions: 0,
         });
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
 
@@ -131,6 +137,14 @@ function Navbar() {
     </div>
   );
 
+  // Loading Skeleton Component
+  const LoadingSkeleton = () => (
+    <div className="flex items-center gap-2 px-2 py-1.5">
+      <div className="hidden sm:block w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+      <div className="w-7 h-7 rounded-full bg-gray-200 animate-pulse"></div>
+    </div>
+  );
+
   return (
     <>
       <header 
@@ -169,36 +183,40 @@ function Navbar() {
               </Link>
             </div>
 
-            {/* Right Section - Badge or Sign In */}
+            {/* Right Section - Badge, Loading, or Sign In */}
             <div className="flex items-center">
-              {isAuthenticated && userProfile ? (
-                <div className="relative">
-                  <button
-                    onClick={() => navigate('/expert')}
-                    onMouseEnter={() => setShowTooltip(true)}
-                    onMouseLeave={() => setShowTooltip(false)}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-indigo-50 transition-all duration-200 group"
-                    aria-label={`Go to dashboard${userProfile.pendingQuestions > 0 ? ` - ${userProfile.pendingQuestions} pending questions` : ''}`}
-                  >
-                    {/* User Name (hidden on small screens) */}
-                    <span className="hidden sm:block text-sm font-medium text-gray-700 group-hover:text-indigo-600 transition-colors">
-                      {userProfile.name.split(' ')[0]}
-                    </span>
-                    
-                    {/* Avatar with Notification Badge */}
-                    <div className="relative">
-                      <UserAvatar size={28} avatarUrl={userProfile.avatar_url} />
-                      <NotificationBadge count={userProfile.pendingQuestions} />
-                    </div>
-                  </button>
+              {isAuthenticated ? (
+                isLoadingProfile ? (
+                  <LoadingSkeleton />
+                ) : userProfile ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => navigate('/expert')}
+                      onMouseEnter={() => setShowTooltip(true)}
+                      onMouseLeave={() => setShowTooltip(false)}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-indigo-50 transition-all duration-200 group"
+                      aria-label={`Go to dashboard${userProfile.pendingQuestions > 0 ? ` - ${userProfile.pendingQuestions} pending questions` : ''}`}
+                    >
+                      {/* User Name (hidden on small screens) */}
+                      <span className="hidden sm:block text-sm font-medium text-gray-700 group-hover:text-indigo-600 transition-colors">
+                        {userProfile.name.split(' ')[0]}
+                      </span>
+                      
+                      {/* Avatar with Notification Badge */}
+                      <div className="relative">
+                        <UserAvatar size={28} avatarUrl={userProfile.avatar_url} />
+                        <NotificationBadge count={userProfile.pendingQuestions} />
+                      </div>
+                    </button>
 
-                  {/* Tooltip on hover */}
-                  {showTooltip && userProfile.pendingQuestions > 0 && (
-                    <Tooltip>
-                      {userProfile.pendingQuestions} pending question{userProfile.pendingQuestions !== 1 ? 's' : ''}
-                    </Tooltip>
-                  )}
-                </div>
+                    {/* Tooltip on hover */}
+                    {showTooltip && userProfile.pendingQuestions > 0 && (
+                      <Tooltip>
+                        {userProfile.pendingQuestions} pending question{userProfile.pendingQuestions !== 1 ? 's' : ''}
+                      </Tooltip>
+                    )}
+                  </div>
+                ) : null
               ) : (
                 <Link
                   to="/signin"
@@ -222,6 +240,7 @@ function Navbar() {
         isOpen={isMenuOpen} 
         onClose={() => setIsMenuOpen(false)}
         userInfo={userProfile}
+        isLoadingProfile={isLoadingProfile}
       />
     </>
   );
