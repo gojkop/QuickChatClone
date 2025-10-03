@@ -26,7 +26,18 @@ export default function SignInPage() {
       window.location.assign(authUrl);
     } catch (e) {
       console.error("Google init failed", e);
-      setError("Sign-in init failed. Please try again.");
+      
+      // More specific error messages
+      if (e.response?.status === 500) {
+        setError("Server error. Please check if Google OAuth is configured correctly in your backend environment variables.");
+      } else if (e.response?.status === 404) {
+        setError("OAuth endpoint not found. Please contact support.");
+      } else if (!navigator.onLine) {
+        setError("No internet connection. Please check your network.");
+      } else {
+        setError("Unable to connect to Google. Please try again or contact support.");
+      }
+      
       setLoading(false);
       sessionStorage.removeItem("qc_auth_in_progress");
     }
