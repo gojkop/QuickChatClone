@@ -43,13 +43,19 @@ function Navbar() {
     navigate('/signin');
   };
 
-  // Get user info (will be replaced with real data from auth context)
+  // Get user info and stats (MOCK DATA - will come from API/database)
   const getUserInfo = () => {
     if (!isAuthenticated) return null;
+    
+    // MOCK DATA - Replace with real data from API
     return {
       name: 'Sarah Williams',
       email: 'sarah@example.com',
-      avatar: null
+      avatar: null,
+      // Notification counts (from database)
+      pendingQuestions: 3, // Questions awaiting response
+      totalEarnings: 2840, // Total earnings this month
+      avgResponseTime: 8 // Average response time in hours
     };
   };
 
@@ -77,6 +83,20 @@ function Navbar() {
       </svg>
     </div>
   );
+
+  // Notification Badge Component
+  const NotificationBadge = ({ count }) => {
+    if (!count || count === 0) return null;
+    
+    return (
+      <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+        <span className="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-red-500 text-white text-[10px] font-bold shadow-sm">
+          {count > 9 ? '9+' : count}
+        </span>
+      </span>
+    );
+  };
 
   return (
     <>
@@ -122,23 +142,28 @@ function Navbar() {
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-indigo-50 transition-all duration-200 group"
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-indigo-50 transition-all duration-200 group relative"
                   >
                     {/* User Name (hidden on small screens) */}
                     <span className="hidden sm:block text-sm font-medium text-gray-700 group-hover:text-indigo-600 transition-colors">
                       {userInfo.name.split(' ')[0]}
                     </span>
                     
-                    {/* Avatar */}
-                    {userInfo.avatar ? (
-                      <img 
-                        src={userInfo.avatar} 
-                        alt={userInfo.name}
-                        className="w-7 h-7 rounded-full object-cover ring-2 ring-white shadow-sm"
-                      />
-                    ) : (
-                      <DefaultUserAvatar size={28} />
-                    )}
+                    {/* Avatar with Notification Badge */}
+                    <div className="relative">
+                      {userInfo.avatar ? (
+                        <img 
+                          src={userInfo.avatar} 
+                          alt={userInfo.name}
+                          className="w-7 h-7 rounded-full object-cover ring-2 ring-white shadow-sm"
+                        />
+                      ) : (
+                        <DefaultUserAvatar size={28} />
+                      )}
+                      
+                      {/* Notification Badge */}
+                      <NotificationBadge count={userInfo.pendingQuestions} />
+                    </div>
                     
                     {/* Dropdown Arrow */}
                     <svg 
@@ -153,23 +178,33 @@ function Navbar() {
                     </svg>
                   </button>
 
-                  {/* Compact Dropdown Menu */}
+                  {/* Enhanced Dropdown Menu with Stats */}
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-1.5 w-56 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50 animate-fadeIn">
-                      {/* Compact User Info Header */}
-                      <div className="px-3 py-2 border-b border-gray-100">
-                        <div className="flex items-center gap-2">
-                          {userInfo.avatar ? (
-                            <img 
-                              src={userInfo.avatar} 
-                              alt={userInfo.name}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            <DefaultUserAvatar size={32} />
-                          )}
+                    <div className="absolute right-0 mt-1.5 w-72 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 animate-fadeIn">
+                      {/* User Info Header */}
+                      <div className="px-3 py-2.5 border-b border-gray-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative">
+                            {userInfo.avatar ? (
+                              <img 
+                                src={userInfo.avatar} 
+                                alt={userInfo.name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <DefaultUserAvatar size={40} />
+                            )}
+                            {userInfo.pendingQuestions > 0 && (
+                              <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex items-center justify-center rounded-full h-5 w-5 bg-red-500 text-white text-[10px] font-bold">
+                                  {userInfo.pendingQuestions}
+                                </span>
+                              </span>
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-gray-900 truncate">
+                            <div className="text-sm font-bold text-gray-900 truncate">
                               {userInfo.name}
                             </div>
                             <div className="text-xs text-gray-500 truncate">
@@ -179,17 +214,45 @@ function Navbar() {
                         </div>
                       </div>
 
-                      {/* Compact Menu Items */}
-                      <div className="py-1">
+                      {/* Quick Stats - Only if user has activity */}
+                      {userInfo.pendingQuestions > 0 && (
+                        <div className="px-3 py-2 bg-gradient-to-br from-orange-50 to-red-50 border-b border-orange-100">
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="flex items-center gap-1.5 flex-1">
+                              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                              <span className="font-semibold text-red-700">
+                                {userInfo.pendingQuestions} pending question{userInfo.pendingQuestions !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Link
+                              to="/expert"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="text-xs font-bold text-red-600 hover:text-red-700 underline"
+                            >
+                              Answer now
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Quick Actions */}
+                      <div className="py-1.5">
                         <Link
                           to="/expert"
                           onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                          className="flex items-center justify-between gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                          </svg>
-                          <span className="font-medium">Dashboard</span>
+                          <div className="flex items-center gap-2.5">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            <span className="font-medium">Dashboard</span>
+                          </div>
+                          {userInfo.pendingQuestions > 0 && (
+                            <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded">
+                              {userInfo.pendingQuestions}
+                            </span>
+                          )}
                         </Link>
 
                         <button
@@ -205,12 +268,45 @@ function Navbar() {
                           </svg>
                           <span className="font-medium">Settings</span>
                         </button>
+
+                        {/* Public Profile Link */}
+                        <button
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            // Copy profile link functionality
+                            const profileUrl = `${window.location.origin}/u/sarah_marketing`; // Replace with actual handle
+                            navigator.clipboard.writeText(profileUrl);
+                            // You could add a toast notification here
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          <span className="font-medium">Copy Profile Link</span>
+                        </button>
                       </div>
+
+                      {/* Mini Stats Section (if no pending questions) */}
+                      {userInfo.pendingQuestions === 0 && (
+                        <div className="px-3 py-2 bg-gray-50 border-t border-gray-100">
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="font-bold text-gray-900">${userInfo.totalEarnings}</div>
+                              <div className="text-gray-500">This Month</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-gray-900">{userInfo.avgResponseTime}h</div>
+                              <div className="text-gray-500">Avg Response</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Divider */}
                       <div className="border-t border-gray-100 my-1"></div>
 
-                      {/* Compact Sign Out */}
+                      {/* Sign Out */}
                       <button
                         onClick={handleSignOut}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
