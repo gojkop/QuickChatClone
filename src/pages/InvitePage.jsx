@@ -20,6 +20,7 @@ function InvitePage() {
     // Check if expert was passed via URL (from home page invite form)
     const params = new URLSearchParams(location.search);
     const expert = params.get('expert');
+    document.title = 'Ask Anyone - QuickChat'
     if (expert) {
       // Skip step 1 and go directly to step 2
       setExpertInfo({
@@ -116,7 +117,7 @@ function InvitePage() {
           <div className="text-center mb-10">
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
               {step === 1 ? (
-                'Invite an Expert'
+                'Ask Anyone'
               ) : (
                 <>
                   Invite{' '}
@@ -128,8 +129,8 @@ function InvitePage() {
             </h1>
             <p className="text-gray-600">
               {step === 1 
-                ? 'Start by telling us who you want to invite to QuickChat'
-                : 'They\'re not on QuickChat yet. Send your question and we\'ll invite them to join.'
+                ? 'Who do you want to ask a question?'
+                : 'Not on QuickChat yet? No problem. We\'ll invite them for you.'
               }
             </p>
           </div>

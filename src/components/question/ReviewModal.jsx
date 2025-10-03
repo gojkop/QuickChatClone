@@ -40,7 +40,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-            <h2 className="text-2xl font-bold text-gray-900">Review Your Invitation</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Review Your Question</h2>
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
@@ -57,7 +57,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
             <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm text-indigo-600 font-semibold mb-1">Inviting to QuickChat</p>
+                  <p className="text-sm text-indigo-600 font-semibold mb-1">Asking</p>
                   <p className="text-2xl font-bold text-indigo-900">{expertHandle}</p>
                 </div>
                 
@@ -198,7 +198,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
               disabled={isSubmitting || !email}
               className="w-full flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg"
             >
-              {isSubmitting ? 'Sending...' : 'Send Invitation'}
+              {isSubmitting ? 'Sending...' : 'Send Question & Invite'}
             </button>
           </div>
         </div>

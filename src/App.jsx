@@ -49,7 +49,8 @@ const AppLayout = () => {
           <Route path="/faq" element={<FaqPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/invite" element={<InvitePage />} />
+          <Route path="/ask-anyone" element={<InvitePage />} />
+          <Route path="/invite" element={<Navigate to="/ask-anyone" replace />} />
           <Route path="/invite-sent" element={<InviteSentPage />} />
           <Route path="/ask" element={<AskQuestionPage />} />
           <Route path="/question-sent" element={<QuestionSentPage />} />
