@@ -1,6 +1,6 @@
 // client/src/pages/SignInPage.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
 import { authService } from "../api";
 import logo from "@/assets/images/logo-quickchat.png";
@@ -33,7 +33,6 @@ export default function SignInPage() {
   };
 
   const onLinkedInClick = () => {
-    // Mock for now - would implement similar to Google OAuth
     setError("");
     alert("LinkedIn sign-in coming soon! For now, please use Google.");
   };
@@ -63,27 +62,31 @@ export default function SignInPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 p-6 md:p-8">
-        <img src={logo} alt="QuickChat" className="h-8 md:h-10 w-auto" />
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with Logo */}
+      <header className="absolute top-0 left-0 right-0 px-4 py-6 md:px-8 z-10">
+        <div className="container mx-auto max-w-6xl">
+          <Link to="/">
+            <img src={logo} alt="QuickChat" className="h-8 md:h-10 w-auto" />
+          </Link>
+        </div>
+      </header>
 
       {/* Main Content */}
-      <div className="min-h-screen flex items-center justify-center px-4 py-20">
+      <div className="min-h-screen flex items-center justify-center px-4 py-20 pt-32">
         <div className="w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-3">
-              Welcome back
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+              Sign in to QuickChat
             </h1>
-            <p className="text-gray-600 text-lg">
-              Sign in to continue managing your expertise
+            <p className="text-gray-600">
+              Access your expert dashboard
             </p>
           </div>
 
           {/* Sign-In Card */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-6">
             {/* Primary Sign-In Options */}
             <div className="space-y-3">
               <SocialButton
@@ -129,35 +132,11 @@ export default function SignInPage() {
               </div>
             )}
 
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500 font-medium">Why sign in?</span>
-              </div>
-            </div>
-
-            {/* Benefits */}
-            <div className="space-y-3">
-              {[
-                { icon: '💰', text: 'Monetize your expertise' },
-                { icon: '⚡', text: 'Answer on your schedule' },
-                { icon: '📊', text: 'Track your earnings' }
-              ].map((benefit, index) => (
-                <div key={index} className="flex items-center gap-3 text-sm text-gray-600">
-                  <span className="text-xl">{benefit.icon}</span>
-                  <span>{benefit.text}</span>
-                </div>
-              ))}
-            </div>
-
             {/* Terms */}
             <p className="text-xs text-center text-gray-500 pt-4 border-t border-gray-100">
-              By continuing, you agree to QuickChat's{' '}
+              By signing in, you agree to our{' '}
               <a href="/terms" className="text-indigo-600 hover:text-indigo-700 font-medium underline">
-                Terms of Service
+                Terms
               </a>{' '}
               and{' '}
               <a href="/privacy" className="text-indigo-600 hover:text-indigo-700 font-medium underline">
@@ -166,21 +145,23 @@ export default function SignInPage() {
             </p>
           </div>
 
-          {/* Footer Link */}
-          <div className="text-center mt-8">
-            <p className="text-gray-600">
-              Not an expert yet?{' '}
-              <a href="/become-expert" className="font-bold text-indigo-600 hover:text-indigo-700">
-                Learn more
+          {/* Footer Links */}
+          <div className="text-center mt-6 space-y-2">
+            <p className="text-sm text-gray-600">
+              New to QuickChat?{' '}
+              <a href="/become-expert" className="font-semibold text-indigo-600 hover:text-indigo-700">
+                Become an expert
               </a>
+            </p>
+            <p className="text-sm text-gray-600">
+              Have a question?{' '}
+              <Link to="/" className="font-semibold text-indigo-600 hover:text-indigo-700">
+                Ask an expert
+              </Link>
             </p>
           </div>
         </div>
       </div>
-
-      {/* Decorative Elements */}
-      <div className="fixed top-20 right-10 w-64 h-64 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-      <div className="fixed bottom-20 left-10 w-64 h-64 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
     </div>
   );
 }
