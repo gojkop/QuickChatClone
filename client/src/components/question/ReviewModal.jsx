@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import DeliveryPreview from '@/components/invite/DeliveryPreview';
 
-function ReviewModal({ isOpen, questionData, expertHandle, priceProposal, onClose, onEdit, onSend }) {
-  const [email, setEmail] = useState('');
+function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProposal, onClose, onEdit, onSend }) {
+  const [email, setEmail] = useState(expertInfo?.type === 'email' ? expertInfo.identifier : '');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -9,8 +10,9 @@ function ReviewModal({ isOpen, questionData, expertHandle, priceProposal, onClos
   if (!isOpen || !questionData) return null;
 
   const handleSend = async () => {
-    if (!email || !email.includes('@')) {
-      alert('Please enter a valid email address');
+    // Only require email if expert type is not email (since we already have it)
+    if (expertInfo?.type !== 'email' && (!email || !email.includes('@'))) {
+      alert('Please enter a valid email address for notifications');
       return;
     }
 
@@ -163,24 +165,43 @@ function ReviewModal({ isOpen, questionData, expertHandle, priceProposal, onClos
 
             {/* Divider */}
             <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Your Contact Information</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">How They'll Receive the Invitation</h3>
               
-              {/* Email (Required) */}
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
-                  placeholder="your.email@example.com"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">We'll send the expert's answer to this email</p>
-              </div>
+              {/* Delivery Preview */}
+              <DeliveryPreview 
+                expertInfo={expertInfo}
+                priceProposal={priceProposal}
+              />
+            </div>
+
+            {/* Contact Information Section */}
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Your Contact Information</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                {expertInfo?.type === 'email' 
+                  ? "We'll notify you when they respond"
+                  : "We'll send you an email notification when they respond"
+                }
+              </p>
+              
+              {/* Email (Required only if not already provided) */}
+              {expertInfo?.type !== 'email' && (
+                <div className="mb-4">
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Your Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
+                    placeholder="your.email@example.com"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">For response notifications</p>
+                </div>
+              )}
 
               {/* Name Fields (Optional) */}
               <div className="grid grid-cols-2 gap-4">
@@ -225,7 +246,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, priceProposal, onClos
               </button>
               <button
                 onClick={handleSend}
-                disabled={isSubmitting || !email}
+                disabled={isSubmitting || (expertInfo?.type !== 'email' && !email)}
                 className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]"
               >
                 {isSubmitting ? (
@@ -235,7 +256,9 @@ function ReviewModal({ isOpen, questionData, expertHandle, priceProposal, onClos
                   </>
                 ) : (
                   <>
-                    <span>Send Invitation</span>
+                    <span>
+                      {expertInfo?.type === 'email' ? 'Send Email Invitation' : 'Complete Invitation'}
+                    </span>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>

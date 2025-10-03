@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import ExpertIdentifier from '@/components/invite/ExpertIdentifier';
 import QuestionComposer from '@/components/question/QuestionComposer';
 import PriceProposal from '@/components/invite/PriceProposal';
 import ReviewModal from '@/components/question/ReviewModal';
 
 function InvitePage() {
-  const [expertHandle, setExpertHandle] = useState('');
+  const [step, setStep] = useState(1); // 1: identifier, 2: question+price, 3: review
+  const [expertInfo, setExpertInfo] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [questionData, setQuestionData] = useState(null);
   const [priceProposal, setPriceProposal] = useState({ type: 'expert-decides', amount: null });
@@ -15,13 +17,26 @@ function InvitePage() {
   const questionComposerRef = useRef();
 
   useEffect(() => {
+    // Check if expert was passed via URL (from home page invite form)
     const params = new URLSearchParams(location.search);
-    const expert = params.get('expert') || 'an expert';
-    setExpertHandle(expert);
+    const expert = params.get('expert');
+    if (expert) {
+      // Skip step 1 and go directly to step 2
+      setExpertInfo({
+        identifier: expert,
+        type: 'name',
+        name: expert
+      });
+      setStep(2);
+    }
   }, [location.search]);
-  
+
+  const handleExpertIdentified = (info) => {
+    setExpertInfo(info);
+    setStep(2);
+  };
+
   const handleContinueToReview = () => {
-    // Get and validate question data from QuestionComposer
     if (questionComposerRef.current) {
       const data = questionComposerRef.current.validateAndGetData();
       if (data) {
@@ -31,26 +46,67 @@ function InvitePage() {
     }
   };
 
-  const handleQuestionReady = (data) => {
-    setQuestionData(data);
-  };
-
   const handleSendInvite = (contactInfo) => {
     console.log("Sending invite with:", {
-      expertHandle,
+      expert: expertInfo,
       question: questionData,
       contact: contactInfo,
       priceProposal
     });
     
-    // Navigate to invite-specific success page with expert name
-    navigate(`/invite-sent?expert=${encodeURIComponent(expertHandle)}`);
+    // Navigate to success page with delivery method info
+    navigate(`/invite-sent?expert=${encodeURIComponent(expertInfo.name)}&method=${expertInfo.type}`);
   };
 
   const handleEditQuestion = () => {
-    // Close modal to return to editing
     setShowReviewModal(false);
   };
+
+  const handleBackToIdentifier = () => {
+    setStep(1);
+    setExpertInfo(null);
+  };
+
+  // Progress indicator
+  const renderProgressBar = () => (
+    <div className="mb-8">
+      <div className="flex items-center justify-between max-w-md mx-auto">
+        {[
+          { num: 1, label: 'Who' },
+          { num: 2, label: 'Question' },
+          { num: 3, label: 'Review' }
+        ].map((item, index) => (
+          <React.Fragment key={item.num}>
+            <div className="flex flex-col items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+                step >= item.num 
+                  ? 'bg-indigo-600 text-white' 
+                  : 'bg-gray-200 text-gray-500'
+              }`}>
+                {step > item.num ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  item.num
+                )}
+              </div>
+              <span className={`text-xs mt-1 font-medium ${
+                step >= item.num ? 'text-indigo-600' : 'text-gray-500'
+              }`}>
+                {item.label}
+              </span>
+            </div>
+            {index < 2 && (
+              <div className={`flex-1 h-0.5 mx-2 transition-all ${
+                step > item.num ? 'bg-indigo-600' : 'bg-gray-200'
+              }`} />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -59,38 +115,71 @@ function InvitePage() {
           {/* Header */}
           <div className="text-center mb-10">
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
-              Invite{' '}
-              <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                {expertHandle}
-              </span>
+              {step === 1 ? (
+                'Invite an Expert'
+              ) : (
+                <>
+                  Invite{' '}
+                  <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                    {expertInfo?.name}
+                  </span>
+                </>
+              )}
             </h1>
             <p className="text-gray-600">
-              They're not on QuickChat yet. Send your question and we'll invite them to join.
+              {step === 1 
+                ? 'Start by telling us who you want to invite to QuickChat'
+                : 'They\'re not on QuickChat yet. Send your question and we\'ll invite them to join.'
+              }
             </p>
           </div>
 
-          {/* Question Composer - in its own card */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
-            <QuestionComposer 
-              ref={questionComposerRef}
-              onReady={handleQuestionReady} 
-              hideButton={true}
-            />
-          </div>
+          {/* Progress Bar */}
+          {renderProgressBar()}
 
-          {/* Price Proposal + Continue Button - grouped together */}
-          <div className="mt-6 space-y-4">
-            <PriceProposal 
-              onPriceChange={setPriceProposal}
+          {/* Step 1: Expert Identifier */}
+          {step === 1 && (
+            <ExpertIdentifier 
+              onContinue={handleExpertIdentified}
+              initialValue={expertInfo?.identifier || ''}
             />
-            
-            <button
-              onClick={handleContinueToReview}
-              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
-            >
-              Continue to Review
-            </button>
-          </div>
+          )}
+
+          {/* Step 2: Question + Price */}
+          {step === 2 && (
+            <>
+              {/* Back button */}
+              <button
+                onClick={handleBackToIdentifier}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium mb-6 transition"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Change expert</span>
+              </button>
+
+              {/* Question Composer */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8 mb-6">
+                <QuestionComposer 
+                  ref={questionComposerRef}
+                  hideButton={true}
+                />
+              </div>
+
+              {/* Price Proposal + Continue Button */}
+              <div className="space-y-4">
+                <PriceProposal onPriceChange={setPriceProposal} />
+                
+                <button
+                  onClick={handleContinueToReview}
+                  className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
+                >
+                  Continue to Review
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </main>
 
@@ -99,7 +188,8 @@ function InvitePage() {
         <ReviewModal
           isOpen={showReviewModal}
           questionData={questionData}
-          expertHandle={expertHandle}
+          expertHandle={expertInfo.name}
+          expertInfo={expertInfo}
           priceProposal={priceProposal}
           onClose={() => setShowReviewModal(false)}
           onEdit={handleEditQuestion}

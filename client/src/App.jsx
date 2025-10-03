@@ -18,6 +18,8 @@ import InvitePage from '@/pages/InvitePage';
 import InviteSentPage from '@/pages/InviteSentPage'; // NEW
 import AskQuestionPage from '@/pages/AskQuestionPage';
 import QuestionSentPage from '@/pages/QuestionSentPage';
+import InviteSentPage from './pages/InviteSentPage';
+
 
 // Import Common Components
 import Navbar from '@/components/common/Navbar';
@@ -46,6 +48,7 @@ const AppLayout = () => {
           <Route path="/ask" element={<AskQuestionPage />} />
           <Route path="/question-sent" element={<QuestionSentPage />} />
           <Route path="/u/:handle" element={<PublicProfilePage />} />
+          <Route path="/invite-sent" element={<InviteSentPage />} />
 
           {/* Auth Routes */}
           <Route path="/signin" element={<SignInPage />} />
