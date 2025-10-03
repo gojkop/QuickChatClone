@@ -35,6 +35,9 @@ function AvatarUpload({ currentAvatar, onChange }) {
       const formData = new FormData();
       formData.append('image', file);
 
+      console.log('Uploading to:', apiClient.defaults.baseURL + '/upload/profile-picture');
+      console.log('File:', file.name, file.type, file.size);
+
       // Use apiClient which already has correct base URL and auth headers
       const response = await apiClient.post('/upload/profile-picture', formData, {
         headers: {
@@ -42,17 +45,21 @@ function AvatarUpload({ currentAvatar, onChange }) {
         },
       });
 
+      console.log('Upload response:', response.data);
+
       const result = response.data;
       
-      // Pass URL back to parent (which will save to Xano)
+      // Pass URL back to parent
       onChange({
         url: result.url,
       });
       
       setPreview(result.url);
     } catch (err) {
-      console.error('Upload failed:', err);
-      setError(err.response?.data?.error || 'Upload failed. Please try again.');
+      console.error('Upload failed - Full error:', err);
+      console.error('Response data:', err.response?.data);
+      console.error('Response status:', err.response?.status);
+      setError(err.response?.data?.error || err.message || 'Upload failed. Please try again.');
       setPreview(currentAvatar); // Revert preview
     } finally {
       setIsUploading(false);
