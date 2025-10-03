@@ -34,8 +34,13 @@ function Navbar() {
 
       try {
         const response = await apiClient.get('/me/profile');
+        console.log('Navbar - Full API response:', response.data);
+        
         const userData = response.data?.user || {};
         const expertData = response.data?.expert_profile || {};
+        
+        console.log('Navbar - User data:', userData);
+        console.log('Navbar - Avatar URL:', userData.avatar_url);
         
         setUserProfile({
           name: userData.name || 'Expert',
