@@ -1,0 +1,25 @@
+name: Sync to QuickChatClone
+
+on:
+  push:
+    branches:
+      - main  # or master, depending on your branch
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Push to target repo
+        env:
+          TARGET_REPO: https://x-access-token:${{ secrets.TARGET_REPO_TOKEN }}@github.com/gojkop/QuickChatClone.git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git remote add target $TARGET_REPO
+          git push target main:main --force
