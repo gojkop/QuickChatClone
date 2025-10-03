@@ -27,40 +27,40 @@ function AvatarUpload({ currentAvatar, onChange }) {
     reader.onloadend = () => setPreview(reader.result);
     reader.readAsDataURL(file);
 
-    // Upload to Xano backend
     setIsUploading(true);
     setError(null);
 
     try {
+      // Step 1: Upload to Cloudflare R2 via Vercel API
       const formData = new FormData();
       formData.append('image', file);
 
-      console.log('Uploading to:', apiClient.defaults.baseURL + '/upload/profile-picture');
-      console.log('File:', file.name, file.type, file.size);
-
-      // Use apiClient which already has correct base URL and auth headers
-      const response = await apiClient.post('/upload/profile-picture', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      console.log('Uploading to Vercel API...');
+      const uploadResponse = await fetch('/api/upload/profile-picture', {
+        method: 'POST',
+        body: formData,
       });
 
-      console.log('Upload response:', response.data);
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Upload to Cloudflare failed');
+      }
 
-      const result = response.data;
-      
-      // Pass URL back to parent
-      onChange({
-        url: result.url,
+      const { url } = await uploadResponse.json();
+      console.log('Uploaded to Cloudflare:', url);
+
+      // Step 2: Save URL to Xano
+      console.log('Saving URL to Xano...');
+      await apiClient.post('/upload/profile-picture', {
+        image_url: url
       });
-      
-      setPreview(result.url);
+
+      onChange({ url });
+      setPreview(url);
     } catch (err) {
-      console.error('Upload failed - Full error:', err);
-      console.error('Response data:', err.response?.data);
-      console.error('Response status:', err.response?.status);
-      setError(err.response?.data?.error || err.message || 'Upload failed. Please try again.');
-      setPreview(currentAvatar); // Revert preview
+      console.error('Upload failed:', err);
+      setError(err.message || 'Upload failed. Please try again.');
+      setPreview(currentAvatar);
     } finally {
       setIsUploading(false);
     }
@@ -68,7 +68,6 @@ function AvatarUpload({ currentAvatar, onChange }) {
 
   return (
     <div className="flex items-center gap-6">
-      {/* Avatar Preview */}
       <div className="relative">
         {preview ? (
           <img 
@@ -94,7 +93,6 @@ function AvatarUpload({ currentAvatar, onChange }) {
           </div>
         )}
         
-        {/* Upload indicator */}
         {isUploading && (
           <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
             <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -102,7 +100,6 @@ function AvatarUpload({ currentAvatar, onChange }) {
         )}
       </div>
 
-      {/* Upload Controls */}
       <div className="flex-1">
         <label 
           htmlFor="avatar-upload" 
