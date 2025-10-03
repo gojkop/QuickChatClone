@@ -1,4 +1,5 @@
 // api/oauth/google/init.js
+export default async function handler(req, res) {
 const axios = require("axios");
 
 module.exports = async (req, res) => {
@@ -28,3 +29,4 @@ module.exports = async (req, res) => {
     res.status(500).json({ message: "OAuth init failed" });
   }
 };
+}
