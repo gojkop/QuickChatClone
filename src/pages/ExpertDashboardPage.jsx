@@ -20,12 +20,13 @@ function ExpertDashboardPage() {
     const fetchProfile = async () => {
       try {
         const response = await apiClient.post('/me/bootstrap');
+        console.log('Bootstrap response:', response.data); // <- ADD THIS LINE
+        
         const expertProfile = response.data.expert_profile || {};
         
-        // ✅ FIX: Include the user object from the response
         const processedProfile = {
           ...expertProfile,
-          user: response.data.user, // ← CRITICAL FIX: Add this line
+          user: response.data.user,
           priceUsd: dollarsFromCents(expertProfile.price_cents),
           slaHours: expertProfile.sla_hours,
           isPublic: expertProfile.public,
@@ -34,6 +35,8 @@ function ExpertDashboardPage() {
           selected_charity: expertProfile.selected_charity || null,
           total_donated: expertProfile.total_donated || 0
         };
+        
+        console.log('Processed profile:', processedProfile); // <- ADD THIS LINE
         setProfile(processedProfile);
       } catch (err) {
         console.error("Failed to fetch profile:", err);
