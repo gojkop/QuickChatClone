@@ -3,10 +3,6 @@
   "routes": [
     { "src": "^/api/oauth/google/init$", "dest": "https://x8ki-letl-twmt.n7.xano.io/api:fALBm5Ej/oauth/google/init" },
     { "src": "^/api/oauth/google/continue$", "dest": "https://x8ki-letl-twmt.n7.xano.io/api:fALBm5Ej/oauth/google/continue" },
-    { "src": "^/api/oauth/google/(.*)$", "dest": "https://x8ki-letl-twmt.n7.xano.io/api:fALBm5Ej/oauth/google/$1" },
-
-    { "src": "^/api/3B14WLbJ/(.*)$", "dest": "https://x8ki-letl-twmt.n7.xano.io/api:3B14WLbJ/$1" },
-    { "src": "^/api/(.*)$",           "dest": "https://x8ki-letl-twmt.n7.xano.io/api:3B14WLbJ/$1" },
 
     { "handle": "filesystem" },
     { "src": "^(?!/api/).*", "dest": "/index.html" }

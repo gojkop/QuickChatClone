@@ -1,11 +1,9 @@
-import React, { createContext, useState, useContext } from 'react';
-// CORRECTED: Using absolute import path from the 'src' directory.
-import { authService } from '@/api/index.js';
+// client/src/context/AuthContext.jsx
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { authService } from '@/api';
 
-// Create the context
 const AuthContext = createContext(null);
 
-// Create the provider component
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(authService.getAuthToken());
 
@@ -19,17 +17,22 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
   };
 
-  const value = {
-    token,
-    isAuthenticated: !!token,
-    login,
-    logout,
-  };
+  // 🔄 reflect token changes from other tabs / callback flows
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'qc_token') {
+        setToken(authService.getAuthToken());
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ token, isAuthenticated: !!token, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// Create a custom hook to use the auth context easily in other components
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
