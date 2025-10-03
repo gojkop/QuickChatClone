@@ -5,6 +5,6 @@ export default function handler(req, res) {
     hasSecretKey: !!process.env.CLOUDFLARE_R2_SECRET_KEY,
     hasBucket: !!process.env.CLOUDFLARE_R2_BUCKET,
     hasPublicUrl: !!process.env.CLOUDFLARE_R2_PUBLIC_URL,
-    bucket: process.env.CLOUDFLARE_R2_BUCKET, // Show actual value to verify
+    bucket: process.env.CLOUDFLARE_R2_BUCKET,
   });
 }
