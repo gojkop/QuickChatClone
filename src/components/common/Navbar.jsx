@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import apiClient from '@/api';
 import SideMenu from './SideMenu';
 import logo from '@/assets/images/logo-quickchat.png';
 
@@ -9,6 +10,7 @@ function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -22,61 +24,78 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Get user info and notifications
-  const getUserInfo = () => {
-    if (!isAuthenticated) return null;
-    
-    // Try to get real user data from auth context or localStorage
-    // Priority: 1. Full name, 2. Handle, 3. Email username, 4. Default
-    const storedName = localStorage.getItem('qc_user_name');
-    const storedHandle = localStorage.getItem('qc_user_handle');
-    const storedEmail = localStorage.getItem('qc_user_email');
-    
-    // Determine display name
-    let displayName = 'Expert'; // Default fallback
-    
-    if (storedName) {
-      displayName = storedName;
-    } else if (storedHandle) {
-      displayName = storedHandle;
-    } else if (storedEmail) {
-      // Extract name from email (before @)
-      displayName = storedEmail.split('@')[0];
-    }
-    
-    // MOCK pending questions count - replace with API call
-    const pendingQuestions = 3; // From database: response.data.expert_profile.pending_questions_count
-    
-    return {
-      name: displayName,
-      pendingQuestions: pendingQuestions,
+  // Fetch user profile when authenticated
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!isAuthenticated) {
+        setUserProfile(null);
+        return;
+      }
+
+      try {
+        const response = await apiClient.get('/me/profile');
+        const userData = response.data?.user || {};
+        const expertData = response.data?.expert_profile || {};
+        
+        setUserProfile({
+          name: userData.name || 'Expert',
+          email: userData.email,
+          avatar_url: userData.avatar_url,
+          pendingQuestions: 3, // TODO: Replace with actual count from API
+        });
+      } catch (err) {
+        console.error('Failed to fetch user profile:', err);
+        // Fallback to localStorage if API fails
+        const storedName = localStorage.getItem('qc_user_name');
+        const storedEmail = localStorage.getItem('qc_user_email');
+        setUserProfile({
+          name: storedName || 'Expert',
+          email: storedEmail,
+          avatar_url: null,
+          pendingQuestions: 0,
+        });
+      }
     };
-  };
 
-  const userInfo = getUserInfo();
+    fetchUserProfile();
+  }, [isAuthenticated]);
 
-  // Compact default avatar
-  const DefaultUserAvatar = ({ size = 28 }) => (
-    <div 
-      className="rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center flex-shrink-0"
-      style={{ width: size, height: size }}
-    >
-      <svg 
-        className="text-white" 
-        style={{ width: size * 0.55, height: size * 0.55 }}
-        fill="none" 
-        stroke="currentColor" 
-        viewBox="0 0 24 24"
-      >
-        <path 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          strokeWidth="2" 
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
+  // User Avatar Component
+  const UserAvatar = ({ size = 28, avatarUrl }) => {
+    if (avatarUrl) {
+      return (
+        <img 
+          src={avatarUrl} 
+          alt="User avatar" 
+          className="rounded-full object-cover flex-shrink-0"
+          style={{ width: size, height: size }}
         />
-      </svg>
-    </div>
-  );
+      );
+    }
+
+    // Default avatar fallback
+    return (
+      <div 
+        className="rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center flex-shrink-0"
+        style={{ width: size, height: size }}
+      >
+        <svg 
+          className="text-white" 
+          style={{ width: size * 0.55, height: size * 0.55 }}
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth="2" 
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
+          />
+        </svg>
+      </div>
+    );
+  };
 
   // Notification Badge Component
   const NotificationBadge = ({ count }) => {
@@ -140,31 +159,31 @@ function Navbar() {
 
             {/* Right Section - Badge or Sign In */}
             <div className="flex items-center">
-              {isAuthenticated && userInfo ? (
+              {isAuthenticated && userProfile ? (
                 <div className="relative">
                   <button
                     onClick={() => navigate('/expert')}
                     onMouseEnter={() => setShowTooltip(true)}
                     onMouseLeave={() => setShowTooltip(false)}
                     className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-indigo-50 transition-all duration-200 group"
-                    aria-label={`Go to dashboard${userInfo.pendingQuestions > 0 ? ` - ${userInfo.pendingQuestions} pending questions` : ''}`}
+                    aria-label={`Go to dashboard${userProfile.pendingQuestions > 0 ? ` - ${userProfile.pendingQuestions} pending questions` : ''}`}
                   >
                     {/* User Name (hidden on small screens) */}
                     <span className="hidden sm:block text-sm font-medium text-gray-700 group-hover:text-indigo-600 transition-colors">
-                      {userInfo.name.split(' ')[0]}
+                      {userProfile.name.split(' ')[0]}
                     </span>
                     
                     {/* Avatar with Notification Badge */}
                     <div className="relative">
-                      <DefaultUserAvatar size={28} />
-                      <NotificationBadge count={userInfo.pendingQuestions} />
+                      <UserAvatar size={28} avatarUrl={userProfile.avatar_url} />
+                      <NotificationBadge count={userProfile.pendingQuestions} />
                     </div>
                   </button>
 
                   {/* Tooltip on hover */}
-                  {showTooltip && userInfo.pendingQuestions > 0 && (
+                  {showTooltip && userProfile.pendingQuestions > 0 && (
                     <Tooltip>
-                      {userInfo.pendingQuestions} pending question{userInfo.pendingQuestions !== 1 ? 's' : ''}
+                      {userProfile.pendingQuestions} pending question{userProfile.pendingQuestions !== 1 ? 's' : ''}
                     </Tooltip>
                   )}
                 </div>
@@ -190,7 +209,7 @@ function Navbar() {
       <SideMenu 
         isOpen={isMenuOpen} 
         onClose={() => setIsMenuOpen(false)}
-        userInfo={userInfo}
+        userInfo={userProfile}
       />
     </>
   );
