@@ -4,7 +4,7 @@ import apiClient from '@/api';
 import SettingsModal from '@/components/dashboard/SettingsModal';
 import AvatarUpload from '@/components/dashboard/AvatarUpload';
 import SocialImpactStats from '@/components/dashboard/SocialImpactStats';
-import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
+import { DEFAULT_AVATAR_SVG } from '@/lib/defaultAvatar';
 
 function ExpertDashboardPage() {
   const [profile, setProfile] = useState(null);
@@ -106,7 +106,7 @@ function ExpertDashboardPage() {
                 className="w-16 h-16 rounded-full object-cover ring-4 ring-indigo-100"
               />
             ) : (
-              <DefaultAvatar size={64} />
+              <img src={DEFAULT_AVATAR_SVG} alt="Default Avatar" />
             )}
             <div>
               <h1 className="text-3xl font-black text-gray-900">
