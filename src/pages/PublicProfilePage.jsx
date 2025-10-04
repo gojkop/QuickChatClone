@@ -147,7 +147,7 @@ function PublicProfilePage() {
                   <img
                     className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg"
                     src={profile.avatar_url}
-                    alt={`${profile.user?.name || 'Expert'}'s avatar`}
+                    alt={`${profile.name || 'Expert'}'s avatar`}
                     onError={(e) => {
                       console.error('Image failed to load:', profile.avatar_url);
                       e.target.style.display = 'none';
@@ -178,7 +178,7 @@ function PublicProfilePage() {
               </div>
 
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{profile.user?.name || 'Expert'}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{profile.name || 'Expert'}</h1>
                 <p className="text-sm text-gray-500 font-medium">@{profile.handle}</p>
                 {profile.tagline && (
                   <p className="mt-1 text-base text-gray-700 font-semibold">{profile.tagline}</p>
