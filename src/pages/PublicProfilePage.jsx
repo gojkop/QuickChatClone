@@ -97,8 +97,10 @@ function PublicProfilePage() {
       setError('');
       try {
         const { data } = await apiClient.get(
-          `/public/profile?handle=${encodeURIComponent(handle)}`
+          `/3B14WLbJ/public/profile?handle=${encodeURIComponent(handle)}`
         );
+
+        console.log('Public profile API response:', data);
 
         // prefer nested expert_profile shape
         const ep = data?.expert_profile ?? data ?? null;
@@ -109,6 +111,12 @@ function PublicProfilePage() {
         }
 
         const isPublic = coercePublic(ep.public);
+        
+        console.log('Profile public status:', { raw: ep.public, coerced: isPublic });
+
+        if (!isPublic) {
+          throw new Error('This profile is private.');
+        }
 
         setProfile({
           ...ep,
@@ -122,6 +130,7 @@ function PublicProfilePage() {
           selected_charity: ep.selected_charity ?? 'unicef',
         });
       } catch (err) {
+        console.error('Public profile fetch error:', err);
         setError(err.message || 'Could not load profile.');
       } finally {
         setIsLoading(false);
@@ -139,10 +148,108 @@ function PublicProfilePage() {
 
   const renderContent = () => {
     if (isLoading) {
-        return <div className="text-center p-12">Loading...</div>
+        return (
+          <div className="text-center p-12">
+            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading profile...</p>
+          </div>
+        );
     }
+    
     if (error) {
-        return <div className="text-center p-12 text-red-500">{error}</div>
+        const isNotFound = error.includes('does not exist') || error.includes('not found');
+        const isPrivate = error.includes('private');
+        
+        if (isNotFound) {
+          return (
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Expert Not Found</h2>
+              <p className="text-gray-600 mb-2">
+                <span className="font-semibold text-gray-900">@{handle}</span> isn't on QuickChat yet.
+              </p>
+              <p className="text-gray-600 mb-6">
+                But you can invite them to join!
+              </p>
+              
+              <a
+                href={`https://quickchat-deploy.vercel.app/invite?expert=${encodeURIComponent(handle)}`}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Invite {handle} to QuickChat</span>
+              </a>
+              
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <p className="text-sm text-gray-500 mb-3">or</p>
+                <a 
+                  href="/"
+                  className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-semibold text-sm transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span>Browse other experts</span>
+                </a>
+              </div>
+            </div>
+          );
+        }
+        
+        if (isPrivate) {
+          return (
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Profile is Private</h2>
+              <p className="text-gray-600 mb-6">
+                This expert has set their profile to private.
+              </p>
+              
+              <a 
+                href="/"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+              >
+                <span>Browse other experts</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
+            </div>
+          );
+        }
+        
+        // Generic error fallback
+        return (
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Oops!</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            
+            <a 
+              href="/"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+            >
+              <span>Go to homepage</span>
+            </a>
+          </div>
+        );
     }
 
     if (profile) {
