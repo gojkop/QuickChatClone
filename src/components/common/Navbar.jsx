@@ -165,7 +165,7 @@ function Navbar() {
                 <img 
                   src={logo} 
                   alt="QuickChat" 
-                  className="h-7 w-auto transition-transform duration-200 hover:scale-105" 
+                  className="h-9 w-auto transition-transform duration-200 hover:scale-105" 
                 />
               </Link>
             </div>
