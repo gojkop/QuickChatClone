@@ -96,7 +96,7 @@ function PublicProfilePage() {
       setError('');
       try {
         const { data } = await apiClient.get(
-          `/3B14WLbJ/public/profile?handle=${encodeURIComponent(handle)}`
+          `/BQW1GS7L/public/profile?handle=${encodeURIComponent(handle)}`
         );
 
         console.log('Public profile API response:', data);
