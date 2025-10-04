@@ -103,7 +103,10 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                 <div className="flex items-start">
                   <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Context</span>
                   {questionData.text ? (
-                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{questionData.text}</p>
+                     <div className="text-sm font-medium text-green-700 flex items-center gap-2">
+                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                       <span>Added</span>
+                    </div>
                   ) : (
                     <span className="text-sm text-gray-500">Not Added</span>
                   )}
