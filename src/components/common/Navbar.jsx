@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import apiClient from '@/api';
 import SideMenu from './SideMenu';
-import logo from '@/assets/images/logo-quickchat.png';
+import logo from '@/assets/images/logo.svg';
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
