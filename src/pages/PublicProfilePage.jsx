@@ -16,22 +16,22 @@ const formatPrice = (cents, currency = 'USD') => {
 
 // Default Avatar Component
 const DefaultAvatar = ({ size = 120 }) => (
-  <div
+  <div 
     className="rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg"
     style={{ width: size, height: size }}
   >
-    <svg
-      className="text-white"
+    <svg 
+      className="text-white" 
       style={{ width: size / 2, height: size / 2 }}
-      fill="none"
-      stroke="currentColor"
+      fill="none" 
+      stroke="currentColor" 
       viewBox="0 0 24 24"
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth="2" 
+        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" 
       />
     </svg>
   </div>
@@ -40,9 +40,9 @@ const DefaultAvatar = ({ size = 120 }) => (
 // Social Impact Card with Donation Calculation
 const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, currency }) => {
   const charityInfo = {
-    'unicef': { name: 'UNICEF', icon: '🌍' },
-    'doctors-without-borders': { name: 'Doctors Without Borders', icon: '⚕️' },
-    'malala-fund': { name: 'Malala Fund', icon: ' FONT' },
+    'unicef': { name: 'UNICEF', icon: '💖' },
+    'doctors-without-borders': { name: 'Doctors Without Borders', icon: '🏥' },
+    'malala-fund': { name: 'Malala Fund', icon: '📚' },
     'wwf': { name: 'WWF', icon: '🐼' },
     'charity-water': { name: 'charity: water', icon: '💧' }
   };
@@ -86,7 +86,7 @@ function PublicProfilePage() {
       setIsLoading(true);
       setError('');
       try {
-        const response = await apiClient.get('/public/profile', { params: { handle } });
+        const response = await apiClient.get(`/public/profile?handle=${handle}`);
         console.log('Public profile API response:', response.data);
         
         if (!response.data || !response.data.public) {
@@ -97,8 +97,8 @@ function PublicProfilePage() {
           ...response.data,
           // Ensure avatar_url is properly extracted
           avatar_url: response.data.avatar_url || null,
-          tagline: "Former VP Marketing at 3 Unicorns",
-          tags: ["SaaS", "B2B Marketing", "Growth", "PLG"],
+          tagline: "Former VP Marketing at 3 Unicorns", 
+          tags: ["SaaS", "B2B Marketing", "Growth", "PLG"], 
           socials: {
             twitter: "https://twitter.com/handle",
             website: "https://website.com"
@@ -144,8 +144,8 @@ function PublicProfilePage() {
             <div className="p-6 space-y-5">
               <div className="flex items-start gap-4 -mt-16">
                 {profile.avatar_url ? (
-                  <img
-                    className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg"
+                  <img 
+                    className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg" 
                     src={profile.avatar_url}
                     alt={`${profile.name || 'Expert'}'s avatar`}
                     onError={(e) => {
@@ -155,8 +155,8 @@ function PublicProfilePage() {
                     }}
                   />
                 ) : null}
-                <div
-                  className="w-24 h-24 flex-shrink-0"
+                <div 
+                  className="w-24 h-24 flex-shrink-0" 
                   style={{ display: profile.avatar_url ? 'none' : 'block' }}
                 >
                   <DefaultAvatar size={96} />
