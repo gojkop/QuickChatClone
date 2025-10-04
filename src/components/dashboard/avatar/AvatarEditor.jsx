@@ -25,14 +25,32 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
   }, []);
 
   const handleRotate = (degrees) => {
-    setRotation((prev) => (prev + degrees) % 360);
+    try {
+      console.log('Rotating by:', degrees);
+      setRotation((prev) => {
+        const newRotation = (prev + degrees) % 360;
+        console.log('New rotation:', newRotation);
+        return newRotation;
+      });
+    } catch (error) {
+      console.error('Error rotating:', error);
+    }
   };
 
   const handleFlip = (direction) => {
-    setFlip((prev) => ({
-      ...prev,
-      [direction]: !prev[direction]
-    }));
+    try {
+      console.log('Flipping:', direction);
+      setFlip((prev) => {
+        const newFlip = {
+          ...prev,
+          [direction]: !prev[direction]
+        };
+        console.log('New flip state:', newFlip);
+        return newFlip;
+      });
+    } catch (error) {
+      console.error('Error flipping:', error);
+    }
   };
 
   const handleReset = () => {
@@ -43,16 +61,26 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
   };
 
   const handleSave = async () => {
-    if (!croppedAreaPixels) return;
+    console.log('Save clicked, croppedAreaPixels:', croppedAreaPixels);
+    if (!croppedAreaPixels) {
+      console.error('No crop area defined');
+      alert('Please adjust the crop area before saving.');
+      return;
+    }
     
     setIsProcessing(true);
     try {
+      console.log('Starting image processing...');
+      console.log('Current state:', { rotation, flip, zoom });
+      
       // Apply rotation first if needed
       let processedImageSrc = imageSrc;
       if (rotation !== 0) {
+        console.log('Applying rotation:', rotation);
         processedImageSrc = await getRotatedImage(imageSrc, rotation);
       }
 
+      console.log('Cropping image...');
       // Get cropped image with flip applied
       const croppedImage = await getCroppedImg(
         processedImageSrc,
@@ -61,12 +89,17 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
         flip
       );
 
+      console.log('Image processed, blob size:', croppedImage.size);
+      
       // Call onSave with the processed blob
+      console.log('Calling onSave...');
       await onSave(croppedImage);
+      
+      console.log('Save complete, closing editor');
       onClose();
     } catch (error) {
       console.error('Error processing avatar:', error);
-      alert('Failed to process image. Please try again.');
+      alert(`Failed to process image: ${error.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -111,18 +144,29 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
             {/* Canvas Area */}
             <div className="lg:col-span-2 space-y-4">
               <div className="relative bg-gray-900 rounded-xl overflow-hidden" style={{ height: '400px' }}>
-                <Cropper
-                  image={imageSrc}
-                  crop={crop}
-                  zoom={zoom}
-                  rotation={rotation}
-                  aspect={1}
-                  cropShape="round"
-                  showGrid={false}
-                  onCropChange={setCrop}
-                  onCropComplete={onCropComplete}
-                  onZoomChange={setZoom}
-                />
+                {imageSrc ? (
+                  <Cropper
+                    image={imageSrc}
+                    crop={crop}
+                    zoom={zoom}
+                    rotation={rotation}
+                    aspect={1}
+                    cropShape="round"
+                    showGrid={false}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                    style={{
+                      containerStyle: {
+                        backgroundColor: '#1a1a1a'
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white">
+                    <p>Loading image...</p>
+                  </div>
+                )}
               </div>
 
               {/* Zoom Slider */}

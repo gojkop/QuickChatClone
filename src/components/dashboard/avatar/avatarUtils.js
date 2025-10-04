@@ -111,10 +111,16 @@ export async function getCroppedImg(
  * Read a file as data URL
  */
 export const readFile = (file) => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.addEventListener('load', () => resolve(reader.result), false);
-    reader.readAsDataURL(file);
+    reader.addEventListener('error', (error) => reject(error), false);
+    
+    if (file instanceof Blob || file instanceof File) {
+      reader.readAsDataURL(file);
+    } else {
+      reject(new Error('Invalid file type'));
+    }
   });
 };
 
