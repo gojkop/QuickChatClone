@@ -20,7 +20,6 @@ function ExpertDashboardPage() {
     const fetchProfile = async () => {
       try {
         const response = await apiClient.get('/me/profile');
-        console.log('Profile response:', response.data);
         
         const expertProfile = response.data.expert_profile || {};
         
@@ -36,7 +35,6 @@ function ExpertDashboardPage() {
           total_donated: expertProfile.total_donated || 0
         };
         
-        console.log('Processed profile:', processedProfile);
         setProfile(processedProfile);
       } catch (err) {
         console.error("Failed to fetch profile:", err);

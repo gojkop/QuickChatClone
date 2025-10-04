@@ -86,33 +86,34 @@ function PublicProfilePage() {
       setIsLoading(true);
       setError('');
       try {
-        const response = await apiClient.get(`/public/profile?handle=${handle}`);
-        console.log('Public profile API response:', response.data);
-        
-        if (!response.data || !response.data.public) {
+        const { data } = await apiClient.get(
+          `/public/profile?handle=${encodeURIComponent(handle)}`
+        );
+
+        // accept either flat or nested shapes
+        const p = data?.expert_profile ?? data ?? {};
+        const user = data?.user ?? p.user ?? null;
+
+        // normalize boolean-ish values
+        const isPublic =
+          p.public === true ||
+          p.public === 1 ||
+          p.public === '1' ||
+          (typeof p.public === 'string' && p.public.toLowerCase() === 'true');
+
+        if (!p || !isPublic) {
           throw new Error('This profile is private or does not exist.');
         }
-        
-        const profileData = {
-          ...response.data,
-          // Ensure avatar_url is properly extracted
-          avatar_url: response.data.avatar_url || null,
-          tagline: "Former VP Marketing at 3 Unicorns", 
-          tags: ["SaaS", "B2B Marketing", "Growth", "PLG"], 
-          socials: {
-            twitter: "https://twitter.com/handle",
-            website: "https://website.com"
-          },
-          charity_percentage: response.data.charity_percentage || 25,
-          selected_charity: response.data.selected_charity || 'unicef',
-        };
-        
-        console.log('Processed profile data:', profileData);
-        console.log('Avatar URL:', profileData.avatar_url);
-        
-        setProfile(profileData);
+
+        setProfile({
+          ...p,
+          user,
+          avatar_url: p.avatar_url ?? p.avatar ?? null,
+          // your defaults (keep/change as you wish)
+          charity_percentage: p.charity_percentage ?? 25,
+          selected_charity: p.selected_charity ?? 'unicef',
+        });
       } catch (err) {
-        console.error("Fetch public profile error:", err);
         setError(err.message || 'Could not load profile.');
       } finally {
         setIsLoading(false);
@@ -121,6 +122,7 @@ function PublicProfilePage() {
 
     fetchPublicProfile();
   }, [handle]);
+
 
   const handleAskQuestion = () => {
     navigate(`/ask?expert=${handle}`);
@@ -149,7 +151,6 @@ function PublicProfilePage() {
                     src={profile.avatar_url}
                     alt={`${profile.user?.name || 'Expert'}'s avatar`}
                     onError={(e) => {
-                      console.error('Image failed to load:', profile.avatar_url);
                       e.target.style.display = 'none';
                       e.target.nextSibling.style.display = 'block';
                     }}
