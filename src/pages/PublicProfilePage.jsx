@@ -182,8 +182,7 @@ function PublicProfilePage() {
             <p className="text-gray-600 mb-6">
               But you can invite them to join!
             </p>
-            
-            
+            <a
               href={`https://quickchat-deploy.vercel.app/invite?expert=${encodeURIComponent(handle)}`}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
