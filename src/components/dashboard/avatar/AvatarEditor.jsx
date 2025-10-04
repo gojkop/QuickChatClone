@@ -12,11 +12,11 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Debug logging
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('AvatarEditor - isOpen changed:', isOpen);
   }, [isOpen]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('AvatarEditor - imageSrc changed:', imageSrc ? 'Image present' : 'No image');
   }, [imageSrc]);
 
@@ -91,11 +91,10 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
           e.stopPropagation(); // Prevent clicks inside modal from bubbling to backdrop
         }}
       >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between bg-white">
           <h3 className="text-xl font-bold text-gray-900">Edit Avatar</h3>
-                    <button 
+          <button 
             onClick={onClose}
             disabled={isProcessing}
             className="p-2 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
