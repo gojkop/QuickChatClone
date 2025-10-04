@@ -4,23 +4,24 @@ function DeliveryPreview({ expertInfo, priceProposal }) {
   const [copied, setCopied] = useState(false);
 
   const generateInviteLink = () => {
-    // In production, this would be a unique tracking link
     return `${window.location.origin}/signup?ref=invite`;
   };
 
   const generateMessage = () => {
     const link = generateInviteLink();
     const priceText = priceProposal.type === 'expert-decides' 
-      ? 'You can set your own price.'
-      : `I'm proposing €${priceProposal.amount} per question.`;
+      ? 'You can set your own price for answering.'
+      : `I'm proposing €${priceProposal.amount} for your answer.`;
     
-    return `Hi! I'd love to ask you a quick question. I've sent you an invitation to join QuickChat, a platform where you can monetize your expertise by answering questions asynchronously.
+    return `Hi! I have a question for you about your expertise. I'd love to get your insights.
 
 ${priceText}
 
-Join here: ${link}
+I've sent the question through QuickChat, a platform where experts can monetize their knowledge by answering questions asynchronously. 
 
-Looking forward to your insights!`;
+Join and see my question here: ${link}
+
+Thanks for considering!`;
   };
 
   const handleCopyMessage = () => {
@@ -58,8 +59,8 @@ Looking forward to your insights!`;
     switch (expertInfo.type) {
       case 'email':
         return {
-          title: 'Email Invitation',
-          description: 'We\'ll send an email invitation with your question directly to their inbox',
+          title: 'Email Delivery',
+          description: 'We\'ll send your question via email with an invitation to answer on QuickChat',
           action: 'automatic'
         };
       case 'linkedin':
@@ -76,7 +77,7 @@ Looking forward to your insights!`;
         };
       default:
         return {
-          title: 'Manual Invitation',
+          title: 'Manual Delivery',
           description: 'Copy this message and share it with them however you prefer',
           action: 'copy'
         };
@@ -138,7 +139,7 @@ Looking forward to your insights!`;
         <div className="mt-4 flex items-center gap-2 text-sm">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
           <span className="text-indigo-700 font-medium">
-            Email will be sent to: <span className="font-bold">{expertInfo.identifier}</span>
+            Question will be sent to: <span className="font-bold">{expertInfo.identifier}</span>
           </span>
         </div>
       )}
