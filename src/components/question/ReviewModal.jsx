@@ -16,10 +16,10 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
     }
 
     setIsSubmitting(true);
-    
+
     // In a real app, this would be an API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     onSend({
       email,
       firstName,
@@ -30,11 +30,11 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -60,7 +60,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                   <p className="text-sm text-indigo-600 font-semibold mb-1">Inviting to QuickChat</p>
                   <p className="text-2xl font-bold text-indigo-900">{expertHandle}</p>
                 </div>
-                
+
                 {priceProposal && (
                   <div className="text-right">
                     <div className="text-xs text-gray-600 mb-1">Price proposal</div>
@@ -80,7 +80,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-3">Your Question Summary</label>
               <div className="space-y-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                
+
                 {/* Title */}
                 <div className="flex items-start">
                   <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Title</span>
@@ -99,12 +99,15 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                     </div>
                   </div>
                 )}
-                
+
                 {/* Additional Context */}
                 <div className="flex items-start">
                   <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Context</span>
                   {questionData.text ? (
-                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{questionData.text}</p>
+                     <div className="text-sm font-medium text-green-700 flex items-center gap-2">
+                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                       <span>Added</span>
+                    </div>
                   ) : (
                     <span className="text-sm text-gray-500">Not Added</span>
                   )}
@@ -140,7 +143,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
             {/* Delivery Preview Section */}
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">How They'll Receive the Invitation</h3>
-              <DeliveryPreview 
+              <DeliveryPreview
                 expertInfo={expertInfo}
                 priceProposal={priceProposal}
               />
