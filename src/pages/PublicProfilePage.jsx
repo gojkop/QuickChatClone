@@ -110,9 +110,22 @@ function PublicProfilePage() {
           throw new Error('This profile does not exist.');
         }
 
-        const isPublic = coercePublic(ep.public);
+        // DEBUG: Check all possible public field names
+        console.log('Checking public fields:', {
+          public: ep.public,
+          is_public: ep.is_public,
+          isPublic: ep.isPublic,
+          allKeys: Object.keys(ep)
+        });
+
+        // Try multiple field names
+        const publicValue = ep.public ?? ep.is_public ?? ep.isPublic;
+        const isPublic = coercePublic(publicValue);
         
-        console.log('Profile public status:', { raw: ep.public, coerced: isPublic });
+        console.log('Profile public status:', { 
+          raw: publicValue, 
+          coerced: isPublic 
+        });
 
         if (!isPublic) {
           throw new Error('This profile is private.');
@@ -122,10 +135,8 @@ function PublicProfilePage() {
           ...ep,
           isPublic,
           user,
-          // normalize common field names
           name: ep.name ?? user?.name ?? null,
           avatar_url: ep.avatar_url ?? ep.avatar ?? null,
-          // sensible defaults
           charity_percentage: ep.charity_percentage ?? 25,
           selected_charity: ep.selected_charity ?? 'unicef',
         });
@@ -136,9 +147,6 @@ function PublicProfilePage() {
         setIsLoading(false);
       }
     };
-
-    fetchPublicProfile();
-  }, [handle]);
 
 
 
