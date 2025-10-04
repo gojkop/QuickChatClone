@@ -56,12 +56,12 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
 
   return (
     <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 rounded-lg p-4 border border-orange-200">
-        <div className="flex items-center gap-3">
-            <span className="text-2xl">{charity.icon}</span>
-            <p className="text-sm text-gray-700 leading-snug">
-                A <span className="font-bold">{charityPercentage}% donation</span> ({formatPrice(donationAmount, currency)}) of your payment will go to <span className="font-bold text-gray-900">{charity.name}</span>.
-            </p>
-        </div>
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{charity.icon}</span>
+        <p className="text-sm text-gray-700 leading-snug">
+          A <span className="font-bold">{charityPercentage}% donation</span> ({formatPrice(donationAmount, currency)}) of your payment will go to <span className="font-bold text-gray-900">{charity.name}</span>.
+        </p>
+      </div>
     </div>
   );
 };
@@ -154,114 +154,113 @@ function PublicProfilePage() {
 
   const renderContent = () => {
     if (isLoading) {
-        return (
-          <div className="text-center p-12">
-            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading profile...</p>
-          </div>
-        );
+      return (
+        <div className="text-center p-12">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      );
     }
     
     if (error) {
-        const isNotFound = error.includes('does not exist') || error.includes('not found');
-        const isPrivate = error.includes('private');
-        
-        if (isNotFound) {
-          return (
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">Expert Not Found</h2>
-              <p className="text-gray-600 mb-2">
-                <span className="font-semibold text-gray-900">@{handle}</span> isn't on QuickChat yet.
-              </p>
-              <p className="text-gray-600 mb-6">
-                But you can invite them to join!
-              </p>
-              
-              
-                href={`https://quickchat-deploy.vercel.app/invite?expert=${encodeURIComponent(handle)}`}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Invite {handle} to QuickChat</span>
-              </a>
-              
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <p className="text-sm text-gray-500 mb-3">or</p>
-                <a 
-                  href="/"
-                  className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-semibold text-sm transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                  </svg>
-                  <span>Browse other experts</span>
-                </a>
-              <div>
-            </div>
-          );
-        }
-        
-        if (isPrivate) {
-          return (
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">Profile is Private</h2>
-              <p className="text-gray-600 mb-6">
-                This expert has set their profile to private.
-              </p>
-              
-              <a 
-                href="/"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-              >
-                <span>Browse other experts</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </a>
-            </div>
-          );
-        }
-        
+      const isNotFound = error.includes('does not exist') || error.includes('not found');
+      const isPrivate = error.includes('private');
+      
+      if (isNotFound) {
         return (
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Oops!</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Expert Not Found</h2>
+            <p className="text-gray-600 mb-2">
+              <span className="font-semibold text-gray-900">@{handle}</span> is not on QuickChat yet.
+            </p>
+            <p className="text-gray-600 mb-6">
+              But you can invite them to join!
+            </p>
+            
+            
+              href={`https://quickchat-deploy.vercel.app/invite?expert=${encodeURIComponent(handle)}`}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Invite {handle} to QuickChat</span>
+            </a>
+            
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-500 mb-3">or</p>
+              <a 
+                href="/"
+                className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-semibold text-sm transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Browse other experts</span>
+              </a>
+            </div>
+          </div>
+        );
+      }
+      
+      if (isPrivate) {
+        return (
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Profile is Private</h2>
+            <p className="text-gray-600 mb-6">
+              This expert has set their profile to private.
+            </p>
             
             <a 
               href="/"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
-              <span>Go to homepage</span>
+              <span>Browse other experts</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
             </a>
           </div>
         );
+      }
+      
+      return (
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Oops!</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          
+          <a 
+            href="/"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+          >
+            <span>Go to homepage</span>
+          </a>
+        </div>
+      );
     }
 
     if (profile) {
       return (
         <>
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden">
-            
             <div className="h-24 bg-gradient-to-br from-indigo-100 to-violet-100"></div>
 
             <div className="p-6 space-y-5">
@@ -287,12 +286,16 @@ function PublicProfilePage() {
                   <div className="flex items-center justify-end gap-4">
                     {profile.socials?.twitter && (
                       <a href={profile.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600 transition-colors">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
                       </a>
                     )}
                     {profile.socials?.website && (
                       <a href={profile.socials.website} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600 transition-colors">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
                       </a>
                     )}
                   </div>
@@ -322,14 +325,14 @@ function PublicProfilePage() {
               )}
               
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 grid grid-cols-2 items-center gap-4">
-                 <div className="text-center">
-                   <div className="text-xs text-gray-500">Response</div>
-                   <div className="font-bold text-gray-900">{profile.sla_hours}h</div>
-                 </div>
-                 <div className="text-center border-l border-gray-200">
-                   <div className="text-xs text-gray-500">Price</div>
-                   <div className="font-bold text-gray-900">{formatPrice(profile.price_cents, profile.currency)}</div>
-                 </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-500">Response</div>
+                  <div className="font-bold text-gray-900">{profile.sla_hours}h</div>
+                </div>
+                <div className="text-center border-l border-gray-200">
+                  <div className="text-xs text-gray-500">Price</div>
+                  <div className="font-bold text-gray-900">{formatPrice(profile.price_cents, profile.currency)}</div>
+                </div>
               </div>
 
               <SocialImpactCard
@@ -341,7 +344,7 @@ function PublicProfilePage() {
             </div>
             
             <div className="p-6 bg-gray-50/50 border-t border-gray-100">
-               <button
+              <button
                 onClick={handleAskQuestion}
                 className="w-full group bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg text-base hover:shadow-lg transition-all"
               >
