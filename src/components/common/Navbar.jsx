@@ -45,14 +45,14 @@ function Navbar() {
         
         // Fetch pending questions count
         let pendingCount = 0;
-        try {
-          const questionsResponse = await apiClient.get('/me/questions?status=paid');
-          const questions = questionsResponse.data || [];
-          // Count questions that are paid but not answered
-          pendingCount = questions.filter(q => !q.answered_at).length;
-        } catch (err) {
-          console.error('Failed to fetch questions count:', err);
-        }
+          try {
+            const questionsResponse = await apiClient.get('/me/questions');
+            const questions = questionsResponse.data || [];
+            // Count questions that haven't been answered yet
+            pendingCount = questions.filter(q => !q.answered_at).length;
+          } catch (err) {
+            console.error('Failed to fetch questions count:', err);
+          }
         
         setUserProfile({
           name: userData.name || 'Expert',
