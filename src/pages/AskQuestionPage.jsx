@@ -29,7 +29,6 @@ function AskQuestionPage() {
       try {
         console.log('Fetching expert profile for handle:', handle);
         
-        // Use the correct API endpoint (api:BQW1GS7L) with direct fetch
         const response = await fetch(
           `https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/public/profile?handle=${encodeURIComponent(handle)}`
         );
@@ -46,11 +45,9 @@ function AskQuestionPage() {
         const data = await response.json();
         console.log('Expert profile data:', data);
 
-        // Check if profile exists and is public
         const expertProfile = data?.expert_profile ?? data;
         const publicValue = expertProfile?.public ?? expertProfile?.is_public ?? expertProfile?.isPublic;
         
-        // Coerce public value to boolean
         const isPublic = publicValue === true || publicValue === 1 || 
                         publicValue === '1' || publicValue === 'true';
 
@@ -74,7 +71,6 @@ function AskQuestionPage() {
     fetchExpertProfile();
   }, [location.search]);
 
-  // Handler to open the review modal
   const handleContinueToReview = () => {
     if (composerRef.current) {
       const data = composerRef.current.validateAndGetData();
@@ -85,17 +81,118 @@ function AskQuestionPage() {
     }
   };
 
-  // Placeholder for payment logic
-  const handleProceedToPayment = (askerInfo) => {
-    console.log("Proceeding to payment with:");
-    console.log("Asker Info:", askerInfo);
-    console.log("Question Data:", questionData);
-    console.log("Expert:", expert);
+  // Convert Blob to base64
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result.split(',')[1]; // Remove data:*/*;base64, prefix
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
 
-    // TODO: Implement payment logic here.
-    // This is where you would call your backend to create a Stripe Checkout session,
-    // and then redirect the user to the Stripe page.
-    alert("Payment flow not implemented yet. Check the console for data.");
+  // Convert File to base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result.split(',')[1];
+        resolve({
+          name: file.name,
+          data: base64String,
+          type: file.type,
+        });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleProceedToPayment = async (askerInfo) => {
+    try {
+      console.log("Starting question submission...");
+      
+      // Show loading state
+      const submitButton = document.querySelector('button[type="submit"]');
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+      }
+
+      // Prepare recording data
+      let recordingBlob = null;
+      if (questionData.mediaBlob) {
+        recordingBlob = await blobToBase64(questionData.mediaBlob);
+      }
+
+      // Prepare attachments data
+      const attachments = [];
+      if (questionData.files && questionData.files.length > 0) {
+        for (const file of questionData.files) {
+          const attachment = await fileToBase64(file);
+          attachments.push(attachment);
+        }
+      }
+
+      // Prepare submission payload
+      const payload = {
+        expertHandle: expert.handle,
+        title: questionData.title,
+        text: questionData.text || null,
+        recordingMode: questionData.mediaBlob ? questionData.recordingMode : null,
+        recordingBlob: recordingBlob,
+        attachments: attachments,
+        payerEmail: askerInfo.email,
+        payerFirstName: askerInfo.firstName || null,
+        payerLastName: askerInfo.lastName || null,
+      };
+
+      console.log('Submitting question with payload:', {
+        ...payload,
+        recordingBlob: recordingBlob ? `${recordingBlob.substring(0, 50)}...` : null,
+        attachments: attachments.map(a => ({ name: a.name, size: a.data.length })),
+      });
+
+      // Call backend API
+      const response = await fetch('/api/questions/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit question');
+      }
+
+      const result = await response.json();
+      console.log('Question submitted successfully:', result);
+
+      // In development mode (no Stripe), redirect to success page
+      if (result.checkoutUrl) {
+        // Production: Redirect to Stripe
+        window.location.href = result.checkoutUrl;
+      } else {
+        // Development: Redirect to success page directly
+        navigate(`/question-sent?question_id=${result.questionId}&dev_mode=true`);
+      }
+
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert(`Error: ${error.message}`);
+      
+      // Re-enable button
+      const submitButton = document.querySelector('button[type="submit"]');
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Proceed to Payment';
+      }
+    }
   };
 
   if (isLoading) {
@@ -220,7 +317,6 @@ function AskQuestionPage() {
         </div>
       </main>
 
-      {/* Render the modal conditionally */}
       <AskReviewModal
         isOpen={showReviewModal}
         onClose={() => setShowReviewModal(false)}
