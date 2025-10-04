@@ -31,7 +31,8 @@ const AppLayout = () => {
   const hideLayout = [
     '/auth/callback',
     '/invite-sent',
-    '/signin'
+    '/signin',
+    '/question-sent'
   ].includes(location.pathname);
   
   // Also hide on public profile pages (they have their own isolated design)

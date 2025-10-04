@@ -4,13 +4,15 @@ import { useLocation, Link } from 'react-router-dom';
 function QuestionSentPage() {
   const location = useLocation();
   const [questionId, setQuestionId] = useState('');
+  const [expertHandle, setExpertHandle] = useState('');
   const [expertName, setExpertName] = useState('the expert');
+
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setQuestionId(params.get('question_id'));
-    // In a real app, you might fetch the expert's name using the questionId
-    setExpertName(params.get('expert') || 'the expert'); 
+    setExpertHandle(params.get('expert'));
+    setExpertName(params.get('expertName') || 'the expert');
   }, [location.search]);
 
   return (
@@ -31,12 +33,12 @@ function QuestionSentPage() {
                 Your Question is on its Way!
               </h1>
               <p className="text-indigo-100">
-                The expert has been notified and you'll receive their answer via email.
+                The expert has been notified and you'll receive the answer via email.
               </p>
             </div>
 
             <div className="p-8">
-              <div className="flex justify-center mb-6">
+               <div className="flex justify-center mb-6">
                 <svg className="w-16 h-16 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
@@ -65,7 +67,21 @@ function QuestionSentPage() {
                   </div>
                 </div>
               </div>
-              
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                <div className="flex gap-3">
+                  <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <div>
+                    <p className="font-semibold text-amber-900 mb-1">💡 Pro Tip</p>
+                    <p className="text-sm text-amber-700">
+                      Save the expert's profile page for easy access to ask them another question in the future.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {questionId && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center mb-6">
                   <p className="text-sm text-gray-600">
@@ -76,7 +92,7 @@ function QuestionSentPage() {
 
               <div className="space-y-3">
                 <Link
-                  to="/"
+                  to={`/u/${expertHandle}`}
                   className="block w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] text-center"
                 >
                   Ask Another Question
