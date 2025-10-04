@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import apiClient from '@/api';
 
 // Helper to format price from cents
 const formatPrice = (cents, currency = 'USD') => {
   const symbols = { USD: '$', EUR: '€', GBP: '£' };
   const symbol = symbols[currency] || '$';
   const amount = (cents || 0) / 100;
-  // Use toFixed(2) to show cents for donation amount
   if (amount % 1 !== 0) {
       return `${symbol}${amount.toFixed(2)}`;
   }
@@ -35,7 +36,7 @@ const DefaultAvatar = ({ size = 120 }) => (
   </div>
 );
 
-// Social Impact Card with Donation Calculation
+// Social Impact Card
 const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, currency }) => {
   const charityInfo = {
     'unicef': { name: 'UNICEF', icon: '💖' },
@@ -64,7 +65,6 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
     </div>
   );
 };
-
 
 function PublicProfilePage() {
   const { handle } = useParams();
@@ -101,7 +101,6 @@ function PublicProfilePage() {
 
         console.log('Public profile API response:', data);
 
-        // prefer nested expert_profile shape
         const ep = data?.expert_profile ?? data ?? null;
         const user = data?.user ?? ep?.user ?? null;
 
@@ -109,7 +108,6 @@ function PublicProfilePage() {
           throw new Error('This profile does not exist.');
         }
 
-        // DEBUG: Check all possible public field names
         console.log('Checking public fields:', {
           public: ep.public,
           is_public: ep.is_public,
@@ -117,7 +115,6 @@ function PublicProfilePage() {
           allKeys: Object.keys(ep)
         });
 
-        // Try multiple field names and handle various formats
         const publicValue = ep.public ?? ep.is_public ?? ep.isPublic;
         const isPublic = coercePublic(publicValue);
         
@@ -135,10 +132,8 @@ function PublicProfilePage() {
           ...ep,
           isPublic,
           user,
-          // normalize common field names
           name: ep.name ?? user?.name ?? null,
           avatar_url: ep.avatar_url ?? ep.avatar ?? null,
-          // sensible defaults
           charity_percentage: ep.charity_percentage ?? 25,
           selected_charity: ep.selected_charity ?? 'unicef',
         });
@@ -188,7 +183,7 @@ function PublicProfilePage() {
                 But you can invite them to join!
               </p>
               
-              <a
+              
                 href={`https://quickchat-deploy.vercel.app/invite?expert=${encodeURIComponent(handle)}`}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
               >
@@ -209,7 +204,7 @@ function PublicProfilePage() {
                   </svg>
                   <span>Browse other experts</span>
                 </a>
-              </div>
+              <div>
             </div>
           );
         }
@@ -241,7 +236,6 @@ function PublicProfilePage() {
           );
         }
         
-        // Generic error fallback
         return (
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mx-auto mb-6">
