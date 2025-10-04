@@ -95,9 +95,15 @@ function PublicProfilePage() {
       setIsLoading(true);
       setError('');
       try {
-        const { data } = await apiClient.get(
-          `/BQW1GS7L/public/profile?handle=${encodeURIComponent(handle)}`
+        const response = await fetch(
+          `https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/public/profile?handle=${encodeURIComponent(handle)}`
         );
+        
+        if (!response.ok) {
+          throw new Error('This profile does not exist.');
+        }
+        
+        const data = await response.json();
 
         console.log('Public profile API response:', data);
 
