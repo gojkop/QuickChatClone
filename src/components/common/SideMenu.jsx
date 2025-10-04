@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import logo from '@/assets/images/logo-quickchat.png';
+import logo from '@/assets/images/logo.svg';
 
 function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
   const { isAuthenticated, logout } = useAuth();
