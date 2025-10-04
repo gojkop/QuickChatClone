@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
 import { authService } from "../api";
-import logo from "@/assets/images/logo-quickchat.png";
+import logo from "@/assets/images/logo.svg";
 
 export default function SignInPage() {
   const navigate = useNavigate();
