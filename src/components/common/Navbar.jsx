@@ -43,11 +43,22 @@ function Navbar() {
         
         const avatarUrl = expertData.avatar_url || null;
         
+        // Fetch pending questions count
+        let pendingCount = 0;
+          try {
+            const questionsResponse = await apiClient.get('/me/questions');
+            const questions = questionsResponse.data || [];
+            // Count questions that haven't been answered yet
+            pendingCount = questions.filter(q => !q.answered_at).length;
+          } catch (err) {
+            console.error('Failed to fetch questions count:', err);
+          }
+        
         setUserProfile({
           name: userData.name || 'Expert',
           email: userData.email,
           avatar_url: avatarUrl,
-          pendingQuestions: 3,
+          pendingQuestions: pendingCount,
         });
       } catch (err) {
         console.error('Failed to fetch user profile:', err);
@@ -66,7 +77,7 @@ function Navbar() {
 
     fetchUserProfile();
   }, [isAuthenticated]);
-
+  
   const UserAvatar = ({ size = 28, avatarUrl }) => {
     const [imageError, setImageError] = useState(false);
 
