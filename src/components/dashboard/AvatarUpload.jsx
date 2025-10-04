@@ -145,7 +145,12 @@ function AvatarUpload({ currentAvatar, onChange }) {
             
             {preview && !isUploading && (
               <button
-                onClick={handleEditExisting}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleEditExisting();
+                }}
+                type="button"
                 className="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
               >
                 Edit

@@ -128,7 +128,12 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
         <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between bg-white">
           <h3 className="text-xl font-bold text-gray-900">Edit Avatar</h3>
           <button 
-            onClick={onClose}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            type="button"
             disabled={isProcessing}
             className="p-2 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
           >
@@ -202,7 +207,12 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
                 <h4 className="text-sm font-bold text-gray-900 mb-3">Transform</h4>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => handleRotate(-90)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRotate(-90);
+                    }}
+                    type="button"
                     className="flex items-center justify-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition text-sm font-semibold text-gray-700"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,7 +221,12 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
                     Rotate ↶
                   </button>
                   <button
-                    onClick={() => handleRotate(90)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRotate(90);
+                    }}
+                    type="button"
                     className="flex items-center justify-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition text-sm font-semibold text-gray-700"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +235,12 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
                     Rotate ↷
                   </button>
                   <button
-                    onClick={() => handleFlip('horizontal')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleFlip('horizontal');
+                    }}
+                    type="button"
                     className={`flex items-center justify-center gap-2 px-3 py-2.5 border rounded-lg transition text-sm font-semibold ${
                       flip.horizontal 
                         ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
@@ -233,7 +253,12 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
                     Flip H
                   </button>
                   <button
-                    onClick={() => handleFlip('vertical')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleFlip('vertical');
+                    }}
+                    type="button"
                     className={`flex items-center justify-center gap-2 px-3 py-2.5 border rounded-lg transition text-sm font-semibold ${
                       flip.vertical 
                         ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
@@ -290,7 +315,12 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
         {/* Footer */}
         <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex items-center justify-between">
           <button
-            onClick={handleReset}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleReset();
+            }}
+            type="button"
             disabled={isProcessing}
             className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition disabled:opacity-50"
           >
@@ -298,14 +328,24 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
           </button>
           <div className="flex gap-3">
             <button
-              onClick={onClose}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              type="button"
               disabled={isProcessing}
               className="px-5 py-2.5 rounded-lg border border-gray-300 font-semibold text-gray-700 hover:bg-white transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
-              onClick={handleSave}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSave();
+              }}
+              type="button"
               disabled={isProcessing}
               className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
