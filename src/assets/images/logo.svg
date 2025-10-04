@@ -1,97 +1,36 @@
-<svg viewBox="0 0 1400 280" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Website brand gradient (indigo to violet) -->
-    <linearGradient id="darkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Brand gradient for CHAT -->
+    <linearGradient id="chatGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#4F46E5"/>
-      <stop offset="50%" style="stop-color:#7C3AED"/>
       <stop offset="100%" style="stop-color:#8B5CF6"/>
     </linearGradient>
-    
-    <!-- Lighter gradient for inner swoosh -->
-    <linearGradient id="lightGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#A78BFA"/>
-      <stop offset="50%" style="stop-color:#C4B5FD"/>
-      <stop offset="100%" style="stop-color:#DDD6FE"/>
-    </linearGradient>
-    
-    <!-- Soft shadow -->
-    <filter id="shadow">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-      <feOffset dx="0" dy="2" result="offsetblur"/>
-      <feComponentTransfer>
-        <feFuncA type="linear" slope="0.2"/>
-      </feComponentTransfer>
-      <feMerge>
-        <feMergeNode/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
   
-  <!-- Q Symbol - Recreating the flowing arrow design -->
-  <g transform="translate(50, 40)" filter="url(#shadow)">
-    <!-- Outer curved Q shape (darker purple) -->
-    <path d="M 90 30
-             C 130 30, 160 60, 160 100
-             C 160 140, 130 170, 90 170
-             C 50 170, 20 140, 20 100
-             C 20 80, 28 62, 42 50
-             L 58 66
-             C 48 74, 42 86, 42 100
-             C 42 128, 62 148, 90 148
-             C 118 148, 138 128, 138 100
-             C 138 72, 118 52, 90 52
-             Z"
-          fill="url(#darkGradient)"/>
-    
-    <!-- Q tail/arrow extension -->
-    <path d="M 135 145
-             L 175 195
-             C 178 199, 177 205, 172 208
-             C 167 211, 161 210, 158 205
-             L 125 160
-             Z"
-          fill="url(#darkGradient)"/>
-    
-    <!-- Inner lighter swoosh creating depth -->
-    <path d="M 65 75
-             C 55 85, 50 95, 50 100
-             C 50 118, 63 130, 80 130
-             L 90 130
-             C 110 130, 125 115, 125 100
-             C 125 90, 120 82, 112 76
-             L 118 68
-             C 128 76, 135 88, 135 100
-             C 135 125, 115 145, 90 145
-             L 80 145
-             C 55 145, 38 125, 38 100
-             C 38 88, 43 76, 52 68
-             Z"
-          fill="url(#lightGradient)"
-          opacity="0.9"/>
-    
-    <!-- White highlight for dimension -->
-    <path d="M 40 65
-             Q 50 45, 70 38
-             Q 85 35, 100 40
-             L 98 48
-             Q 85 44, 72 47
-             Q 55 52, 48 70
-             Z"
-          fill="white"
-          opacity="0.25"/>
-  </g>
-  
   <!-- QUICKCHAT Text -->
-  <text x="280" y="175" 
-        font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Arial Black', sans-serif" 
-        font-size="130" 
-        font-weight="900" 
-        letter-spacing="-2"
-        fill="url(#darkGradient)">
-    QUICKCHAT
-  </text>
-  
-  <!-- Subtle baseline accent -->
-  <rect x="280" y="192" width="150" height="4" rx="2" fill="url(#darkGradient)" opacity="0.25"/>
+  <g transform="translate(20, 100)">
+    <!-- QUICK in black -->
+    <text x="0" y="0" 
+          font-family="Inter, system-ui, -apple-system, sans-serif" 
+          font-size="72" 
+          font-weight="900" 
+          letter-spacing="-2"
+          fill="#1F2937">QUICK</text>
+    
+    <!-- CHAT in gradient -->
+    <text x="220" y="0" 
+          font-family="Inter, system-ui, -apple-system, sans-serif" 
+          font-size="72" 
+          font-weight="900" 
+          letter-spacing="-2"
+          fill="url(#chatGrad)">CHAT</text>
+    
+    <!-- INSTANT EXPERTISE tagline -->
+    <text x="2" y="28" 
+          font-family="Inter, system-ui, -apple-system, sans-serif" 
+          font-size="18" 
+          font-weight="600" 
+          letter-spacing="2"
+          fill="#6B7280">BEYOND AI ANSWERS</text>
+  </g>
 </svg>
