@@ -17,36 +17,38 @@ function ExpertDashboardPage() {
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await apiClient.get('/me/profile');
-        console.log('Profile response:', response.data);
-        
-        const expertProfile = response.data.expert_profile || {};
-        
-        const processedProfile = {
-          ...expertProfile,
-          user: response.data.user,
-          priceUsd: dollarsFromCents(expertProfile.price_cents),
-          slaHours: expertProfile.sla_hours,
-          isPublic: expertProfile.public,
-          avatar_url: expertProfile.avatar_url || null,
-          charity_percentage: expertProfile.charity_percentage || 0,
-          selected_charity: expertProfile.selected_charity || null,
-          total_donated: expertProfile.total_donated || 0
-        };
-        
-        console.log('Processed profile:', processedProfile);
-        setProfile(processedProfile);
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
-        setError("Could not load your profile. Please try refreshing the page.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
+  const fetchProfile = async () => {
+    console.log('=== FETCHING EXPERT PROFILE ===');
+    try {
+      const response = await apiClient.get('/me/profile');
+      console.log('✅ Profile API response:', response.data);
+      console.log('📊 Expert Profile data:', {
+        id: response.data.expert_profile?.id,
+        user_id: response.data.expert_profile?.user_id,
+        handle: response.data.expert_profile?.handle,
+        avatar_url: response.data.expert_profile?.avatar_url
+      });
+      console.log('👤 User data:', {
+        id: response.data.user?.id,
+        name: response.data.user?.name,
+        email: response.data.user?.email,
+        avatar_url: response.data.user?.avatar_url
+      });
+      
+      // ... rest of your existing code
+    } catch (err) {
+      console.error('❌ Failed to fetch profile:', err);
+      console.error('Error details:', {
+        status: err.response?.status,
+        data: err.response?.data
+      });
+      setError("Could not load your profile. Please try refreshing the page.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchProfile();
+}, []);
 
   const handleSaveSettings = (updatedProfile) => {
     // Process updated profile from modal to match display format
@@ -99,30 +101,23 @@ function ExpertDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
-        {/* Header - FIXED for mobile */}
+        {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 sm:gap-4 mb-2">
-            {/* Avatar - flex-shrink-0 prevents compression */}
-            <div className="flex-shrink-0">
-              {profile?.avatar_url ? (
-                <img 
-                  src={profile.avatar_url} 
-                  alt="Avatar" 
-                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-4 ring-indigo-100"
-                />
-              ) : (
-                <DefaultAvatar size={48} className="sm:w-16 sm:h-16" />
-              )}
-            </div>
-            
-            {/* Text container - flex-1 min-w-0 allows truncation */}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 truncate">
+          <div className="flex items-center gap-4 mb-2">
+            {profile?.avatar_url ? (
+              <img 
+                src={profile.avatar_url} 
+                alt="Avatar" 
+                className="w-16 h-16 rounded-full object-cover ring-4 ring-indigo-100"
+              />
+            ) : (
+              <DefaultAvatar size={64} />
+            )}
+            <div>
+              <h1 className="text-3xl font-black text-gray-900">
                 Welcome, {profile?.user?.name || 'Expert'}
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500 truncate">
-                {profile?.user?.email || '...'}
-              </p>
+              <p className="text-sm text-gray-500">{profile?.user?.email || '...'}</p>
             </div>
           </div>
         </div>
