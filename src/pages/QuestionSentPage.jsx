@@ -33,7 +33,7 @@ function QuestionSentPage() {
                 Your Question is on its Way!
               </h1>
               <p className="text-indigo-100">
-                The expert has been notified and you'll receive the answer via email.
+                The expert has been notified and you'll receive their answer via email.
               </p>
             </div>
 

@@ -1,3 +1,4 @@
+// client/src/pages/AskQuestionPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import QuestionComposer from '@/components/question/QuestionComposer';
@@ -179,7 +180,8 @@ function AskQuestionPage() {
         window.location.href = result.checkoutUrl;
       } else {
         // Development: Redirect to success page directly
-        navigate(`/question-sent?question_id=${result.questionId}&dev_mode=true`);
+        const expertName = expert.name || expert.user?.name || expert.handle;
+        navigate(`/question-sent?question_id=${result.questionId}&expert=${expert.handle}&expertName=${encodeURIComponent(expertName)}&dev_mode=true`);
       }
 
     } catch (error) {
