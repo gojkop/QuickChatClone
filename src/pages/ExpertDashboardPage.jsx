@@ -117,7 +117,7 @@ function ExpertDashboardPage() {
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState('paid'); // Filter
+  const [selectedStatus, setSelectedStatus] = useState(''); // Filter
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
 
