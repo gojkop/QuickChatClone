@@ -13,6 +13,7 @@ function AvatarUpload({ currentAvatar, onChange }) {
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
+    console.log('File selected:', file);
     if (!file) return;
 
     // Validate
@@ -30,9 +31,12 @@ function AvatarUpload({ currentAvatar, onChange }) {
 
     // Read file and open editor
     try {
+      console.log('Reading file...');
       const imageSrc = await readFile(file);
+      console.log('Image loaded, opening editor');
       setSelectedImageSrc(imageSrc);
       setIsEditorOpen(true);
+      console.log('Editor state set to true');
     } catch (err) {
       console.error('Error reading file:', err);
       setError('Failed to read image file');
@@ -163,6 +167,7 @@ function AvatarUpload({ currentAvatar, onChange }) {
       <AvatarEditor
         isOpen={isEditorOpen}
         onClose={() => {
+          console.log('Editor closing');
           setIsEditorOpen(false);
           setSelectedImageSrc(null);
         }}

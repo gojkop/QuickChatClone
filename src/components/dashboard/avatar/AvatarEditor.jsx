@@ -1,5 +1,5 @@
 // src/components/dashboard/avatar/AvatarEditor.jsx
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import { createImage, getCroppedImg, getRotatedImage } from './avatarUtils';
 
@@ -10,6 +10,15 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
   const [flip, setFlip] = useState({ horizontal: false, vertical: false });
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('AvatarEditor - isOpen changed:', isOpen);
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    console.log('AvatarEditor - imageSrc changed:', imageSrc ? 'Image present' : 'No image');
+  }, [imageSrc]);
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -66,12 +75,27 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        // Only close if clicking backdrop, not modal content
+        if (e.target === e.currentTarget) {
+          console.log('Backdrop clicked, closing modal');
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent clicks inside modal from bubbling to backdrop
+        }}
+      >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between bg-white">
           <h3 className="text-xl font-bold text-gray-900">Edit Avatar</h3>
-          <button 
+                    <button 
             onClick={onClose}
             disabled={isProcessing}
             className="p-2 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
