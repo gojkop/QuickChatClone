@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import apiClient from '@/api';
 
 // Helper to format price from cents
 const formatPrice = (cents, currency = 'USD') => {
@@ -83,6 +81,7 @@ function PublicProfilePage() {
     }
 
     const coercePublic = (val) => {
+      if (val === null || val === undefined) return false;
       if (typeof val === 'boolean') return val;
       if (typeof val === 'number') return val === 1;
       if (typeof val === 'string') {
@@ -118,13 +117,14 @@ function PublicProfilePage() {
           allKeys: Object.keys(ep)
         });
 
-        // Try multiple field names
+        // Try multiple field names and handle various formats
         const publicValue = ep.public ?? ep.is_public ?? ep.isPublic;
         const isPublic = coercePublic(publicValue);
         
         console.log('Profile public status:', { 
           raw: publicValue, 
-          coerced: isPublic 
+          coerced: isPublic,
+          type: typeof publicValue
         });
 
         if (!isPublic) {
@@ -135,8 +135,10 @@ function PublicProfilePage() {
           ...ep,
           isPublic,
           user,
+          // normalize common field names
           name: ep.name ?? user?.name ?? null,
           avatar_url: ep.avatar_url ?? ep.avatar ?? null,
+          // sensible defaults
           charity_percentage: ep.charity_percentage ?? 25,
           selected_charity: ep.selected_charity ?? 'unicef',
         });
@@ -148,7 +150,8 @@ function PublicProfilePage() {
       }
     };
 
-
+    fetchPublicProfile();
+  }, [handle]);
 
   const handleAskQuestion = () => {
     navigate(`/ask?expert=${handle}`);
