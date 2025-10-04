@@ -2,10 +2,12 @@
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
-import apiClient, { authService } from "../api";
+import apiClient from "../api";
+import { useAuth } from "@/context/AuthContext";  // ✅ Import useAuth
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();  // ✅ Get login function from context
   const ranRef = useRef(false);
 
   useEffect(() => {
@@ -35,31 +37,20 @@ export default function OAuthCallbackPage() {
           tokenPreview: oauthResponse.token?.substring(0, 30) + '...'
         });
         
+        // ✅ Use login() to update both localStorage AND context
         if (oauthResponse.token) {
-          authService.saveAuthToken(oauthResponse.token);
-          console.log('💾 Token saved to localStorage');
+          login(oauthResponse.token);  // ✅ This updates the context!
+          console.log('💾 Token saved and context updated');
         }
 
         console.log('📡 Calling /me/bootstrap...');
         try {
           const bootstrapResponse = await apiClient.post("/me/bootstrap");
           console.log('✅ Bootstrap response:', bootstrapResponse.data);
-          console.log('📊 Expert profile created/updated:', {
-            id: bootstrapResponse.data.expert_profile?.id,
-            user_id: bootstrapResponse.data.expert_profile?.user_id,
-            handle: bootstrapResponse.data.expert_profile?.handle,
-            status: bootstrapResponse.data.expert_profile?.status
-          });
-          console.log('👤 User data:', {
-            id: bootstrapResponse.data.user?.id,
-            name: bootstrapResponse.data.user?.name,
-            email: bootstrapResponse.data.user?.email
-          });
         } catch (bootstrapError) {
           console.warn('⚠️ Bootstrap error (might be expected):', {
             status: bootstrapError.response?.status,
-            message: bootstrapError.response?.data?.message,
-            fullError: bootstrapError.response?.data
+            message: bootstrapError.response?.data?.message
           });
         }
       } catch (e) {
@@ -77,7 +68,7 @@ export default function OAuthCallbackPage() {
       sessionStorage.removeItem("qc_auth_in_progress");
       navigate("/expert", { replace: true });
     })();
-  }, [navigate]);
+  }, [navigate, login]);  // ✅ Add login to dependencies
 
   return <div style={{ padding: 24 }}>Finalizing sign-in…</div>;
 }

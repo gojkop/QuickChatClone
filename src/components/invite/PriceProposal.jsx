@@ -24,12 +24,16 @@ function PriceProposal({ onPriceChange }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900">Price Proposal</h3>
+        <h3 className="text-lg font-bold text-gray-900">Your Price Offer</h3>
         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Optional</span>
       </div>
+      
+      <p className="text-sm text-gray-600 mb-4">
+        Suggest what you'd like to pay for their answer
+      </p>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* Expert Decides */}
+        {/* Let Them Decide */}
         <button
           type="button"
           onClick={() => handleOptionChange('expert-decides')}
@@ -49,14 +53,14 @@ function PriceProposal({ onPriceChange }) {
                 <div className="w-2 h-2 rounded-full bg-white"></div>
               )}
             </div>
-            <span className="text-sm font-bold text-gray-900">Expert Decides</span>
+            <span className="text-sm font-bold text-gray-900">They Decide</span>
           </div>
           <p className="text-xs text-gray-600 leading-relaxed">
-            They'll set their own price when accepting
+            Let them set their own price
           </p>
         </button>
 
-        {/* Propose Price */}
+        {/* Offer a Price */}
         <button
           type="button"
           onClick={() => handleOptionChange('propose')}
@@ -76,19 +80,19 @@ function PriceProposal({ onPriceChange }) {
                 <div className="w-2 h-2 rounded-full bg-white"></div>
               )}
             </div>
-            <span className="text-sm font-bold text-gray-900">Propose Price</span>
+            <span className="text-sm font-bold text-gray-900">Make an Offer</span>
           </div>
           <p className="text-xs text-gray-600 leading-relaxed">
-            Suggest a specific amount
+            Propose a specific amount
           </p>
         </button>
       </div>
 
-      {/* Price Input - Shows when "Propose Price" is selected */}
+      {/* Price Input */}
       {priceOption === 'propose' && (
         <div className="mt-4 pt-4 border-t border-gray-200">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Your proposed price
+            Your offer
           </label>
           <div className="relative">
             <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-semibold">
@@ -122,6 +126,9 @@ function PriceProposal({ onPriceChange }) {
               </button>
             ))}
           </div>
+          <p className="text-xs text-gray-500 mt-3">
+            💡 They can accept or counter your offer
+          </p>
         </div>
       )}
     </div>

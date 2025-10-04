@@ -7,7 +7,6 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
   const [expertExists, setExpertExists] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Detect what type of identifier was entered
   useEffect(() => {
     if (!identifier.trim()) {
       setDetectedType(null);
@@ -18,28 +17,24 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
 
     const value = identifier.trim();
 
-    // Email detection
     if (value.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       setDetectedType('email');
       checkIfExpertExists(value);
       return;
     }
 
-    // LinkedIn URL detection
     if (value.includes('linkedin.com/')) {
       setDetectedType('linkedin');
       setExpertExists(null);
       return;
     }
 
-    // Social handle detection (starts with @)
     if (value.startsWith('@')) {
       setDetectedType('social');
       setExpertExists(null);
       return;
     }
 
-    // Default to name
     setDetectedType('name');
     setExpertExists(null);
   }, [identifier]);
@@ -49,18 +44,13 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
     setErrorMessage('');
     
     try {
-      // Mock API call - replace with actual API endpoint
       await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mock: randomly determine if expert exists (20% chance)
       const exists = Math.random() < 0.2;
       setExpertExists(exists);
       
       if (exists) {
-        setErrorMessage('This expert is already on QuickChat! Redirecting to their profile...');
-        // In real implementation: redirect to /u/their-handle or /ask?expert=handle
+        setErrorMessage('This person is already on QuickChat! Redirecting to their profile...');
         setTimeout(() => {
-          // window.location.href = `/u/${mockHandle}`;
         }, 2000);
       }
     } catch (error) {
@@ -72,7 +62,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
 
   const handleContinue = () => {
     if (!identifier.trim()) {
-      setErrorMessage('Please enter how you know this expert');
+      setErrorMessage('Please enter who you want to ask');
       return;
     }
 
@@ -87,19 +77,16 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
     const value = identifier.trim();
     
     if (detectedType === 'email') {
-      // Extract name from email (before @)
       return value.split('@')[0].replace(/[._-]/g, ' ');
     }
     
     if (detectedType === 'social') {
-      // Remove @ symbol
       return value.substring(1);
     }
     
     if (detectedType === 'linkedin') {
-      // Try to extract name from LinkedIn URL
       const match = value.match(/linkedin\.com\/in\/([^\/]+)/);
-      return match ? match[1].replace(/-/g, ' ') : 'this expert';
+      return match ? match[1].replace(/-/g, ' ') : 'this person';
     }
     
     return value;
@@ -153,12 +140,11 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Who do you want to invite?</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Who would you like to ask?</h2>
         <p className="text-gray-600">Enter their email, LinkedIn, social handle, or name</p>
       </div>
 
       <div className="space-y-4">
-        {/* Input Field */}
         <div className="relative">
           <input
             type="text"
@@ -169,7 +155,6 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
             autoFocus
           />
           
-          {/* Type indicator icon */}
           {detectedType && (
             <div className="absolute right-4 top-1/2 -translate-y-1/2">
               {isChecking ? (
@@ -181,7 +166,6 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
           )}
         </div>
 
-        {/* Detection feedback */}
         {detectedType && !errorMessage && !expertExists && (
           <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
@@ -191,7 +175,6 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
           </div>
         )}
 
-        {/* Expert already exists message */}
         {expertExists && (
           <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
             <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,12 +182,11 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
             </svg>
             <div className="flex-1">
               <p className="font-semibold text-green-900">Great news!</p>
-              <p className="text-sm text-green-700 mt-1">This expert is already on QuickChat. You can ask them directly without sending an invitation.</p>
+              <p className="text-sm text-green-700 mt-1">This person is already on QuickChat. You can ask them directly without needing to invite them.</p>
             </div>
           </div>
         )}
 
-        {/* Error message */}
         {errorMessage && !expertExists && (
           <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
             <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +196,6 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
           </div>
         )}
 
-        {/* Examples */}
         {!identifier && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <p className="text-sm font-semibold text-gray-700 mb-3">Examples:</p>
@@ -250,7 +231,6 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
           </div>
         )}
 
-        {/* Continue button */}
         <button
           onClick={handleContinue}
           disabled={!identifier.trim() || isChecking || expertExists}

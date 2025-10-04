@@ -22,12 +22,12 @@ function InviteSentPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           ),
-          title: 'Email Sent!',
-          description: `We've sent an email invitation to ${expertName} with your question.`,
+          title: 'Question Sent!',
+          description: `We've sent your question to ${expertName} along with an invitation to answer on QuickChat.`,
           nextSteps: [
-            'They\'ll receive your question and invitation to join QuickChat',
-            'Once they sign up and accept, we\'ll notify you',
-            'You\'ll receive their answer via email'
+            'They\'ll receive your question and an invitation to join QuickChat',
+            'Once they sign up and view your question, we\'ll notify you',
+            'You\'ll receive their answer via email when they respond'
           ]
         };
       case 'linkedin':
@@ -41,8 +41,8 @@ function InviteSentPage() {
           description: `You have a message ready for ${expertName} on LinkedIn.`,
           nextSteps: [
             'Send them the message you copied on LinkedIn',
-            'They\'ll use the link to sign up and see your question',
-            'You\'ll be notified when they respond'
+            'They\'ll use the link to see your question and join QuickChat',
+            'You\'ll be notified when they view and respond to your question'
           ]
         };
       case 'social':
@@ -57,7 +57,7 @@ function InviteSentPage() {
           nextSteps: [
             'Share the message you copied on Instagram, Twitter, or DM',
             'They\'ll join QuickChat using your unique invitation link',
-            'We\'ll email you when they respond to your question'
+            'We\'ll email you when they view your question and send their answer'
           ]
         };
       default:
@@ -67,11 +67,11 @@ function InviteSentPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ),
-          title: 'Invitation Ready!',
-          description: `Share your invitation with ${expertName}.`,
+          title: 'Question Ready!',
+          description: `Share your question with ${expertName}.`,
           nextSteps: [
             'Send them the message however you prefer',
-            'They\'ll sign up using your invitation link',
+            'They\'ll join QuickChat to see your question',
             'You\'ll be notified when they answer'
           ]
         };
@@ -84,7 +84,6 @@ function InviteSentPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50">
       <main className="container mx-auto px-4 py-20 pt-32">
         <div className="max-w-2xl mx-auto">
-          {/* Success Animation */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-100 mb-6 animate-bounce">
               <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,9 +92,7 @@ function InviteSentPage() {
             </div>
           </div>
 
-          {/* Main Card */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-            {/* Header */}
             <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-8 py-6 text-center">
               <h1 className="text-3xl font-black text-white mb-2">
                 {methodInfo.title}
@@ -105,14 +102,11 @@ function InviteSentPage() {
               </p>
             </div>
 
-            {/* Content */}
             <div className="p-8">
-              {/* Icon */}
               <div className="flex justify-center mb-6">
                 {methodInfo.icon}
               </div>
 
-              {/* Next Steps */}
               <div className="mb-8">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">What happens next?</h2>
                 <div className="space-y-3">
@@ -127,14 +121,13 @@ function InviteSentPage() {
                 </div>
               </div>
 
-              {/* Tip Box */}
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                 <div className="flex gap-3">
                   <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                   <div>
-                    <p className="font-semibold text-amber-900 mb-1">Pro Tip</p>
+                    <p className="font-semibold text-amber-900 mb-1">💡 Tip</p>
                     <p className="text-sm text-amber-700">
                       The sooner {expertName} joins, the faster you'll get your answer. Consider following up if you don't hear back within a few days.
                     </p>
@@ -142,29 +135,27 @@ function InviteSentPage() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="space-y-3">
                 <Link
-                  to="/"
+                  to="/invite"
                   className="block w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] text-center"
                 >
-                  Invite Another Expert
+                  Ask Another Question
                 </Link>
                 <Link
-                  to="/dashboard"
+                  to="/"
                   className="block w-full border-2 border-gray-300 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-50 transition text-center"
                 >
-                  Go to Dashboard
+                  Back to Home
                 </Link>
               </div>
             </div>
           </div>
 
-          {/* Additional Info */}
           <div className="text-center mt-8 text-sm text-gray-600">
             <p>
               Questions? Check our{' '}
-              <Link to="/help" className="text-indigo-600 hover:text-indigo-700 font-semibold">
+              <Link to="/faq" className="text-indigo-600 hover:text-indigo-700 font-semibold">
                 Help Center
               </Link>
               {' '}or{' '}

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import apiClient from '@/api';
 import SideMenu from './SideMenu';
-import logo from '@/assets/images/logo-quickchat.png';
+import logo from '@/assets/images/logo.svg';
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -38,27 +38,19 @@ function Navbar() {
 
       try {
         const response = await apiClient.get('/me/profile');
-        console.log('Navbar - Full API response:', response.data);
-        
         const userData = response.data?.user || {};
         const expertData = response.data?.expert_profile || {};
         
-        console.log('Navbar - User data:', userData);
-        console.log('Navbar - Expert data:', expertData);
-        console.log('Navbar - Expert Avatar URL:', expertData.avatar_url);
-        
-        // Avatar is stored on expert_profile, not user
         const avatarUrl = expertData.avatar_url || null;
         
         setUserProfile({
           name: userData.name || 'Expert',
           email: userData.email,
           avatar_url: avatarUrl,
-          pendingQuestions: 3, // TODO: Replace with actual count from API
+          pendingQuestions: 3,
         });
       } catch (err) {
         console.error('Failed to fetch user profile:', err);
-        // Fallback to localStorage if API fails
         const storedName = localStorage.getItem('qc_user_name');
         const storedEmail = localStorage.getItem('qc_user_email');
         setUserProfile({
@@ -75,7 +67,6 @@ function Navbar() {
     fetchUserProfile();
   }, [isAuthenticated]);
 
-  // User Avatar Component
   const UserAvatar = ({ size = 28, avatarUrl }) => {
     const [imageError, setImageError] = useState(false);
 
@@ -91,7 +82,6 @@ function Navbar() {
       );
     }
 
-    // Default avatar fallback
     return (
       <div 
         className="rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center flex-shrink-0"
@@ -115,7 +105,6 @@ function Navbar() {
     );
   };
 
-  // Notification Badge Component
   const NotificationBadge = ({ count }) => {
     if (!count || count === 0) return null;
     
@@ -129,7 +118,6 @@ function Navbar() {
     );
   };
 
-  // Tooltip Component
   const Tooltip = ({ children }) => (
     <div className="absolute top-full mt-2 right-0 bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap z-50 animate-fadeIn">
       {children}
@@ -137,7 +125,6 @@ function Navbar() {
     </div>
   );
 
-  // Loading Skeleton Component
   const LoadingSkeleton = () => (
     <div className="flex items-center gap-2 px-2 py-1.5">
       <div className="hidden sm:block w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
@@ -178,13 +165,26 @@ function Navbar() {
                 <img 
                   src={logo} 
                   alt="QuickChat" 
-                  className="h-7 w-auto transition-transform duration-200 hover:scale-105" 
+                  className="h-9 w-auto transition-transform duration-200 hover:scale-105" 
                 />
               </Link>
             </div>
 
-            {/* Right Section - Badge, Loading, or Sign In */}
-            <div className="flex items-center">
+            {/* Right Section - Ask Anyone + Badge/Loading/Sign In */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Ask Anyone Button */}
+              <Link
+                to="/invite"
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold text-sm hover:shadow-md transition-all duration-200 transform hover:scale-105"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span className="hidden sm:inline">Ask Anyone</span>
+                <span className="sm:hidden">Ask</span>
+              </Link>
+
+              {/* User Section */}
               {isAuthenticated ? (
                 isLoadingProfile ? (
                   <LoadingSkeleton />
@@ -197,19 +197,16 @@ function Navbar() {
                       className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-indigo-50 transition-all duration-200 group"
                       aria-label={`Go to dashboard${userProfile.pendingQuestions > 0 ? ` - ${userProfile.pendingQuestions} pending questions` : ''}`}
                     >
-                      {/* User Name (hidden on small screens) */}
                       <span className="hidden sm:block text-sm font-medium text-gray-700 group-hover:text-indigo-600 transition-colors">
                         {userProfile.name.split(' ')[0]}
                       </span>
                       
-                      {/* Avatar with Notification Badge */}
                       <div className="relative">
                         <UserAvatar size={28} avatarUrl={userProfile.avatar_url} />
                         <NotificationBadge count={userProfile.pendingQuestions} />
                       </div>
                     </button>
 
-                    {/* Tooltip on hover */}
                     {showTooltip && userProfile.pendingQuestions > 0 && (
                       <Tooltip>
                         {userProfile.pendingQuestions} pending question{userProfile.pendingQuestions !== 1 ? 's' : ''}
@@ -233,7 +230,6 @@ function Navbar() {
         </nav>
       </header>
 
-      {/* Compact Spacer */}
       <div className={`transition-all duration-300 ${isScrolled ? 'h-12' : 'h-14'}`}></div>
 
       <SideMenu 

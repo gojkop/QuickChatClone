@@ -6,7 +6,7 @@ import PriceProposal from '@/components/invite/PriceProposal';
 import ReviewModal from '@/components/question/ReviewModal';
 
 function InvitePage() {
-  const [step, setStep] = useState(1); // 1: identifier, 2: question+price, 3: review
+  const [step, setStep] = useState(1);
   const [expertInfo, setExpertInfo] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [questionData, setQuestionData] = useState(null);
@@ -17,11 +17,9 @@ function InvitePage() {
   const questionComposerRef = useRef();
 
   useEffect(() => {
-    // Check if expert was passed via URL (from home page invite form)
     const params = new URLSearchParams(location.search);
     const expert = params.get('expert');
     if (expert) {
-      // Skip step 1 and go directly to step 2
       setExpertInfo({
         identifier: expert,
         type: 'name',
@@ -47,14 +45,13 @@ function InvitePage() {
   };
 
   const handleSendInvite = (contactInfo) => {
-    console.log("Sending invite with:", {
+    console.log("Sending question with:", {
       expert: expertInfo,
       question: questionData,
       contact: contactInfo,
       priceProposal
     });
     
-    // Navigate to success page with delivery method info
     navigate(`/invite-sent?expert=${encodeURIComponent(expertInfo.name)}&method=${expertInfo.type}`);
   };
 
@@ -67,7 +64,6 @@ function InvitePage() {
     setExpertInfo(null);
   };
 
-  // Progress indicator
   const renderProgressBar = () => (
     <div className="mb-8">
       <div className="flex items-center justify-between max-w-md mx-auto">
@@ -116,10 +112,10 @@ function InvitePage() {
           <div className="text-center mb-10">
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
               {step === 1 ? (
-                'Invite an Expert'
+                'Ask Anyone a Question'
               ) : (
                 <>
-                  Invite{' '}
+                  Ask{' '}
                   <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
                     {expertInfo?.name}
                   </span>
@@ -128,8 +124,8 @@ function InvitePage() {
             </h1>
             <p className="text-gray-600">
               {step === 1 
-                ? 'Start by telling us who you want to invite to QuickChat'
-                : 'They\'re not on QuickChat yet. Send your question and we\'ll invite them to join.'
+                ? 'Connect with anyone and get expert answers — we\'ll invite them to QuickChat'
+                : 'They\'ll get your question and an invitation to answer on QuickChat'
               }
             </p>
           </div>
@@ -148,7 +144,6 @@ function InvitePage() {
           {/* Step 2: Question + Price */}
           {step === 2 && (
             <>
-              {/* Back button */}
               <button
                 onClick={handleBackToIdentifier}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium mb-6 transition"
@@ -156,10 +151,9 @@ function InvitePage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                 </svg>
-                <span>Change expert</span>
+                <span>Ask someone else</span>
               </button>
 
-              {/* Question Composer */}
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8 mb-6">
                 <QuestionComposer 
                   ref={questionComposerRef}
@@ -167,7 +161,6 @@ function InvitePage() {
                 />
               </div>
 
-              {/* Price Proposal + Continue Button */}
               <div className="space-y-4">
                 <PriceProposal onPriceChange={setPriceProposal} />
                 
@@ -175,7 +168,7 @@ function InvitePage() {
                   onClick={handleContinueToReview}
                   className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
                 >
-                  Continue to Review
+                  Review & Send Question
                 </button>
               </div>
             </>
@@ -183,7 +176,6 @@ function InvitePage() {
         </div>
       </main>
 
-      {/* Review Modal */}
       {showReviewModal && questionData && (
         <ReviewModal
           isOpen={showReviewModal}
