@@ -82,6 +82,16 @@ function PublicProfilePage() {
       return;
     }
 
+    const coercePublic = (val) => {
+      if (typeof val === 'boolean') return val;
+      if (typeof val === 'number') return val === 1;
+      if (typeof val === 'string') {
+        const v = val.trim().toLowerCase();
+        return v === '1' || v === 'true' || v === 't' || v === 'yes' || v === 'on';
+      }
+      return false;
+    };
+
     const fetchPublicProfile = async () => {
       setIsLoading(true);
       setError('');
@@ -90,28 +100,26 @@ function PublicProfilePage() {
           `/public/profile?handle=${encodeURIComponent(handle)}`
         );
 
-        // accept either flat or nested shapes
-        const p = data?.expert_profile ?? data ?? {};
-        const user = data?.user ?? p.user ?? null;
+        // prefer nested expert_profile shape
+        const ep = data?.expert_profile ?? data ?? null;
+        const user = data?.user ?? ep?.user ?? null;
 
-        // normalize boolean-ish values
-        const isPublic =
-          p.public === true ||
-          p.public === 1 ||
-          p.public === '1' ||
-          (typeof p.public === 'string' && p.public.toLowerCase() === 'true');
-
-        if (!p || !isPublic) {
-          throw new Error('This profile is private or does not exist.');
+        if (!ep) {
+          throw new Error('This profile does not exist.');
         }
 
+        const isPublic = coercePublic(ep.public);
+
         setProfile({
-          ...p,
+          ...ep,
+          isPublic,
           user,
-          avatar_url: p.avatar_url ?? p.avatar ?? null,
-          // your defaults (keep/change as you wish)
-          charity_percentage: p.charity_percentage ?? 25,
-          selected_charity: p.selected_charity ?? 'unicef',
+          // normalize common field names
+          name: ep.name ?? user?.name ?? null,
+          avatar_url: ep.avatar_url ?? ep.avatar ?? null,
+          // sensible defaults
+          charity_percentage: ep.charity_percentage ?? 25,
+          selected_charity: ep.selected_charity ?? 'unicef',
         });
       } catch (err) {
         setError(err.message || 'Could not load profile.');
@@ -122,6 +130,7 @@ function PublicProfilePage() {
 
     fetchPublicProfile();
   }, [handle]);
+
 
 
   const handleAskQuestion = () => {
