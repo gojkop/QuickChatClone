@@ -18,7 +18,7 @@
           fill="#1F2937">QUICK</text>
     
     <!-- CHAT in gradient -->
-    <text x="245" y="0" 
+    <text x="220" y="0" 
           font-family="Inter, system-ui, -apple-system, sans-serif" 
           font-size="72" 
           font-weight="900" 
@@ -26,9 +26,9 @@
           fill="url(#chatGrad)">CHAT</text>
     
     <!-- INSTANT EXPERTISE tagline -->
-    <text x="2" y="32" 
+    <text x="3" y="32" 
           font-family="Inter, system-ui, -apple-system, sans-serif" 
-          font-size="24" 
+          font-size="28" 
           font-weight="600" 
           letter-spacing="2"
           fill="#6B7280">BEYOND AI ANSWERS</text>
