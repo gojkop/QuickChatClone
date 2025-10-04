@@ -13,10 +13,8 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
   };
 
   const handleCopyProfileLink = () => {
-    // Replace with actual handle from user data
     const profileUrl = `${window.location.origin}/u/sarah_marketing`;
     navigator.clipboard.writeText(profileUrl);
-    // Optional: Add toast notification here
     onClose();
   };
 
@@ -25,20 +23,17 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
       section: 'Product',
       items: [
         { to: '/pricing', label: 'Pricing', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
-        { to: '/social-impact', label: 'Social Impact', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg> },
-        { to: '/invite', label: 'Invite an Expert', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg> }
+        { to: '/social-impact', label: 'Social Impact', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg> }
       ]
     }
   ];
 
-  // Account menu items for authenticated users
   const accountItems = [
     { to: '/expert', label: 'Dashboard', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
     { to: '/expert#settings', label: 'Settings', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
     { to: '/u/sarah_marketing', label: 'View Public Profile', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> },
   ];
 
-  // Loading Skeleton for Quick Actions
   const QuickActionsLoading = () => (
     <div className="px-4 py-4 bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 border-b border-gray-200">
       <div className="px-3 mb-2 text-xs font-bold text-gray-600 uppercase tracking-wider">
@@ -56,16 +51,13 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
 
   return (
     <div className={`fixed inset-0 z-50 transition-all duration-300 ease-out ${isOpen ? '' : 'pointer-events-none'}`}>
-      {/* Backdrop with blur */}
       <div
         className={`absolute inset-0 bg-gray-900/20 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       />
 
-      {/* Sidebar */}
       <aside className={`relative h-full w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <Link to="/" onClick={onClose} className="flex items-center">
             <img src={logo} alt="QuickChat" className="h-8 w-auto" />
@@ -81,7 +73,6 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
           </button>
         </div>
 
-        {/* Quick Actions Panel - Only for authenticated users */}
         {isAuthenticated && (
           isLoadingProfile ? (
             <QuickActionsLoading />
@@ -91,7 +82,6 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
                 Quick Actions
               </div>
               
-              {/* Pending Questions Alert */}
               {userInfo.pendingQuestions > 0 ? (
                 <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3 mb-3">
                   <div className="flex items-center justify-between mb-2">
@@ -114,7 +104,6 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
                   </Link>
                 </div>
               ) : (
-                /* Stats when no pending questions */
                 <div className="bg-white/70 backdrop-blur-sm rounded-lg p-3 border border-indigo-100">
                   <div className="grid grid-cols-2 gap-3 text-center">
                     <div>
@@ -133,7 +122,6 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
                 </div>
               )}
 
-              {/* Quick Dashboard Link */}
               <Link
                 to="/expert"
                 onClick={onClose}
@@ -148,9 +136,7 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
           ) : null
         )}
 
-        {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-6">
-          {/* Product Section */}
           {menuItems.map((section, idx) => (
             <div key={idx} className="mb-6">
               <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -175,7 +161,6 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
             </div>
           ))}
 
-          {/* My Account Section - Only for authenticated users */}
           {isAuthenticated && !isLoadingProfile && (
             <div className="mb-6">
               <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -197,7 +182,6 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
                   </li>
                 ))}
                 
-                {/* Copy Profile Link Button */}
                 <li>
                   <button
                     onClick={handleCopyProfileLink}
@@ -215,7 +199,6 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
             </div>
           )}
 
-          {/* Account Section - Sign In/Out */}
           {!isAuthenticated && (
             <div className="mb-6">
               <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -239,7 +222,6 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
           )}
         </nav>
 
-        {/* Footer Links & Sign Out */}
         <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
           <div className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
             Support
@@ -283,7 +265,6 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
             </li>
           </ul>
 
-          {/* Sign Out Button */}
           {isAuthenticated && !isLoadingProfile && (
             <button
               onClick={handleSignOut}
