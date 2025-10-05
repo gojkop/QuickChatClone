@@ -32,12 +32,11 @@ function AnswerRecorder({ question, onReady, onCancel }) {
     };
   }, [mediaBlobUrl]);
 
-  // Fix for video playback - ensure video loads when blob URL changes
+  // Ensure review video loads when blob URL is ready
   useEffect(() => {
     if (reviewVideoRef.current && mediaBlobUrl && recordingState === 'review' && recordingMode === 'video') {
+      console.log('Loading video with URL:', mediaBlobUrl);
       const videoEl = reviewVideoRef.current;
-      videoEl.src = mediaBlobUrl;
-      videoEl.load();
       
       videoEl.onloadedmetadata = () => {
         console.log('Video metadata loaded. Duration:', videoEl.duration);
@@ -46,6 +45,8 @@ function AnswerRecorder({ question, onReady, onCancel }) {
       videoEl.onerror = (e) => {
         console.error('Video error:', e, videoEl.error);
       };
+      
+      videoEl.load();
     }
   }, [mediaBlobUrl, recordingState, recordingMode]);
 
@@ -261,42 +262,45 @@ function AnswerRecorder({ question, onReady, onCancel }) {
               </div>
             )}
             
-            <div className="p-4 bg-white flex items-center justify-between">
-              <button 
-                onClick={handleRerecord}
-                className="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition"
-              >
-                Cancel
-              </button>
-              
-              <button
-                onClick={toggleRecordingMode}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-              >
-                {recordingMode === 'video' ? (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                    <span>Audio Only</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <span>Video</span>
-                  </>
-                )}
-              </button>
-              
-              <button
-                onClick={startRecording}
-                className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-lg"
-              >
-                <div className="w-3 h-3 rounded-full bg-white"></div>
-                <span>Start Recording</span>
-              </button>
+            <div className="p-3 sm:p-4 bg-white">
+              {/* Mobile: Stacked layout, Desktop: Row layout */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <button 
+                  onClick={handleRerecord}
+                  className="order-3 sm:order-1 px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition text-sm"
+                >
+                  Cancel
+                </button>
+                
+                <button
+                  onClick={toggleRecordingMode}
+                  className="order-2 flex items-center justify-center gap-2 px-4 py-2 text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm"
+                >
+                  {recordingMode === 'video' ? (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                      <span>Audio Only</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <span>Video</span>
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  onClick={startRecording}
+                  className="order-1 sm:order-3 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-lg"
+                >
+                  <div className="w-3 h-3 rounded-full bg-white"></div>
+                  <span>Start Recording</span>
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -321,17 +325,17 @@ function AnswerRecorder({ question, onReady, onCancel }) {
                 </div>
               </div>
             )}
-            <div className="p-6 text-center">
-              <div className="inline-flex items-center gap-3 mb-4">
-                <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
-                <span className="text-red-700 font-bold text-lg">Recording...</span>
+            <div className="p-4 sm:p-6 text-center">
+              <div className="inline-flex items-center gap-3 mb-3 sm:mb-4">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-600 animate-pulse"></div>
+                <span className="text-red-700 font-bold text-base sm:text-lg">Recording...</span>
               </div>
-              <div className="text-4xl font-black text-red-600 mb-4" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <div className="text-3xl sm:text-4xl font-black text-red-600 mb-3 sm:mb-4" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {formatTimer(timer)}
               </div>
               <button
                 onClick={stopRecording}
-                className="px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
               >
                 Stop Recording
               </button>
@@ -343,14 +347,24 @@ function AnswerRecorder({ question, onReady, onCancel }) {
         return (
           <div className="border-2 border-green-500 rounded-xl overflow-hidden">
             {recordingMode === 'video' ? (
-              <video 
-                ref={reviewVideoRef}
-                src={mediaBlobUrl}
-                className="w-full aspect-video bg-black"
-                controls
-                playsInline
-                preload="auto"
-              />
+              <div className="relative">
+                {!mediaBlobUrl && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                    <div className="text-center text-white">
+                      <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                      <p>Processing video...</p>
+                    </div>
+                  </div>
+                )}
+                <video 
+                  ref={reviewVideoRef}
+                  src={mediaBlobUrl}
+                  className="w-full aspect-video bg-black"
+                  controls
+                  playsInline
+                  preload="auto"
+                />
+              </div>
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                 <audio 
@@ -362,8 +376,8 @@ function AnswerRecorder({ question, onReady, onCancel }) {
               </div>
             )}
             
-            <div className="p-4 bg-green-50 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-green-700">
+            <div className="p-3 sm:p-4 bg-green-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-2 text-green-700 justify-center sm:justify-start">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -371,7 +385,7 @@ function AnswerRecorder({ question, onReady, onCancel }) {
               </div>
               <button
                 onClick={handleRerecord}
-                className="px-4 py-2 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
+                className="w-full sm:w-auto px-4 py-2 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
               >
                 Re-record
               </button>
