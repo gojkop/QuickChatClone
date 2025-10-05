@@ -3,6 +3,7 @@
 
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import FormData from 'form-data';
+import axios from 'axios';
 
 export const config = {
   api: {
@@ -81,7 +82,7 @@ export default async function handler(req, res) {
     let streamVideoStatus = null;
     let streamVideoUrl = null;
     
-    if (recordingBlob && recordingMode) {
+          if (recordingBlob && recordingMode) {
       console.log('📹 Uploading recording to Cloudflare Stream...');
       
       try {
@@ -97,18 +98,20 @@ export default async function handler(req, res) {
           name: `Question: ${title}`
         }));
 
-        const streamResponse = await fetch(
+        const streamResponse = await axios.post(
           `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/stream`,
+          formData,
           {
-            method: 'POST',
             headers: {
               'Authorization': `Bearer ${process.env.CLOUDFLARE_STREAM_API_TOKEN}`,
+              ...formData.getHeaders()
             },
-            body: formData
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity
           }
         );
 
-        const streamData = await streamResponse.json();
+        const streamData = streamResponse.data;
         
         if (!streamData.success) {
           console.error('❌ Stream upload failed:', streamData.errors);
@@ -134,13 +137,12 @@ export default async function handler(req, res) {
       console.log(`📎 Uploading ${attachments.length} attachments...`);
       
       try {
-        
         const s3Client = new S3Client({
           region: 'auto',
           endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
           credentials: {
-            accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
-            secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+            accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY,
+            secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_KEY,
           },
         });
 
@@ -151,7 +153,7 @@ export default async function handler(req, res) {
           const key = `question-attachments/${timestamp}-${sanitizedName}`;
 
           await s3Client.send(new PutObjectCommand({
-            Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+            Bucket: process.env.CLOUDFLARE_R2_BUCKET,
             Key: key,
             Body: buffer,
             ContentType: attachment.type || 'application/octet-stream',
