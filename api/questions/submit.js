@@ -1,6 +1,9 @@
 // api/questions/submit.js
 // Question submission with Cloudflare Stream and R2 uploads
 
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import FormData from 'form-data';
+
 export const config = {
   api: {
     bodyParser: {
