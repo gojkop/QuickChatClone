@@ -8,10 +8,10 @@ const getTimeAgo = (timestamp) => {
   const diff = now - timestamp;
   
   if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
-  return `${Math.floor(diff / 604800)}w`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return `${Math.floor(diff / 604800)}w ago`;
 };
 
 // Helper to format SLA remaining time
@@ -120,14 +120,18 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {questions.map((question) => {
+              {questions.map((question) => {
                   const isPending = question.status === 'paid' && !question.answered_at;
-                  const statusConfig = {
-                    'paid': { label: 'Pending', color: 'bg-amber-100 text-amber-700' },
-                    'answered': { label: 'Answered', color: 'bg-green-100 text-green-700' },
-                    'pending_payment': { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' },
-                  };
-                  const status = statusConfig[question.status] || statusConfig['pending_payment'];
+                  
+                  // Better status mapping
+                  let statusDisplay;
+                  if (question.answered_at || question.status === 'answered') {
+                    statusDisplay = { label: 'Answered', color: 'bg-green-100 text-green-700' };
+                  } else if (question.status === 'paid') {
+                    statusDisplay = { label: 'Pending', color: 'bg-amber-100 text-amber-700' };
+                  } else {
+                    statusDisplay = { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' };
+                  }
 
                   return (
                     <tr 
@@ -136,11 +140,11 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                       onClick={() => handleQuestionClick(question)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${status.color}`}>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusDisplay.color}`}>
                           {isPending && (
                             <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
                           )}
-                          {status.label}
+                          {statusDisplay.label}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -150,7 +154,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                               {question.title}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span>{getTimeAgo(question.created_at)} ago</span>
+                              <span>{getTimeAgo(question.created_at)}</span>
                               {question.media_asset_id && (
                                 <span className="inline-flex items-center gap-1 text-indigo-600">
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,12 +210,16 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
           <div className="lg:hidden divide-y divide-gray-200">
             {questions.map((question) => {
               const isPending = question.status === 'paid' && !question.answered_at;
-              const statusConfig = {
-                'paid': { label: 'Pending', color: 'bg-amber-100 text-amber-700' },
-                'answered': { label: 'Answered', color: 'bg-green-100 text-green-700' },
-                'pending_payment': { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' },
-              };
-              const status = statusConfig[question.status] || statusConfig['pending_payment'];
+              
+              // Better status mapping
+              let statusDisplay;
+              if (question.answered_at || question.status === 'answered') {
+                statusDisplay = { label: 'Answered', color: 'bg-green-100 text-green-700' };
+              } else if (question.status === 'paid') {
+                statusDisplay = { label: 'Pending', color: 'bg-amber-100 text-amber-700' };
+              } else {
+                statusDisplay = { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' };
+              }
 
               return (
                 <div 
@@ -223,11 +231,11 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0 mr-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${status.color}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${statusDisplay.color}`}>
                           {isPending && (
                             <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
                           )}
-                          {status.label}
+                          {statusDisplay.label}
                         </span>
                         {isPending && (
                           <span className="text-xs font-semibold text-gray-600">
@@ -239,7 +247,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                         {question.title}
                       </h3>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span>{getTimeAgo(question.created_at)} ago</span>
+                        <span>{getTimeAgo(question.created_at)}</span>
                         {question.media_asset_id && (
                           <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />

@@ -103,16 +103,6 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onSubmit, on
               </div>
             </div>
 
-            {/* Detailed Content Preview */}
-            {hasText && (
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">Written Response Preview</h3>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 max-h-40 overflow-y-auto">
-                  <p className="text-gray-700 whitespace-pre-wrap text-sm">{answerData.text}</p>
-                </div>
-              </div>
-            )}
-
             {/* Important Notice */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex gap-3">

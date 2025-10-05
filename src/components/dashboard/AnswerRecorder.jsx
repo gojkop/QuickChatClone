@@ -345,21 +345,19 @@ function AnswerRecorder({ question, onReady, onCancel }) {
             {recordingMode === 'video' ? (
               <video 
                 ref={reviewVideoRef}
+                src={mediaBlobUrl}
                 className="w-full aspect-video bg-black"
                 controls
                 playsInline
-                preload="metadata"
-              >
-                <source src={mediaBlobUrl} type="video/webm" />
-                Your browser does not support the video tag.
-              </video>
+                preload="auto"
+              />
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                 <audio 
                   src={mediaBlobUrl}
                   controls
                   className="w-full max-w-md px-4"
-                  preload="metadata"
+                  preload="auto"
                 />
               </div>
             )}
