@@ -1,3 +1,4 @@
+// src/pages/InvitePage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ExpertIdentifier from '@/components/invite/ExpertIdentifier';
@@ -34,10 +35,13 @@ function InvitePage() {
     setStep(2);
   };
 
-  const handleContinueToReview = () => {
+  // KEY CHANGE: Made async to support video concatenation
+  const handleContinueToReview = async () => {
     if (questionComposerRef.current) {
-      const data = questionComposerRef.current.validateAndGetData();
+      // This will trigger concatenation if there are segments - now async!
+      const data = await questionComposerRef.current.validateAndGetData();
       if (data) {
+        console.log('Question data with duration:', data.recordingDuration);
         setQuestionData(data);
         setShowReviewModal(true);
       }
