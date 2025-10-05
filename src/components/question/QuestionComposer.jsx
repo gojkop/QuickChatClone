@@ -1,3 +1,4 @@
+// src/components/question/QuestionComposer.jsx
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { concatenateSegments } from '@/utils/videoConcatenator';
 
@@ -15,6 +16,10 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   const [currentSegment, setCurrentSegment] = useState(null);
   const [recordingState, setRecordingState] = useState('idle');
   const [timer, setTimer] = useState(0);
+  
+  // Camera switching state
+  const [facingMode, setFacingMode] = useState('user'); // 'user' = front, 'environment' = back
+  const [isFlipping, setIsFlipping] = useState(false);
 
   // Concatenation state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -62,7 +67,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       let finalRecordingMode = null;
       let finalDuration = 0;
 
-      // Concatenate segments if any exist
       if (segments.length > 0) {
         setIsProcessing(true);
         try {

@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ExpertIdentifier from '@/components/invite/ExpertIdentifier';
 import QuestionComposer from '@/components/question/QuestionComposer';
 import PriceProposal from '@/components/invite/PriceProposal';
-import ReviewModal from '@/components/question/ReviewModal';
+import ReviewModal from '@/components/invite/ReviewModal';
 
 function InvitePage() {
   const [step, setStep] = useState(1);
