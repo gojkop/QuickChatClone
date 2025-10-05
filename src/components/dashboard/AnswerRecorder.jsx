@@ -1,6 +1,7 @@
+// src/components/dashboard/AnswerRecorder.jsx
 import React, { useState, useRef, useEffect } from 'react';
 
-const MAX_RECORDING_SECONDS = 300; // 5 minutes for answers
+const MAX_RECORDING_SECONDS = 900; // 15 minutes for answers
 
 function AnswerRecorder({ question, onReady, onCancel }) {
   const [text, setText] = useState('');
@@ -9,6 +10,7 @@ function AnswerRecorder({ question, onReady, onCancel }) {
   const [mediaBlob, setMediaBlob] = useState(null);
   const [mediaBlobUrl, setMediaBlobUrl] = useState(null);
   const [timer, setTimer] = useState(MAX_RECORDING_SECONDS);
+  const [files, setFiles] = useState([]);
 
   const videoRef = useRef(null);
   const reviewVideoRef = useRef(null);
@@ -30,6 +32,23 @@ function AnswerRecorder({ question, onReady, onCancel }) {
     };
   }, [mediaBlobUrl]);
 
+  // Fix for video playback - ensure video loads when blob URL changes
+  useEffect(() => {
+    if (reviewVideoRef.current && mediaBlobUrl && recordingState === 'review' && recordingMode === 'video') {
+      const videoEl = reviewVideoRef.current;
+      videoEl.src = mediaBlobUrl;
+      videoEl.load();
+      
+      videoEl.onloadedmetadata = () => {
+        console.log('Video metadata loaded. Duration:', videoEl.duration);
+      };
+      
+      videoEl.onerror = (e) => {
+        console.error('Video error:', e, videoEl.error);
+      };
+    }
+  }, [mediaBlobUrl, recordingState, recordingMode]);
+
   const cleanupStream = () => {
     if (liveStreamRef.current) {
       liveStreamRef.current.getTracks().forEach(track => track.stop());
@@ -39,6 +58,19 @@ function AnswerRecorder({ question, onReady, onCancel }) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
     }
+  };
+
+  const handleFileChange = (e) => {
+    const newFiles = Array.from(e.target.files);
+    if (newFiles.length + files.length > 3) {
+      alert('Maximum 3 files allowed.');
+      return;
+    }
+    setFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const removeFile = (index) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const initiatePreview = async () => {
@@ -94,8 +126,10 @@ function AnswerRecorder({ question, onReady, onCancel }) {
     
     mediaRecorderRef.current.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
+      console.log('Recording stopped. Blob size:', blob.size, 'type:', blob.type);
       setMediaBlob(blob);
       const url = URL.createObjectURL(blob);
+      console.log('Created blob URL:', url);
       setMediaBlobUrl(url);
       setRecordingState('review');
       cleanupStream();
@@ -137,7 +171,8 @@ function AnswerRecorder({ question, onReady, onCancel }) {
     const data = {
       text,
       mediaBlob,
-      recordingMode
+      recordingMode,
+      files
     };
     
     onReady(data);
@@ -171,7 +206,7 @@ function AnswerRecorder({ question, onReady, onCancel }) {
               </div>
               <div>
                 <span className="text-indigo-600 font-semibold block">Click to Record {recordingMode === 'video' ? 'Video' : 'Audio'} Answer</span>
-                <span className="text-gray-500 text-sm">Maximum 5 minutes</span>
+                <span className="text-gray-500 text-sm">Maximum 15 minutes</span>
               </div>
             </div>
           </button>
@@ -310,19 +345,21 @@ function AnswerRecorder({ question, onReady, onCancel }) {
             {recordingMode === 'video' ? (
               <video 
                 ref={reviewVideoRef}
-                src={mediaBlobUrl}
                 className="w-full aspect-video bg-black"
                 controls
                 playsInline
-                preload="auto"
-              />
+                preload="metadata"
+              >
+                <source src={mediaBlobUrl} type="video/webm" />
+                Your browser does not support the video tag.
+              </video>
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                 <audio 
                   src={mediaBlobUrl}
                   controls
                   className="w-full max-w-md px-4"
-                  preload="auto"
+                  preload="metadata"
                 />
               </div>
             )}
@@ -358,7 +395,7 @@ function AnswerRecorder({ question, onReady, onCancel }) {
 
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Record Your Answer
+          Record Your Answer (max 15 minutes)
         </label>
         {renderRecorder()}
       </div>
@@ -377,6 +414,34 @@ function AnswerRecorder({ question, onReady, onCancel }) {
           placeholder="Add any written response or additional notes..."
         />
         <div className="text-right text-xs text-gray-500 mt-1">{text.length} / 5000</div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">
+          Attach Files <span className="text-gray-500 font-normal">(Optional, max 3)</span>
+        </label>
+        <input
+          type="file"
+          id="answer-file-upload"
+          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition"
+          multiple
+          onChange={handleFileChange}
+        />
+        {files.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {files.map((file, index) => (
+              <li key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                <span className="text-sm text-gray-700 truncate flex-1">{file.name}</span>
+                <button
+                  onClick={() => removeFile(index)}
+                  className="ml-3 text-red-500 hover:text-red-700 font-semibold text-sm"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200">

@@ -1,3 +1,4 @@
+// src/components/dashboard/QuestionActionsDropdown.jsx
 import React, { useState, useRef, useEffect } from 'react';
 
 function QuestionActionsDropdown({ question, onAction }) {
@@ -21,6 +22,7 @@ function QuestionActionsDropdown({ question, onAction }) {
   };
 
   const isPending = question.status === 'paid' && !question.answered_at;
+  const isAnswered = question.status === 'answered';
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -70,39 +72,66 @@ function QuestionActionsDropdown({ question, onAction }) {
                 </button>
 
                 <div className="border-t border-gray-200 my-1"></div>
+
+                <button
+                  onClick={() => handleAction('refund')}
+                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                >
+                  <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                  <span>Refund & Decline</span>
+                </button>
+              </>
+            )}
+
+            {isAnswered && (
+              <>
+                <button
+                  onClick={() => handleAction('view-answer')}
+                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                >
+                  <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span>View My Answer</span>
+                </button>
+
+                <div className="border-t border-gray-200 my-1"></div>
               </>
             )}
 
             <button
-              onClick={() => handleAction('view-profile')}
+              onClick={() => handleAction('archive')}
               className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
             >
               <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
               </svg>
-              <span>View Asker Profile</span>
+              <span>Archive Question</span>
             </button>
 
             <button
-              onClick={() => handleAction('refund')}
+              onClick={() => handleAction('block')}
               className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
             >
-              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
               </svg>
-              <span>Refund & Decline</span>
+              <span>Block Asker</span>
             </button>
 
             <div className="border-t border-gray-200 my-1"></div>
 
             <button
-              onClick={() => handleAction('block')}
+              onClick={() => handleAction('delete')}
               className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              <span>Block Asker</span>
+              <span>Delete Question</span>
             </button>
           </div>
         </div>

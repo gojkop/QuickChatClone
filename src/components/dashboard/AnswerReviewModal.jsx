@@ -1,3 +1,4 @@
+// src/components/dashboard/AnswerReviewModal.jsx
 import React from 'react';
 
 function AnswerReviewModal({ isOpen, onClose, answerData, question, onSubmit, onEdit }) {
@@ -6,6 +7,10 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onSubmit, on
   const handleSubmit = () => {
     onSubmit(answerData);
   };
+
+  const hasRecording = !!answerData.mediaBlob;
+  const hasText = !!answerData.text && answerData.text.trim().length > 0;
+  const hasFiles = answerData.files && answerData.files.length > 0;
 
   return (
     <div className="fixed inset-0 z-[60] overflow-y-auto">
@@ -37,37 +42,76 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onSubmit, on
               <p className="font-semibold text-gray-900">{question.title}</p>
             </div>
 
-            {/* Answer Details */}
+            {/* Answer Summary */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Your Answer</h3>
-              <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Answer Summary</h3>
+              <div className="space-y-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
+
                 {/* Recording Status */}
-                {answerData.mediaBlob && (
-                  <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-green-700 font-medium">
-                      {answerData.recordingMode === 'video' ? 'Video' : 'Audio'} answer recorded
-                    </span>
-                  </div>
-                )}
-
-                {/* Written Answer */}
-                {answerData.text && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Written response:</p>
-                    <div className="bg-white border border-gray-200 rounded-lg p-4">
-                      <p className="text-gray-700 whitespace-pre-wrap">{answerData.text}</p>
+                <div className="flex items-start">
+                  <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">
+                    {answerData.recordingMode === 'video' ? 'Video' : 'Audio'}
+                  </span>
+                  {hasRecording ? (
+                    <div className="text-sm font-medium text-green-700 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Recording Added</span>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <span className="text-sm text-gray-500">No Recording</span>
+                  )}
+                </div>
 
-                {!answerData.mediaBlob && !answerData.text && (
-                  <p className="text-amber-600 text-sm">No answer content recorded</p>
-                )}
+                {/* Written Response Status */}
+                <div className="flex items-start">
+                  <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Written</span>
+                  {hasText ? (
+                    <div className="text-sm font-medium text-green-700 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Added ({answerData.text.length} characters)</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-500">Not Added</span>
+                  )}
+                </div>
+
+                {/* Attachments Status */}
+                <div className="flex items-start">
+                  <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Files</span>
+                  {hasFiles ? (
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-green-700 flex items-center gap-2 mb-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>{answerData.files.length} file{answerData.files.length !== 1 ? 's' : ''} attached</span>
+                      </div>
+                      <ul className="text-sm list-disc pl-5 text-gray-700">
+                        {answerData.files.map((file, index) => (
+                          <li key={index}>{file.name}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-500">No Files Attached</span>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Detailed Content Preview */}
+            {hasText && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">Written Response Preview</h3>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 max-h-40 overflow-y-auto">
+                  <p className="text-gray-700 whitespace-pre-wrap text-sm">{answerData.text}</p>
+                </div>
+              </div>
+            )}
 
             {/* Important Notice */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -81,6 +125,7 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onSubmit, on
                     <li>• Your answer will be sent directly to the asker</li>
                     <li>• You cannot edit the answer after submission</li>
                     <li>• The asker will be notified immediately</li>
+                    <li>• Payment will be processed upon submission</li>
                   </ul>
                 </div>
               </div>
@@ -98,7 +143,8 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onSubmit, on
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300"
+                disabled={!hasRecording && !hasText}
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Submit Answer
               </button>
