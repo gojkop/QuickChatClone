@@ -37,6 +37,20 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     navigator.mediaDevices && 
     navigator.mediaDevices.getDisplayMedia;
 
+  // Mobile detection
+  const isMobileDevice = typeof window !== 'undefined' && 
+    (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 2));
+
+  // Effect to properly set video source when stream is ready
+  useEffect(() => {
+    if (videoRef.current && liveStreamRef.current && 
+        (recordingState === 'preview' || recordingState === 'recording') &&
+        currentSegment?.mode !== 'audio') {
+      videoRef.current.srcObject = liveStreamRef.current;
+    }
+  }, [recordingState, currentSegment?.mode]);
+
   useEffect(() => {
     return () => {
       cleanupStream();
@@ -170,10 +184,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       
       liveStreamRef.current = stream;
       setRecordingState('preview');
-      
-      if (videoRef.current && mode !== 'audio') {
-        videoRef.current.srcObject = stream;
-      }
     } catch (error) {
       console.error("Permission Error:", error);
       setRecordingState('denied');
@@ -188,10 +198,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     
     const streamToRecord = liveStreamRef.current;
     const mimeType = currentSegment.mode === 'audio' ? 'audio/webm' : 'video/webm;codecs=vp8,opus';
-    
-    if (currentSegment.mode !== 'audio' && videoRef.current) {
-      videoRef.current.srcObject = streamToRecord;
-    }
     
     mediaRecorderRef.current = new MediaRecorder(streamToRecord, { mimeType });
     const chunks = [];
@@ -598,7 +604,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                   </svg>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-blue-900 mb-1">
-                      💻 Screen recording available on desktop
+                      Screen recording available on desktop
                     </p>
                     <p className="text-xs text-blue-700">
                       Use our desktop site to record your screen along with video and audio
@@ -656,8 +662,8 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
               <div className="relative">
                 <video ref={videoRef} className="w-full bg-gray-900 aspect-video" autoPlay muted playsInline />
                 
-                {/* Camera flip button - only for video mode */}
-                {currentSegment.mode === 'video' && (
+                {/* Camera flip button - only for video mode on mobile */}
+                {currentSegment.mode === 'video' && isMobileDevice && (
                   <button
                     onClick={flipCamera}
                     disabled={isFlipping}
@@ -674,8 +680,8 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                   </button>
                 )}
                 
-                {/* Camera indicator badge */}
-                {currentSegment.mode === 'video' && (
+                {/* Camera indicator badge - only on mobile */}
+                {currentSegment.mode === 'video' && isMobileDevice && (
                   <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold rounded-full">
                     {facingMode === 'user' ? '📷 Front Camera' : '📷 Back Camera'}
                   </div>
