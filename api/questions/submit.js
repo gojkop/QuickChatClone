@@ -122,11 +122,12 @@ export default async function handler(req, res) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              stream_video_id: video.uid,
-              type: recordingMode,
-              duration: video.duration || null,
-              thumbnail_url: video.thumbnail || null,
-              playback_url: video.playback?.hls || null
+              owner_type: 'question',
+              provider: 'cloudflare_stream',
+              asset_id: video.uid,
+              duration_sec: video.duration || null,
+              status: video.status?.state || 'processing',
+              url: video.playback?.hls || video.thumbnail || null
             })
           }
         );
