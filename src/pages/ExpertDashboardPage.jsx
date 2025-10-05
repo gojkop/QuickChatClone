@@ -3,6 +3,7 @@ import apiClient from '@/api';
 import SettingsModal from '@/components/dashboard/SettingsModal';
 import SocialImpactStats from '@/components/dashboard/SocialImpactStats';
 import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
+import QuestionTable from '@/components/dashboard/QuestionTable';
 
 // Helper to format currency
 const formatPrice = (cents, currency = 'USD') => {
@@ -10,103 +11,6 @@ const formatPrice = (cents, currency = 'USD') => {
   const symbol = symbols[currency] || '$';
   const amount = (cents || 0) / 100;
   return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
-};
-
-// Helper to format date
-const formatDate = (timestamp) => {
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-// Question Card Component
-const QuestionCard = ({ question, onViewDetails }) => {
-  const isAnswered = question.answered_at !== null;
-  const statusColor = {
-    'paid': 'bg-green-100 text-green-700 border-green-200',
-    'pending_payment': 'bg-amber-100 text-amber-700 border-amber-200',
-    'answered': 'bg-blue-100 text-blue-700 border-blue-200',
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-bold text-gray-900 line-clamp-1">
-              {question.title}
-            </h3>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusColor[question.status] || 'bg-gray-100 text-gray-700'}`}>
-              {question.status}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              {question.payer_email}
-            </span>
-            <span className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {formatDate(question.created_at)}
-            </span>
-          </div>
-        </div>
-
-        <div className="text-right ml-4">
-          <div className="text-2xl font-black text-gray-900">
-            {formatPrice(question.price_cents, question.currency)}
-          </div>
-        </div>
-      </div>
-
-      {question.text && (
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-          {question.text}
-        </p>
-      )}
-
-      <div className="flex items-center gap-3">
-        {question.media_asset_id && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            Video/Audio
-          </span>
-        )}
-        
-        {question.attachments && JSON.parse(question.attachments).length > 0 && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-lg">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-            </svg>
-            {JSON.parse(question.attachments).length} files
-          </span>
-        )}
-
-        <div className="flex-1"></div>
-
-        <button
-          onClick={() => onViewDetails(question)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition text-sm"
-        >
-          <span>{isAnswered ? 'View Answer' : 'Answer Now'}</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
 };
 
 function ExpertDashboardPage() {
@@ -117,7 +21,7 @@ function ExpertDashboardPage() {
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(''); // Filter
+  const [activeTab, setActiveTab] = useState('pending'); // pending, answered, all
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
 
@@ -155,12 +59,17 @@ function ExpertDashboardPage() {
     const fetchQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
-        const params = selectedStatus ? `?status=${selectedStatus}` : '';
+        const statusMap = {
+          'pending': 'paid',
+          'answered': 'answered',
+          'all': ''
+        };
+        const status = statusMap[activeTab];
+        const params = status ? `?status=${status}` : '';
         const response = await apiClient.get(`/me/questions${params}`);
         setQuestions(response.data || []);
       } catch (err) {
         console.error("Failed to fetch questions:", err);
-        // Don't show error if endpoint doesn't exist yet
         if (err.response?.status !== 404) {
           console.error("Error fetching questions:", err.message);
         }
@@ -172,7 +81,7 @@ function ExpertDashboardPage() {
     if (profile) {
       fetchQuestions();
     }
-  }, [profile, selectedStatus]);
+  }, [profile, activeTab]);
 
   const handleSaveSettings = (updatedProfile) => {
     const processedProfile = {
@@ -194,13 +103,25 @@ function ExpertDashboardPage() {
     }
   };
 
-  const handleViewDetails = (question) => {
-    // TODO: Navigate to question detail page or open modal
-    console.log('View question:', question);
-    alert(`Question detail view coming soon!\n\nQuestion ID: ${question.id}\nTitle: ${question.title}`);
+  const handleAnswerQuestion = (question) => {
+    // TODO: Navigate to question detail/answer page
+    console.log('Answer question:', question);
+    alert(`Question answer page coming soon!\n\nQuestion ID: ${question.id}\nTitle: ${question.title}`);
+  };
+
+  const handleDeleteQuestion = (question) => {
+    // TODO: Implement delete confirmation and API call
+    console.log('Delete question:', question);
+    if (window.confirm(`Are you sure you want to delete this question?\n\n"${question.title}"\n\nThis action cannot be undone.`)) {
+      alert('Delete functionality will be implemented soon!');
+      // Future implementation:
+      // await apiClient.delete(`/me/questions/${question.id}`);
+      // setQuestions(questions.filter(q => q.id !== question.id));
+    }
   };
 
   const pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
+  const answeredCount = questions.filter(q => q.answered_at !== null).length;
 
   if (isLoading) {
     return (
@@ -339,60 +260,57 @@ function ExpertDashboardPage() {
 
           {/* Right Column - Questions */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Questions Header with Filter */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Your Questions</h2>
-                {pendingCount > 0 && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-100 text-red-700">
-                    {pendingCount} pending
-                  </span>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                {['paid', 'answered', 'all'].map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setSelectedStatus(status === 'all' ? '' : status)}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
-                      (status === 'all' && selectedStatus === '') || selectedStatus === status
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </button>
-                ))}
+            {/* Questions Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h2 className="text-2xl font-bold text-gray-900">Questions</h2>
+              
+              {/* Tab Navigation */}
+              <div className="inline-flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+                <button
+                  onClick={() => setActiveTab('pending')}
+                  className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+                    activeTab === 'pending'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Pending {pendingCount > 0 && `(${pendingCount})`}
+                </button>
+                <button
+                  onClick={() => setActiveTab('answered')}
+                  className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+                    activeTab === 'answered'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Answered
+                </button>
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+                    activeTab === 'all'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  All
+                </button>
               </div>
             </div>
 
-            {/* Questions List */}
+            {/* Questions Table */}
             {isLoadingQuestions ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                 <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-gray-600">Loading questions...</p>
               </div>
-            ) : questions.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <p className="text-gray-600 font-medium mb-1">No questions yet!</p>
-                <p className="text-sm text-gray-500">Share your profile link to start receiving questions</p>
-              </div>
             ) : (
-              <div className="space-y-4">
-                {questions.map((question) => (
-                  <QuestionCard 
-                    key={question.id} 
-                    question={question}
-                    onViewDetails={handleViewDetails}
-                  />
-                ))}
-              </div>
+              <QuestionTable 
+                questions={questions}
+                onAnswer={handleAnswerQuestion}
+                onDelete={handleDeleteQuestion}
+              />
             )}
           </div>
         </div>
