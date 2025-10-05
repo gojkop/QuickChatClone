@@ -85,7 +85,6 @@ export default async function handler(req, res) {
       console.log('📹 Uploading recording to Cloudflare Stream...');
       
       try {
-        const FormData = require('form-data');
         const buffer = Buffer.from(recordingBlob, 'base64');
         
         const formData = new FormData();
@@ -135,7 +134,6 @@ export default async function handler(req, res) {
       console.log(`📎 Uploading ${attachments.length} attachments...`);
       
       try {
-        const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
         
         const s3Client = new S3Client({
           region: 'auto',
