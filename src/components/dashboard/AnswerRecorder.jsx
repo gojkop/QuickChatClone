@@ -573,7 +573,7 @@ function AnswerRecorder({ question, onReady, onCancel }) {
                   </svg>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-blue-900 mb-1">
-                      💻 Screen recording available on desktop
+                      Screen recording available on desktop
                     </p>
                     <p className="text-xs text-blue-700">
                       Use our desktop site to record your screen along with video and audio
