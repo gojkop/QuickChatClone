@@ -77,6 +77,7 @@ function AskQuestionPage() {
       // This will trigger concatenation if there are segments
       const data = await composerRef.current.validateAndGetData();
       if (data) {
+        console.log('Question data with duration:', data.recordingDuration);
         setQuestionData(data);
         setShowReviewModal(true);
       }
@@ -332,4 +333,4 @@ function AskQuestionPage() {
   );
 }
 
-export default AskQuestionPage;
+export default AskQuestionPage; 

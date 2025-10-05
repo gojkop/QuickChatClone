@@ -36,6 +36,10 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
     });
   };
 
+  // Check if duration matches expected
+  const recordingDuration = questionData.recordingDuration || 0;
+  const isDurationValid = recordingDuration > 0;
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
@@ -92,18 +96,62 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                   <p className="text-gray-900 text-sm font-medium">{questionData.title}</p>
                 </div>
 
-                {/* Recording - Now shows single concatenated video info */}
+                {/* Recording - Shows concatenated video with duration */}
                 {questionData.mediaBlob && (
                   <div className="flex items-start">
                     <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">
                       Recording
                     </span>
-                    <div className="text-sm font-medium text-green-700 flex items-center gap-2">
-                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                       <span>
-                         {questionData.recordingMode === 'video' ? 'Video' : 
-                          questionData.recordingMode === 'audio' ? 'Audio' : 'Recording'} Added
-                       </span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`text-sm font-medium flex items-center gap-2 ${
+                          isDurationValid ? 'text-green-700' : 'text-amber-700'
+                        }`}>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span>
+                            {questionData.recordingMode === 'video' ? 'Video' : 
+                             questionData.recordingMode === 'audio' ? 'Audio' : 'Recording'} Added
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Duration Display with Validation */}
+                      {isDurationValid && (
+                        <div className="flex items-center gap-2 mt-2 p-2 bg-white rounded border border-gray-200">
+                          <svg className="w-4 h-4 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="flex-1">
+                            <div className="text-xs font-semibold text-gray-900">
+                              Duration: {formatTime(recordingDuration)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Segments successfully combined
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isDurationValid && questionData.mediaBlob && (
+                        <div className="flex items-center gap-2 mt-2 p-2 bg-amber-50 rounded border border-amber-200">
+                          <svg className="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <div className="flex-1">
+                            <div className="text-xs font-semibold text-amber-900">
+                              Recording verification needed
+                            </div>
+                            <div className="text-xs text-amber-700">
+                              Duration could not be determined
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
