@@ -203,7 +203,7 @@ function ExpertDashboardPage() {
                     className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-4 ring-indigo-100"
                   />
                 ) : (
-                  <DefaultAvatar size={48} className="sm:w-16 sm:h-16" />
+                  <DefaultAvatar size={48} />
                 )}
               </div>
               
