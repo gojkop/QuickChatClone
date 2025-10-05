@@ -38,7 +38,7 @@ const formatPrice = (cents, currency = 'USD') => {
   return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
 };
 
-const QuestionTable = ({ questions, onAnswer, onDelete }) => {
+const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages, onPageChange }) => {
   if (questions.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
@@ -54,7 +54,8 @@ const QuestionTable = ({ questions, onAnswer, onDelete }) => {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="space-y-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Desktop Table */}
       <div className="hidden lg:block overflow-x-auto">
         <table className="w-full">

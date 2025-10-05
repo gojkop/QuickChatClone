@@ -20,6 +20,8 @@ function ExpertDashboardPage() {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('pending'); // pending, answered, all
+  const [currentPage, setCurrentPage] = useState(1);
+  const QUESTIONS_PER_PAGE = 10;
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
 
@@ -76,6 +78,7 @@ function ExpertDashboardPage() {
         const params = status ? `?status=${status}` : '';
         const response = await apiClient.get(`/me/questions${params}`);
         setQuestions(response.data || []);
+        setCurrentPage(1); // Reset to first page when tab changes
       } catch (err) {
         console.error("Failed to fetch questions:", err);
         if (err.response?.status !== 404) {
@@ -150,6 +153,18 @@ function ExpertDashboardPage() {
   };
 
   const pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
+
+  // Pagination calculations
+  const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
+  const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
+  const endIndex = startIndex + QUESTIONS_PER_PAGE;
+  const paginatedQuestions = questions.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    // Scroll to top of questions section
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Mock stats data - TODO: fetch from API
   const stats = {
@@ -358,9 +373,12 @@ function ExpertDashboardPage() {
               </div>
             ) : (
               <QuestionTable 
-                questions={questions}
+                questions={paginatedQuestions}
                 onAnswer={handleAnswerQuestion}
                 onDelete={handleDeleteQuestion}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
               />
             )}
           </div>
