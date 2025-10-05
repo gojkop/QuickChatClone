@@ -72,9 +72,10 @@ function AskQuestionPage() {
     fetchExpertProfile();
   }, [location.search]);
 
-  const handleContinueToReview = () => {
+  const handleContinueToReview = async () => {
     if (composerRef.current) {
-      const data = composerRef.current.validateAndGetData();
+      // This will trigger concatenation if there are segments
+      const data = await composerRef.current.validateAndGetData();
       if (data) {
         setQuestionData(data);
         setShowReviewModal(true);
@@ -123,7 +124,7 @@ function AskQuestionPage() {
         submitButton.textContent = 'Submitting...';
       }
 
-      // Prepare recording data
+      // Prepare recording data - now it's a single concatenated blob
       let recordingBlob = null;
       if (questionData.mediaBlob) {
         recordingBlob = await blobToBase64(questionData.mediaBlob);
@@ -138,7 +139,7 @@ function AskQuestionPage() {
         }
       }
 
-      // Prepare submission payload
+      // Prepare submission payload - back to original single blob structure
       const payload = {
         expertHandle: expert.handle,
         title: questionData.title,

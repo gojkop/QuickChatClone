@@ -8,6 +8,12 @@ const formatPrice = (cents, currency = 'USD') => {
   return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
 };
 
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProceedToPayment }) {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -86,15 +92,18 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                   <p className="text-gray-900 text-sm font-medium">{questionData.title}</p>
                 </div>
 
-                {/* Recording */}
+                {/* Recording - Now shows single concatenated video info */}
                 {questionData.mediaBlob && (
                   <div className="flex items-start">
                     <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">
-                      {questionData.recordingMode === 'video' ? 'Video' : 'Audio'}
+                      Recording
                     </span>
                     <div className="text-sm font-medium text-green-700 flex items-center gap-2">
                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                       <span>Recording Added</span>
+                       <span>
+                         {questionData.recordingMode === 'video' ? 'Video' : 
+                          questionData.recordingMode === 'audio' ? 'Audio' : 'Recording'} Added
+                       </span>
                     </div>
                   </div>
                 )}

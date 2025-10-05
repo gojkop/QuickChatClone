@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { concatenateSegments } from '@/utils/videoConcatenator';
 
 const MAX_RECORDING_SECONDS = 90;
 
@@ -8,12 +9,16 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   const [text, setText] = useState('');
   const [files, setFiles] = useState([]);
 
-  // Recording state
-  const [recordingState, setRecordingState] = useState('initial');
-  const [recordingMode, setRecordingMode] = useState('video');
-  const [mediaBlob, setMediaBlob] = useState(null);
-  const [mediaBlobUrl, setMediaBlobUrl] = useState(null);
-  const [timer, setTimer] = useState(MAX_RECORDING_SECONDS);
+  // Segment-based recording state
+  const [segments, setSegments] = useState([]);
+  const [totalDuration, setTotalDuration] = useState(0);
+  const [currentSegment, setCurrentSegment] = useState(null);
+  const [recordingState, setRecordingState] = useState('idle');
+  const [timer, setTimer] = useState(0);
+
+  // Concatenation state
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(null);
 
   // Refs
   const videoRef = useRef(null);
@@ -21,64 +26,78 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   const mediaRecorderRef = useRef(null);
   const liveStreamRef = useRef(null);
   const timerIntervalRef = useRef(null);
+  const segmentStartTimeRef = useRef(0);
 
-  // Cleanup on unmount
+  const isScreenRecordingAvailable = typeof navigator !== 'undefined' && 
+    navigator.mediaDevices && 
+    navigator.mediaDevices.getDisplayMedia;
+
   useEffect(() => {
     return () => {
-      if (liveStreamRef.current) {
-        liveStreamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-      // Cleanup blob URL
-      if (mediaBlobUrl) {
-        URL.revokeObjectURL(mediaBlobUrl);
+      cleanupStream();
+      segments.forEach(seg => {
+        if (seg.blobUrl) URL.revokeObjectURL(seg.blobUrl);
+      });
+      if (currentSegment?.blobUrl) {
+        URL.revokeObjectURL(currentSegment.blobUrl);
       }
     };
-  }, [mediaBlobUrl]);
+  }, []);
 
-  // Ensure review video loads when blob URL is ready
-  useEffect(() => {
-    if (reviewVideoRef.current && mediaBlobUrl && recordingState === 'review' && recordingMode === 'video') {
-      console.log('Loading video with URL:', mediaBlobUrl);
-      const videoEl = reviewVideoRef.current;
-      
-      videoEl.onloadedmetadata = () => {
-        console.log('Video metadata loaded. Duration:', videoEl.duration);
-      };
-      
-      videoEl.onerror = (e) => {
-        console.error('Video error:', e, videoEl.error);
-      };
-      
-      videoEl.load();
-    }
-  }, [mediaBlobUrl, recordingState, recordingMode]);
-
-  // Expose methods to parent component
   useImperativeHandle(ref, () => ({
     getQuestionData: () => ({
       title,
       text,
       files,
-      mediaBlob,
-      recordingMode
+      segments,
+      recordingMode: segments.length > 0 ? 'multi-segment' : null
     }),
-    validateAndGetData: () => {
+    validateAndGetData: async () => {
       if (!title.trim()) {
         alert('Please enter a question title.');
         return null;
       }
+
+      let finalMediaBlob = null;
+      let finalRecordingMode = null;
+
+      // Concatenate segments if any exist
+      if (segments.length > 0) {
+        setIsProcessing(true);
+        try {
+          const result = await concatenateSegments(segments, setProcessingProgress);
+          finalMediaBlob = result.blob;
+          finalRecordingMode = result.mode;
+        } catch (error) {
+          console.error('Failed to concatenate segments:', error);
+          alert('Failed to process recording segments. Please try again.');
+          return null;
+        } finally {
+          setIsProcessing(false);
+          setProcessingProgress(null);
+        }
+      }
+
       return {
         title,
         text,
         files,
-        mediaBlob,
-        recordingMode
+        mediaBlob: finalMediaBlob,
+        recordingMode: finalRecordingMode
       };
     }
   }));
+
+  const cleanupStream = () => {
+    if (liveStreamRef.current) {
+      liveStreamRef.current.getTracks().forEach(track => track.stop());
+      liveStreamRef.current = null;
+    }
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  };
 
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files);
@@ -93,66 +112,73 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const cleanupStream = () => {
-    if (liveStreamRef.current) {
-      liveStreamRef.current.getTracks().forEach(track => track.stop());
-      liveStreamRef.current = null;
+  const startNewSegment = (mode) => {
+    const remainingTime = MAX_RECORDING_SECONDS - totalDuration;
+    if (remainingTime <= 0) {
+      alert('You have used all 90 seconds. Please remove a segment to add more.');
+      return;
     }
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
+    
+    setCurrentSegment({ mode, blob: null, blobUrl: null, duration: 0 });
+    setRecordingState('asking');
+    initiatePreview(mode);
   };
 
-  const initiatePreview = async () => {
-    setRecordingState('asking');
+  const initiatePreview = async (mode) => {
     try {
-      const constraints = recordingMode === 'video' 
-        ? { audio: true, video: { facingMode: 'user' } }
-        : { audio: true, video: false };
+      let stream;
       
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (mode === 'screen' || mode === 'screen-camera') {
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({ 
+          video: true,
+          audio: true 
+        });
+        
+        if (mode === 'screen-camera') {
+          try {
+            const cameraStream = await navigator.mediaDevices.getUserMedia({ 
+              video: { facingMode: 'user' },
+              audio: true 
+            });
+            // For simplicity, just use display stream (PIP would require canvas mixing)
+            stream = displayStream;
+          } catch (e) {
+            console.warn('Camera failed, using screen only:', e);
+            stream = displayStream;
+          }
+        } else {
+          stream = displayStream;
+        }
+      } else {
+        const constraints = mode === 'video' 
+          ? { audio: true, video: { facingMode: 'user' } }
+          : { audio: true, video: false };
+        
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
+      
       liveStreamRef.current = stream;
       setRecordingState('preview');
       
-      if (videoRef.current && recordingMode === 'video') {
+      if (videoRef.current && mode !== 'audio') {
         videoRef.current.srcObject = stream;
       }
     } catch (error) {
       console.error("Permission Error:", error);
-      
-      // Check if it's a permission error vs other errors
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        setRecordingState('denied');
-      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-        // No camera/mic found
-        setRecordingState('no-device');
-      } else {
-        // Generic error
-        setRecordingState('denied');
-      }
-    }
-  };
-
-  const toggleRecordingMode = () => {
-    if (recordingState === 'preview') {
-      cleanupStream();
-      const newMode = recordingMode === 'video' ? 'audio' : 'video';
-      setRecordingMode(newMode);
-      setRecordingState('initial');
-    } else {
-      setRecordingMode(recordingMode === 'video' ? 'audio' : 'video');
+      setRecordingState('denied');
     }
   };
 
   const startRecording = () => {
+    const remainingTime = MAX_RECORDING_SECONDS - totalDuration;
     setRecordingState('recording');
-    setTimer(MAX_RECORDING_SECONDS);
+    setTimer(remainingTime);
+    segmentStartTimeRef.current = Date.now();
     
     const streamToRecord = liveStreamRef.current;
-    const mimeType = recordingMode === 'video' ? 'video/webm;codecs=vp8,opus' : 'audio/webm';
+    const mimeType = currentSegment.mode === 'audio' ? 'audio/webm' : 'video/webm;codecs=vp8,opus';
     
-    if (recordingMode === 'video' && videoRef.current) {
+    if (currentSegment.mode !== 'audio' && videoRef.current) {
       videoRef.current.srcObject = streamToRecord;
     }
     
@@ -167,17 +193,20 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     
     mediaRecorderRef.current.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
-      console.log('Recording stopped. Blob size:', blob.size, 'type:', blob.type);
-      setMediaBlob(blob);
-      // Create and store blob URL
+      const duration = Math.floor((Date.now() - segmentStartTimeRef.current) / 1000);
       const url = URL.createObjectURL(blob);
-      console.log('Created blob URL:', url);
-      setMediaBlobUrl(url);
+      
+      setCurrentSegment(prev => ({
+        ...prev,
+        blob,
+        blobUrl: url,
+        duration: Math.min(duration, remainingTime)
+      }));
       setRecordingState('review');
       cleanupStream();
     };
 
-    mediaRecorderRef.current.start(100); // Collect data every 100ms
+    mediaRecorderRef.current.start(100);
 
     timerIntervalRef.current = setInterval(() => {
       setTimer(prev => {
@@ -199,289 +228,379 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     }
   };
 
-  const handleRerecord = () => {
-    cleanupStream();
-    // Cleanup old blob URL
-    if (mediaBlobUrl) {
-      URL.revokeObjectURL(mediaBlobUrl);
+  const saveSegment = () => {
+    if (currentSegment && currentSegment.blob) {
+      setSegments(prev => [...prev, {
+        id: Date.now(),
+        ...currentSegment
+      }]);
+      setTotalDuration(prev => prev + currentSegment.duration);
+      setCurrentSegment(null);
+      setRecordingState('idle');
     }
-    setMediaBlob(null);
-    setMediaBlobUrl(null);
-    setRecordingState('initial');
   };
 
-  const handleProceedToReview = () => {
+  const discardSegment = () => {
+    if (currentSegment?.blobUrl) {
+      URL.revokeObjectURL(currentSegment.blobUrl);
+    }
+    cleanupStream();
+    setCurrentSegment(null);
+    setRecordingState('idle');
+  };
+
+  const removeSegment = (id) => {
+    const segment = segments.find(s => s.id === id);
+    if (segment) {
+      setTotalDuration(prev => prev - segment.duration);
+      if (segment.blobUrl) {
+        URL.revokeObjectURL(segment.blobUrl);
+      }
+      setSegments(prev => prev.filter(s => s.id !== id));
+    }
+  };
+
+  const handleProceedToReview = async () => {
     if (!title.trim()) {
       alert('Please enter a question title.');
       return;
+    }
+
+    // Concatenate segments before proceeding
+    let finalMediaBlob = null;
+    let finalRecordingMode = null;
+
+    if (segments.length > 0) {
+      setIsProcessing(true);
+      try {
+        const result = await concatenateSegments(segments, setProcessingProgress);
+        finalMediaBlob = result.blob;
+        finalRecordingMode = result.mode;
+      } catch (error) {
+        console.error('Failed to concatenate segments:', error);
+        alert('Failed to process recording. Please try again.');
+        setIsProcessing(false);
+        setProcessingProgress(null);
+        return;
+      } finally {
+        setIsProcessing(false);
+        setProcessingProgress(null);
+      }
     }
     
     const data = {
       title,
       text,
       files,
-      mediaBlob,
-      recordingMode
+      mediaBlob: finalMediaBlob,
+      recordingMode: finalRecordingMode
     };
     
     onReady(data);
   };
 
-  const renderRecorder = () => {
-    switch (recordingState) {
-      case 'initial':
-        return (
-          <button 
-            onClick={initiatePreview}
-            className="w-full py-12 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all group"
-          >
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-16 h-16 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition-colors">
-                {recordingMode === 'video' ? (
-                  <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                ) : (
-                  <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                )}
-              </div>
-              <div>
-                <span className="text-indigo-600 font-semibold block">Click to Record {recordingMode === 'video' ? 'Video' : 'Audio'}</span>
-                <span className="text-gray-500 text-sm">Maximum 90 seconds</span>
-              </div>
-            </div>
-          </button>
-        );
+  const getSegmentIcon = (mode) => {
+    const icons = {
+      video: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />,
+      audio: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />,
+      screen: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />,
+      'screen-camera': <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    };
+    return <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">{icons[mode]}</svg>;
+  };
 
-      case 'asking':
-        return (
-          <div className="text-center p-12 border-2 border-dashed border-gray-300 rounded-xl">
-            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-gray-600">Requesting camera/microphone access...</p>
-          </div>
-        );
+  const getSegmentLabel = (mode) => {
+    const labels = { video: 'Video', audio: 'Audio', screen: 'Screen', 'screen-camera': 'Screen + Cam' };
+    return labels[mode] || 'Recording';
+  };
 
-      case 'denied':
-        return (
-          <div className="text-center p-8 border-2 border-amber-400 rounded-xl bg-amber-50">
-            <svg className="w-12 h-12 text-amber-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <p className="font-semibold text-amber-800 mb-2">Camera/microphone access needed</p>
-            
-            {/* Detect iOS (all browsers on iPhone use WebKit) */}
-            {/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream ? (
-              <div className="text-left max-w-md mx-auto">
-                <p className="text-sm text-amber-700 mb-3">
-                  On iPhone, you need to enable camera/microphone in Settings (this applies to all browsers):
-                </p>
-                <ol className="text-sm text-amber-700 space-y-2 mb-4 list-decimal list-inside bg-white rounded-lg p-4 border border-amber-200">
-                  <li>Open iPhone <strong>Settings</strong> app</li>
-                  <li>Scroll down and find your browser (<strong>Safari</strong>, <strong>Chrome</strong>, etc.)</li>
-                  <li>Tap on it to open browser settings</li>
-                  <li>Find <strong>Camera</strong> and set to <strong>"Ask"</strong> or <strong>"Allow"</strong></li>
-                  <li>Find <strong>Microphone</strong> and set to <strong>"Ask"</strong> or <strong>"Allow"</strong></li>
-                  <li><strong>Close this tab completely</strong> and reopen the page</li>
-                </ol>
-                <div className="bg-blue-50 rounded-lg p-3 mb-4 border border-blue-200">
-                  <p className="text-xs font-semibold text-blue-900 mb-1">💡 Important:</p>
-                  <p className="text-xs text-blue-800">
-                    iPhone doesn't show a permission popup. You must enable in Settings first, then fully close and reopen this page.
-                  </p>
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Processing overlay
+  if (isProcessing) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Processing Recording</h3>
+            <p className="text-gray-600 mb-4">
+              Combining your segments into one video...
+            </p>
+            {processingProgress && (
+              <div className="space-y-2">
+                <div className="text-sm text-gray-600">
+                  {processingProgress.stage === 'preparing' && 'Preparing...'}
+                  {processingProgress.stage === 'processing' && `Segment ${processingProgress.current} of ${processingProgress.total}`}
+                  {processingProgress.stage === 'complete' && 'Finalizing...'}
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(processingProgress.current / processingProgress.total) * 100}%` }}
+                  ></div>
                 </div>
               </div>
-            ) : (
-              <p className="text-sm text-amber-700 mb-4">Please allow access to your camera and microphone when prompted by your browser</p>
             )}
-            
-            <button 
-              onClick={initiatePreview}
-              className="px-6 py-3 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition"
-            >
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const renderRecorder = () => {
+    if (recordingState === 'idle') {
+      return (
+        <div className="space-y-4">
+          {segments.length > 0 && (
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700">Recorded Segments</span>
+                <span className="text-xs text-gray-500">
+                  {formatTime(totalDuration)} / {formatTime(MAX_RECORDING_SECONDS)}
+                </span>
+              </div>
+              
+              <div className="space-y-2">
+                {segments.map((segment, index) => (
+                  <div key={segment.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                        {getSegmentIcon(segment.mode)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900">
+                          Segment {index + 1} · {getSegmentLabel(segment.mode)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatTime(segment.duration)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => {
+                          const elem = segment.mode !== 'audio' 
+                            ? document.createElement('video')
+                            : document.createElement('audio');
+                          elem.src = segment.blobUrl;
+                          elem.controls = true;
+                          if (segment.mode !== 'audio') {
+                            elem.style.width = '100%';
+                            elem.style.maxHeight = '400px';
+                          }
+                          const modal = document.createElement('div');
+                          modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80';
+                          modal.onclick = () => modal.remove();
+                          modal.appendChild(elem);
+                          document.body.appendChild(modal);
+                          elem.play();
+                        }}
+                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => removeSegment(segment.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {totalDuration < MAX_RECORDING_SECONDS && (
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {segments.length === 0 ? 'Record Your Question' : 'Add Another Segment'}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {formatTime(MAX_RECORDING_SECONDS - totalDuration)} remaining
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => startNewSegment('video')}
+                  className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
+                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">Video</span>
+                </button>
+
+                <button
+                  onClick={() => startNewSegment('audio')}
+                  className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
+                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">Audio</span>
+                </button>
+
+                {isScreenRecordingAvailable && (
+                  <>
+                    <button
+                      onClick={() => startNewSegment('screen')}
+                      className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
+                        <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">Screen</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (recordingState === 'asking') {
+      return (
+        <div className="text-center p-12 border-2 border-dashed border-gray-300 rounded-xl">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-600">Requesting permissions...</p>
+        </div>
+      );
+    }
+
+    if (recordingState === 'denied') {
+      return (
+        <div className="text-center p-8 border-2 border-amber-400 rounded-xl bg-amber-50">
+          <svg className="w-12 h-12 text-amber-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="font-semibold text-amber-800 mb-2">Permission denied</p>
+          <p className="text-sm text-amber-700 mb-4">Please allow access when prompted</p>
+          <div className="flex gap-2 justify-center">
+            <button onClick={discardSegment} className="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition">
+              Cancel
+            </button>
+            <button onClick={() => initiatePreview(currentSegment.mode)} className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition">
               Try Again
             </button>
           </div>
-        );
+        </div>
+      );
+    }
 
-      case 'no-device':
-        return (
-          <div className="text-center p-8 border-2 border-red-400 rounded-xl bg-red-50">
-            <svg className="w-12 h-12 text-red-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-            </svg>
-            <p className="font-semibold text-red-800 mb-2">No camera or microphone found</p>
-            <p className="text-sm text-red-700 mb-4">
-              Please make sure your device has a working camera and microphone
-            </p>
-            <button 
-              onClick={() => setRecordingState('initial')}
-              className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition"
-            >
-              Go Back
+    if (recordingState === 'preview') {
+      return (
+        <div className="border-2 border-gray-300 rounded-xl overflow-hidden">
+          {currentSegment.mode !== 'audio' ? (
+            <video ref={videoRef} className="w-full bg-gray-900 aspect-video" autoPlay muted playsInline />
+          ) : (
+            <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+              <div className="text-center">
+                <svg className="w-16 h-16 text-white mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+                <p className="text-white font-semibold">Audio Ready</p>
+              </div>
+            </div>
+          )}
+          
+          <div className="p-4 bg-white flex flex-col sm:flex-row gap-3 sm:justify-between">
+            <button onClick={discardSegment} className="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">
+              Cancel
+            </button>
+            <button onClick={startRecording} className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition">
+              <div className="w-3 h-3 rounded-full bg-white"></div>
+              <span>Start Recording</span>
             </button>
           </div>
-        );
-
-      case 'preview':
-        return (
-          <div className="border-2 border-gray-300 rounded-xl overflow-hidden">
-            {recordingMode === 'video' && (
-              <video 
-                ref={videoRef}
-                className="w-full bg-gray-900 aspect-video"
-                autoPlay
-                muted
-                playsInline
-              />
-            )}
-            {recordingMode === 'audio' && (
-              <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
-                <div className="text-center">
-                  <svg className="w-16 h-16 text-white mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                  <p className="text-white font-semibold">Audio Only Mode</p>
-                  <p className="text-gray-400 text-sm">Your voice will be recorded</p>
-                </div>
-              </div>
-            )}
-            
-            <div className="p-3 sm:p-4 bg-white">
-              {/* Mobile: Stacked layout, Desktop: Row layout */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <button 
-                  onClick={handleRerecord}
-                  className="order-3 sm:order-1 px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition text-sm"
-                >
-                  Cancel
-                </button>
-                
-                <button
-                  onClick={toggleRecordingMode}
-                  className="order-2 flex items-center justify-center gap-2 px-4 py-2 text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm"
-                >
-                  {recordingMode === 'video' ? (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                      </svg>
-                      <span>Audio Only</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      <span>Video</span>
-                    </>
-                  )}
-                </button>
-                
-                <button
-                  onClick={startRecording}
-                  className="order-1 sm:order-3 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-lg"
-                >
-                  <div className="w-3 h-3 rounded-full bg-white"></div>
-                  <span>Start Recording</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'recording':
-        return (
-          <div className="border-2 border-red-500 rounded-xl overflow-hidden bg-red-50">
-            {recordingMode === 'video' && (
-              <video 
-                ref={videoRef}
-                className="w-full bg-gray-900 aspect-video"
-                autoPlay
-                muted
-                playsInline
-              />
-            )}
-            {recordingMode === 'audio' && (
-              <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 rounded-full bg-red-600 mx-auto mb-4 animate-pulse"></div>
-                  <p className="text-white font-semibold">Recording Audio...</p>
-                </div>
-              </div>
-            )}
-            <div className="p-4 sm:p-6 text-center">
-              <div className="inline-flex items-center gap-3 mb-3 sm:mb-4">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-600 animate-pulse"></div>
-                <span className="text-red-700 font-bold text-base sm:text-lg">Recording...</span>
-              </div>
-              <div className="text-3xl sm:text-4xl font-black text-red-600 mb-3 sm:mb-4" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                0:{timer < 10 ? `0${timer}` : timer}
-              </div>
-              <button
-                onClick={stopRecording}
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
-              >
-                Stop Recording
-              </button>
-            </div>
-          </div>
-        );
-
-      case 'review':
-        return (
-          <div className="border-2 border-green-500 rounded-xl overflow-hidden">
-            {recordingMode === 'video' ? (
-              <div className="relative">
-                {!mediaBlobUrl && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                    <div className="text-center text-white">
-                      <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                      <p>Processing video...</p>
-                    </div>
-                  </div>
-                )}
-                <video 
-                  ref={reviewVideoRef}
-                  src={mediaBlobUrl}
-                  className="w-full aspect-video bg-black"
-                  controls
-                  playsInline
-                  preload="auto"
-                />
-              </div>
-            ) : (
-              <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
-                <audio 
-                  src={mediaBlobUrl}
-                  controls
-                  className="w-full max-w-md px-4"
-                  preload="auto"
-                />
-              </div>
-            )}
-            
-            <div className="p-3 sm:p-4 bg-green-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-2 text-green-700 justify-center sm:justify-start">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="font-semibold">Recording complete</span>
-              </div>
-              <button
-                onClick={handleRerecord}
-                className="w-full sm:w-auto px-4 py-2 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
-              >
-                Re-record
-              </button>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
+        </div>
+      );
     }
+
+    if (recordingState === 'recording') {
+      return (
+        <div className="border-2 border-red-500 rounded-xl overflow-hidden bg-red-50">
+          {currentSegment.mode !== 'audio' ? (
+            <video ref={videoRef} className="w-full bg-gray-900 aspect-video" autoPlay muted playsInline />
+          ) : (
+            <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full bg-red-600 mx-auto mb-4 animate-pulse"></div>
+                <p className="text-white font-semibold">Recording Audio...</p>
+              </div>
+            </div>
+          )}
+          
+          <div className="p-6 text-center">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
+              <span className="text-red-700 font-bold text-lg">Recording...</span>
+            </div>
+            <div className="text-4xl font-black text-red-600 mb-4" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {formatTime(timer)}
+            </div>
+            <button onClick={stopRecording} className="px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition">
+              Stop Recording
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (recordingState === 'review') {
+      return (
+        <div className="border-2 border-green-500 rounded-xl overflow-hidden">
+          {currentSegment.mode !== 'audio' ? (
+            <video ref={reviewVideoRef} src={currentSegment.blobUrl} className="w-full aspect-video bg-black" controls playsInline preload="auto" />
+          ) : (
+            <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+              <audio src={currentSegment.blobUrl} controls className="w-full max-w-md px-4" preload="auto" />
+            </div>
+          )}
+          
+          <div className="p-4 bg-green-50 flex flex-col sm:flex-row gap-3 sm:justify-between">
+            <div className="flex items-center gap-2 text-green-700 justify-center sm:justify-start">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-semibold">{getSegmentLabel(currentSegment.mode)} · {formatTime(currentSegment.duration)}</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={discardSegment} className="flex-1 sm:flex-none px-4 py-2 text-gray-700 font-semibold hover:bg-white rounded-lg transition">
+                Discard
+              </button>
+              <button onClick={saveSegment} className="flex-1 sm:flex-none px-6 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition">
+                Add Segment
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -502,26 +621,9 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
 
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Record Your Question (max 90s)
+          Record Your Question
+          <span className="text-gray-500 font-normal ml-2">(Total: max 90s)</span>
         </label>
-        
-        {/* iOS-specific tip - show only on iOS devices before recording */}
-        {/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream && recordingState === 'initial' && (
-          <div className="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="flex gap-2">
-              <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <p className="text-xs font-semibold text-blue-900 mb-1">📱 iPhone users - Important!</p>
-                <p className="text-xs text-blue-800">
-                  Before recording, make sure camera/microphone permissions are enabled in your iPhone Settings → [Your Browser] → Camera & Microphone
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
         {renderRecorder()}
       </div>
 
@@ -557,10 +659,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
             {files.map((file, index) => (
               <li key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-700 truncate flex-1">{file.name}</span>
-                <button
-                  onClick={() => removeFile(index)}
-                  className="ml-3 text-red-500 hover:text-red-700 font-semibold text-sm"
-                >
+                <button onClick={() => removeFile(index)} className="ml-3 text-red-500 hover:text-red-700 font-semibold text-sm">
                   Remove
                 </button>
               </li>
@@ -572,9 +671,10 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       {!hideButton && (
         <button
           onClick={handleProceedToReview}
-          className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
+          disabled={isProcessing}
+          className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Continue to Review
+          {isProcessing ? 'Processing...' : 'Continue to Review'}
         </button>
       )}
     </div>
