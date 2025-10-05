@@ -99,7 +99,18 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
       onClose();
     } catch (error) {
       console.error('Error processing avatar:', error);
-      alert(`Failed to process image: ${error.message}`);
+      
+      // Better error messages
+      let errorMessage = 'Failed to process image. ';
+      if (error.message && error.message.includes('CORS')) {
+        errorMessage += 'Image cannot be loaded due to CORS restrictions. Please upload a new photo.';
+      } else if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Please try again or upload a different image.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsProcessing(false);
     }

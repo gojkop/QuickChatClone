@@ -60,20 +60,18 @@ export async function getCroppedImg(
   canvas.width = targetSize;
   canvas.height = targetSize;
 
-  // Calculate scale factor to fit crop area into target size
-  const scaleX = targetSize / pixelCrop.width;
-  const scaleY = targetSize / pixelCrop.height;
-
-  // Apply transformations
+  // Save the context state
   ctx.save();
-  
-  // Translate to center
+
+  // Move to center of canvas
   ctx.translate(targetSize / 2, targetSize / 2);
-  
-  // Apply flip
-  ctx.scale(flip.horizontal ? -1 : 1, flip.vertical ? -1 : 1);
-  
-  // Translate back
+
+  // Apply flip transforms (must be done before drawing)
+  const scaleX = flip.horizontal ? -1 : 1;
+  const scaleY = flip.vertical ? -1 : 1;
+  ctx.scale(scaleX, scaleY);
+
+  // Move back to origin for drawing
   ctx.translate(-targetSize / 2, -targetSize / 2);
 
   // Draw the cropped image scaled to target size
@@ -89,6 +87,7 @@ export async function getCroppedImg(
     targetSize
   );
 
+  // Restore context state
   ctx.restore();
 
   // Convert to blob with compression

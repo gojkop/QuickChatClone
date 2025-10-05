@@ -58,6 +58,7 @@ function Navbar() {
           name: userData.name || 'Expert',
           email: userData.email,
           avatar_url: avatarUrl,
+          handle: expertData.handle || null,  // ← ADD THIS LINE
           pendingQuestions: pendingCount,
         });
       } catch (err) {
@@ -68,6 +69,7 @@ function Navbar() {
           name: storedName || 'Expert',
           email: storedEmail,
           avatar_url: null,
+          handle: null,
           pendingQuestions: 0,
         });
       } finally {

@@ -1,12 +1,10 @@
-// src/components/question/QuestionComposer.jsx
-import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+// src/components/dashboard/AnswerRecorder.jsx
+import React, { useState, useRef, useEffect } from 'react';
 import { concatenateSegments } from '@/utils/videoConcatenator';
 
-const MAX_RECORDING_SECONDS = 90;
+const MAX_RECORDING_SECONDS = 900; // 15 minutes for answers
 
-const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
-  // Form state
-  const [title, setTitle] = useState('');
+function AnswerRecorder({ question, onReady, onCancel }) {
   const [text, setText] = useState('');
   const [files, setFiles] = useState([]);
 
@@ -16,9 +14,9 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   const [currentSegment, setCurrentSegment] = useState(null);
   const [recordingState, setRecordingState] = useState('idle');
   const [timer, setTimer] = useState(0);
-  
+
   // Camera switching state
-  const [facingMode, setFacingMode] = useState('user'); // 'user' = front, 'environment' = back
+  const [facingMode, setFacingMode] = useState('user');
   const [isFlipping, setIsFlipping] = useState(false);
 
   // Concatenation state
@@ -64,57 +62,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     };
   }, []);
 
-  useImperativeHandle(ref, () => ({
-    getQuestionData: () => ({
-      title,
-      text,
-      files,
-      segments,
-      recordingMode: segments.length > 0 ? 'multi-segment' : null
-    }),
-    validateAndGetData: async () => {
-      if (!title.trim()) {
-        alert('Please enter a question title.');
-        return null;
-      }
-
-      let finalMediaBlob = null;
-      let finalRecordingMode = null;
-      let finalDuration = 0;
-
-      if (segments.length > 0) {
-        setIsProcessing(true);
-        try {
-          const result = await concatenateSegments(segments, setProcessingProgress);
-          finalMediaBlob = result.blob;
-          finalRecordingMode = result.mode;
-          finalDuration = result.duration;
-          
-          // Fallback: Calculate duration from segments if not provided
-          if (!finalDuration || finalDuration === 0) {
-            finalDuration = segments.reduce((total, seg) => total + (seg.duration || 0), 0);
-          }
-        } catch (error) {
-          console.error('Failed to concatenate segments:', error);
-          alert('Failed to process recording segments. Please try again.');
-          return null;
-        } finally {
-          setIsProcessing(false);
-          setProcessingProgress(null);
-        }
-      }
-
-      return {
-        title,
-        text,
-        files,
-        mediaBlob: finalMediaBlob,
-        recordingMode: finalRecordingMode,
-        recordingDuration: finalDuration
-      };
-    }
-  }));
-
   const cleanupStream = () => {
     if (liveStreamRef.current) {
       liveStreamRef.current.getTracks().forEach(track => track.stop());
@@ -142,24 +89,21 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   const startNewSegment = async (mode) => {
     const remainingTime = MAX_RECORDING_SECONDS - totalDuration;
     if (remainingTime <= 0) {
-      alert('You have used all 90 seconds. Please remove a segment to add more.');
+      alert('You have used all 15 minutes. Please remove a segment to add more.');
       return;
     }
-    
+
     // Clean up any existing stream first
     cleanupStream();
     
     // Reset camera to front-facing when starting new video segment
-    // Use a small delay to ensure state updates before camera initialization
     if (mode === 'video') {
       setFacingMode('user');
-      // Wait a brief moment for state to update
       await new Promise(resolve => setTimeout(resolve, 50));
     }
     
     setCurrentSegment({ mode, blob: null, blobUrl: null, duration: 0 });
     setRecordingState('asking');
-    // Always pass 'user' explicitly for video mode
     initiatePreview(mode, mode === 'video' ? 'user' : facingMode);
   };
 
@@ -266,14 +210,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     setIsFlipping(true);
     
     try {
-      // Stop current stream
       cleanupStream();
       
-      // Toggle facing mode
       const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
       setFacingMode(newFacingMode);
       
-      // Request new stream with flipped camera
       const constraints = {
         audio: true,
         video: { facingMode: newFacingMode }
@@ -287,7 +228,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       }
     } catch (error) {
       console.error("Camera flip error:", error);
-      // If flip fails, try to restore original camera
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
@@ -353,11 +293,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   };
 
   const handleProceedToReview = async () => {
-    if (!title.trim()) {
-      alert('Please enter a question title.');
-      return;
-    }
-
     let finalMediaBlob = null;
     let finalRecordingMode = null;
     let finalDuration = 0;
@@ -365,15 +300,37 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     if (segments.length > 0) {
       setIsProcessing(true);
       try {
+        console.log('Starting concatenation with segments:', segments.map(s => ({
+          mode: s.mode,
+          duration: s.duration,
+          blobSize: s.blob?.size
+        })));
+        
         const result = await concatenateSegments(segments, setProcessingProgress);
+        
+        console.log('Concatenation result:', {
+          hasBlob: !!result.blob,
+          blobSize: result.blob?.size,
+          mode: result.mode,
+          duration: result.duration,
+          fullResult: result
+        });
+        
         finalMediaBlob = result.blob;
         finalRecordingMode = result.mode;
         finalDuration = result.duration;
         
-        // Fallback: Calculate duration from segments if not provided
+        // Fallback: Calculate duration from segments if not provided by concatenation
         if (!finalDuration || finalDuration === 0) {
           finalDuration = segments.reduce((total, seg) => total + (seg.duration || 0), 0);
+          console.log('Using fallback duration calculation:', finalDuration);
         }
+        
+        console.log('Final values:', {
+          finalMediaBlob: !!finalMediaBlob,
+          finalRecordingMode,
+          finalDuration
+        });
       } catch (error) {
         console.error('Failed to concatenate segments:', error);
         alert('Failed to process recording. Please try again.');
@@ -387,7 +344,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     }
     
     const data = {
-      title,
       text,
       files,
       mediaBlob: finalMediaBlob,
@@ -395,17 +351,13 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       recordingDuration: finalDuration
     };
     
+    console.log('Passing data to onReady:', {
+      hasMediaBlob: !!data.mediaBlob,
+      recordingMode: data.recordingMode,
+      recordingDuration: data.recordingDuration
+    });
+    
     onReady(data);
-  };
-
-  const getSegmentIcon = (mode) => {
-    const icons = {
-      video: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />,
-      audio: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />,
-      screen: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />,
-      'screen-camera': <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-    };
-    return <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">{icons[mode]}</svg>;
   };
 
   const getSegmentLabel = (mode) => {
@@ -419,7 +371,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Existing segments display component (shown everywhere)
+  // Existing segments display
   const ExistingSegmentsDisplay = () => {
     if (segments.length === 0) return null;
 
@@ -567,7 +519,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-6">
               <div className="text-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {segments.length === 0 ? 'Record Your Question' : 'Add Another Segment'}
+                  {segments.length === 0 ? 'Record Your Answer' : 'Add Another Segment'}
                 </h3>
                 <p className="text-sm text-gray-600">
                   {formatTime(MAX_RECORDING_SECONDS - totalDuration)} remaining
@@ -614,7 +566,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                 )}
               </div>
 
-              {/* Mobile Info Message - Only shown when screen recording is NOT available */}
               {!isScreenRecordingAvailable && (
                 <div className="mt-4 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -622,7 +573,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                   </svg>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-blue-900 mb-1">
-                      💻 Screen recording available on desktop
+                      Screen recording available on desktop
                     </p>
                     <p className="text-xs text-blue-700">
                       Use our desktop site to record your screen along with video and audio
@@ -680,7 +631,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
               <div className="relative">
                 <video ref={videoRef} className="w-full bg-gray-900 aspect-video" autoPlay muted playsInline />
                 
-                {/* Camera flip button - only for video mode on mobile */}
                 {currentSegment.mode === 'video' && isMobileDevice && (
                   <button
                     onClick={flipCamera}
@@ -698,7 +648,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                   </button>
                 )}
                 
-                {/* Camera indicator badge - only on mobile */}
                 {currentSegment.mode === 'video' && isMobileDevice && (
                   <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold rounded-full">
                     {facingMode === 'user' ? '📷 Front Camera' : '📷 Back Camera'}
@@ -801,41 +750,32 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   };
 
   return (
-    <div className="space-y-8">
-      <div>
-        <label htmlFor="question-title" className="block text-sm font-semibold text-gray-900 mb-2">
-          Question Title
-        </label>
-        <input
-          type="text"
-          id="question-title"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
-          placeholder="e.g., Review my landing page copy"
-        />
+    <div className="space-y-6">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+        <h3 className="font-semibold text-indigo-900 mb-1">Answering to:</h3>
+        <p className="text-indigo-700">{question.title}</p>
       </div>
 
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Record Your Question
-          <span className="text-gray-500 font-normal ml-2">(Total: max 90s)</span>
+          Record Your Answer
+          <span className="text-gray-500 font-normal ml-2">(Total: max 15 minutes)</span>
         </label>
         {renderRecorder()}
       </div>
 
       <div>
-        <label htmlFor="question-text" className="block text-sm font-semibold text-gray-900 mb-2">
-          Additional Context <span className="text-gray-500 font-normal">(Optional)</span>
+        <label htmlFor="answer-text" className="block text-sm font-semibold text-gray-900 mb-2">
+          Written Answer or Additional Notes <span className="text-gray-500 font-normal">(Optional)</span>
         </label>
         <textarea
-          id="question-text"
+          id="answer-text"
           value={text}
           onChange={e => setText(e.target.value)}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
           rows="4"
           maxLength="5000"
-          placeholder="Add any written context, links, or details..."
+          placeholder="Add any written response or additional notes..."
         />
         <div className="text-right text-xs text-gray-500 mt-1">{text.length} / 5000</div>
       </div>
@@ -846,7 +786,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         </label>
         <input
           type="file"
-          id="file-upload"
+          id="answer-file-upload"
           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition"
           multiple
           onChange={handleFileChange}
@@ -856,7 +796,10 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
             {files.map((file, index) => (
               <li key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-700 truncate flex-1">{file.name}</span>
-                <button onClick={() => removeFile(index)} className="ml-3 text-red-500 hover:text-red-700 font-semibold text-sm">
+                <button
+                  onClick={() => removeFile(index)}
+                  className="ml-3 text-red-500 hover:text-red-700 font-semibold text-sm"
+                >
                   Remove
                 </button>
               </li>
@@ -865,19 +808,23 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         )}
       </div>
 
-      {!hideButton && (
+      <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200">
+        <button
+          onClick={onCancel}
+          className="px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+        >
+          Cancel
+        </button>
         <button
           onClick={handleProceedToReview}
           disabled={isProcessing}
-          className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isProcessing ? 'Processing...' : 'Continue to Review'}
+          {isProcessing ? 'Processing...' : 'Review Answer'}
         </button>
-      )}
+      </div>
     </div>
   );
-});
+}
 
-QuestionComposer.displayName = 'QuestionComposer';
-
-export default QuestionComposer;
+export default AnswerRecorder;

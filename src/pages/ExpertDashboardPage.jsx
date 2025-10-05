@@ -1,123 +1,29 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '@/api';
 import SettingsModal from '@/components/dashboard/SettingsModal';
+import AccountModal from '@/components/dashboard/AccountModal';
+import ProfilePreviewModal from '@/components/dashboard/ProfilePreviewModal';
 import SocialImpactStats from '@/components/dashboard/SocialImpactStats';
+import StatsSection from '@/components/dashboard/StatsSection';
 import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
-
-// Helper to format currency
-const formatPrice = (cents, currency = 'USD') => {
-  const symbols = { USD: '$', EUR: '€', GBP: '£' };
-  const symbol = symbols[currency] || '$';
-  const amount = (cents || 0) / 100;
-  return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
-};
-
-// Helper to format date
-const formatDate = (timestamp) => {
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-// Question Card Component
-const QuestionCard = ({ question, onViewDetails }) => {
-  const isAnswered = question.answered_at !== null;
-  const statusColor = {
-    'paid': 'bg-green-100 text-green-700 border-green-200',
-    'pending_payment': 'bg-amber-100 text-amber-700 border-amber-200',
-    'answered': 'bg-blue-100 text-blue-700 border-blue-200',
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-bold text-gray-900 line-clamp-1">
-              {question.title}
-            </h3>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusColor[question.status] || 'bg-gray-100 text-gray-700'}`}>
-              {question.status}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              {question.payer_email}
-            </span>
-            <span className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {formatDate(question.created_at)}
-            </span>
-          </div>
-        </div>
-
-        <div className="text-right ml-4">
-          <div className="text-2xl font-black text-gray-900">
-            {formatPrice(question.price_cents, question.currency)}
-          </div>
-        </div>
-      </div>
-
-      {question.text && (
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-          {question.text}
-        </p>
-      )}
-
-      <div className="flex items-center gap-3">
-        {question.media_asset_id && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            Video/Audio
-          </span>
-        )}
-        
-        {question.attachments && JSON.parse(question.attachments).length > 0 && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-lg">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-            </svg>
-            {JSON.parse(question.attachments).length} files
-          </span>
-        )}
-
-        <div className="flex-1"></div>
-
-        <button
-          onClick={() => onViewDetails(question)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition text-sm"
-        >
-          <span>{isAnswered ? 'View Answer' : 'Answer Now'}</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-};
+import QuestionTable from '@/components/dashboard/QuestionTable';
 
 function ExpertDashboardPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [error, setError] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(''); // Filter
+  const [activeTab, setActiveTab] = useState('pending');
+  const [currentPage, setCurrentPage] = useState(1);
+  const QUESTIONS_PER_PAGE = 10;
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
 
@@ -152,15 +58,30 @@ function ExpertDashboardPage() {
   }, []);
 
   useEffect(() => {
+    const hash = location.hash;
+    if (hash === '#profile-settings') {
+      setIsProfileModalOpen(true);
+    } else if (hash === '#account-settings') {
+      setIsAccountModalOpen(true);
+    }
+  }, [location]);
+
+  useEffect(() => {
     const fetchQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
-        const params = selectedStatus ? `?status=${selectedStatus}` : '';
+        const statusMap = {
+          'pending': 'paid',
+          'answered': 'answered',
+          'all': ''
+        };
+        const status = statusMap[activeTab];
+        const params = status ? `?status=${status}` : '';
         const response = await apiClient.get(`/me/questions${params}`);
         setQuestions(response.data || []);
+        setCurrentPage(1);
       } catch (err) {
         console.error("Failed to fetch questions:", err);
-        // Don't show error if endpoint doesn't exist yet
         if (err.response?.status !== 404) {
           console.error("Error fetching questions:", err.message);
         }
@@ -172,7 +93,7 @@ function ExpertDashboardPage() {
     if (profile) {
       fetchQuestions();
     }
-  }, [profile, selectedStatus]);
+  }, [profile, activeTab]);
 
   const handleSaveSettings = (updatedProfile) => {
     const processedProfile = {
@@ -184,8 +105,26 @@ function ExpertDashboardPage() {
     };
     setProfile(processedProfile);
   };
+
+  const handleSaveAccount = (updatedAccount) => {
+    console.log('Account updated:', updatedAccount);
+  };
+
+  const handleCloseProfileModal = () => {
+    setIsProfileModalOpen(false);
+    if (location.hash === '#profile-settings') {
+      navigate('/expert', { replace: true });
+    }
+  };
+
+  const handleCloseAccountModal = () => {
+    setIsAccountModalOpen(false);
+    if (location.hash === '#account-settings') {
+      navigate('/expert', { replace: true });
+    }
+  };
   
-  const handleCopyToClipboard = () => {
+  const handleCopyProfileLink = () => {
     if (profile?.handle) {
       const url = `${window.location.origin}/u/${profile.handle}`;
       navigator.clipboard.writeText(url);
@@ -194,13 +133,27 @@ function ExpertDashboardPage() {
     }
   };
 
-  const handleViewDetails = (question) => {
-    // TODO: Navigate to question detail page or open modal
-    console.log('View question:', question);
-    alert(`Question detail view coming soon!\n\nQuestion ID: ${question.id}\nTitle: ${question.title}`);
+  const pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
+
+  const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
+  const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
+  const endIndex = startIndex + QUESTIONS_PER_PAGE;
+  const paginatedQuestions = questions.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
+  const stats = {
+    thisMonthEarnings: 280000,
+    allTimeEarnings: 1560000,
+    totalAnswered: 127,
+    avgResponseTime: 8.5,
+    targetResponseTime: 24,
+    avgRating: 4.8,
+    monthlyGrowth: 12
+  };
 
   if (isLoading) {
     return (
@@ -232,180 +185,210 @@ function ExpertDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 sm:gap-4 mb-2">
-            <div className="flex-shrink-0">
-              {profile?.avatar_url ? (
-                <img 
-                  src={profile.avatar_url} 
-                  alt="Avatar" 
-                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-4 ring-indigo-100"
-                />
-              ) : (
-                <DefaultAvatar size={48} className="sm:w-16 sm:h-16" />
-              )}
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 truncate">
-                Welcome, {profile?.user?.name || 'Expert'}
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 truncate">
-                {profile?.user?.email || '...'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Settings & Impact */}
-          <div className="space-y-6">
-            {/* Quick Settings Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Quick Settings</h2>
-                <button 
-                  onClick={() => setIsModalOpen(true)}
-                  className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm"
-                >
-                  Edit
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-gray-600">Price per Question</span>
-                  <span className="font-bold text-gray-900">${profile.priceUsd || '—'}</span>
-                </div>
-                
-                <div className="flex justify-between items-center py-2 border-t border-gray-100">
-                  <span className="text-sm text-gray-600">Response Time</span>
-                  <span className="font-bold text-gray-900">{profile.slaHours ? `${profile.slaHours}h` : '—'}</span>
-                </div>
-                
-                <div className="py-2 border-t border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Public Profile</span>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                      profile.isPublic 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${profile.isPublic ? 'bg-green-600' : 'bg-gray-400'}`}></div>
-                      {profile.isPublic ? 'Active' : 'Private'}
-                    </span>
+        <div className="mb-4 lg:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Clickable Avatar with Preview */}
+              <button
+                onClick={() => setIsPreviewModalOpen(true)}
+                className="flex-shrink-0 group relative"
+                title="Preview your public profile"
+              >
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt="Avatar" 
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-4 ring-indigo-100 group-hover:ring-indigo-300 transition-all cursor-pointer"
+                  />
+                ) : (
+                  <div className="group-hover:opacity-80 transition-opacity cursor-pointer">
+                    <DefaultAvatar size={48} />
                   </div>
-                  {profile.handle && profile.isPublic && (
-                    <div className="mt-2">
-                      <div className="flex items-center gap-2 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                        <a 
-                          href={`/u/${profile.handle}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="flex-1 text-xs text-indigo-600 font-semibold truncate hover:underline"
-                        >
+                )}
+                {/* Hover indicator */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                  <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+              </button>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 truncate">
+                    Welcome, {profile?.user?.name || 'Expert'}
+                  </h1>
+                  {profile?.handle && profile.isPublic && (
+                    <div className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg">
+                      
+                        <a href={`/u/${profile.handle}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 hover:opacity-80 transition"
+                        title="View public profile"
+                      >
+                        <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        <span className="text-xs font-semibold text-indigo-600 max-w-[100px] truncate">
                           /u/{profile.handle}
-                        </a>
-                        <button 
-                          onClick={handleCopyToClipboard}
-                          className="flex-shrink-0 px-2.5 py-1 bg-white border border-gray-200 rounded text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
-                        >
-                          {copied ? (
-                            <span className="flex items-center gap-1 text-green-600">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                              </svg>
-                              Copied
-                            </span>
-                          ) : (
-                            'Copy'
-                          )}
-                        </button>
-                      </div>
+                        </span>
+                      </a>
+                      <div className="w-px h-4 bg-indigo-200 mx-1"></div>
+                      <button
+                        onClick={handleCopyProfileLink}
+                        className="p-1 hover:bg-indigo-100 rounded transition"
+                        title="Copy link"
+                        type="button"
+                      >
+                        {copied ? (
+                          <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs sm:text-sm text-gray-500 truncate">
+                    {profile?.user?.email || '...'}
+                  </p>
+                  {profile?.handle && profile.isPublic && (
+                    <button
+                      onClick={handleCopyProfileLink}
+                      className="md:hidden inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded text-xs font-semibold text-indigo-600"
+                      type="button"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      {copied ? 'Copied' : 'Link'}
+                    </button>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Social Impact Card */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => navigate('#profile-settings')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                type="button"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="hidden sm:inline">Profile</span>
+              </button>
+              <button
+                onClick={() => navigate('#account-settings')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                type="button"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="hidden sm:inline">Account</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          <div className="space-y-4 lg:space-y-6">
+            <StatsSection stats={stats} />
             <SocialImpactStats 
-              totalDonated={profile.total_donated || 0}
-              charityPercentage={profile.charity_percentage || 0}
-              selectedCharity={profile.selected_charity}
+              totalDonated={profile?.total_donated || 0}
+              charityPercentage={profile?.charity_percentage || 0}
+              selectedCharity={profile?.selected_charity}
             />
           </div>
 
-          {/* Right Column - Questions */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Questions Header with Filter */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Your Questions</h2>
-                {pendingCount > 0 && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-100 text-red-700">
-                    {pendingCount} pending
-                  </span>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                {['paid', 'answered', 'all'].map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setSelectedStatus(status === 'all' ? '' : status)}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
-                      (status === 'all' && selectedStatus === '') || selectedStatus === status
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </button>
-                ))}
+          <div className="lg:col-span-2 space-y-4 lg:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h2 className="text-2xl font-bold text-gray-900">Questions</h2>
+              
+              <div className="inline-flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+                <button
+                  onClick={() => setActiveTab('pending')}
+                  className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+                    activeTab === 'pending'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  type="button"
+                >
+                  Pending {pendingCount > 0 && `(${pendingCount})`}
+                </button>
+                <button
+                  onClick={() => setActiveTab('answered')}
+                  className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+                    activeTab === 'answered'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  type="button"
+                >
+                  Answered
+                </button>
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+                    activeTab === 'all'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  type="button"
+                >
+                  All
+                </button>
               </div>
             </div>
 
-            {/* Questions List */}
             {isLoadingQuestions ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                 <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-gray-600">Loading questions...</p>
               </div>
-            ) : questions.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <p className="text-gray-600 font-medium mb-1">No questions yet!</p>
-                <p className="text-sm text-gray-500">Share your profile link to start receiving questions</p>
-              </div>
             ) : (
-              <div className="space-y-4">
-                {questions.map((question) => (
-                  <QuestionCard 
-                    key={question.id} 
-                    question={question}
-                    onViewDetails={handleViewDetails}
-                  />
-                ))}
-              </div>
+              <QuestionTable 
+                questions={paginatedQuestions}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
             )}
           </div>
         </div>
       </main>
 
-      {/* Settings Modal */}
       {profile && (
-        <SettingsModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          profile={profile}
-          onSave={handleSaveSettings}
-        />
+        <>
+          <SettingsModal 
+            isOpen={isProfileModalOpen} 
+            onClose={handleCloseProfileModal} 
+            profile={profile}
+            onSave={handleSaveSettings}
+          />
+          <AccountModal 
+            isOpen={isAccountModalOpen} 
+            onClose={handleCloseAccountModal} 
+            profile={profile}
+            onSave={handleSaveAccount}
+          />
+          <ProfilePreviewModal
+            isOpen={isPreviewModalOpen}
+            onClose={() => setIsPreviewModalOpen(false)}
+            profile={profile}
+          />
+        </>
       )}
     </div>
   );

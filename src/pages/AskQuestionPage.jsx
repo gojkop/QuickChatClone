@@ -1,3 +1,4 @@
+// client/src/pages/AskQuestionPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import QuestionComposer from '@/components/question/QuestionComposer';
@@ -71,10 +72,12 @@ function AskQuestionPage() {
     fetchExpertProfile();
   }, [location.search]);
 
-  const handleContinueToReview = () => {
+  const handleContinueToReview = async () => {
     if (composerRef.current) {
-      const data = composerRef.current.validateAndGetData();
+      // This will trigger concatenation if there are segments
+      const data = await composerRef.current.validateAndGetData();
       if (data) {
+        console.log('Question data with duration:', data.recordingDuration);
         setQuestionData(data);
         setShowReviewModal(true);
       }
@@ -122,7 +125,7 @@ function AskQuestionPage() {
         submitButton.textContent = 'Submitting...';
       }
 
-      // Prepare recording data
+      // Prepare recording data - now it's a single concatenated blob
       let recordingBlob = null;
       if (questionData.mediaBlob) {
         recordingBlob = await blobToBase64(questionData.mediaBlob);
@@ -137,7 +140,7 @@ function AskQuestionPage() {
         }
       }
 
-      // Prepare submission payload
+      // Prepare submission payload - back to original single blob structure
       const payload = {
         expertHandle: expert.handle,
         title: questionData.title,
@@ -179,7 +182,8 @@ function AskQuestionPage() {
         window.location.href = result.checkoutUrl;
       } else {
         // Development: Redirect to success page directly
-        navigate(`/question-sent?question_id=${result.questionId}&dev_mode=true`);
+        const expertName = expert.name || expert.user?.name || expert.handle;
+        navigate(`/question-sent?question_id=${result.questionId}&expert=${expert.handle}&expertName=${encodeURIComponent(expertName)}&dev_mode=true`);
       }
 
     } catch (error) {
@@ -329,4 +333,4 @@ function AskQuestionPage() {
   );
 }
 
-export default AskQuestionPage;
+export default AskQuestionPage; 

@@ -18,6 +18,8 @@ import InvitePage from '@/pages/InvitePage';
 import InviteSentPage from '@/pages/InviteSentPage';
 import AskQuestionPage from '@/pages/AskQuestionPage';
 import QuestionSentPage from '@/pages/QuestionSentPage';
+import AnswerReviewPage from '@/pages/AnswerReviewPage';
+
 
 // Import Common Components
 import Navbar from '@/components/common/Navbar';
@@ -31,7 +33,8 @@ const AppLayout = () => {
   const hideLayout = [
     '/auth/callback',
     '/invite-sent',
-    '/signin'
+    '/signin',
+    '/question-sent'
   ].includes(location.pathname);
   
   // Also hide on public profile pages (they have their own isolated design)
@@ -54,6 +57,8 @@ const AppLayout = () => {
           <Route path="/ask" element={<AskQuestionPage />} />
           <Route path="/question-sent" element={<QuestionSentPage />} />
           <Route path="/u/:handle" element={<PublicProfilePage />} />
+          <Route path="/r/:token" element={<AnswerReviewPage />} />
+
           
           {/* Auth Routes */}
           <Route path="/signin" element={<SignInPage />} />
