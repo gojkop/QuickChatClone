@@ -181,9 +181,9 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Attachments</h3>
                       <div className="space-y-2">
                         {attachments.map((file, index) => (
-                          
+                           <a
                             key={index}
-                            <a href={file.url || '#'}
+                            href={file.url || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
