@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '@/api';
 import SettingsModal from '@/components/dashboard/SettingsModal';
 import AccountModal from '@/components/dashboard/AccountModal';
+import ProfilePreviewModal from '@/components/dashboard/ProfilePreviewModal';
 import SocialImpactStats from '@/components/dashboard/SocialImpactStats';
 import StatsSection from '@/components/dashboard/StatsSection';
 import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
@@ -18,6 +19,7 @@ function ExpertDashboardPage() {
   const [error, setError] = useState('');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
   const [currentPage, setCurrentPage] = useState(1);
@@ -186,17 +188,31 @@ function ExpertDashboardPage() {
         <div className="mb-4 lg:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex items-center gap-3 sm:gap-4">
-              <div className="flex-shrink-0">
+              {/* Clickable Avatar with Preview */}
+              <button
+                onClick={() => setIsPreviewModalOpen(true)}
+                className="flex-shrink-0 group relative"
+                title="Preview your public profile"
+              >
                 {profile?.avatar_url ? (
                   <img 
                     src={profile.avatar_url} 
                     alt="Avatar" 
-                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-4 ring-indigo-100"
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-4 ring-indigo-100 group-hover:ring-indigo-300 transition-all cursor-pointer"
                   />
                 ) : (
-                  <DefaultAvatar size={48} />
+                  <div className="group-hover:opacity-80 transition-opacity cursor-pointer">
+                    <DefaultAvatar size={48} />
+                  </div>
                 )}
-              </div>
+                {/* Hover indicator */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                  <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+              </button>
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -366,6 +382,11 @@ function ExpertDashboardPage() {
             onClose={handleCloseAccountModal} 
             profile={profile}
             onSave={handleSaveAccount}
+          />
+          <ProfilePreviewModal
+            isOpen={isPreviewModalOpen}
+            onClose={() => setIsPreviewModalOpen(false)}
+            profile={profile}
           />
         </>
       )}
