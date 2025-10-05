@@ -27,6 +27,15 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
   const [mediaUrl, setMediaUrl] = useState(null);
   const [attachments, setAttachments] = useState([]);
 
+  // Reset state when modal opens/closes or question changes
+  useEffect(() => {
+    if (!isOpen || !question) {
+      setShowAnswerRecorder(false);
+      setShowReviewModal(false);
+      setAnswerData(null);
+    }
+  }, [isOpen, question]);
+
   useEffect(() => {
     if (question?.media_asset_id) {
       // Mock URL - replace with actual media URL fetch
