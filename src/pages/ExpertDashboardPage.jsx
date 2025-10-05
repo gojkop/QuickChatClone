@@ -50,6 +50,25 @@ function ExpertDashboardPage() {
     fetchProfile();
   }, []);
 
+  // Handle URL hash to open modals
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#profile-settings') {
+        setIsProfileModalOpen(true);
+      } else if (hash === '#account-settings') {
+        setIsAccountModalOpen(true);
+      }
+    };
+
+    // Check hash on mount
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -92,6 +111,22 @@ function ExpertDashboardPage() {
   const handleSaveAccount = (updatedAccount) => {
     // TODO: Update profile with account changes
     console.log('Account updated:', updatedAccount);
+  };
+
+  const handleCloseProfileModal = () => {
+    setIsProfileModalOpen(false);
+    // Clear hash from URL
+    if (window.location.hash === '#profile-settings') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
+
+  const handleCloseAccountModal = () => {
+    setIsAccountModalOpen(false);
+    // Clear hash from URL
+    if (window.location.hash === '#account-settings') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   };
   
   const handleCopyProfileLink = () => {
@@ -244,7 +279,10 @@ function ExpertDashboardPage() {
             {/* Right side - Action Buttons */}
             <div className="flex items-center gap-2 sm:gap-3">
               <button
-                onClick={() => setIsProfileModalOpen(true)}
+                onClick={() => {
+                  setIsProfileModalOpen(true);
+                  window.history.pushState(null, '', '#profile-settings');
+                }}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,7 +292,10 @@ function ExpertDashboardPage() {
                 <span className="hidden sm:inline">Profile</span>
               </button>
               <button
-                onClick={() => setIsAccountModalOpen(true)}
+                onClick={() => {
+                  setIsAccountModalOpen(true);
+                  window.history.pushState(null, '', '#account-settings');
+                }}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,7 +383,7 @@ function ExpertDashboardPage() {
       {profile && (
         <SettingsModal 
           isOpen={isProfileModalOpen} 
-          onClose={() => setIsProfileModalOpen(false)} 
+          onClose={handleCloseProfileModal} 
           profile={profile}
           onSave={handleSaveSettings}
         />
@@ -352,7 +393,7 @@ function ExpertDashboardPage() {
       {profile && (
         <AccountModal 
           isOpen={isAccountModalOpen} 
-          onClose={() => setIsAccountModalOpen(false)} 
+          onClose={handleCloseAccountModal} 
           profile={profile}
           onSave={handleSaveAccount}
         />
