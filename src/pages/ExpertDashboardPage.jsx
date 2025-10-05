@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '@/api';
 import SettingsModal from '@/components/dashboard/SettingsModal';
 import AccountModal from '@/components/dashboard/AccountModal';
@@ -8,6 +9,8 @@ import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
 import QuestionTable from '@/components/dashboard/QuestionTable';
 
 function ExpertDashboardPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,22 +55,13 @@ function ExpertDashboardPage() {
 
   // Handle URL hash to open modals
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash;
-      if (hash === '#profile-settings') {
-        setIsProfileModalOpen(true);
-      } else if (hash === '#account-settings') {
-        setIsAccountModalOpen(true);
-      }
-    };
-
-    // Check hash on mount
-    handleHashChange();
-
-    // Listen for hash changes
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+    const hash = location.hash;
+    if (hash === '#profile-settings') {
+      setIsProfileModalOpen(true);
+    } else if (hash === '#account-settings') {
+      setIsAccountModalOpen(true);
+    }
+  }, [location]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -116,16 +110,16 @@ function ExpertDashboardPage() {
   const handleCloseProfileModal = () => {
     setIsProfileModalOpen(false);
     // Clear hash from URL
-    if (window.location.hash === '#profile-settings') {
-      window.history.replaceState(null, '', window.location.pathname);
+    if (location.hash === '#profile-settings') {
+      navigate('/expert', { replace: true });
     }
   };
 
   const handleCloseAccountModal = () => {
     setIsAccountModalOpen(false);
     // Clear hash from URL
-    if (window.location.hash === '#account-settings') {
-      window.history.replaceState(null, '', window.location.pathname);
+    if (location.hash === '#account-settings') {
+      navigate('/expert', { replace: true });
     }
   };
   
@@ -279,10 +273,7 @@ function ExpertDashboardPage() {
             {/* Right side - Action Buttons */}
             <div className="flex items-center gap-2 sm:gap-3">
               <button
-                onClick={() => {
-                  setIsProfileModalOpen(true);
-                  window.history.pushState(null, '', '#profile-settings');
-                }}
+                onClick={() => navigate('#profile-settings')}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,10 +283,7 @@ function ExpertDashboardPage() {
                 <span className="hidden sm:inline">Profile</span>
               </button>
               <button
-                onClick={() => {
-                  setIsAccountModalOpen(true);
-                  window.history.pushState(null, '', '#account-settings');
-                }}
+                onClick={() => navigate('#account-settings')}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
