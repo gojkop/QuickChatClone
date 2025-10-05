@@ -19,7 +19,7 @@ function ExpertDashboardPage() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState('pending'); // pending, answered, all
+  const [activeTab, setActiveTab] = useState('pending');
   const [currentPage, setCurrentPage] = useState(1);
   const QUESTIONS_PER_PAGE = 10;
 
@@ -55,7 +55,6 @@ function ExpertDashboardPage() {
     fetchProfile();
   }, []);
 
-  // Handle URL hash to open modals
   useEffect(() => {
     const hash = location.hash;
     if (hash === '#profile-settings') {
@@ -78,7 +77,7 @@ function ExpertDashboardPage() {
         const params = status ? `?status=${status}` : '';
         const response = await apiClient.get(`/me/questions${params}`);
         setQuestions(response.data || []);
-        setCurrentPage(1); // Reset to first page when tab changes
+        setCurrentPage(1);
       } catch (err) {
         console.error("Failed to fetch questions:", err);
         if (err.response?.status !== 404) {
@@ -106,13 +105,11 @@ function ExpertDashboardPage() {
   };
 
   const handleSaveAccount = (updatedAccount) => {
-    // TODO: Update profile with account changes
     console.log('Account updated:', updatedAccount);
   };
 
   const handleCloseProfileModal = () => {
     setIsProfileModalOpen(false);
-    // Clear hash from URL
     if (location.hash === '#profile-settings') {
       navigate('/expert', { replace: true });
     }
@@ -120,7 +117,6 @@ function ExpertDashboardPage() {
 
   const handleCloseAccountModal = () => {
     setIsAccountModalOpen(false);
-    // Clear hash from URL
     if (location.hash === '#account-settings') {
       navigate('/expert', { replace: true });
     }
@@ -137,7 +133,6 @@ function ExpertDashboardPage() {
 
   const pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
 
-  // Pagination calculations
   const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
   const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
   const endIndex = startIndex + QUESTIONS_PER_PAGE;
@@ -145,14 +140,12 @@ function ExpertDashboardPage() {
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
-    // Scroll to top of questions section
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Mock stats data - TODO: fetch from API
   const stats = {
-    thisMonthEarnings: 280000, // $2,800 in cents
-    allTimeEarnings: 1560000, // $15,600 in cents
+    thisMonthEarnings: 280000,
+    allTimeEarnings: 1560000,
     totalAnswered: 127,
     avgResponseTime: 8.5,
     targetResponseTime: 24,
@@ -190,10 +183,8 @@ function ExpertDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
-        {/* Header */}
         <div className="mb-4 lg:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            {/* Left side - Avatar and Info */}
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="flex-shrink-0">
                 {profile?.avatar_url ? (
@@ -212,9 +203,8 @@ function ExpertDashboardPage() {
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 truncate">
                     Welcome, {profile?.user?.name || 'Expert'}
                   </h1>
-                  {/* Profile Link Badge */}
                   {profile?.handle && profile.isPublic && (
-                    <div className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg group">
+                    <div className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg">
                       
                         href={`/u/${profile.handle}`}
                         target="_blank"
@@ -229,11 +219,12 @@ function ExpertDashboardPage() {
                           /u/{profile.handle}
                         </span>
                       </a>
-                      <div className="w-px h-4 bg-indigo-200"></div>
+                      <div className="w-px h-4 bg-indigo-200 mx-1"></div>
                       <button
                         onClick={handleCopyProfileLink}
                         className="p-1 hover:bg-indigo-100 rounded transition"
                         title="Copy link"
+                        type="button"
                       >
                         {copied ? (
                           <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,11 +243,11 @@ function ExpertDashboardPage() {
                   <p className="text-xs sm:text-sm text-gray-500 truncate">
                     {profile?.user?.email || '...'}
                   </p>
-                  {/* Mobile Profile Link */}
                   {profile?.handle && profile.isPublic && (
                     <button
                       onClick={handleCopyProfileLink}
                       className="md:hidden inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded text-xs font-semibold text-indigo-600"
+                      type="button"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -268,11 +259,11 @@ function ExpertDashboardPage() {
               </div>
             </div>
 
-            {/* Right side - Action Buttons */}
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => navigate('#profile-settings')}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                type="button"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -283,6 +274,7 @@ function ExpertDashboardPage() {
               <button
                 onClick={() => navigate('#account-settings')}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                type="button"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -294,26 +286,19 @@ function ExpertDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-          {/* Left Column - Stats & Social Impact */}
           <div className="space-y-4 lg:space-y-6">
-            {/* Performance Stats */}
             <StatsSection stats={stats} />
-
-            {/* Social Impact Card */}
             <SocialImpactStats 
-              totalDonated={profile.total_donated || 0}
-              charityPercentage={profile.charity_percentage || 0}
-              selectedCharity={profile.selected_charity}
+              totalDonated={profile?.total_donated || 0}
+              charityPercentage={profile?.charity_percentage || 0}
+              selectedCharity={profile?.selected_charity}
             />
           </div>
 
-          {/* Right Column - Questions */}
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-            {/* Questions Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <h2 className="text-2xl font-bold text-gray-900">Questions</h2>
               
-              {/* Tab Navigation */}
               <div className="inline-flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
                 <button
                   onClick={() => setActiveTab('pending')}
@@ -322,6 +307,7 @@ function ExpertDashboardPage() {
                       ? 'bg-indigo-600 text-white shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
+                  type="button"
                 >
                   Pending {pendingCount > 0 && `(${pendingCount})`}
                 </button>
@@ -332,6 +318,7 @@ function ExpertDashboardPage() {
                       ? 'bg-indigo-600 text-white shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
+                  type="button"
                 >
                   Answered
                 </button>
@@ -342,13 +329,13 @@ function ExpertDashboardPage() {
                       ? 'bg-indigo-600 text-white shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
+                  type="button"
                 >
                   All
                 </button>
               </div>
             </div>
 
-            {/* Questions Table - Now handles everything internally */}
             {isLoadingQuestions ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                 <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -366,24 +353,21 @@ function ExpertDashboardPage() {
         </div>
       </main>
 
-      {/* Profile Settings Modal */}
       {profile && (
-        <SettingsModal 
-          isOpen={isProfileModalOpen} 
-          onClose={handleCloseProfileModal} 
-          profile={profile}
-          onSave={handleSaveSettings}
-        />
-      )}
-
-      {/* Account Modal */}
-      {profile && (
-        <AccountModal 
-          isOpen={isAccountModalOpen} 
-          onClose={handleCloseAccountModal} 
-          profile={profile}
-          onSave={handleSaveAccount}
-        />
+        <>
+          <SettingsModal 
+            isOpen={isProfileModalOpen} 
+            onClose={handleCloseProfileModal} 
+            profile={profile}
+            onSave={handleSaveSettings}
+          />
+          <AccountModal 
+            isOpen={isAccountModalOpen} 
+            onClose={handleCloseAccountModal} 
+            profile={profile}
+            onSave={handleSaveAccount}
+          />
+        </>
       )}
     </div>
   );
