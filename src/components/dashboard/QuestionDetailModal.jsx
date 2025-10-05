@@ -65,10 +65,15 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
   const handleSubmitAnswer = async (finalData) => {
     console.log('Submitting answer:', finalData);
     // TODO: API call to submit answer
-    alert('Answer submitted successfully!');
-    setShowReviewModal(false);
-    setShowAnswerRecorder(false);
-    onClose();
+    // For now, just close everything - the AnswerReviewModal will handle showing success
+    
+    // The success modal is now shown by AnswerReviewModal itself
+    // So we just need to close this detail modal after a short delay
+    setTimeout(() => {
+      setShowReviewModal(false);
+      setShowAnswerRecorder(false);
+      onClose();
+    }, 100);
   };
 
   const isAnswered = question.status === 'answered';
