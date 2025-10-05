@@ -52,8 +52,6 @@ export default async function handler(req, res) {
     }
 
     console.log('✅ Validation passed');
-    console.log('👤 Expert:', expertHandle);
-    console.log('📧 Email:', payerEmail);
 
     // Step 1: Get expert profile
     console.log('📡 Fetching expert profile...');
@@ -74,8 +72,11 @@ export default async function handler(req, res) {
 
     console.log('✅ Expert found - ID:', expertProfile.id);
 
-    // Step 2: Upload recording to Cloudflare Stream
-    let mediaAssetId = null;
+    // Step 2: Upload recording to Cloudflare Stream (get video UID, but don't create media_asset yet)
+    let streamVideoUid = null;
+    let streamVideoDuration = null;
+    let streamVideoStatus = null;
+    let streamVideoUrl = null;
     
     if (recordingBlob && recordingMode) {
       console.log('📹 Uploading recording to Cloudflare Stream...');
@@ -113,30 +114,12 @@ export default async function handler(req, res) {
         }
 
         const video = streamData.result;
-        console.log('✅ Stream upload successful:', video.uid);
-
-        // Create media_asset in Xano
-        const mediaResponse = await fetch(
-          'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/media_asset',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              owner_type: 'question',
-              provider: 'cloudflare_stream',
-              asset_id: video.uid,
-              duration_sec: video.duration || null,
-              status: video.status?.state || 'processing',
-              url: video.playback?.hls || video.thumbnail || null
-            })
-          }
-        );
-
-        if (mediaResponse.ok) {
-          const mediaAsset = await mediaResponse.json();
-          mediaAssetId = mediaAsset.id;
-          console.log('✅ Media asset created:', mediaAssetId);
-        }
+        streamVideoUid = video.uid;
+        streamVideoDuration = video.duration || null;
+        streamVideoStatus = video.status?.state || 'processing';
+        streamVideoUrl = video.playback?.hls || video.thumbnail || null;
+        
+        console.log('✅ Stream upload successful:', streamVideoUid);
       } catch (error) {
         console.error('⚠️ Media upload failed:', error.message);
       }
@@ -188,7 +171,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Step 4: Create question in Xano
+    // Step 4: Create question FIRST (without media_asset_id)
     console.log('📝 Creating question in Xano...');
     
     const questionData = {
@@ -200,7 +183,6 @@ export default async function handler(req, res) {
       sla_hours_snapshot: expertProfile.sla_hours,
       title: title.trim(),
       text: text ? text.trim() : null,
-      media_asset_id: mediaAssetId,
       attachments: attachmentUrls.length > 0 ? JSON.stringify(attachmentUrls) : null,
     };
 
@@ -225,7 +207,55 @@ export default async function handler(req, res) {
     const question = await questionResponse.json();
     console.log('✅ Question created with ID:', question.id);
 
-    // Step 5: Dev mode - skip Stripe, mark as paid
+    // Step 5: Create media_asset with owner_id = question.id (if we have video)
+    let mediaAssetId = null;
+    
+    if (streamVideoUid) {
+      console.log('📹 Creating media_asset record...');
+      
+      try {
+        const mediaResponse = await fetch(
+          'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/media_asset',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              owner_type: 'question',
+              owner_id: question.id,
+              provider: 'cloudflare_stream',
+              asset_id: streamVideoUid,
+              duration_sec: streamVideoDuration,
+              status: streamVideoStatus,
+              url: streamVideoUrl
+            })
+          }
+        );
+
+        if (mediaResponse.ok) {
+          const mediaAsset = await mediaResponse.json();
+          mediaAssetId = mediaAsset.id;
+          console.log('✅ Media asset created:', mediaAssetId);
+          
+          // Step 6: Update question to link media_asset_id
+          await fetch(
+            `https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/question/${question.id}`,
+            {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                media_asset_id: mediaAssetId
+              }),
+            }
+          );
+          
+          console.log('✅ Question updated with media_asset_id');
+        }
+      } catch (error) {
+        console.error('⚠️ Media asset creation failed:', error.message);
+      }
+    }
+
+    // Step 7: Dev mode - skip Stripe, mark as paid
     if (process.env.SKIP_STRIPE === 'true' || process.env.NODE_ENV === 'development') {
       console.log('⚠️ SKIPPING STRIPE - Development Mode');
       
