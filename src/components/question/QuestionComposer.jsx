@@ -134,24 +134,31 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const startNewSegment = (mode) => {
+  const startNewSegment = async (mode) => {
     const remainingTime = MAX_RECORDING_SECONDS - totalDuration;
     if (remainingTime <= 0) {
       alert('You have used all 90 seconds. Please remove a segment to add more.');
       return;
     }
     
+    // Clean up any existing stream first
+    cleanupStream();
+    
     // Reset camera to front-facing when starting new video segment
+    // Use a small delay to ensure state updates before camera initialization
     if (mode === 'video') {
       setFacingMode('user');
+      // Wait a brief moment for state to update
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
     
     setCurrentSegment({ mode, blob: null, blobUrl: null, duration: 0 });
     setRecordingState('asking');
-    initiatePreview(mode);
+    // Always pass 'user' explicitly for video mode
+    initiatePreview(mode, mode === 'video' ? 'user' : facingMode);
   };
 
-  const initiatePreview = async (mode) => {
+  const initiatePreview = async (mode, desiredFacingMode = facingMode) => {
     try {
       let stream;
       
@@ -164,7 +171,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         if (mode === 'screen-camera') {
           try {
             const cameraStream = await navigator.mediaDevices.getUserMedia({ 
-              video: { facingMode: facingMode },
+              video: { facingMode: desiredFacingMode },
               audio: true 
             });
             stream = displayStream;
@@ -177,7 +184,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         }
       } else {
         const constraints = mode === 'video' 
-          ? { audio: true, video: { facingMode: facingMode } }
+          ? { audio: true, video: { facingMode: desiredFacingMode } }
           : { audio: true, video: false };
         
         stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -605,7 +612,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                   </svg>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-blue-900 mb-1">
-                      Screen recording available on desktop
+                      💻 Screen recording available on desktop
                     </p>
                     <p className="text-xs text-blue-700">
                       Use our desktop site to record your screen along with video and audio
@@ -645,7 +652,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
               <button onClick={discardSegment} className="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition">
                 Cancel
               </button>
-              <button onClick={() => initiatePreview(currentSegment.mode)} className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition">
+              <button onClick={() => initiatePreview(currentSegment.mode, facingMode)} className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition">
                 Try Again
               </button>
             </div>
