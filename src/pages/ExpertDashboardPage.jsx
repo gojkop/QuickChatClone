@@ -135,23 +135,6 @@ function ExpertDashboardPage() {
     }
   };
 
-  const handleAnswerQuestion = (question) => {
-    // TODO: Navigate to question detail/answer page
-    console.log('Answer question:', question);
-    alert(`Question answer page coming soon!\n\nQuestion ID: ${question.id}\nTitle: ${question.title}`);
-  };
-
-  const handleDeleteQuestion = (question) => {
-    // TODO: Implement delete confirmation and API call
-    console.log('Delete question:', question);
-    if (window.confirm(`Are you sure you want to delete this question?\n\n"${question.title}"\n\nThis action cannot be undone.`)) {
-      alert('Delete functionality will be implemented soon!');
-      // Future implementation:
-      // await apiClient.delete(`/me/questions/${question.id}`);
-      // setQuestions(questions.filter(q => q.id !== question.id));
-    }
-  };
-
   const pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
 
   // Pagination calculations
@@ -232,7 +215,7 @@ function ExpertDashboardPage() {
                   {/* Profile Link Badge */}
                   {profile?.handle && profile.isPublic && (
                     <div className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg group">
-                      <a
+                      
                         href={`/u/${profile.handle}`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -365,7 +348,7 @@ function ExpertDashboardPage() {
               </div>
             </div>
 
-            {/* Questions Table */}
+            {/* Questions Table - Now handles everything internally */}
             {isLoadingQuestions ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                 <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -374,8 +357,6 @@ function ExpertDashboardPage() {
             ) : (
               <QuestionTable 
                 questions={paginatedQuestions}
-                onAnswer={handleAnswerQuestion}
-                onDelete={handleDeleteQuestion}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
