@@ -89,6 +89,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
           finalMediaBlob = result.blob;
           finalRecordingMode = result.mode;
           finalDuration = result.duration;
+          
+          // Fallback: Calculate duration from segments if not provided
+          if (!finalDuration || finalDuration === 0) {
+            finalDuration = segments.reduce((total, seg) => total + (seg.duration || 0), 0);
+          }
         } catch (error) {
           console.error('Failed to concatenate segments:', error);
           alert('Failed to process recording segments. Please try again.');
@@ -364,6 +369,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         finalMediaBlob = result.blob;
         finalRecordingMode = result.mode;
         finalDuration = result.duration;
+        
+        // Fallback: Calculate duration from segments if not provided
+        if (!finalDuration || finalDuration === 0) {
+          finalDuration = segments.reduce((total, seg) => total + (seg.duration || 0), 0);
+        }
       } catch (error) {
         console.error('Failed to concatenate segments:', error);
         alert('Failed to process recording. Please try again.');

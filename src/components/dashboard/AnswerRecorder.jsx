@@ -295,13 +295,42 @@ function AnswerRecorder({ question, onReady, onCancel }) {
   const handleProceedToReview = async () => {
     let finalMediaBlob = null;
     let finalRecordingMode = null;
+    let finalDuration = 0;
 
     if (segments.length > 0) {
       setIsProcessing(true);
       try {
+        console.log('Starting concatenation with segments:', segments.map(s => ({
+          mode: s.mode,
+          duration: s.duration,
+          blobSize: s.blob?.size
+        })));
+        
         const result = await concatenateSegments(segments, setProcessingProgress);
+        
+        console.log('Concatenation result:', {
+          hasBlob: !!result.blob,
+          blobSize: result.blob?.size,
+          mode: result.mode,
+          duration: result.duration,
+          fullResult: result
+        });
+        
         finalMediaBlob = result.blob;
         finalRecordingMode = result.mode;
+        finalDuration = result.duration;
+        
+        // Fallback: Calculate duration from segments if not provided by concatenation
+        if (!finalDuration || finalDuration === 0) {
+          finalDuration = segments.reduce((total, seg) => total + (seg.duration || 0), 0);
+          console.log('Using fallback duration calculation:', finalDuration);
+        }
+        
+        console.log('Final values:', {
+          finalMediaBlob: !!finalMediaBlob,
+          finalRecordingMode,
+          finalDuration
+        });
       } catch (error) {
         console.error('Failed to concatenate segments:', error);
         alert('Failed to process recording. Please try again.');
@@ -318,8 +347,15 @@ function AnswerRecorder({ question, onReady, onCancel }) {
       text,
       files,
       mediaBlob: finalMediaBlob,
-      recordingMode: finalRecordingMode
+      recordingMode: finalRecordingMode,
+      recordingDuration: finalDuration
     };
+    
+    console.log('Passing data to onReady:', {
+      hasMediaBlob: !!data.mediaBlob,
+      recordingMode: data.recordingMode,
+      recordingDuration: data.recordingDuration
+    });
     
     onReady(data);
   };
