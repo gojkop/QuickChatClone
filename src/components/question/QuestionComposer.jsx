@@ -38,9 +38,10 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     navigator.mediaDevices.getDisplayMedia;
 
   // Mobile detection
-  const isMobileDevice = typeof window !== 'undefined' && 
-    (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    (navigator.maxTouchPoints && navigator.maxTouchPoints > 2));
+  const isMobileDevice = typeof window !== 'undefined' && (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 2)
+  );
 
   // Effect to properly set video source when stream is ready
   useEffect(() => {
@@ -604,7 +605,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                   </svg>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-blue-900 mb-1">
-                      Screen recording available on desktop
+                     Screen recording available on desktop
                     </p>
                     <p className="text-xs text-blue-700">
                       Use our desktop site to record your screen along with video and audio
