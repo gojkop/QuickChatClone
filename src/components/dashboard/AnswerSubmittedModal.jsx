@@ -1,6 +1,12 @@
 // src/components/dashboard/AnswerSubmittedModal.jsx
 import React, { useState } from 'react';
 
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 function AnswerSubmittedModal({ isOpen, onClose, answerData, question }) {
   const [copied, setCopied] = useState(false);
 
@@ -29,6 +35,7 @@ function AnswerSubmittedModal({ isOpen, onClose, answerData, question }) {
   const hasRecording = !!answerData?.mediaBlob;
   const hasText = !!answerData?.text && answerData.text.trim().length > 0;
   const hasFiles = answerData?.files && answerData.files.length > 0;
+  const recordingDuration = answerData?.recordingDuration || 0;
 
   return (
     <div className="fixed inset-0 z-[70] overflow-y-auto">
@@ -60,10 +67,10 @@ function AnswerSubmittedModal({ isOpen, onClose, answerData, question }) {
               <p className="font-semibold text-gray-900">{question?.title || 'Your question'}</p>
             </div>
 
-            {/* Answer Summary */}
+            {/* Answer Summary with Duration */}
             <div>
               <h3 className="text-sm font-bold text-gray-900 mb-3">Answer Summary</h3>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 mb-3">
                 <div className={`p-3 rounded-lg border-2 text-center ${hasRecording ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                   <svg className={`w-6 h-6 mx-auto mb-1 ${hasRecording ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -91,6 +98,26 @@ function AnswerSubmittedModal({ isOpen, onClose, answerData, question }) {
                   </p>
                 </div>
               </div>
+
+              {/* Duration Display if recording exists */}
+              {hasRecording && recordingDuration > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                  <svg className="w-5 h-5 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <div className="text-xs font-semibold text-indigo-900">
+                      Recording Duration: {formatTime(recordingDuration)}
+                    </div>
+                    <div className="text-xs text-indigo-700">
+                      All segments successfully combined
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Review Link */}
