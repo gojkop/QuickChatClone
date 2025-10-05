@@ -3,6 +3,7 @@ import apiClient from '@/api';
 import SettingsModal from '@/components/dashboard/SettingsModal';
 import AccountModal from '@/components/dashboard/AccountModal';
 import SocialImpactStats from '@/components/dashboard/SocialImpactStats';
+import StatsSection from '@/components/dashboard/StatsSection';
 import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
 import QuestionTable from '@/components/dashboard/QuestionTable';
 
@@ -93,7 +94,7 @@ function ExpertDashboardPage() {
     console.log('Account updated:', updatedAccount);
   };
   
-  const handleCopyToClipboard = () => {
+  const handleCopyProfileLink = () => {
     if (profile?.handle) {
       const url = `${window.location.origin}/u/${profile.handle}`;
       navigator.clipboard.writeText(url);
@@ -120,6 +121,17 @@ function ExpertDashboardPage() {
   };
 
   const pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
+
+  // Mock stats data - TODO: fetch from API
+  const stats = {
+    thisMonthEarnings: 280000, // $2,800 in cents
+    allTimeEarnings: 1560000, // $15,600 in cents
+    totalAnswered: 127,
+    avgResponseTime: 8.5,
+    targetResponseTime: 24,
+    avgRating: 4.8,
+    monthlyGrowth: 12
+  };
 
   if (isLoading) {
     return (
@@ -169,12 +181,43 @@ function ExpertDashboardPage() {
               </div>
               
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 truncate">
-                  Welcome, {profile?.user?.name || 'Expert'}
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-500 truncate">
-                  {profile?.user?.email || '...'}
-                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 truncate">
+                    Welcome, {profile?.user?.name || 'Expert'}
+                  </h1>
+                  {/* Profile Link Badge */}
+                  {profile?.handle && profile.isPublic && (
+                    <button
+                      onClick={handleCopyProfileLink}
+                      className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition group"
+                      title="Copy profile link"
+                    >
+                      <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      <span className="text-xs font-semibold text-indigo-600 max-w-[100px] truncate">
+                        {copied ? 'Copied!' : `/u/${profile.handle}`}
+                      </span>
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs sm:text-sm text-gray-500 truncate">
+                    {profile?.user?.email || '...'}
+                  </p>
+                  {/* Mobile Profile Link */}
+                  {profile?.handle && profile.isPublic && (
+                    <button
+                      onClick={handleCopyProfileLink}
+                      className="md:hidden inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded text-xs font-semibold text-indigo-600"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      {copied ? 'Copied' : 'Link'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -201,43 +244,15 @@ function ExpertDashboardPage() {
               </button>
             </div>
           </div>
-
-          {/* Profile Link Section */}
-          {profile?.handle && profile.isPublic && (
-            <div className="mt-4 flex items-center gap-2 bg-white p-3 rounded-lg border border-gray-200 shadow-sm max-w-md">
-              <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>
-              <a 
-                href={`/u/${profile.handle}`} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="flex-1 text-sm text-indigo-600 font-semibold truncate hover:underline"
-              >
-                {window.location.origin}/u/{profile.handle}
-              </a>
-              <button 
-                onClick={handleCopyToClipboard}
-                className="flex-shrink-0 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-semibold text-gray-700 hover:bg-gray-100 transition"
-              >
-                {copied ? (
-                  <span className="flex items-center gap-1 text-green-600">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Copied
-                  </span>
-                ) : (
-                  'Copy Link'
-                )}
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Social Impact Only */}
+          {/* Left Column - Stats & Social Impact */}
           <div className="space-y-6">
+            {/* Performance Stats */}
+            <StatsSection stats={stats} />
+
+            {/* Social Impact Card */}
             <SocialImpactStats 
               totalDonated={profile.total_donated || 0}
               charityPercentage={profile.charity_percentage || 0}
