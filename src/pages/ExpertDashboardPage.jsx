@@ -206,7 +206,7 @@ function ExpertDashboardPage() {
                   {profile?.handle && profile.isPublic && (
                     <div className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg">
                       
-                        href={`/u/${profile.handle}`}
+                        <a href={`/u/${profile.handle}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 hover:opacity-80 transition"
