@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '@/api';
 import SettingsModal from '@/components/dashboard/SettingsModal';
+import AccountModal from '@/components/dashboard/AccountModal';
 import SocialImpactStats from '@/components/dashboard/SocialImpactStats';
 import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
 import QuestionTable from '@/components/dashboard/QuestionTable';
-
-// Helper to format currency
-const formatPrice = (cents, currency = 'USD') => {
-  const symbols = { USD: '$', EUR: '€', GBP: '£' };
-  const symbol = symbols[currency] || '$';
-  const amount = (cents || 0) / 100;
-  return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
-};
 
 function ExpertDashboardPage() {
   const [profile, setProfile] = useState(null);
@@ -19,7 +12,8 @@ function ExpertDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [error, setError] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('pending'); // pending, answered, all
 
@@ -93,6 +87,11 @@ function ExpertDashboardPage() {
     };
     setProfile(processedProfile);
   };
+
+  const handleSaveAccount = (updatedAccount) => {
+    // TODO: Update profile with account changes
+    console.log('Account updated:', updatedAccount);
+  };
   
   const handleCopyToClipboard = () => {
     if (profile?.handle) {
@@ -121,7 +120,6 @@ function ExpertDashboardPage() {
   };
 
   const pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
-  const answeredCount = questions.filter(q => q.answered_at !== null).length;
 
   if (isLoading) {
     return (
@@ -155,102 +153,91 @@ function ExpertDashboardPage() {
       <main className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 sm:gap-4 mb-2">
-            <div className="flex-shrink-0">
-              {profile?.avatar_url ? (
-                <img 
-                  src={profile.avatar_url} 
-                  alt="Avatar" 
-                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-4 ring-indigo-100"
-                />
-              ) : (
-                <DefaultAvatar size={48} className="sm:w-16 sm:h-16" />
-              )}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            {/* Left side - Avatar and Info */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0">
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt="Avatar" 
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-4 ring-indigo-100"
+                  />
+                ) : (
+                  <DefaultAvatar size={48} className="sm:w-16 sm:h-16" />
+                )}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 truncate">
+                  Welcome, {profile?.user?.name || 'Expert'}
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 truncate">
+                  {profile?.user?.email || '...'}
+                </p>
+              </div>
             </div>
-            
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 truncate">
-                Welcome, {profile?.user?.name || 'Expert'}
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 truncate">
-                {profile?.user?.email || '...'}
-              </p>
+
+            {/* Right side - Action Buttons */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => setIsProfileModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="hidden sm:inline">Profile</span>
+              </button>
+              <button
+                onClick={() => setIsAccountModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="hidden sm:inline">Account</span>
+              </button>
             </div>
           </div>
+
+          {/* Profile Link Section */}
+          {profile?.handle && profile.isPublic && (
+            <div className="mt-4 flex items-center gap-2 bg-white p-3 rounded-lg border border-gray-200 shadow-sm max-w-md">
+              <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              <a 
+                href={`/u/${profile.handle}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex-1 text-sm text-indigo-600 font-semibold truncate hover:underline"
+              >
+                {window.location.origin}/u/{profile.handle}
+              </a>
+              <button 
+                onClick={handleCopyToClipboard}
+                className="flex-shrink-0 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-semibold text-gray-700 hover:bg-gray-100 transition"
+              >
+                {copied ? (
+                  <span className="flex items-center gap-1 text-green-600">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Copied
+                  </span>
+                ) : (
+                  'Copy Link'
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Settings & Impact */}
+          {/* Left Column - Social Impact Only */}
           <div className="space-y-6">
-            {/* Quick Settings Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Quick Settings</h2>
-                <button 
-                  onClick={() => setIsModalOpen(true)}
-                  className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm"
-                >
-                  Edit
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-gray-600">Price per Question</span>
-                  <span className="font-bold text-gray-900">${profile.priceUsd || '—'}</span>
-                </div>
-                
-                <div className="flex justify-between items-center py-2 border-t border-gray-100">
-                  <span className="text-sm text-gray-600">Response Time</span>
-                  <span className="font-bold text-gray-900">{profile.slaHours ? `${profile.slaHours}h` : '—'}</span>
-                </div>
-                
-                <div className="py-2 border-t border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Public Profile</span>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                      profile.isPublic 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${profile.isPublic ? 'bg-green-600' : 'bg-gray-400'}`}></div>
-                      {profile.isPublic ? 'Active' : 'Private'}
-                    </span>
-                  </div>
-                  {profile.handle && profile.isPublic && (
-                    <div className="mt-2">
-                      <div className="flex items-center gap-2 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                        <a 
-                          href={`/u/${profile.handle}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="flex-1 text-xs text-indigo-600 font-semibold truncate hover:underline"
-                        >
-                          /u/{profile.handle}
-                        </a>
-                        <button 
-                          onClick={handleCopyToClipboard}
-                          className="flex-shrink-0 px-2.5 py-1 bg-white border border-gray-200 rounded text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
-                        >
-                          {copied ? (
-                            <span className="flex items-center gap-1 text-green-600">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                              </svg>
-                              Copied
-                            </span>
-                          ) : (
-                            'Copy'
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Social Impact Card */}
             <SocialImpactStats 
               totalDonated={profile.total_donated || 0}
               charityPercentage={profile.charity_percentage || 0}
@@ -316,13 +303,23 @@ function ExpertDashboardPage() {
         </div>
       </main>
 
-      {/* Settings Modal */}
+      {/* Profile Settings Modal */}
       {profile && (
         <SettingsModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
+          isOpen={isProfileModalOpen} 
+          onClose={() => setIsProfileModalOpen(false)} 
           profile={profile}
           onSave={handleSaveSettings}
+        />
+      )}
+
+      {/* Account Modal */}
+      {profile && (
+        <AccountModal 
+          isOpen={isAccountModalOpen} 
+          onClose={() => setIsAccountModalOpen(false)} 
+          profile={profile}
+          onSave={handleSaveAccount}
         />
       )}
     </div>
