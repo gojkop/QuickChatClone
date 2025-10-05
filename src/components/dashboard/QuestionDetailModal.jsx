@@ -183,7 +183,7 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                         {attachments.map((file, index) => (
                           
                             key={index}
-                            href={file.url || '#'}
+                            <a href={file.url || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
