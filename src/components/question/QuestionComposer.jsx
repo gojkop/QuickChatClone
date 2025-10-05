@@ -122,6 +122,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       return;
     }
     
+    // Reset camera to front-facing when starting new video segment
+    if (mode === 'video') {
+      setFacingMode('user');
+    }
+    
     setCurrentSegment({ mode, blob: null, blobUrl: null, duration: 0 });
     setRecordingState('asking');
     initiatePreview(mode);
@@ -140,7 +145,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         if (mode === 'screen-camera') {
           try {
             const cameraStream = await navigator.mediaDevices.getUserMedia({ 
-              video: { facingMode: 'user' },
+              video: { facingMode: facingMode },
               audio: true 
             });
             stream = displayStream;
@@ -153,7 +158,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         }
       } else {
         const constraints = mode === 'video' 
-          ? { audio: true, video: { facingMode: 'user' } }
+          ? { audio: true, video: { facingMode: facingMode } }
           : { audio: true, video: false };
         
         stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -227,6 +232,54 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     }
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
+    }
+  };
+
+  const flipCamera = async () => {
+    if (isFlipping || recordingState !== 'preview' || currentSegment?.mode !== 'video') {
+      return;
+    }
+
+    setIsFlipping(true);
+    
+    try {
+      // Stop current stream
+      cleanupStream();
+      
+      // Toggle facing mode
+      const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
+      setFacingMode(newFacingMode);
+      
+      // Request new stream with flipped camera
+      const constraints = {
+        audio: true,
+        video: { facingMode: newFacingMode }
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      liveStreamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error("Camera flip error:", error);
+      // If flip fails, try to restore original camera
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: { facingMode: facingMode }
+        });
+        liveStreamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (restoreError) {
+        console.error("Could not restore camera:", restoreError);
+        setRecordingState('denied');
+      }
+    } finally {
+      setIsFlipping(false);
     }
   };
 
@@ -541,7 +594,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                   </svg>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-blue-900 mb-1">
-                      Screen recording available on desktop
+                      💻 Screen recording available on desktop
                     </p>
                     <p className="text-xs text-blue-700">
                       Use our desktop site to record your screen along with video and audio
@@ -596,7 +649,34 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
           <ExistingSegmentsDisplay />
           <div className="border-2 border-gray-300 rounded-xl overflow-hidden">
             {currentSegment.mode !== 'audio' ? (
-              <video ref={videoRef} className="w-full bg-gray-900 aspect-video" autoPlay muted playsInline />
+              <div className="relative">
+                <video ref={videoRef} className="w-full bg-gray-900 aspect-video" autoPlay muted playsInline />
+                
+                {/* Camera flip button - only for video mode */}
+                {currentSegment.mode === 'video' && (
+                  <button
+                    onClick={flipCamera}
+                    disabled={isFlipping}
+                    className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={`Switch to ${facingMode === 'user' ? 'back' : 'front'} camera`}
+                  >
+                    {isFlipping ? (
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+                
+                {/* Camera indicator badge */}
+                {currentSegment.mode === 'video' && (
+                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold rounded-full">
+                    {facingMode === 'user' ? '📷 Front Camera' : '📷 Back Camera'}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                 <div className="text-center">
