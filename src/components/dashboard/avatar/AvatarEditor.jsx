@@ -1,7 +1,7 @@
 // src/components/dashboard/avatar/AvatarEditor.jsx
 import React, { useState, useCallback, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
-import { createImage, getCroppedImg, getRotatedImage } from './avatarUtils';
+import { getCroppedImg } from './avatarUtils';
 
 function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -72,21 +72,14 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
     try {
       console.log('Starting image processing...');
       console.log('Current state:', { rotation, flip, zoom });
-      
-      // Apply rotation first if needed
-      let processedImageSrc = imageSrc;
-      if (rotation !== 0) {
-        console.log('Applying rotation:', rotation);
-        processedImageSrc = await getRotatedImage(imageSrc, rotation);
-      }
 
-      console.log('Cropping image...');
-      // Get cropped image with flip applied
+      // Process image with all transforms applied together
+      console.log('Cropping and applying transforms...');
       const croppedImage = await getCroppedImg(
-        processedImageSrc,
-        croppedAreaPixels,
-        rotation,
-        flip
+        imageSrc,           // Original image source
+        croppedAreaPixels,  // Crop coordinates
+        rotation,           // Rotation degrees
+        flip                // Flip state
       );
 
       console.log('Image processed, blob size:', croppedImage.size);

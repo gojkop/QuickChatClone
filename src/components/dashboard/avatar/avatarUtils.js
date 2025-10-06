@@ -60,29 +60,35 @@ export async function getCroppedImg(
   canvas.width = targetSize;
   canvas.height = targetSize;
 
+  // Calculate the center of the canvas
+  const centerX = targetSize / 2;
+  const centerY = targetSize / 2;
+
   // Save the context state
   ctx.save();
 
   // Move to center of canvas
-  ctx.translate(targetSize / 2, targetSize / 2);
+  ctx.translate(centerX, centerY);
 
-  // Apply flip transforms (must be done before drawing)
+  // Apply rotation (convert degrees to radians)
+  if (rotation !== 0) {
+    ctx.rotate((rotation * Math.PI) / 180);
+  }
+
+  // Apply flip transforms
   const scaleX = flip.horizontal ? -1 : 1;
   const scaleY = flip.vertical ? -1 : 1;
   ctx.scale(scaleX, scaleY);
 
-  // Move back to origin for drawing
-  ctx.translate(-targetSize / 2, -targetSize / 2);
-
-  // Draw the cropped image scaled to target size
+  // Draw the cropped image centered and scaled to target size
   ctx.drawImage(
     image,
     pixelCrop.x,
     pixelCrop.y,
     pixelCrop.width,
     pixelCrop.height,
-    0,
-    0,
+    -targetSize / 2,  // Draw from center
+    -targetSize / 2,
     targetSize,
     targetSize
   );
