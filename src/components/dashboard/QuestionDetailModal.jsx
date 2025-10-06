@@ -193,14 +193,30 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                       </h3>
                       <div className="space-y-3">
                         {recordingSegments.map((segment, index) => {
-                          let metadata = {};
-                          try {
-                            metadata = segment.metadata ? JSON.parse(segment.metadata) : {};
-                          } catch (e) {
-                            console.error('Error parsing metadata:', e);
-                          }
-                          const isVideo = metadata.mode === 'video';
+                          let metadata = { mode: 'audio' }; // Default to audio
+                          let isVideo = false;
                           
+                          console.log(`Segment ${index} raw metadata:`, segment.metadata);
+                          console.log(`Segment ${index} metadata type:`, typeof segment.metadata);
+                          
+                          try {
+                            if (segment.metadata) {
+                              // Handle if it's already an object
+                              if (typeof segment.metadata === 'object') {
+                                metadata = segment.metadata;
+                              } 
+                              // Handle if it's a JSON string
+                              else if (typeof segment.metadata === 'string') {
+                                metadata = JSON.parse(segment.metadata);
+                              }
+                              
+                              console.log(`Segment ${index} parsed metadata:`, metadata);
+                              isVideo = metadata.mode === 'video';
+                            }
+                          } catch (e) {
+                            console.error(`Error parsing segment ${index} metadata:`, e.message);
+                            console.error('Raw value:', segment.metadata);
+                          }
                           return (
                             <div key={segment.id || index} className="bg-gray-900 rounded-xl overflow-hidden">
                               <div className="p-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
