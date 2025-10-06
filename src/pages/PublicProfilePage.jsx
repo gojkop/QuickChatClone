@@ -121,6 +121,35 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
   }
 
   const donationAmount = (priceCents * charityPercentage) / 100;
+  const is100Percent = charityPercentage === 100;
+
+  if (is100Percent) {
+    return (
+      <div className="bg-gradient-to-br from-amber-100 via-yellow-100 to-orange-100 rounded-xl p-5 border-2 border-amber-400 shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-20 h-20 bg-amber-300/20 rounded-full -mr-10 -mt-10"></div>
+        <div className="absolute bottom-0 left-0 w-16 h-16 bg-yellow-300/20 rounded-full -ml-8 -mb-8"></div>
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl">{charity.icon}</span>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg font-bold text-amber-900">100% Donation</span>
+                <span className="text-xl">✨</span>
+              </div>
+              <p className="text-sm text-amber-800 leading-snug font-medium">
+                This expert donates <span className="font-bold">all earnings</span> ({formatPrice(donationAmount, currency)}) to <span className="font-bold">{charity.name}</span>.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-amber-300">
+            <p className="text-xs text-amber-900 italic">
+              Your payment directly supports {charity.name}'s mission. Thank you for contributing!
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 rounded-xl p-4 border border-orange-200 shadow-sm">
@@ -142,6 +171,19 @@ const TrustBadge = () => {
         <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
       </svg>
       <span className="text-xs font-semibold text-green-700">Verified Expert</span>
+    </div>
+  );
+};
+
+// 100% Charity Badge Component
+const CharityHeroBadge = () => {
+  return (
+    <div className="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-400 rounded-full shadow-md animate-pulse">
+      <svg className="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
+      </svg>
+      <span className="text-xs font-bold text-amber-800">100% to Charity</span>
+      <span className="text-sm">✨</span>
     </div>
   );
 };
@@ -471,7 +513,11 @@ function PublicProfilePage() {
               <div>
                 <div className="flex items-start gap-2 flex-wrap mb-2">
                   <h1 className="text-3xl font-bold text-gray-900 leading-tight">{profile.name || 'Expert'}</h1>
-                  <TrustBadge />
+                  {profile.charity_percentage === 100 ? (
+                    <CharityHeroBadge />
+                  ) : (
+                    <TrustBadge />
+                  )}
                 </div>
                 {profile.title && (
                   <p className="text-lg text-indigo-600 font-semibold">{profile.title}</p>
