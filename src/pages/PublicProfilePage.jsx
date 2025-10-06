@@ -84,9 +84,15 @@ const SocialLink = ({ platform, url }) => {
   const config = socialConfig[platform];
   if (!config || !url) return null;
 
+  // Ensure URL has protocol
+  let formattedUrl = url;
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    formattedUrl = `https://${url}`;
+  }
+
   return (
     <a 
-      href={url} 
+      href={formattedUrl} 
       target="_blank" 
       rel="noopener noreferrer" 
       className="text-gray-400 hover:text-indigo-600 transition-colors"
@@ -102,6 +108,8 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
   const charityInfo = {
     'unicef': { name: 'UNICEF', icon: '💖' },
     'doctors-without-borders': { name: 'Doctors Without Borders', icon: '🏥' },
+    'red-cross': { name: 'Red Cross', icon: '❤️' },
+    'world-wildlife': { name: 'World Wildlife Fund', icon: '🐼' },
     'malala-fund': { name: 'Malala Fund', icon: '📚' },
     'wwf': { name: 'WWF', icon: '🐼' },
     'charity-water': { name: 'charity: water', icon: '💧' }
@@ -195,40 +203,51 @@ function PublicProfilePage() {
           throw new Error('This profile is private.');
         }
 
-        // ============================================================
-        // MOCK DATA SECTION - Remove these mock objects when DB is ready
-        // ============================================================
-        const mockSocials = {
-          twitter: 'https://twitter.com/example',
-          linkedin: 'https://linkedin.com/in/example',
-          website: 'https://example.com'
-        };
-        
-        const mockExpertise = [
-          'SaaS Growth Strategy',
-          'Product Marketing',
-          'Go-to-Market Strategy',
-          'B2B Sales Enablement',
-          'Customer Acquisition'
-        ];
-        // ============================================================
-        // When DB is integrated, change the lines below to:
-        // socials: ep.socials ?? {},
-        // expertise: ep.expertise ?? ep.fields_of_expertise ?? []
-        // title: ep.title ?? ep.professional_title ?? null,
-        // ============================================================
+        // Parse socials if it's a JSON string
+        let socialsData = ep.socials;
+        if (typeof socialsData === 'string') {
+          try {
+            socialsData = JSON.parse(socialsData);
+          } catch (e) {
+            console.error('Failed to parse socials JSON:', e);
+            socialsData = {};
+          }
+        }
+
+        // Parse expertise if it's a JSON string
+        let expertiseData = ep.expertise;
+        if (typeof expertiseData === 'string') {
+          try {
+            expertiseData = JSON.parse(expertiseData);
+          } catch (e) {
+            console.error('Failed to parse expertise JSON:', e);
+            expertiseData = [];
+          }
+        }
+
+        // Ensure expertise is an array
+        if (!Array.isArray(expertiseData)) {
+          expertiseData = [];
+        }
+
+        // Ensure socials is an object
+        if (!socialsData || typeof socialsData !== 'object') {
+          socialsData = {};
+        }
         
         setProfile({
           ...ep,
           isPublic,
           user,
           name: ep.name ?? user?.name ?? null,
-          title: ep.title ?? ep.professional_title ?? 'Senior Marketing Expert', // Mock title
+          // Map professional_title to title for display
+          title: ep.professional_title ?? ep.title ?? null,
+          tagline: ep.tagline ?? null,
           avatar_url: ep.avatar_url ?? ep.avatar ?? null,
-          charity_percentage: ep.charity_percentage ?? 25,
-          selected_charity: ep.selected_charity ?? 'unicef',
-          socials: (ep.socials && Object.keys(ep.socials).length > 0) ? ep.socials : mockSocials, // Use mock if no socials
-          expertise: (ep.expertise && ep.expertise.length > 0) ? ep.expertise : (ep.fields_of_expertise || mockExpertise) // Use mock if no expertise
+          charity_percentage: ep.charity_percentage ?? 0,
+          selected_charity: ep.selected_charity ?? null,
+          socials: socialsData,
+          expertise: expertiseData
         });
       } catch (err) {
         console.error('Public profile fetch error:', err);
@@ -379,7 +398,7 @@ function PublicProfilePage() {
                   <DefaultAvatar size={96} />
                 </div>
                 
-                {/* Social Links - MOCK DATA ACTIVE */}
+                {/* Social Links */}
                 {hasSocials && (
                   <div className="pt-14 flex-1">
                     <div className="flex items-center justify-end gap-3">
@@ -420,13 +439,13 @@ function PublicProfilePage() {
                 <p className="text-gray-600 text-sm leading-relaxed">{profile.bio}</p>
               )}
 
-              {/* Expertise Section - MOCK DATA ACTIVE */}
+              {/* Expertise Section */}
               {profile.expertise && profile.expertise.length > 0 && (
                 <div>
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Expertise</h3>
                   <div className="flex flex-wrap gap-2">
-                    {profile.expertise.slice(0, 5).map((field, index) => (
-                      <span key={index} className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg border border-gray-200">
+                    {profile.expertise.slice(0, 6).map((field, index) => (
+                      <span key={index} className="px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg border border-indigo-200">
                         {field}
                       </span>
                     ))}
@@ -434,7 +453,7 @@ function PublicProfilePage() {
                 </div>
               )}
 
-              {/* Tags Section */}
+              {/* Tags Section (if still using separate tags field) */}
               {profile.tags && profile.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {profile.tags.map(tag => (
