@@ -1,85 +1,60 @@
-// ============================================
-// FILE: api/media/upload-recording-segment.js
-// Upload individual recording segment to Cloudflare Stream
-// ============================================
-
-// ⭐ FIX: Change 'cloudflare' to 'claudflare' to match your actual directory name
-import { uploadToStream } from '../lib/cloudflare/stream.js';
-import { decodeBase64 } from '../lib/utils.js';
-
-// Helper function - define locally to avoid import issues
-function getMimeTypeFromMode(mode) {
-  const mimeTypes = {
-    'video': 'video/webm',
-    'audio': 'audio/webm',
-    'screen': 'video/webm',
-    'screen-camera': 'video/webm'
-  };
-  return mimeTypes[mode] || 'video/webm';
-}
+import FormData from 'form-data';
+import axios from 'axios';
 
 export default async function handler(req, res) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    console.log('Upload segment request received');
-    
     const { recordingBlob, recordingMode, segmentIndex, duration } = req.body;
 
-    // Validation
     if (!recordingBlob) {
-      console.error('Missing recordingBlob');
-      return res.status(400).json({ error: 'recordingBlob is required' });
+      return res.status(400).json({ error: 'No recording provided' });
     }
 
-    if (!recordingMode) {
-      console.error('Missing recordingMode');
-      return res.status(400).json({ error: 'recordingMode is required' });
-    }
+    const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const CLOUDFLARE_STREAM_API_TOKEN = process.env.CLOUDFLARE_STREAM_API_TOKEN;
 
-    const validModes = ['video', 'audio', 'screen', 'screen-camera'];
-    if (!validModes.includes(recordingMode)) {
-      console.error('Invalid recordingMode:', recordingMode);
-      return res.status(400).json({ 
-        error: `Invalid recordingMode. Must be one of: ${validModes.join(', ')}` 
-      });
-    }
-
-    console.log('Decoding base64...');
-    // Decode and upload
-    const buffer = decodeBase64(recordingBlob);
+    // Extract base64 data (remove data URL prefix)
+    const base64Data = recordingBlob.split(',')[1];
     
-    console.log('Buffer size:', buffer.length);
+    // Convert base64 to Buffer
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', buffer, {
+      filename: `segment-${segmentIndex}-${Date.now()}.webm`,
+      contentType: recordingMode === 'video' ? 'video/webm' : 'audio/webm',
+    });
+
+    // Upload to Cloudflare Stream
+    const streamUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`;
     
-    const mimeType = getMimeTypeFromMode(recordingMode);
-    const timestamp = Date.now();
-    const filename = `segment-${segmentIndex || 0}-${timestamp}.webm`;
+    const uploadResponse = await axios.post(streamUrl, formData, {
+      headers: {
+        'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+        ...formData.getHeaders(),
+      },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
 
-    console.log('Uploading to Stream:', { filename, mimeType, size: buffer.length });
+    if (!uploadResponse.data.success) {
+      console.error('Cloudflare upload error:', uploadResponse.data);
+      return res.status(500).json({ error: 'Upload to Cloudflare failed' });
+    }
 
-    const result = await uploadToStream(buffer, filename, mimeType);
-
-    console.log('Upload successful:', result.uid);
-
-    const finalDuration = duration || result.duration || 0;
+    const videoId = uploadResponse.data.result.uid;
+    const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoId}/manifest/video.m3u8`;
 
     return res.status(200).json({
       success: true,
       data: {
-        uid: result.uid,
-        playbackUrl: result.playbackUrl,
-        duration: finalDuration,  // ← Make sure this uses finalDuration
+        uid: videoId,
+        playbackUrl: playbackUrl,
+        duration: duration || uploadResponse.data.result.duration || 0,
         mode: recordingMode,
         size: buffer.length,
         segmentIndex: segmentIndex || 0,
@@ -87,13 +62,10 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Recording segment upload error:', error);
-    console.error('Error stack:', error.stack);
-    
+    console.error('Upload error:', error.response?.data || error.message);
     return res.status(500).json({
-      success: false,
-      error: error.message || 'Failed to upload recording segment',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: 'Upload failed',
+      details: error.message,
     });
   }
 }
