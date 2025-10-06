@@ -20,7 +20,13 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   const [facingMode, setFacingMode] = useState('user');
   const [isFlipping, setIsFlipping] = useState(false);
 
-  // ⭐ NEW: Progressive upload hooks
+  // ⭐ Calculate total duration from segments (NOT state, just computed!)
+  const totalDuration = segments.reduce((sum, seg) => {
+    const dur = (seg.duration >= 0) ? seg.duration : 0;
+    return sum + dur;
+  }, 0);
+
+  // ⭐ Progressive upload hooks
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
 
@@ -71,7 +77,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         .map(u => u.result),
       recordingMode: segments.length > 0 ? 'multi-segment' : null
     }),
-    // ⭐ SIMPLIFIED: No concatenation!
     validateAndGetData: async () => {
       if (!title.trim()) {
         alert('Please enter a question title.');
@@ -102,7 +107,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     }
   };
 
-  // ⭐ CHANGED: Upload files immediately
   const handleFileChange = async (e) => {
     const newFiles = Array.from(e.target.files);
     if (newFiles.length + attachmentUpload.uploads.length > 3) {
@@ -198,7 +202,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     
     mediaRecorderRef.current.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
-      // ⭐ FIX: Calculate actual duration from timestamps
       const duration = Math.max(1, Math.floor((Date.now() - segmentStartTimeRef.current) / 1000));
       const url = URL.createObjectURL(blob);
       
@@ -206,7 +209,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         ...prev,
         blob,
         blobUrl: url,
-        duration: Math.min(duration, remainingTime) // ⭐ Ensure it's not more than remaining time
+        duration: Math.min(duration, remainingTime)
       }));
       setRecordingState('review');
       cleanupStream();
@@ -278,7 +281,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     }
   };
 
-  // ⭐ CHANGED: Upload segment immediately after saving
   const saveSegment = async () => {
     if (currentSegment && currentSegment.blob) {
       const segmentData = {
@@ -287,9 +289,8 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       };
       
       setSegments(prev => [...prev, segmentData]);
-      setTotalDuration(prev => prev + currentSegment.duration);
       
-      // ⭐ Upload immediately in background
+      // Upload immediately in background
       try {
         await segmentUpload.uploadSegment(
           currentSegment.blob,
@@ -320,7 +321,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     const segment = segments[segmentIndex];
     
     if (segment) {
-      setTotalDuration(prev => prev - segment.duration);
       if (segment.blobUrl) {
         URL.revokeObjectURL(segment.blobUrl);
       }
@@ -347,7 +347,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     setSegments(newSegments);
   };
 
-  // ⭐ SIMPLIFIED: No concatenation, instant transition!
   const handleProceedToReview = async () => {
     if (!title.trim()) {
       alert('Please enter a question title.');
@@ -384,7 +383,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   };
 
   const formatTime = (seconds) => {
-    // Handle invalid values
     if (seconds === undefined || seconds === null || seconds < 0 || isNaN(seconds)) {
       return '0:00';
     }
@@ -394,17 +392,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Also in AskReviewModal.jsx, when displaying segment duration:
-  // BEFORE:
-  // {formatTime(segment.duration || 0)}
-
-  // And for total duration calculation:
-  const totalDuration = recordingSegments.reduce((sum, seg) => {
-    const dur = seg.duration >= 0 ? seg.duration : 0;
-    return sum + dur;
-  }, 0);
-
-  // ⭐ UPDATED: Show upload status for each segment
   const ExistingSegmentsDisplay = () => {
     if (segments.length === 0) return null;
 
@@ -440,7 +427,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                       {getSegmentLabel(segment.mode)}
                       <span className="text-gray-500">· {formatTime(segment.duration)}</span>
                     </div>
-                    {/* ⭐ NEW: Upload status indicator */}
                     <div className="text-xs mt-0.5">
                       {isUploading && (
                         <span className="text-indigo-600 flex items-center gap-1">
@@ -782,7 +768,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     return null;
   };
 
-  // ⭐ NEW: Check if everything is uploaded before allowing proceed
   const canProceed = 
     title.trim().length > 0 &&
     !segmentUpload.hasUploading &&
@@ -828,7 +813,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         <div className="text-right text-xs text-gray-500 mt-1">{text.length} / 5000</div>
       </div>
 
-      {/* ⭐ UPDATED: Show attachment upload status */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
           Attach Files <span className="text-gray-500 font-normal">(Optional, max 3)</span>
@@ -880,7 +864,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         )}
       </div>
 
-      {/* ⭐ UPDATED: Show upload status in button */}
       {!hideButton && (
         <div>
           <button
@@ -895,7 +878,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
               : 'Continue to Review'}
           </button>
           
-          {/* ⭐ NEW: Upload progress summary */}
           {(segmentUpload.segments.length > 0 || attachmentUpload.uploads.length > 0) && (
             <div className="mt-3 text-center text-sm text-gray-600">
               {segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading) ? (
