@@ -48,9 +48,9 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
 
           {/* Preview Content */}
           {profile.isPublic && publicPageUrl ? (
-            <div className="flex-1 overflow-hidden bg-gray-100 relative">
+            <div className="flex-1 relative bg-gray-100" style={{ minHeight: 0 }}>
               {/* Browser Chrome */}
-              <div className="bg-gray-200 border-b border-gray-300 px-3 py-2 flex items-center gap-2">
+              <div className="absolute top-0 left-0 right-0 bg-gray-200 border-b border-gray-300 px-3 py-2 flex items-center gap-2 z-10">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 rounded-full bg-red-400"></div>
                   <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
@@ -63,7 +63,7 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
 
               {/* Loading State */}
               {iframeLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+                <div className="absolute inset-0 flex items-center justify-center bg-white z-20 mt-10">
                   <div className="text-center">
                     <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-sm text-gray-600">Loading preview...</p>
@@ -71,19 +71,23 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
                 </div>
               )}
 
-              {/* Iframe Container */}
-              <div className="relative w-full h-full overflow-auto">
+              {/* Iframe Container - Scrollable */}
+              <div className="absolute inset-0 pt-10 overflow-auto">
                 <iframe
                   src={publicPageUrl}
-                  className="w-full h-full border-0"
+                  className="w-full border-0"
+                  style={{ 
+                    height: '100%',
+                    minHeight: '600px',
+                    pointerEvents: 'none'
+                  }}
                   title="Profile Preview"
-                  style={{ pointerEvents: 'none' }}
                   onLoad={() => setIframeLoading(false)}
                 />
                 
                 {/* Transparent Overlay - Blocks ALL interactions */}
                 <div 
-                  className="absolute inset-0 cursor-not-allowed"
+                  className="absolute inset-0 cursor-default"
                   style={{ pointerEvents: 'all' }}
                   title="Preview only - click 'Open Full Page' to interact"
                 />
