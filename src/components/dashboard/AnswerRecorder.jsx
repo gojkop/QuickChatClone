@@ -166,7 +166,23 @@ function AnswerRecorder({ question, onReady, onCancel }) {
     };
     
     mediaRecorderRef.current.onstop = () => {
+      console.log('MediaRecorder stopped');
+      console.log('Chunks collected:', chunks.length);
+      console.log('Chunk sizes:', chunks.map(c => c.size));
+      
       const blob = new Blob(chunks, { type: mimeType });
+      console.log('Final blob size:', blob.size);
+      console.log('Final blob type:', blob.type);
+      
+      // Check magic bytes
+      blob.arrayBuffer().then(buffer => {
+        const uint8Array = new Uint8Array(buffer);
+        const magicBytes = Array.from(uint8Array.slice(0, 4))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        console.log('Blob magic bytes:', magicBytes);
+      });
+      
       const duration = Math.floor((Date.now() - segmentStartTimeRef.current) / 1000);
       const url = URL.createObjectURL(blob);
       
