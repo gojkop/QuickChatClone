@@ -31,87 +31,91 @@ export function useRecordingSegmentUpload() {
   const [uploading, setUploading] = useState(false);
 
   const uploadSegment = async (blob, mode, segmentIndex, duration) => {
-    console.log('=== UPLOAD SEGMENT CALLED ===');
-    console.log('Blob size:', blob.size);
-    console.log('Blob type:', blob.type);
-    
-    const uploadId = `${Date.now()}-${segmentIndex}`;
+  console.log('=== UPLOAD SEGMENT CALLED ===');
+  console.log('Blob size:', blob.size);
+  
+  const uploadId = `${Date.now()}-${segmentIndex}`;
 
-    setSegments(prev => [...prev, {
-      id: uploadId,
-      blob,
-      mode,
-      segmentIndex,
-      duration,
-      uploading: true,
-      error: null,
-      result: null,
-    }]);
+  setSegments(prev => [...prev, {
+    id: uploadId,
+    blob,
+    mode,
+    segmentIndex,
+    duration,
+    uploading: true,
+    error: null,
+    result: null,
+  }]);
 
-    try {
-      // Convert blob to base64
-      const base64DataUrl = await blobToBase64(blob);
-      
-      console.log('Full base64DataUrl length:', base64DataUrl.length);
-      console.log('Base64DataUrl starts with:', base64DataUrl.substring(0, 70));
-      
-      // ⭐ FIX: Search for ";base64," specifically, not just any comma
-      const base64Marker = ';base64,';
-      const markerIndex = base64DataUrl.indexOf(base64Marker);
-      
-      if (markerIndex === -1) {
-        console.error('Could not find ";base64," in data URL');
-        console.error('Data URL structure:', base64DataUrl.substring(0, 100));
-        throw new Error('Invalid data URL: ";base64," marker not found');
-      }
-      
-      // Extract everything after ";base64,"
-      const base64Data = base64DataUrl.substring(markerIndex + base64Marker.length);
-      
-      console.log('Marker found at index:', markerIndex);
-      console.log('Base64 data length:', base64Data.length);
-      console.log('Base64 data preview (first 100):', base64Data.substring(0, 100));
-      
-      if (!base64Data || base64Data.length < 100) {
-        throw new Error(`Base64 data too short: ${base64Data ? base64Data.length : 0} bytes`);
-      }
-      
-      const response = await fetch('/api/media/upload-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          videoBase64: base64Data,
-          recordingMode: mode,
-          segmentIndex,
-          duration,
-        }),
-      });
+  try {
+    // Step 1: Get presigned upload URL
+    const urlResponse = await fetch('/api/media/get-upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        segmentIndex,
+        mode,
+        duration,
+      }),
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
-      }
-
-      const result = await response.json();
-
-      setSegments(prev => prev.map(seg => 
-        seg.id === uploadId
-          ? { ...seg, uploading: false, result: result.data }
-          : seg
-      ));
-
-      return result.data;
-
-    } catch (error) {
-      console.error('Upload error:', error);
-      setSegments(prev => prev.map(seg =>
-        seg.id === uploadId
-          ? { ...seg, uploading: false, error: error.message }
-          : seg
-      ));
-      throw error;
+    if (!urlResponse.ok) {
+      throw new Error('Failed to get upload URL');
     }
-  };
+
+    const { data: { uploadUrl, fileName } } = await urlResponse.json();
+
+    // Step 2: Upload directly to R2
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'video/webm',
+      },
+      body: blob,
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error('R2 upload failed');
+    }
+
+    console.log('✅ Uploaded to R2:', fileName);
+
+    // Step 3: Trigger Stream transcoding
+    const streamResponse = await fetch('/api/media/trigger-stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName,
+        segmentIndex,
+        mode,
+        duration,
+      }),
+    });
+
+    if (!streamResponse.ok) {
+      throw new Error('Stream trigger failed');
+    }
+
+    const result = await streamResponse.json();
+
+    setSegments(prev => prev.map(seg => 
+      seg.id === uploadId
+        ? { ...seg, uploading: false, result: result.data }
+        : seg
+    ));
+
+    return result.data;
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    setSegments(prev => prev.map(seg =>
+      seg.id === uploadId
+        ? { ...seg, uploading: false, error: error.message }
+        : seg
+    ));
+    throw error;
+  }
+};
 
   const retrySegment = (uploadId) => {
     setSegments(prev => prev.map(s =>
