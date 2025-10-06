@@ -12,7 +12,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
 
   // Segment-based recording state
   const [segments, setSegments] = useState([]);
-  const [totalDuration, setTotalDuration] = useState(0);
   const [currentSegment, setCurrentSegment] = useState(null);
   const [recordingState, setRecordingState] = useState('idle');
   const [timer, setTimer] = useState(0);
