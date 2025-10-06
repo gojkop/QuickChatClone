@@ -109,6 +109,8 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
 
       if (formData.avatar_url) {
         localStorage.setItem('qc_avatar', formData.avatar_url);
+      } else {
+        localStorage.removeItem('qc_avatar');
       }
       localStorage.setItem('qc_charity_percentage', formData.charity_percentage || 0);
       if (formData.selected_charity) {
@@ -171,77 +173,27 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               <div className="space-y-4">
                 {/* Avatar - centered */}
                 <div className="flex flex-col items-center gap-2">
-                  {formData.avatar_url ? (
-                    <>
-                      <AvatarUpload 
-                        currentAvatar={formData.avatar_url}
-                        onChange={handleAvatarChange}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }));
-                          localStorage.removeItem('qc_avatar');
-                        }}
-                        className="text-xs text-gray-600 hover:text-red-600 font-medium transition-colors flex items-center gap-1"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Remove photo
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {/* Default Avatar Preview */}
-                      <div className="relative group">
-                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg">
-                          <svg 
-                            className="text-white w-16 h-16"
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              strokeWidth="2" 
-                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" 
-                            />
-                          </svg>
-                        </div>
-                        {/* Upload button overlay */}
-                        <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                          <span className="text-white text-sm font-semibold">Upload Photo</span>
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                // This would typically call your upload function
-                                // For now, we'll let AvatarUpload handle it
-                                // You might need to trigger the AvatarUpload's file picker instead
-                                console.log('File selected:', file);
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Trigger the file input from AvatarUpload component
-                          // This is a workaround - ideally AvatarUpload should be refactored
-                          const fileInput = document.querySelector('input[type="file"]');
-                          if (fileInput) fileInput.click();
-                        }}
-                        className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold"
-                      >
-                        Change Photo
-                      </button>
-                    </>
+                  {/* ALWAYS render AvatarUpload, just pass null when no avatar */}
+                  <AvatarUpload 
+                    currentAvatar={formData.avatar_url || null}
+                    onChange={handleAvatarChange}
+                  />
+                  
+                  {/* Show remove button only if avatar exists */}
+                  {formData.avatar_url && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }));
+                        localStorage.removeItem('qc_avatar');
+                      }}
+                      className="text-xs text-gray-600 hover:text-red-600 font-medium transition-colors flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Remove photo
+                    </button>
                   )}
                 </div>
                 
