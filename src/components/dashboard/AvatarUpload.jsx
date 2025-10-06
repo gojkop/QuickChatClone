@@ -12,6 +12,8 @@ function AvatarUpload({ currentAvatar, onChange }) {
   const [selectedImageSrc, setSelectedImageSrc] = useState(null);
 
   const handleFileChange = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     const file = e.target.files[0];
     console.log('File selected:', file);
     if (!file) return;
@@ -43,13 +45,44 @@ function AvatarUpload({ currentAvatar, onChange }) {
     }
   };
 
+  // UPDATED FUNCTION - Uses proxy to avoid CORS
   const handleEditExisting = async () => {
-    if (!currentAvatar) return;
-    setSelectedImageSrc(currentAvatar);
-    setIsEditorOpen(true);
+    console.log('Edit existing clicked, currentAvatar:', currentAvatar);
+    if (!currentAvatar) {
+      console.log('No current avatar to edit');
+      return;
+    }
+    
+    try {
+      console.log('Fetching existing avatar via proxy...');
+      
+      // Use proxy endpoint to avoid CORS issues
+      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(currentAvatar)}`;
+      console.log('Proxy URL:', proxyUrl);
+      
+      const response = await fetch(proxyUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Proxy failed: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const dataUrl = await readFile(blob);
+      
+      console.log('Avatar loaded via proxy, opening editor');
+      setSelectedImageSrc(dataUrl);
+      setIsEditorOpen(true);
+    } catch (err) {
+      console.error('Error loading existing avatar:', err);
+      setError('Unable to load existing avatar for editing.');
+      
+      // Show user-friendly message
+      alert('Unable to edit existing avatar. Please upload a new photo instead.');
+    }
   };
 
   const handleSaveFromEditor = async (croppedBlob) => {
+    console.log('Saving from editor, blob size:', croppedBlob.size);
     setIsUploading(true);
     setError(null);
 
