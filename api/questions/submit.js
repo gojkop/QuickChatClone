@@ -1,316 +1,37 @@
-// api/questions/submit.js
-// Question submission with Cloudflare Stream and R2 uploads
-
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import FormData from 'form-data';
-import axios from 'axios';
-
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
-};
+// ============================================
+// FILE: api/questions/submit.js
+// Main API endpoint (now much simpler!)
+// ============================================
+import { validateQuestionSubmission } from '../lib/validators.js';
+import { submitQuestion } from '../services/questionService.js';
 
 export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
+  // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    console.log('🎯 Question submission started');
+    // Validate request payload
+    validateQuestionSubmission(req.body);
 
-    const {
-      expertHandle,
-      title,
-      text,
-      recordingMode,
-      recordingBlob,
-      attachments,
-      payerEmail,
-      payerFirstName,
-      payerLastName,
-    } = req.body;
+    // Process submission
+    const result = await submitQuestion(req.body);
 
-    // Validate required fields
-    if (!expertHandle || !title || !payerEmail) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        required: ['expertHandle', 'title', 'payerEmail']
-      });
-    }
-
-    console.log('✅ Validation passed');
-
-    // Step 1: Get expert profile
-    console.log('📡 Fetching expert profile...');
-    const expertResponse = await fetch(
-      `https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/public/profile?handle=${encodeURIComponent(expertHandle)}`
-    );
-
-    if (!expertResponse.ok) {
-      return res.status(404).json({ error: 'Expert not found' });
-    }
-
-    const expertData = await expertResponse.json();
-    const expertProfile = expertData?.expert_profile || expertData;
-    
-    if (!expertProfile || !expertProfile.id) {
-      return res.status(404).json({ error: 'Expert profile not found' });
-    }
-
-    console.log('✅ Expert found - ID:', expertProfile.id);
-
-    // Step 2: Upload recording to Cloudflare Stream (get video UID, but don't create media_asset yet)
-    let streamVideoUid = null;
-    let streamVideoDuration = null;
-    let streamVideoStatus = null;
-    let streamVideoUrl = null;
-    
-          if (recordingBlob && recordingMode) {
-      console.log('📹 Uploading recording to Cloudflare Stream...');
-      console.log('Recording mode:', recordingMode);
-      console.log('Base64 blob length:', recordingBlob.length);
-      
-      try {
-        const buffer = Buffer.from(recordingBlob, 'base64');
-        console.log('Buffer size:', buffer.length);
-        console.log('File header (hex):', buffer.slice(0, 20).toString('hex'));
-        
-        // WebM files should start with: 1a45dfa3
-        const isValidWebM = buffer.slice(0, 4).toString('hex') === '1a45dfa3';
-        console.log('Valid WebM header:', isValidWebM);
-        
-        if (!isValidWebM) {
-          console.error('❌ Invalid WebM file - header mismatch');
-          throw new Error('Invalid video file format');
-        }
-        
-        const formData = new FormData();
-        formData.append('file', buffer, {
-          filename: 'recording.webm',
-          contentType: recordingMode === 'audio' ? 'audio/webm' : 'video/webm'
-        });
-        
-        formData.append('meta', JSON.stringify({
-          name: `Question: ${title}`
-        }));
-
-        const streamResponse = await axios.post(
-          `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/stream`,
-          formData,
-          {
-            headers: {
-              'Authorization': `Bearer ${process.env.CLOUDFLARE_STREAM_API_TOKEN}`,
-              ...formData.getHeaders()
-            },
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity
-          }
-        );
-
-        const streamData = streamResponse.data;
-        
-        if (!streamData.success) {
-          console.error('❌ Stream upload failed:', streamData.errors);
-          throw new Error('Stream upload failed');
-        }
-
-        const video = streamData.result;
-        streamVideoUid = video.uid;
-        streamVideoDuration = video.duration || null;
-        streamVideoStatus = video.status?.state || 'processing';
-        streamVideoUrl = video.playback?.hls || video.thumbnail || null;
-        
-        console.log('✅ Stream upload successful:', streamVideoUid);
-      } catch (error) {
-        console.error('⚠️ Media upload failed:', error.message);
-      }
-    }
-
-    // Step 3: Upload attachments to R2
-    const attachmentUrls = [];
-    
-    if (attachments && attachments.length > 0) {
-      console.log(`📎 Uploading ${attachments.length} attachments...`);
-      
-      try {
-        const s3Client = new S3Client({
-          region: 'auto',
-          endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-          credentials: {
-            accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY,
-            secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_KEY,
-          },
-        });
-
-        for (const attachment of attachments) {
-          const buffer = Buffer.from(attachment.data, 'base64');
-          const timestamp = Date.now();
-          const sanitizedName = attachment.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-          const key = `question-attachments/${timestamp}-${sanitizedName}`;
-
-          await s3Client.send(new PutObjectCommand({
-            Bucket: process.env.CLOUDFLARE_R2_BUCKET,
-            Key: key,
-            Body: buffer,
-            ContentType: attachment.type || 'application/octet-stream',
-          }));
-
-          const url = `https://pub-${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.dev/${key}`;
-          attachmentUrls.push({
-            name: attachment.name,
-            url,
-            type: attachment.type,
-            size: buffer.length
-          });
-        }
-        
-        console.log('✅ Attachments uploaded:', attachmentUrls.length);
-      } catch (error) {
-        console.error('⚠️ Attachment upload failed:', error.message);
-      }
-    }
-
-    // Step 4: Create question FIRST (without media_asset_id)
-    console.log('📝 Creating question in Xano...');
-    
-    const questionData = {
-      expert_profile_id: expertProfile.id,
-      payer_email: payerEmail,
-      price_cents: expertProfile.price_cents,
-      currency: expertProfile.currency || 'USD',
-      status: 'pending_payment',
-      sla_hours_snapshot: expertProfile.sla_hours,
-      title: title.trim(),
-      text: text ? text.trim() : null,
-      attachments: attachmentUrls.length > 0 ? JSON.stringify(attachmentUrls) : null,
-    };
-
-    const questionResponse = await fetch(
-      'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/question',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(questionData),
-      }
-    );
-
-    if (!questionResponse.ok) {
-      const errorText = await questionResponse.text();
-      console.error('❌ Xano error:', errorText);
-      return res.status(500).json({ 
-        error: 'Failed to create question',
-        details: errorText
-      });
-    }
-
-    const question = await questionResponse.json();
-    console.log('✅ Question created with ID:', question.id);
-
-    // Step 5: Create media_asset with owner_id = question.id (if we have video)
-    let mediaAssetId = null;
-    
-    if (streamVideoUid) {
-      console.log('📹 Creating media_asset record...');
-      
-      try {
-        const mediaResponse = await fetch(
-          'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/media_asset',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              owner_type: 'question',
-              owner_id: question.id,
-              provider: 'cloudflare_stream',
-              asset_id: streamVideoUid,
-              duration_sec: streamVideoDuration,
-              status: streamVideoStatus,
-              url: streamVideoUrl
-            })
-          }
-        );
-
-        if (mediaResponse.ok) {
-          const mediaAsset = await mediaResponse.json();
-          mediaAssetId = mediaAsset.id;
-          console.log('✅ Media asset created:', mediaAssetId);
-          
-          // Step 6: Update question to link media_asset_id
-          await fetch(
-            `https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/question/${question.id}`,
-            {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                media_asset_id: mediaAssetId
-              }),
-            }
-          );
-          
-          console.log('✅ Question updated with media_asset_id');
-        }
-      } catch (error) {
-        console.error('⚠️ Media asset creation failed:', error.message);
-      }
-    }
-
-    // Step 7: Dev mode - skip Stripe, mark as paid
-    if (process.env.SKIP_STRIPE === 'true' || process.env.NODE_ENV === 'development') {
-      console.log('⚠️ SKIPPING STRIPE - Development Mode');
-      
-      const patchResponse = await fetch(
-        `https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/question/${question.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            status: 'paid',
-            paid_at: Math.floor(Date.now() / 1000),
-          }),
-        }
-      );
-
-      if (patchResponse.ok) {
-        console.log('✅ Question status updated to "paid"');
-      }
-    }
-
-    console.log('🎉 Question submission completed!');
-
+    // Return success
     return res.status(200).json({
       success: true,
-      questionId: question.id,
-      message: 'Question submitted successfully',
-      debug: {
-        hasMedia: !!mediaAssetId,
-        attachmentsCount: attachmentUrls.length
-      }
+      questionId: result.question.id,
+      mediaAssetId: result.mediaAsset?.id,
+      attachmentCount: result.attachments.length,
     });
 
   } catch (error) {
-    console.error('💥 Fatal error:', error.message);
+    console.error('Question submission error:', error);
     
     return res.status(500).json({
-      error: 'Failed to submit question',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      success: false,
+      error: error.message || 'Failed to submit question',
     });
   }
 }

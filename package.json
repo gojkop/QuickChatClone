@@ -6,22 +6,30 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vercel:dev": "vercel dev",
+    "vercel:deploy": "vercel --prod"
   },
   "dependencies": {
     "axios": "^1.6.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-easy-crop": "^5.0.8",
-    "react-router-dom": "^6.22.3"
+    "react-router-dom": "^6.22.3",
+    "@aws-sdk/client-s3": "^3.490.0",
+    "form-data": "^4.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
     "@vercel/blob": "^0.15.0",
+    "@vercel/node": "^3.0.0",
     "cloudinary": "^1.41.0",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
     "vite": "^5.2.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
