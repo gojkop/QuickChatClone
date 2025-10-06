@@ -82,129 +82,12 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
     setFormData(prev => ({ ...prev, selected_charity: charityId }));
   };
 
-  // Generate and upload default avatar
-  const handleUploadDefaultAvatar = async () => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        console.log('Generating default avatar image...');
-        
-        // Create canvas
-        const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 256;
-        const ctx = canvas.getContext('2d');
-
-        // Create gradient background
-        const gradient = ctx.createLinearGradient(0, 0, 256, 256);
-        gradient.addColorStop(0, '#6366f1'); // indigo-500
-        gradient.addColorStop(1, '#8b5cf6'); // violet-500
-        
-        // Draw circle with gradient
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(128, 128, 128, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Draw chat icon (simplified version)
-        ctx.strokeStyle = '#ffffff';
-        ctx.fillStyle = '#ffffff';
-        ctx.lineWidth = 8;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        
-        // Chat bubble outline (using arc for better compatibility)
-        ctx.beginPath();
-        const x = 80, y = 80, w = 96, h = 80, r = 12;
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        ctx.lineTo(x + r, y + h);
-        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-        ctx.lineTo(x, y + r);
-        ctx.quadraticCurveTo(x, y, x + r, y);
-        ctx.stroke();
-        
-        // Three dots
-        const dotY = 120;
-        [85, 128, 171].forEach(x => {
-          ctx.beginPath();
-          ctx.arc(x, dotY, 6, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
-        // Convert to blob
-        canvas.toBlob(async (blob) => {
-          try {
-            console.log('Uploading default avatar...');
-            
-            // Upload to Cloudflare
-            const formData = new FormData();
-            formData.append('image', blob, 'default-avatar.png');
-
-            const uploadResponse = await fetch('/api/upload/profile-picture', {
-              method: 'POST',
-              body: formData,
-            });
-
-            if (!uploadResponse.ok) {
-              throw new Error('Failed to upload default avatar');
-            }
-
-            const { url } = await uploadResponse.json();
-            console.log('Default avatar uploaded:', url);
-
-            // CRITICAL: Save URL to Xano using the dedicated endpoint
-            console.log('Saving default avatar URL to Xano...');
-            await apiClient.post('/upload/profile-picture', {
-              image_url: url
-            });
-
-            // Update formData with new URL
-            setFormData(prev => ({ 
-              ...prev, 
-              avatar_url: url,
-              avatar_key: null 
-            }));
-
-            resolve(url);
-          } catch (err) {
-            console.error('Error uploading default avatar:', err);
-            reject(err);
-          }
-        }, 'image/png');
-      } catch (err) {
-        console.error('Error generating default avatar:', err);
-        reject(err);
-      }
-    });
-  };
-
   const handleSave = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      let avatarUrlToSave = formData.avatar_url;
-      let avatarKeyToSave = formData.avatar_key;
-
-      // If avatar was removed, we need to upload a default avatar
-      if (formData.avatar_url === null && profile.avatar_url) {
-        console.log('Avatar was removed, uploading default avatar...');
-        try {
-          avatarUrlToSave = await handleUploadDefaultAvatar();
-          avatarKeyToSave = null;
-          console.log('Default avatar URL:', avatarUrlToSave);
-        } catch (err) {
-          console.error('Failed to upload default avatar:', err);
-          setError('Failed to upload default avatar. Please try again.');
-          setIsLoading(false);
-          return;
-        }
-      }
-
       const payload = {
         price_cents: Number(formData.priceUsd) * 100,
         sla_hours: Number(formData.slaHours),
@@ -212,7 +95,9 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         public: formData.isPublic,
         handle: formData.handle,
         currency: 'USD',
-        // Don't send avatar_url/avatar_key here - they're set via /upload/profile-picture endpoint
+        // Send null to clear avatar, or the URL if it exists
+        avatar_url: formData.avatar_url,
+        avatar_key: formData.avatar_key,
         professional_title: formData.professional_title || '',
         tagline: formData.tagline || '',
         expertise: Array.isArray(formData.expertise) ? formData.expertise : [],
@@ -222,16 +107,10 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       };
 
       console.log('Saving payload:', payload);
-      console.log('Avatar URL that was uploaded:', avatarUrlToSave);
 
-      const response = await apiClient.put('/me/profile', payload);
-      
-      console.log('API response:', response.data);
-      console.log('API returned avatar_url:', response.data.avatar_url);
-      
-      // Update localStorage with the avatar from API response
-      if (response.data.avatar_url) {
-        localStorage.setItem('qc_avatar', response.data.avatar_url);
+      // Update localStorage
+      if (formData.avatar_url) {
+        localStorage.setItem('qc_avatar', formData.avatar_url);
       } else {
         localStorage.removeItem('qc_avatar');
       }
@@ -240,17 +119,16 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       if (formData.selected_charity) {
         localStorage.setItem('qc_selected_charity', formData.selected_charity);
       }
+
+      const response = await apiClient.put('/me/profile', payload);
       
-      // Use the avatar URL from the API response (it should reflect the default avatar we just uploaded)
+      console.log('API response:', response.data);
+      
       const updatedProfile = {
         ...response.data,
-        // Override with our local values for immediate UI update
-        avatar_url: response.data.avatar_url || avatarUrlToSave,
         charity_percentage: formData.charity_percentage,
         selected_charity: formData.selected_charity
       };
-      
-      console.log('Updated profile being saved:', updatedProfile);
       
       onSave(updatedProfile);
       onClose();
