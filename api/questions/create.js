@@ -97,7 +97,7 @@ export default async function handler(req, res) {
         };
 
         const mediaResponse = await fetch(
-          `${process.env.XANO_BASE_URL}/media_assets`,
+          `${process.env.XANO_BASE_URL}/media_asset`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
