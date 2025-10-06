@@ -8,9 +8,9 @@ const formatPrice = (cents, currency = 'USD') => {
   const symbol = symbols[currency] || '$';
   const amount = (cents || 0) / 100;
   if (amount % 1 !== 0) {
-      return `${symbol}${amount.toFixed(2)}`;
+      return symbol + amount.toFixed(2);
   }
-  return `${symbol}${amount.toFixed(0)}`;
+  return symbol + amount.toFixed(0);
 };
 
 // Default Avatar Component
@@ -36,7 +36,7 @@ const DefaultAvatar = ({ size = 120 }) => (
   </div>
 );
 
-// Social Link Component - icon-only links
+// Social Link Component
 const SocialLink = ({ platform, url }) => {
   const socialConfig = {
     twitter: {
@@ -84,10 +84,9 @@ const SocialLink = ({ platform, url }) => {
   const config = socialConfig[platform];
   if (!config || !url) return null;
 
-  // Ensure URL has protocol
   let formattedUrl = url;
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    formattedUrl = `https://${url}`;
+    formattedUrl = 'https://' + url;
   }
 
   return (
@@ -95,7 +94,7 @@ const SocialLink = ({ platform, url }) => {
       href={formattedUrl} 
       target="_blank" 
       rel="noopener noreferrer" 
-      className="text-gray-400 hover:text-indigo-600 transition-colors"
+      className="text-gray-400 hover:text-indigo-600 transition-colors transform hover:scale-110 duration-200"
       title={config.label}
     >
       {config.icon}
@@ -124,7 +123,7 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
   const donationAmount = (priceCents * charityPercentage) / 100;
 
   return (
-    <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 rounded-lg p-4 border border-orange-200">
+    <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 rounded-xl p-4 border border-orange-200 shadow-sm">
       <div className="flex items-center gap-3">
         <span className="text-2xl">{charity.icon}</span>
         <p className="text-sm text-gray-700 leading-snug">
@@ -135,12 +134,25 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
   );
 };
 
+// Trust Badge Component
+const TrustBadge = () => {
+  return (
+    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full shadow-sm">
+      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+      </svg>
+      <span className="text-xs font-semibold text-green-700">Verified Expert</span>
+    </div>
+  );
+};
+
 function PublicProfilePage() {
   const { handle } = useParams();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   useEffect(() => {
     if (!handle) {
@@ -165,7 +177,7 @@ function PublicProfilePage() {
       setError('');
       try {
         const response = await fetch(
-          `https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/public/profile?handle=${encodeURIComponent(handle)}`
+          'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/public/profile?handle=' + encodeURIComponent(handle)
         );
         
         if (!response.ok) {
@@ -174,8 +186,6 @@ function PublicProfilePage() {
         
         const data = await response.json();
 
-        console.log('Public profile API response:', data);
-
         const ep = data?.expert_profile ?? data ?? null;
         const user = data?.user ?? ep?.user ?? null;
 
@@ -183,54 +193,35 @@ function PublicProfilePage() {
           throw new Error('This profile does not exist.');
         }
 
-        console.log('Checking public fields:', {
-          public: ep.public,
-          is_public: ep.is_public,
-          isPublic: ep.isPublic,
-          allKeys: Object.keys(ep)
-        });
-
         const publicValue = ep.public ?? ep.is_public ?? ep.isPublic;
         const isPublic = coercePublic(publicValue);
-        
-        console.log('Profile public status:', { 
-          raw: publicValue, 
-          coerced: isPublic,
-          type: typeof publicValue
-        });
 
         if (!isPublic) {
           throw new Error('This profile is private.');
         }
 
-        // Parse socials if it's a JSON string
         let socialsData = ep.socials;
         if (typeof socialsData === 'string') {
           try {
             socialsData = JSON.parse(socialsData);
           } catch (e) {
-            console.error('Failed to parse socials JSON:', e);
             socialsData = {};
           }
         }
 
-        // Parse expertise if it's a JSON string
         let expertiseData = ep.expertise;
         if (typeof expertiseData === 'string') {
           try {
             expertiseData = JSON.parse(expertiseData);
           } catch (e) {
-            console.error('Failed to parse expertise JSON:', e);
             expertiseData = [];
           }
         }
 
-        // Ensure expertise is an array
         if (!Array.isArray(expertiseData)) {
           expertiseData = [];
         }
 
-        // Ensure socials is an object
         if (!socialsData || typeof socialsData !== 'object') {
           socialsData = {};
         }
@@ -240,7 +231,6 @@ function PublicProfilePage() {
           isPublic,
           user,
           name: ep.name ?? user?.name ?? null,
-          // Map professional_title to title for display
           title: ep.professional_title ?? ep.title ?? null,
           tagline: ep.tagline ?? null,
           avatar_url: ep.avatar_url ?? ep.avatar ?? null,
@@ -250,7 +240,6 @@ function PublicProfilePage() {
           expertise: expertiseData
         });
       } catch (err) {
-        console.error('Public profile fetch error:', err);
         setError(err.message || 'Could not load profile.');
       } finally {
         setIsLoading(false);
@@ -261,7 +250,29 @@ function PublicProfilePage() {
   }, [handle]);
 
   const handleAskQuestion = () => {
-    navigate(`/ask?expert=${handle}`);
+    navigate('/ask?expert=' + handle);
+  };
+
+  const handleShare = () => {
+    const url = window.location.href;
+    const expertName = profile ? (profile.name || handle) : handle;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: 'Ask ' + expertName + ' a question',
+        text: profile && profile.tagline ? profile.tagline : 'Get expert advice from ' + expertName,
+        url: url
+      }).catch(function() {});
+    } else {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function() {
+          setShowShareMenu(true);
+          setTimeout(function() {
+            setShowShareMenu(false);
+          }, 2000);
+        }).catch(function() {});
+      }
+    }
   };
 
   const renderContent = () => {
@@ -295,7 +306,7 @@ function PublicProfilePage() {
               But you can invite them to join!
             </p>
             <a
-              href={`https://quickchat-deploy.vercel.app/invite?expert=${encodeURIComponent(handle)}`}
+              href={'https://quickchat-deploy.vercel.app/invite?expert=' + encodeURIComponent(handle)}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -369,38 +380,72 @@ function PublicProfilePage() {
     }
 
     if (profile) {
-      // Check if socials exist and have at least one valid URL
-      const hasSocials = profile.socials && Object.values(profile.socials).some(url => url && url.trim() !== '');
+      const hasSocials = profile.socials && Object.values(profile.socials).some(function(url) {
+        return url && url.trim() !== '';
+      });
       
       return (
-        <>
+        <React.Fragment>
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden">
-            <div className="h-24 bg-gradient-to-br from-indigo-100 to-violet-100"></div>
-
-            <div className="p-6 space-y-5">
-              {/* Avatar Section with Social Links */}
-              <div className="flex items-start gap-4 -mt-16">
-                {profile.avatar_url ? (
-                  <img 
-                    className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg" 
-                    src={profile.avatar_url}
-                    alt={`${profile.name || 'Expert'}'s avatar`}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'block';
-                    }}
-                  />
-                ) : null}
-                <div 
-                  className="w-24 h-24 flex-shrink-0" 
-                  style={{ display: profile.avatar_url ? 'none' : 'block' }}
+            {/* Enhanced Header Gradient */}
+            <div className="h-32 bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 relative overflow-hidden">
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+                  backgroundSize: '32px 32px'
+                }}></div>
+              </div>
+              
+              {/* Share Button */}
+              <div className="absolute top-4 right-4">
+                <button
+                  onClick={handleShare}
+                  className="p-2.5 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-white transition-all transform hover:scale-105 active:scale-95"
+                  title="Share profile"
                 >
-                  <DefaultAvatar size={96} />
+                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                  </svg>
+                </button>
+                {showShareMenu && (
+                  <div className="absolute top-full right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl whitespace-nowrap">
+                    Link copied!
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6 pb-28 md:pb-6">
+              {/* Avatar Section with Activity Badge */}
+              <div className="flex items-start gap-4 -mt-20">
+                <div className="relative flex-shrink-0">
+                  {profile.avatar_url ? (
+                    <img 
+                      className="w-28 h-28 rounded-full object-cover ring-4 ring-white shadow-xl" 
+                      src={profile.avatar_url}
+                      alt={(profile.name || 'Expert') + "'s avatar"}
+                      onError={function(e) {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-28 h-28 flex-shrink-0" 
+                    style={{ display: profile.avatar_url ? 'none' : 'block' }}
+                  >
+                    <DefaultAvatar size={112} />
+                  </div>
+                  
+                  {/* Activity Badge */}
+                  <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-green-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
+                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></div>
+                  </div>
                 </div>
                 
                 {/* Social Links */}
                 {hasSocials && (
-                  <div className="pt-14 flex-1">
+                  <div className="pt-16 flex-1">
                     <div className="flex items-center justify-end gap-3">
                       {profile.socials.twitter && (
                         <SocialLink platform="twitter" url={profile.socials.twitter} />
@@ -422,118 +467,174 @@ function PublicProfilePage() {
                 )}
               </div>
 
-              {/* Name, Title, and Tagline Section */}
+              {/* Name, Title, Badge, and Tagline */}
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{profile.name || 'Expert'}</h1>
+                <div className="flex items-start gap-2 flex-wrap mb-2">
+                  <h1 className="text-3xl font-bold text-gray-900 leading-tight">{profile.name || 'Expert'}</h1>
+                  <TrustBadge />
+                </div>
                 {profile.title && (
-                  <p className="text-base text-indigo-600 font-semibold mt-0.5">{profile.title}</p>
+                  <p className="text-lg text-indigo-600 font-semibold">{profile.title}</p>
                 )}
                 {profile.tagline && (
-                  <p className="mt-2 text-base text-gray-700">{profile.tagline}</p>
+                  <p className="mt-3 text-base text-gray-700 leading-relaxed">{profile.tagline}</p>
                 )}
               </div>
 
               {/* Bio Section */}
               {profile.bio && (
-                <p className="text-gray-600 text-sm leading-relaxed">{profile.bio}</p>
+                <div className="text-gray-600 text-sm leading-relaxed">
+                  {profile.bio}
+                </div>
               )}
 
               {/* Expertise Section */}
               {profile.expertise && profile.expertise.length > 0 && (
                 <div>
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Expertise</h3>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Expertise</h3>
                   <div className="flex flex-wrap gap-2">
-                    {profile.expertise.slice(0, 6).map((field, index) => (
-                      <span key={index} className="px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg border border-indigo-200">
-                        {field}
-                      </span>
-                    ))}
+                    {profile.expertise.slice(0, 6).map(function(field, index) {
+                      return (
+                        <span key={index} className="px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors">
+                          {field}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Tags Section (if still using separate tags field) */}
+              {/* Tags Section */}
               {profile.tags && profile.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {profile.tags.map(tag => (
-                    <span key={tag} className="px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-full">
-                      {tag}
-                    </span>
-                  ))}
+                  {profile.tags.map(function(tag) {
+                    return (
+                      <span key={tag} className="px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-full">
+                        {tag}
+                      </span>
+                    );
+                  })}
                 </div>
               )}
               
-              {/* Response Time and Price Section */}
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 grid grid-cols-2 items-center gap-4">
-                <div className="text-center">
-                  <div className="text-xs text-gray-500">Response</div>
-                  <div className="font-bold text-gray-900">{profile.sla_hours}h</div>
+              {/* Enhanced Price Card */}
+              <div className="bg-white rounded-xl border-2 border-indigo-600 p-5 shadow-lg">
+                <div className="flex items-baseline justify-between mb-4">
+                  <div>
+                    <div className="text-3xl font-bold text-gray-900">
+                      {formatPrice(profile.price_cents, profile.currency)}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-0.5">per answer</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-indigo-600 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                      </svg>
+                      <span>{profile.sla_hours}h response</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">guaranteed</div>
+                  </div>
                 </div>
-                <div className="text-center border-l border-gray-200">
-                  <div className="text-xs text-gray-500">Price</div>
-                  <div className="font-bold text-gray-900">{formatPrice(profile.price_cents, profile.currency)}</div>
+                
+                {/* What's included */}
+                <div className="space-y-2 pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-2.5 text-sm text-gray-700">
+                    <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                    </svg>
+                    <span>Up to 90s video question</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-sm text-gray-700">
+                    <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                    </svg>
+                    <span>Detailed video/voice answer</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-sm text-gray-700">
+                    <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                    </svg>
+                    <span>Money-back if no reply</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            {/* Charity Donation Section - Above CTA */}
-            {profile.charity_percentage > 0 && profile.selected_charity && (
-              <div className="px-6 pb-4">
+
+              {/* Charity Donation Section */}
+              {profile.charity_percentage > 0 && profile.selected_charity && (
                 <SocialImpactCard
                   charityPercentage={profile.charity_percentage}
                   selectedCharity={profile.selected_charity}
                   priceCents={profile.price_cents}
                   currency={profile.currency}
                 />
-              </div>
-            )}
-
-            {/* CTA Button */}
-            <div className="px-6 pb-6 bg-gray-50/50 border-t border-gray-100 pt-4">
-              <button
-                onClick={handleAskQuestion}
-                className="w-full group bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg text-base hover:shadow-lg transition-all"
-              >
-                Ask Your Question
-              </button>
+              )}
             </div>
           </div>
         
+          {/* Desktop CTA */}
+          <div className="hidden md:block mt-6">
+            <button
+              onClick={handleAskQuestion}
+              className="w-full group bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl text-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+            >
+              Ask Your Question
+            </button>
+          </div>
+
+          {/* Mobile Sticky CTA */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-2xl z-50 md:hidden">
+            <div className="flex items-center gap-3 max-w-md mx-auto">
+              <div className="flex-shrink-0">
+                <div className="text-xs text-gray-600">Ask {profile.name ? profile.name.split(' ')[0] : handle}</div>
+                <div className="text-xl font-bold text-gray-900">
+                  {formatPrice(profile.price_cents, profile.currency)}
+                </div>
+              </div>
+              <button
+                onClick={handleAskQuestion}
+                className="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg active:scale-95 transition-transform"
+              >
+                Ask Now
+              </button>
+            </div>
+          </div>
+
           {/* Trust Indicators */}
-          <div className="pt-6">
-            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs text-gray-500">
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          <div className="pt-8 pb-4">
+            <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                 </svg>
                 <span>Secure payment</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
                 </svg>
                 <span>Guaranteed response</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
                 </svg>
                 <span>Money-back guarantee</span>
               </div>
             </div>
           </div>
-        </>
+        </React.Fragment>
       );
     }
     return null;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex justify-center items-start sm:items-center p-4 pt-28 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex justify-center items-start sm:items-center p-4 pt-28 sm:p-6">
       <div className="w-full max-w-md">
         {renderContent()}
         
-        <div className="text-center mt-6">
+        <div className="text-center mt-6 mb-6">
           <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors group">
             <span>Powered by</span>
             <span className="font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
