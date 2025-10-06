@@ -19,7 +19,8 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div 
-          className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col pointer-events-auto transform transition-all"
+          className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col pointer-events-auto transform transition-all"
+          style={{ height: '80vh' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -62,7 +63,7 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
               </div>
 
               {/* Iframe Container - Takes remaining space */}
-              <div className="flex-1 relative min-h-0">
+              <div className="flex-1 relative bg-white">
                 {/* Loading State */}
                 {iframeLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white z-20">
@@ -73,15 +74,20 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
                   </div>
                 )}
 
-                {/* Scrollable iframe wrapper */}
-                <div className="absolute inset-0 overflow-auto">
-                  <iframe
-                    src={publicPageUrl}
-                    className="w-full h-full min-h-[600px] border-0"
-                    title="Profile Preview"
-                    onLoad={() => setIframeLoading(false)}
-                  />
-                </div>
+                {/* Iframe - Full size */}
+                <iframe
+                  src={publicPageUrl}
+                  className="w-full h-full border-0 block"
+                  title="Profile Preview"
+                  onLoad={() => {
+                    console.log('Iframe loaded');
+                    setIframeLoading(false);
+                  }}
+                  onError={() => {
+                    console.error('Iframe failed to load');
+                    setIframeLoading(false);
+                  }}
+                />
                 
                 {/* Transparent Overlay - Blocks ALL interactions */}
                 <div 
