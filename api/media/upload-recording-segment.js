@@ -2,8 +2,10 @@
 // FILE: api/media/upload-recording-segment.js
 // Upload individual recording segment to Cloudflare Stream
 // ============================================
-import { uploadToStream } from '../lib/cloudflare/stream.js';
-import { decodeBase64 } from '../lib/utils.js';
+
+// ⭐ FIX: Change 'cloudflare' to 'claudflare' to match your actual directory name
+import { uploadToStream } from '../lib/claudflare/stream.js';
+import { decodeBase64 } from '../lib/claudflare/utils.js';
 
 // Helper function - define locally to avoid import issues
 function getMimeTypeFromMode(mode) {
@@ -33,7 +35,7 @@ export default async function handler(req, res) {
   try {
     console.log('Upload segment request received');
     
-    const { recordingBlob, recordingMode, segmentIndex } = req.body;
+    const { recordingBlob, recordingMode, segmentIndex, duration } = req.body;
 
     // Validation
     if (!recordingBlob) {

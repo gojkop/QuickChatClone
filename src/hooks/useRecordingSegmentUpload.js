@@ -4,7 +4,7 @@ import { useState } from 'react';
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
 
-  const uploadSegment = async (blob, mode, segmentIndex) => {
+  const uploadSegment = async (blob, mode, segmentIndex, duration = 0) => {
     const uploadId = `${Date.now()}-${segmentIndex}`;
 
     // Add to segments list
@@ -21,6 +21,8 @@ export function useRecordingSegmentUpload() {
     try {
       // Convert blob to base64
       const base64 = await blobToBase64(blob);
+      
+      console.log('Uploading segment with duration:', duration);
 
       // ⭐ FIX: Get duration from blob if available
       let duration = 0;
@@ -137,5 +139,26 @@ function blobToBase64(blob) {
     reader.onloadend = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
+  });
+}
+
+// Helper to get actual duration from blob
+function getBlobDuration(blob) {
+  return new Promise((resolve, reject) => {
+    const isVideo = blob.type.startsWith('video/');
+    const element = document.createElement(isVideo ? 'video' : 'audio');
+    element.preload = 'metadata';
+    
+    element.onloadedmetadata = () => {
+      URL.revokeObjectURL(element.src);
+      resolve(Math.round(element.duration));
+    };
+    
+    element.onerror = () => {
+      URL.revokeObjectURL(element.src);
+      reject(new Error('Could not load media'));
+    };
+    
+    element.src = URL.createObjectURL(blob);
   });
 }

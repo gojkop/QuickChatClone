@@ -290,14 +290,15 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       
       setSegments(prev => [...prev, segmentData]);
       
-      // Upload immediately in background
+      // ⭐ Upload immediately in background WITH DURATION
       try {
         await segmentUpload.uploadSegment(
           currentSegment.blob,
           currentSegment.mode,
-          segments.length
+          segments.length,
+          currentSegment.duration // ⭐ Pass duration!
         );
-        console.log('Segment uploaded successfully');
+        console.log('Segment uploaded successfully with duration:', currentSegment.duration);
       } catch (error) {
         console.error('Segment upload failed:', error);
       }
