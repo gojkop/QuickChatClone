@@ -196,7 +196,7 @@ function AnswerRecorder({ question, onReady, onCancel }) {
       cleanupStream();
     };
 
-    mediaRecorderRef.current.start(100);
+    mediaRecorderRef.current.start();
 
     timerIntervalRef.current = setInterval(() => {
       setTimer(prev => {
