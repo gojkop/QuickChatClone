@@ -8,11 +8,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "Missing code" });
     }
 
-    const { 
-      CLIENT_PUBLIC_ORIGIN, 
-      XANO_AUTH_BASE_URL,  // Changed from XANO_BASE_URL
-      COOKIE_DOMAIN 
-    } = process.env;
+    // Destructure directly from process.env
+    const CLIENT_PUBLIC_ORIGIN = process.env.CLIENT_PUBLIC_ORIGIN;
+    const XANO_AUTH_BASE_URL = process.env.XANO_AUTH_BASE_URL;
+    const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN;
 
     // Check if environment variables are set
     if (!CLIENT_PUBLIC_ORIGIN) {
