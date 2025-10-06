@@ -349,7 +349,7 @@ function PublicProfilePage() {
               But you can invite them to join!
             </p>
             
-             <a href={'https://quickchat-deploy.vercel.app/invite?expert=' + encodeURIComponent(handle)}
+              href={'https://quickchat-deploy.vercel.app/invite?expert=' + encodeURIComponent(handle)}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -467,7 +467,7 @@ function PublicProfilePage() {
             </div>
 
             <div className="px-5 md:px-6 pb-28 md:pb-6 space-y-5">
-              {/* Avatar Section - Smaller */}
+              {/* Avatar Section */}
               <div className="flex items-start gap-4 -mt-16 md:-mt-18 relative z-10">
                 <div className="relative flex-shrink-0 group">
                   {/* Subtle glow effect */}
@@ -523,8 +523,8 @@ function PublicProfilePage() {
                 )}
               </div>
 
-              {/* Name, Title - Smaller Typography */}
-              <div className="space-y-2">
+              {/* Name, Title - More prominent */}
+              <div className="space-y-2.5">
                 <div className="flex items-start gap-2.5 flex-wrap">
                   <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
                     {profile.name || 'Expert'}
@@ -541,25 +541,25 @@ function PublicProfilePage() {
                   </p>
                 )}
                 {profile.tagline && (
-                  <p className="text-base text-gray-700 leading-relaxed max-w-2xl">
+                  <p className="text-base text-gray-700 leading-relaxed">
                     {profile.tagline}
                   </p>
                 )}
               </div>
 
-              {/* Bio Section */}
+              {/* Bio Section - More prominent */}
               {profile.bio && (
-                <div className="prose prose-sm prose-gray max-w-none">
-                  <p className="text-gray-600 leading-relaxed text-sm">
+                <div className="prose prose-gray max-w-none">
+                  <p className="text-gray-700 leading-relaxed text-base">
                     {profile.bio}
                   </p>
                 </div>
               )}
 
-              {/* Expertise Section */}
+              {/* Expertise Section - More prominent */}
               {profile.expertise && profile.expertise.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-xs font-semibold text-gray-900 tracking-wide">Areas of Expertise</h3>
+                <div className="space-y-3.5">
+                  <h3 className="text-sm font-bold text-gray-900 tracking-wide">Areas of Expertise</h3>
                   <div className="flex flex-wrap gap-2">
                     {profile.expertise.slice(0, 6).map(function(field, index) {
                       return (
@@ -576,82 +576,39 @@ function PublicProfilePage() {
                 </div>
               )}
               
-              {/* Compressed Price Card */}
-              <div className="relative bg-white rounded-xl border-2 border-gray-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                {/* Subtle accent ribbon */}
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-50 to-violet-50 rounded-bl-full opacity-50"/>
+              {/* Compact Price Card */}
+              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {formatPrice(profile.price_cents, profile.currency)}
+                    </div>
+                    <div className="text-xs text-gray-500">per answer</div>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 rounded-lg border border-green-200">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/>
+                    <span className="text-xs font-semibold text-green-700">{profile.sla_hours}h response</span>
+                  </div>
+                </div>
                 
-                <div className="relative p-5 space-y-4">
-                  {/* Price Display - Smaller */}
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <div className="text-4xl font-bold text-gray-900 tracking-tight">
-                        {formatPrice(profile.price_cents, profile.currency)}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">per answer</div>
-                    </div>
-                    
-                    {/* Response time badge */}
-                    <div className="flex flex-col items-end">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 rounded-lg border border-green-200">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/>
-                        <span className="text-xs font-semibold text-green-700">{profile.sla_hours}h</span>
-                      </div>
-                      <span className="text-xs text-gray-500 mt-1">guaranteed</span>
-                    </div>
+                <div className="space-y-2 text-xs text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                    </svg>
+                    <span>Up to 90s video question</span>
                   </div>
-                  
-                  {/* Separator */}
-                  <div className="relative py-3">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-200"/>
-                    </div>
-                    <div className="relative flex justify-center">
-                      <span className="bg-white px-2 text-gray-400">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"/>
-                        </svg>
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                    </svg>
+                    <span>Expert video/voice answer</span>
                   </div>
-                  
-                  {/* What's included - Compact */}
-                  <div className="space-y-2.5">
-                    <div className="flex items-start gap-2.5 group">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                        <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">Up to 90s video question</div>
-                        <div className="text-xs text-gray-600">Ask anything in your own words</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-2.5 group">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                        <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">Expert video/voice answer</div>
-                        <div className="text-xs text-gray-600">Personalized from {profile.name?.split(' ')[0] || 'expert'}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-2.5 group">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                        <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">100% money-back guarantee</div>
-                        <div className="text-xs text-gray-600">Full refund if no response</div>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                    </svg>
+                    <span>Money-back guarantee</span>
                   </div>
                 </div>
               </div>
