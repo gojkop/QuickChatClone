@@ -349,7 +349,7 @@ function PublicProfilePage() {
               But you can invite them to join!
             </p>
             
-              href={'https://quickchat-deploy.vercel.app/invite?expert=' + encodeURIComponent(handle)}
+            <a href={'https://quickchat-deploy.vercel.app/invite?expert=' + encodeURIComponent(handle)}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
