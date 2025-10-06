@@ -1,11 +1,32 @@
 // src/components/dashboard/ProfilePreviewModal.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 function ProfilePreviewModal({ isOpen, onClose, profile }) {
+  const [iframeError, setIframeError] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+
+  // Reset iframe state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setIframeError(false);
+      setIframeLoaded(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen || !profile) return null;
 
   // Construct the public profile URL
   const publicPageUrl = profile.handle ? `/u/${profile.handle}` : null;
+
+  const handleIframeLoad = () => {
+    setIframeLoaded(true);
+    setIframeError(false);
+  };
+
+  const handleIframeError = () => {
+    setIframeError(true);
+    console.error('Failed to load profile preview');
+  };
 
   return (
     <>
@@ -61,16 +82,40 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
               </div>
 
               {/* Iframe Container */}
-              <div className="absolute inset-0 pt-8 overflow-auto">
+              <div className="absolute inset-0 pt-8 overflow-auto bg-gray-50">
+                {!iframeLoaded && !iframeError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-sm text-gray-600">Loading preview...</p>
+                    </div>
+                  </div>
+                )}
+                
+                {iframeError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white">
+                    <div className="text-center px-6">
+                      <svg className="w-12 h-12 text-amber-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <h4 className="text-base font-bold text-gray-900 mb-2">Preview Unavailable</h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Unable to load preview. Click below to view the full page.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
                 <iframe
                   src={publicPageUrl}
                   className="w-full h-full border-0"
                   title="Profile Preview"
-                  sandbox="allow-same-origin allow-scripts"
                   style={{
                     transform: 'scale(1)',
                     transformOrigin: 'top center',
                   }}
+                  onLoad={handleIframeLoad}
+                  onError={handleIframeError}
                 />
               </div>
 
@@ -119,4 +164,4 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
   );
 }
 
-export default ProfilePreviewModal;
+export default ProfilePreviewModal; 
