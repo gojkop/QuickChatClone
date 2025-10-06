@@ -74,46 +74,17 @@ function AskQuestionPage() {
 
   const handleContinueToReview = async () => {
     if (composerRef.current) {
-      // This will trigger concatenation if there are segments
+      // ⭐ NEW: Get segments directly, no concatenation!
       const data = await composerRef.current.validateAndGetData();
       if (data) {
-        console.log('Question data with duration:', data.recordingDuration);
+        console.log('Question data:', data);
         setQuestionData(data);
         setShowReviewModal(true);
       }
     }
   };
 
-  // Convert Blob to base64
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result.split(',')[1]; // Remove data:*/*;base64, prefix
-        resolve(base64String);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-
-  // Convert File to base64
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result.split(',')[1];
-        resolve({
-          name: file.name,
-          data: base64String,
-          type: file.type,
-        });
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
+  // ⭐ NEW: Updated to use progressive upload format
   const handleProceedToPayment = async (askerInfo) => {
     try {
       console.log("Starting question submission...");
@@ -125,42 +96,30 @@ function AskQuestionPage() {
         submitButton.textContent = 'Submitting...';
       }
 
-      // Prepare recording data - now it's a single concatenated blob
-      let recordingBlob = null;
-      if (questionData.mediaBlob) {
-        recordingBlob = await blobToBase64(questionData.mediaBlob);
-      }
-
-      // Prepare attachments data
-      const attachments = [];
-      if (questionData.files && questionData.files.length > 0) {
-        for (const file of questionData.files) {
-          const attachment = await fileToBase64(file);
-          attachments.push(attachment);
-        }
-      }
-
-      // Prepare submission payload - back to original single blob structure
+      // ⭐ NEW: Prepare payload with segment references (already uploaded!)
       const payload = {
         expertHandle: expert.handle,
         title: questionData.title,
         text: questionData.text || null,
-        recordingMode: questionData.mediaBlob ? questionData.recordingMode : null,
-        recordingBlob: recordingBlob,
-        attachments: attachments,
         payerEmail: askerInfo.email,
         payerFirstName: askerInfo.firstName || null,
         payerLastName: askerInfo.lastName || null,
+        
+        // ⭐ NEW: Send segments (already uploaded in background!)
+        recordingSegments: questionData.recordingSegments || [],
+        
+        // ⭐ NEW: Send attachments (already uploaded in background!)
+        attachments: questionData.attachments || [],
       };
 
       console.log('Submitting question with payload:', {
         ...payload,
-        recordingBlob: recordingBlob ? `${recordingBlob.substring(0, 50)}...` : null,
-        attachments: attachments.map(a => ({ name: a.name, size: a.data.length })),
+        recordingSegments: payload.recordingSegments.length + ' segments',
+        attachments: payload.attachments.length + ' attachments',
       });
 
-      // Call backend API
-      const response = await fetch('/api/questions/submit', {
+      // ⭐ NEW: Call the NEW endpoint
+      const response = await fetch('/api/questions/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,8 +128,18 @@ function AskQuestionPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to submit question');
+        let errorMessage = `Submission failed (${response.status})`;
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+          const errorText = await response.text();
+          console.error('Backend returned non-JSON response:', errorText.substring(0, 500));
+          errorMessage = `Server error (${response.status}). Check backend logs.`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -183,7 +152,7 @@ function AskQuestionPage() {
       } else {
         // Development: Redirect to success page directly
         const expertName = expert.name || expert.user?.name || expert.handle;
-        navigate(`/question-sent?question_id=${result.questionId}&expert=${expert.handle}&expertName=${encodeURIComponent(expertName)}&dev_mode=true`);
+        navigate(`/question-sent?question_id=${result.data.questionId}&expert=${expert.handle}&expertName=${encodeURIComponent(expertName)}&dev_mode=true`);
       }
 
     } catch (error) {
@@ -333,4 +302,4 @@ function AskQuestionPage() {
   );
 }
 
-export default AskQuestionPage; 
+export default AskQuestionPage;
