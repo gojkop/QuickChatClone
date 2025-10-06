@@ -2,6 +2,19 @@ import React, { useState } from 'react';
 import QuestionActionsDropdown from './QuestionActionsDropdown';
 import QuestionDetailModal from './QuestionDetailModal';
 
+// Helper to check if attachments exist safely
+const hasAttachments = (question) => {
+  if (!question.attachments) return false;
+  try {
+    const parsed = typeof question.attachments === 'string' 
+      ? JSON.parse(question.attachments) 
+      : question.attachments;
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch (e) {
+    return false;
+  }
+};
+
 // Helper to format time ago
 const getTimeAgo = (timestamp) => {
   const now = Date.now() / 1000;
@@ -162,7 +175,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                                   </svg>
                                 </span>
                               )}
-                              {question.attachments && JSON.parse(question.attachments).length > 0 && (
+                              {hasAttachments(question) && (
                                 <span className="inline-flex items-center gap-1 text-violet-600">
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -253,7 +266,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         )}
-                        {question.attachments && JSON.parse(question.attachments).length > 0 && (
+                        {hasAttachments(question) && (
                           <svg className="w-3 h-3 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                           </svg>

@@ -39,26 +39,55 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
   }, [isOpen, question]);
 
   useEffect(() => {
+    console.log('=== RAW QUESTION DATA ===');
+    console.log('Full question:', JSON.stringify(question, null, 2));
+    
     // Parse recording segments
     if (question?.recording_segments) {
+      console.log('Recording segments type:', typeof question.recording_segments);
+      console.log('Recording segments is array:', Array.isArray(question.recording_segments));
       console.log('Recording segments:', question.recording_segments);
       setRecordingSegments(question.recording_segments);
     } else {
       setRecordingSegments([]);
     }
 
-    // Parse attachments
+    // Parse attachments with better error handling
     if (question?.attachments) {
+      console.log('Attachments raw type:', typeof question.attachments);
+      console.log('Attachments raw value:', question.attachments);
+      console.log('Attachments first 100 chars:', String(question.attachments).substring(0, 100));
+      
       try {
-        const files = typeof question.attachments === 'string' 
-          ? JSON.parse(question.attachments)
-          : question.attachments;
+        let files;
+        
+        if (typeof question.attachments === 'string') {
+          // Try to clean the string first
+          let cleanedString = question.attachments.trim();
+          console.log('Attempting to parse:', cleanedString);
+          files = JSON.parse(cleanedString);
+        } else {
+          files = question.attachments;
+        }
+        
+        console.log('Parsed successfully:', files);
         setAttachments(Array.isArray(files) ? files : []);
       } catch (e) {
-        console.error('Error parsing attachments:', e);
-        setAttachments([]);
+        console.error('JSON parse error:', e.message);
+        console.error('Failed string:', question.attachments);
+        
+        // Try alternative: maybe it's already an object but stringified twice
+        try {
+          const doubleDecoded = JSON.parse(JSON.parse(question.attachments));
+          console.log('Double parse worked:', doubleDecoded);
+          setAttachments(Array.isArray(doubleDecoded) ? doubleDecoded : []);
+        } catch (e2) {
+          console.error('Double parse also failed');
+          setAttachments([]);
+        }
       }
     } else {
+      console.log('No attachments field');
       setAttachments([]);
     }
   }, [question]);
