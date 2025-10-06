@@ -72,12 +72,14 @@ export default async function handler(req, res) {
 
     console.log('Upload successful:', result.uid);
 
+    const finalDuration = duration || result.duration || 0;
+
     return res.status(200).json({
       success: true,
       data: {
         uid: result.uid,
         playbackUrl: result.playbackUrl,
-        duration: result.duration,
+        duration: finalDuration,  // ← Make sure this uses finalDuration
         mode: recordingMode,
         size: buffer.length,
         segmentIndex: segmentIndex || 0,
