@@ -1,28 +1,36 @@
-import { callLLM, estimateCost } from './lib/llm-service.js';
-
+// Simple test endpoint - no dependencies first
 export default async function handler(req, res) {
   try {
-    const result = await callLLM(
-      'List 3 benefits of AI coaching for questions. Respond in JSON format: {"benefits": ["benefit1", "benefit2", "benefit3"]}',
-      {
-        temperature: 0.7,
-        max_tokens: 200,
-        requireJSON: true
-      }
-    );
-
-    return res.json({
+    // Test 1: Check if endpoint is reached
+    console.log('[test-llm] Endpoint reached');
+    
+    // Test 2: Check environment variables
+    const provider = process.env.LLM_PROVIDER || 'not-set';
+    const hasApiKey = !!process.env.GOOGLE_AI_API_KEY;
+    
+    console.log('[test-llm] Provider:', provider);
+    console.log('[test-llm] Has API Key:', hasApiKey);
+    
+    // Return basic info first (no LLM call yet)
+    return res.status(200).json({
       success: true,
-      provider: process.env.LLM_PROVIDER || 'gemini',
-      result,
-      note: 'LLM is working correctly!'
+      message: 'Endpoint is working!',
+      environment: {
+        provider: provider,
+        hasGoogleKey: !!process.env.GOOGLE_AI_API_KEY,
+        hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+        hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
+        nodeVersion: process.version
+      },
+      note: 'Basic endpoint test - LLM not called yet'
     });
-
+    
   } catch (error) {
-    console.error('LLM test failed:', error);
+    console.error('[test-llm] Error:', error);
     return res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
+      stack: error.stack
     });
   }
 }
