@@ -53,19 +53,24 @@ export function useRecordingSegmentUpload() {
       const base64DataUrl = await blobToBase64(blob);
       
       console.log('Full base64DataUrl length:', base64DataUrl.length);
-      console.log('Base64DataUrl starts with:', base64DataUrl.substring(0, 50));
+      console.log('Base64DataUrl starts with:', base64DataUrl.substring(0, 70));
       
-      // ⭐ FIX: Split only on the FIRST comma (the one before "base64,")
-      const commaIndex = base64DataUrl.indexOf(',');
+      // ⭐ FIX: Search for ";base64," specifically, not just any comma
+      const base64Marker = ';base64,';
+      const markerIndex = base64DataUrl.indexOf(base64Marker);
       
-      if (commaIndex === -1) {
-        throw new Error('Invalid data URL: no comma found');
+      if (markerIndex === -1) {
+        console.error('Could not find ";base64," in data URL');
+        console.error('Data URL structure:', base64DataUrl.substring(0, 100));
+        throw new Error('Invalid data URL: ";base64," marker not found');
       }
       
-      const base64Data = base64DataUrl.substring(commaIndex + 1);
+      // Extract everything after ";base64,"
+      const base64Data = base64DataUrl.substring(markerIndex + base64Marker.length);
       
+      console.log('Marker found at index:', markerIndex);
       console.log('Base64 data length:', base64Data.length);
-      console.log('Base64 data preview:', base64Data.substring(0, 100));
+      console.log('Base64 data preview (first 100):', base64Data.substring(0, 100));
       
       if (!base64Data || base64Data.length < 100) {
         throw new Error(`Base64 data too short: ${base64Data ? base64Data.length : 0} bytes`);
