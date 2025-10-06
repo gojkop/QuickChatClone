@@ -81,6 +81,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
   };
 
   const handleCharityChange = (charityId) => {
+    console.log('Charity changed to:', charityId); // Debug log
     setFormData(prev => ({ ...prev, selected_charity: charityId }));
   };
 
@@ -104,9 +105,11 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         tagline: formData.tagline || '',
         expertise: Array.isArray(formData.expertise) ? formData.expertise : [],
         socials: formData.socials || {},
-        charity_percentage: formData.charity_percentage || 0,
+        charity_percentage: Number(formData.charity_percentage) || 0,
         selected_charity: formData.selected_charity || null
       };
+
+      console.log('Saving payload:', payload); // Debug log
 
       // Save to localStorage for now (avatar and charity settings)
       if (formData.avatar_url) {
@@ -119,6 +122,8 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
 
       // Using the App Group API endpoint
       const response = await apiClient.put('/me/profile', payload);
+      
+      console.log('API response:', response.data); // Debug log
       
       // Merge the response with local storage data
       const updatedProfile = {
@@ -145,6 +150,14 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
   // Safe access to potentially undefined fields
   const currentExpertise = Array.isArray(formData.expertise) ? formData.expertise : [];
   const currentSocials = formData.socials || {};
+
+  // Debug charity values
+  useEffect(() => {
+    console.log('FormData charity values:', {
+      charity_percentage: formData.charity_percentage,
+      selected_charity: formData.selected_charity
+    });
+  }, [formData.charity_percentage, formData.selected_charity]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
@@ -387,25 +400,28 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               </div>
             </div>
 
-            {/* Charity */}
+            {/* Charity - Compact */}
             <div className="space-y-2 pt-2 border-t border-gray-200">
               <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Give Back (Optional)</h4>
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Donation Percentage</label>
                 <CharityDonationSelector 
                   value={formData.charity_percentage || 0}
                   onChange={handleCharityPercentageChange}
                 />
-                
-                {formData.charity_percentage > 0 && (
-                  <div className="mt-2.5">
-                    <CharitySelector 
-                      value={formData.selected_charity}
-                      onChange={handleCharityChange}
-                      donationPercentage={formData.charity_percentage}
-                    />
-                  </div>
-                )}
               </div>
+              
+              {formData.charity_percentage > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Select Charity</label>
+                  <CharitySelector 
+                    value={formData.selected_charity}
+                    onChange={handleCharityChange}
+                    donationPercentage={formData.charity_percentage}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Error Message */}
