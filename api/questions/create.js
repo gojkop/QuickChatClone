@@ -60,7 +60,16 @@ export default async function handler(req, res) {
 
     // 1. Get expert profile
     console.log('Fetching expert profile...');
-    const expert = await getExpertByHandle(expertHandle);
+    const expertResponse = await fetch(
+      `${process.env.XANO_BASE_URL}/public/profile?handle=${encodeURIComponent(expertHandle)}`
+    );
+
+    if (!expertResponse.ok) {
+      throw new Error('Expert not found');
+    }
+
+    const expertData = await expertResponse.json();
+    const expert = expertData?.expert_profile ?? expertData;
     console.log('Expert found:', expert.id);
 
     // 2. Create question record (without media_asset_id initially)
