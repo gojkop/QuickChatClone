@@ -1,4 +1,4 @@
-import { xanoClient } from '../../lib/xano-client.js';
+import { xanoClient } from '../../lib/xano/client.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

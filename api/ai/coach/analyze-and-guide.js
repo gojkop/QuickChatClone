@@ -1,4 +1,4 @@
-import { xanoClient } from '../../lib/xano-client.js';
+import { xanoClient } from '../../lib/xano/client.js';
 import { callLLM } from '../../lib/llm-service.js';
 
 export default async function handler(req, res) {
