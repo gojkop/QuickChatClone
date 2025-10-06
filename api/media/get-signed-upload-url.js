@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         maxDurationSeconds: 3600,
         requireSignedURLs: false,
         allowedOrigins: [
-          process.env.CLIENT_PUBLIC_ORIGIN || 'https://quickchat-deploy.vercel.app'
+          'quickchat-deploy.vercel.app'
         ],
       },
       {
