@@ -399,8 +399,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   // BEFORE:
   // {formatTime(segment.duration || 0)}
 
-  // AFTER:
-  {formatTime(segment.duration >= 0 ? segment.duration : 0)}
+  // And for total duration calculation:
+  const totalDuration = recordingSegments.reduce((sum, seg) => {
+    const dur = seg.duration >= 0 ? seg.duration : 0;
+    return sum + dur;
+  }, 0);
 
   // ⭐ UPDATED: Show upload status for each segment
   const ExistingSegmentsDisplay = () => {
