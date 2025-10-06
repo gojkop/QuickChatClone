@@ -37,11 +37,20 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       e.preventDefault();
       const newTag = expertiseInput.trim();
       const currentExpertise = Array.isArray(formData.expertise) ? formData.expertise : [];
+      
+      // Check if limit reached
+      if (currentExpertise.length >= 6) {
+        setError('Maximum 6 expertise tags allowed. Remove a tag to add a new one.');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+      
       if (!currentExpertise.includes(newTag)) {
         setFormData(prev => ({
           ...prev,
           expertise: [...currentExpertise, newTag]
         }));
+        setError(''); // Clear any previous errors
       }
       setExpertiseInput('');
     }
@@ -53,6 +62,10 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       ...prev,
       expertise: currentExpertise.filter(t => t !== tag)
     }));
+    // Clear error when removing a tag (in case it was a "max tags" error)
+    if (error && error.includes('Maximum 6 expertise tags')) {
+      setError('');
+    }
   };
 
   const handleAvatarChange = (uploadResult) => {
@@ -166,7 +179,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                 <div className="flex-1 space-y-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-                      Username
+                      Public Profile Handle
                     </label>
                     <div className="flex items-center">
                       <span className="px-3 py-2.5 bg-white border border-r-0 border-gray-200 rounded-l-lg text-sm text-gray-500 font-medium">
@@ -182,6 +195,9 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                         required
                       />
                     </div>
+                    <p className="text-xs text-gray-500 mt-1.5">
+                      Your unique URL: yoursite.com/u/your-handle
+                    </p>
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input 
@@ -300,17 +316,31 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                  Expertise Tags
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-medium text-gray-600">
+                    Expertise Tags
+                  </label>
+                  <span className={`text-xs font-semibold ${currentExpertise.length >= 6 ? 'text-red-600' : 'text-gray-500'}`}>
+                    {currentExpertise.length}/6
+                  </span>
+                </div>
                 <input 
                   type="text"
                   value={expertiseInput}
                   onChange={(e) => setExpertiseInput(e.target.value)}
                   onKeyDown={handleAddExpertise}
-                  placeholder="Type and press Enter (e.g., React, Strategy)"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                  placeholder={currentExpertise.length >= 6 ? "Maximum tags reached" : "Type and press Enter (e.g., React, Strategy)"}
+                  disabled={currentExpertise.length >= 6}
+                  className={`w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${currentExpertise.length >= 6 ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
+                {currentExpertise.length >= 6 && (
+                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    Maximum 6 tags reached. Remove a tag to add another.
+                  </p>
+                )}
                 {currentExpertise.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {currentExpertise.map((tag, idx) => (
