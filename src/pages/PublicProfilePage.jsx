@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import apiClient from '@/api';
 
 // Helper to format price from cents
 const formatPrice = (cents, currency = 'USD') => {
@@ -281,16 +280,27 @@ function PublicProfilePage() {
 
   const handleShare = () => {
     const url = window.location.href;
+    const expertName = profile?.name || handle || 'Expert';
+    
     if (navigator.share) {
       navigator.share({
-        title: `Ask ${profile.name || handle} a question`,
-        text: profile.tagline || `Get expert advice from ${profile.name || handle}`,
+        title: 'Ask ' + expertName + ' a question',
+        text: profile?.tagline || 'Get expert advice from ' + expertName,
         url: url
-      }).catch(() => {});
+      }).catch(function(error) {
+        console.log('Share failed:', error);
+      });
     } else {
-      navigator.clipboard.writeText(url);
-      setShowShareMenu(true);
-      setTimeout(() => setShowShareMenu(false), 2000);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function() {
+          setShowShareMenu(true);
+          setTimeout(function() {
+            setShowShareMenu(false);
+          }, 2000);
+        }).catch(function(error) {
+          console.log('Copy failed:', error);
+        });
+      }
     }
   };
 
