@@ -12,9 +12,9 @@ function getClient() {
 export async function callGemini(prompt, options = {}) {
   const client = getClient();
   
-  // ✅ FIXED: Use correct model name for v1 API
+  // ✅ Use gemini-1.5-pro (works on both v1 and v1beta)
   const model = client.getGenerativeModel({ 
-    model: 'gemini-2.0-flash-exp',  // ← Changed from gemini-1.5-flash
+    model: 'gemini-1.5-pro',
     generationConfig: {
       temperature: options.temperature || 0.7,
       maxOutputTokens: options.max_tokens || 1024,
