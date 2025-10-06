@@ -11,10 +11,7 @@ export default async function handler(req, res) {
     const { videoBase64, recordingMode, segmentIndex, duration } = req.body;
 
     console.log('=== BACKEND: Upload Video ===');
-    console.log('videoBase64 exists:', !!videoBase64);
     console.log('videoBase64 length:', videoBase64 ? videoBase64.length : 0);
-    console.log('videoBase64 type:', typeof videoBase64);
-    console.log('videoBase64 first 100 chars:', videoBase64 ? videoBase64.substring(0, 100) : 'null');
     console.log('Recording mode:', recordingMode);
     console.log('Segment index:', segmentIndex);
     console.log('Duration:', duration);
@@ -23,59 +20,87 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No video data provided' });
     }
 
-    // ⭐ FIX: Check if videoBase64 starts with "data:" (shouldn't!)
-    if (videoBase64.startsWith('data:')) {
-      console.error('ERROR: videoBase64 still contains data URL prefix!');
-      return res.status(400).json({ 
-        error: 'Invalid format: videoBase64 should not contain data URL prefix',
-        received: videoBase64.substring(0, 50)
-      });
-    }
-
     // Convert base64 to buffer
-    console.log('Converting base64 to buffer...');
-    let videoBuffer;
-    try {
-      videoBuffer = Buffer.from(videoBase64, 'base64');
-      console.log('Buffer created successfully');
-      console.log('Buffer size:', videoBuffer.length);
-    } catch (error) {
-      console.error('Buffer creation failed:', error);
-      return res.status(400).json({ 
-        error: 'Failed to decode base64',
-        details: error.message
-      });
-    }
+    const videoBuffer = Buffer.from(videoBase64, 'base64');
+    console.log('Buffer size:', videoBuffer.length);
 
     // Check magic bytes
     const magicBytes = videoBuffer.slice(0, 4).toString('hex');
     console.log('Magic bytes:', magicBytes);
-    console.log('Expected WebM magic bytes: 1a45dfa3');
     
     if (magicBytes !== '1a45dfa3') {
-      console.error('Invalid magic bytes!');
       return res.status(400).json({ 
         error: 'Invalid video format',
-        details: `Expected WebM magic bytes 1a45dfa3, got ${magicBytes}`,
-        bufferSize: videoBuffer.length,
-        base64Length: videoBase64.length
+        details: `Expected WebM magic bytes 1a45dfa3, got ${magicBytes}`
       });
     }
 
-    console.log('Magic bytes check passed! Video format is valid WebM.');
+    console.log('✅ Magic bytes check passed! Uploading to Cloudflare Stream...');
 
-    // Now upload to Cloudflare Stream
-    // TODO: Add your Cloudflare upload logic here
+    // ⭐ Upload to Cloudflare Stream
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const apiToken = process.env.CLOUDFLARE_STREAM_API_TOKEN;
+
+    if (!accountId || !apiToken) {
+      throw new Error('Missing Cloudflare credentials');
+    }
+
+    const FormData = require('form-data');
+    const form = new FormData();
     
-    // For now, return success
+    // Add the video file
+    form.append('file', videoBuffer, {
+      filename: `segment-${segmentIndex}-${Date.now()}.webm`,
+      contentType: 'video/webm',
+    });
+
+    // Add metadata
+    const metadata = {
+      name: `Segment ${segmentIndex}`,
+      segmentIndex: segmentIndex,
+      recordingMode: recordingMode,
+      duration: duration
+    };
+    form.append('meta', JSON.stringify(metadata));
+
+    // Upload to Cloudflare Stream
+    const uploadResponse = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          ...form.getHeaders(),
+        },
+        body: form,
+      }
+    );
+
+    const uploadResult = await uploadResponse.json();
+    
+    console.log('Cloudflare response status:', uploadResponse.status);
+    console.log('Cloudflare response:', JSON.stringify(uploadResult, null, 2));
+
+    if (!uploadResponse.ok || !uploadResult.success) {
+      throw new Error(
+        uploadResult.errors?.[0]?.message || 
+        'Cloudflare upload failed'
+      );
+    }
+
+    const video = uploadResult.result;
+    
     return res.status(200).json({
       success: true,
       data: {
-        uid: 'test-' + Date.now(),
-        playbackUrl: 'https://test.cloudflare.com/video.mp4',
+        uid: video.uid,
+        playbackUrl: `https://customer-${accountId.substring(0, 8)}.cloudflarestream.com/${video.uid}/manifest/video.m3u8`,
+        thumbnail: video.thumbnail,
         duration: duration || 0,
         mode: recordingMode,
-        size: videoBuffer.length
+        size: videoBuffer.length,
+        status: video.status,
+        cloudflareVideoId: video.uid
       }
     });
 
