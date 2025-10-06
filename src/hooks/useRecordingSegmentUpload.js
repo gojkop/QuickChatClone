@@ -14,22 +14,36 @@ export function useRecordingSegmentUpload() {
   const [uploading, setUploading] = useState(false);
 
   const uploadSegment = async (blob, mode, segmentIndex, duration) => {
+    // ⭐ ADD THIS AT THE START
+    console.log('=== UPLOAD SEGMENT CALLED ===');
+    console.log('Blob size:', blob.size);
+    console.log('Blob type:', blob.type);
+    console.log('Mode:', mode);
+    console.log('Segment index:', segmentIndex);
+    console.log('Duration:', duration);
+    
     const uploadId = `${Date.now()}-${segmentIndex}`;
 
     setSegments(prev => [...prev, {
       id: uploadId,
+      blob,
+      mode,
       segmentIndex,
+      duration,
       uploading: true,
-      progress: 0,
       error: null,
       result: null,
     }]);
 
-    setUploading(true);
-
     try {
       // Convert blob to base64
-      const videoBase64 = await blobToBase64(blob);
+      const base64 = await blobToBase64(blob);
+      
+      // ⭐ ADD THIS
+      console.log('Base64 length:', base64.length);
+      console.log('Base64 prefix (first 100 chars):', base64.substring(0, 100));
+      
+      // ... rest of the function
 
       // Upload through backend to Cloudflare
       const response = await fetch('/api/media/upload-video', {

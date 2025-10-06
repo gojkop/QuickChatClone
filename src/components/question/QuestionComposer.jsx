@@ -201,7 +201,28 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     };
     
     mediaRecorderRef.current.onstop = () => {
+      // ⭐ ADD THESE DEBUG LOGS
+      console.log('=== RECORDING STOPPED ===');
+      console.log('Chunks collected:', chunks.length);
+      console.log('Chunk sizes:', chunks.map(c => c.size));
+      console.log('Total bytes in chunks:', chunks.reduce((sum, c) => sum + c.size, 0));
+      
       const blob = new Blob(chunks, { type: mimeType });
+      
+      // ⭐ ADD THESE DEBUG LOGS
+      console.log('Final blob size:', blob.size);
+      console.log('Final blob type:', blob.type);
+      
+      // Check magic bytes
+      const reader = new FileReader();
+      reader.onload = () => {
+        const arr = new Uint8Array(reader.result).slice(0, 4);
+        const magicBytes = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+        console.log('Blob magic bytes:', magicBytes);
+        console.log('Expected WebM magic bytes: 1a45dfa3');
+      };
+      reader.readAsArrayBuffer(blob.slice(0, 4));
+      
       const duration = Math.max(1, Math.floor((Date.now() - segmentStartTimeRef.current) / 1000));
       const url = URL.createObjectURL(blob);
       
@@ -215,7 +236,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       cleanupStream();
     };
 
-    mediaRecorderRef.current.start(100);
+    mediaRecorderRef.current.start();
 
     timerIntervalRef.current = setInterval(() => {
       setTimer(prev => {
