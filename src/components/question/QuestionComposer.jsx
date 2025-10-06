@@ -1,6 +1,7 @@
 // src/components/question/QuestionComposer.jsx
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { concatenateSegments } from '@/utils/videoConcatenator';
+import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
+import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
 
 const MAX_RECORDING_SECONDS = 90;
 
@@ -8,7 +9,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   // Form state
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
-  const [files, setFiles] = useState([]);
 
   // Segment-based recording state
   const [segments, setSegments] = useState([]);
@@ -18,12 +18,12 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   const [timer, setTimer] = useState(0);
   
   // Camera switching state
-  const [facingMode, setFacingMode] = useState('user'); // 'user' = front, 'environment' = back
+  const [facingMode, setFacingMode] = useState('user');
   const [isFlipping, setIsFlipping] = useState(false);
 
-  // Concatenation state
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState(null);
+  // ⭐ NEW: Progressive upload hooks
+  const segmentUpload = useRecordingSegmentUpload();
+  const attachmentUpload = useAttachmentUpload();
 
   // Refs
   const videoRef = useRef(null);
@@ -37,13 +37,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     navigator.mediaDevices && 
     navigator.mediaDevices.getDisplayMedia;
 
-  // Mobile detection
   const isMobileDevice = typeof window !== 'undefined' && (
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
     (navigator.maxTouchPoints > 2)
   );
 
-  // Effect to properly set video source when stream is ready
   useEffect(() => {
     if (videoRef.current && liveStreamRef.current && 
         (recordingState === 'preview' || recordingState === 'recording') &&
@@ -68,49 +66,28 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     getQuestionData: () => ({
       title,
       text,
-      files,
-      segments,
+      recordingSegments: segmentUpload.getSuccessfulSegments(),
+      attachments: attachmentUpload.uploads
+        .filter(u => u.result)
+        .map(u => u.result),
       recordingMode: segments.length > 0 ? 'multi-segment' : null
     }),
+    // ⭐ SIMPLIFIED: No concatenation!
     validateAndGetData: async () => {
       if (!title.trim()) {
         alert('Please enter a question title.');
         return null;
       }
 
-      let finalMediaBlob = null;
-      let finalRecordingMode = null;
-      let finalDuration = 0;
-
-      if (segments.length > 0) {
-        setIsProcessing(true);
-        try {
-          const result = await concatenateSegments(segments, setProcessingProgress);
-          finalMediaBlob = result.blob;
-          finalRecordingMode = result.mode;
-          finalDuration = result.duration;
-          
-          // Fallback: Calculate duration from segments if not provided
-          if (!finalDuration || finalDuration === 0) {
-            finalDuration = segments.reduce((total, seg) => total + (seg.duration || 0), 0);
-          }
-        } catch (error) {
-          console.error('Failed to concatenate segments:', error);
-          alert('Failed to process recording segments. Please try again.');
-          return null;
-        } finally {
-          setIsProcessing(false);
-          setProcessingProgress(null);
-        }
-      }
-
       return {
         title,
         text,
-        files,
-        mediaBlob: finalMediaBlob,
-        recordingMode: finalRecordingMode,
-        recordingDuration: finalDuration
+        recordingSegments: segmentUpload.getSuccessfulSegments(),
+        attachments: attachmentUpload.uploads
+          .filter(u => u.result)
+          .map(u => u.result),
+        recordingMode: segments.length > 0 ? 'multi-segment' : null,
+        recordingDuration: totalDuration
       };
     }
   }));
@@ -126,17 +103,21 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     }
   };
 
-  const handleFileChange = (e) => {
+  // ⭐ CHANGED: Upload files immediately
+  const handleFileChange = async (e) => {
     const newFiles = Array.from(e.target.files);
-    if (newFiles.length + files.length > 3) {
+    if (newFiles.length + attachmentUpload.uploads.length > 3) {
       alert('Maximum 3 files allowed.');
       return;
     }
-    setFiles(prev => [...prev, ...newFiles]);
-  };
 
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
+    for (const file of newFiles) {
+      try {
+        await attachmentUpload.uploadAttachment(file);
+      } catch (error) {
+        console.error('File upload failed:', error);
+      }
+    }
   };
 
   const startNewSegment = async (mode) => {
@@ -146,20 +127,15 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       return;
     }
     
-    // Clean up any existing stream first
     cleanupStream();
     
-    // Reset camera to front-facing when starting new video segment
-    // Use a small delay to ensure state updates before camera initialization
     if (mode === 'video') {
       setFacingMode('user');
-      // Wait a brief moment for state to update
       await new Promise(resolve => setTimeout(resolve, 50));
     }
     
     setCurrentSegment({ mode, blob: null, blobUrl: null, duration: 0 });
     setRecordingState('asking');
-    // Always pass 'user' explicitly for video mode
     initiatePreview(mode, mode === 'video' ? 'user' : facingMode);
   };
 
@@ -266,14 +242,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     setIsFlipping(true);
     
     try {
-      // Stop current stream
       cleanupStream();
       
-      // Toggle facing mode
       const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
       setFacingMode(newFacingMode);
       
-      // Request new stream with flipped camera
       const constraints = {
         audio: true,
         video: { facingMode: newFacingMode }
@@ -287,7 +260,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       }
     } catch (error) {
       console.error("Camera flip error:", error);
-      // If flip fails, try to restore original camera
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
@@ -306,13 +278,29 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     }
   };
 
-  const saveSegment = () => {
+  // ⭐ CHANGED: Upload segment immediately after saving
+  const saveSegment = async () => {
     if (currentSegment && currentSegment.blob) {
-      setSegments(prev => [...prev, {
+      const segmentData = {
         id: Date.now(),
         ...currentSegment
-      }]);
+      };
+      
+      setSegments(prev => [...prev, segmentData]);
       setTotalDuration(prev => prev + currentSegment.duration);
+      
+      // ⭐ Upload immediately in background
+      try {
+        await segmentUpload.uploadSegment(
+          currentSegment.blob,
+          currentSegment.mode,
+          segments.length
+        );
+        console.log('Segment uploaded successfully');
+      } catch (error) {
+        console.error('Segment upload failed:', error);
+      }
+      
       setCurrentSegment(null);
       setRecordingState('idle');
     }
@@ -328,13 +316,20 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   };
 
   const removeSegment = (id) => {
-    const segment = segments.find(s => s.id === id);
+    const segmentIndex = segments.findIndex(s => s.id === id);
+    const segment = segments[segmentIndex];
+    
     if (segment) {
       setTotalDuration(prev => prev - segment.duration);
       if (segment.blobUrl) {
         URL.revokeObjectURL(segment.blobUrl);
       }
       setSegments(prev => prev.filter(s => s.id !== id));
+      
+      const uploadSegment = segmentUpload.segments[segmentIndex];
+      if (uploadSegment) {
+        segmentUpload.removeSegment(uploadSegment.id);
+      }
     }
   };
 
@@ -352,47 +347,22 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     setSegments(newSegments);
   };
 
+  // ⭐ SIMPLIFIED: No concatenation, instant transition!
   const handleProceedToReview = async () => {
     if (!title.trim()) {
       alert('Please enter a question title.');
       return;
     }
-
-    let finalMediaBlob = null;
-    let finalRecordingMode = null;
-    let finalDuration = 0;
-
-    if (segments.length > 0) {
-      setIsProcessing(true);
-      try {
-        const result = await concatenateSegments(segments, setProcessingProgress);
-        finalMediaBlob = result.blob;
-        finalRecordingMode = result.mode;
-        finalDuration = result.duration;
-        
-        // Fallback: Calculate duration from segments if not provided
-        if (!finalDuration || finalDuration === 0) {
-          finalDuration = segments.reduce((total, seg) => total + (seg.duration || 0), 0);
-        }
-      } catch (error) {
-        console.error('Failed to concatenate segments:', error);
-        alert('Failed to process recording. Please try again.');
-        setIsProcessing(false);
-        setProcessingProgress(null);
-        return;
-      } finally {
-        setIsProcessing(false);
-        setProcessingProgress(null);
-      }
-    }
     
     const data = {
       title,
       text,
-      files,
-      mediaBlob: finalMediaBlob,
-      recordingMode: finalRecordingMode,
-      recordingDuration: finalDuration
+      recordingSegments: segmentUpload.getSuccessfulSegments(),
+      attachments: attachmentUpload.uploads
+        .filter(u => u.result)
+        .map(u => u.result),
+      recordingMode: segments.length > 0 ? 'multi-segment' : null,
+      recordingDuration: totalDuration
     };
     
     onReady(data);
@@ -419,7 +389,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Existing segments display component (shown everywhere)
+  // ⭐ UPDATED: Show upload status for each segment
   const ExistingSegmentsDisplay = () => {
     if (segments.length === 0) return null;
 
@@ -430,7 +400,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
             <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
             </svg>
-            <span className="text-sm font-bold text-indigo-900">Your Segments (will play in order)</span>
+            <span className="text-sm font-bold text-indigo-900">Your Segments</span>
           </div>
           <span className="text-xs font-semibold text-indigo-700 bg-white px-2 py-1 rounded">
             {formatTime(totalDuration)} / {formatTime(MAX_RECORDING_SECONDS)}
@@ -438,124 +408,124 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         </div>
 
         <div className="bg-white rounded-lg p-3 space-y-2">
-          {segments.map((segment, index) => (
-            <div key={segment.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
-                  {index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-gray-900 flex items-center gap-1">
-                    {getSegmentLabel(segment.mode)}
-                    <span className="text-gray-500">· {formatTime(segment.duration)}</span>
+          {segments.map((segment, index) => {
+            const uploadStatus = segmentUpload.segments[index];
+            const isUploading = uploadStatus?.uploading;
+            const hasError = uploadStatus?.error;
+            const isUploaded = uploadStatus?.result;
+
+            return (
+              <div key={segment.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold text-gray-900 flex items-center gap-1">
+                      {getSegmentLabel(segment.mode)}
+                      <span className="text-gray-500">· {formatTime(segment.duration)}</span>
+                    </div>
+                    {/* ⭐ NEW: Upload status indicator */}
+                    <div className="text-xs mt-0.5">
+                      {isUploading && (
+                        <span className="text-indigo-600 flex items-center gap-1">
+                          <div className="w-2 h-2 border border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                          Uploading...
+                        </span>
+                      )}
+                      {hasError && (
+                        <span className="text-red-600 flex items-center gap-1">
+                          ❌ Upload failed
+                          <button
+                            onClick={() => segmentUpload.retrySegment(uploadStatus.id)}
+                            className="text-indigo-600 hover:underline"
+                          >
+                            Retry
+                          </button>
+                        </span>
+                      )}
+                      {isUploaded && (
+                        <span className="text-green-600 flex items-center gap-1">
+                          ✅ Uploaded
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-1 flex-shrink-0">
-                {index > 0 && (
+                
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {index > 0 && (
+                    <button
+                      onClick={() => moveSegmentUp(index)}
+                      className="p-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
+                      title="Move up"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+                      </svg>
+                    </button>
+                  )}
+                  {index < segments.length - 1 && (
+                    <button
+                      onClick={() => moveSegmentDown(index)}
+                      className="p-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
+                      title="Move down"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
                   <button
-                    onClick={() => moveSegmentUp(index)}
-                    className="p-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
-                    title="Move up"
+                    onClick={() => {
+                      const elem = segment.mode !== 'audio' 
+                        ? document.createElement('video')
+                        : document.createElement('audio');
+                      elem.src = segment.blobUrl;
+                      elem.controls = true;
+                      if (segment.mode !== 'audio') {
+                        elem.style.width = '100%';
+                        elem.style.maxHeight = '400px';
+                      }
+                      const modal = document.createElement('div');
+                      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80';
+                      modal.onclick = () => modal.remove();
+                      modal.appendChild(elem);
+                      document.body.appendChild(modal);
+                      elem.play();
+                    }}
+                    className="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition"
+                    title="Preview"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </button>
-                )}
-                {index < segments.length - 1 && (
                   <button
-                    onClick={() => moveSegmentDown(index)}
-                    className="p-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
-                    title="Move down"
+                    onClick={() => removeSegment(segment.id)}
+                    className="p-1 text-red-600 hover:bg-red-50 rounded transition"
+                    title="Delete"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
-                )}
-                <button
-                  onClick={() => {
-                    const elem = segment.mode !== 'audio' 
-                      ? document.createElement('video')
-                      : document.createElement('audio');
-                    elem.src = segment.blobUrl;
-                    elem.controls = true;
-                    if (segment.mode !== 'audio') {
-                      elem.style.width = '100%';
-                      elem.style.maxHeight = '400px';
-                    }
-                    const modal = document.createElement('div');
-                    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80';
-                    modal.onclick = () => modal.remove();
-                    modal.appendChild(elem);
-                    document.body.appendChild(modal);
-                    elem.play();
-                  }}
-                  className="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition"
-                  title="Preview"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => removeSegment(segment.id)}
-                  className="p-1 text-red-600 hover:bg-red-50 rounded transition"
-                  title="Delete"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-3 flex items-start gap-2 text-xs text-indigo-700">
           <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span>Segments will be combined in this order into one video. Use arrows to reorder.</span>
+          <span>Segments are uploading in the background. You can continue when all are uploaded.</span>
         </div>
       </div>
     );
   };
-
-  // Processing overlay
-  if (isProcessing) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Processing Recording</h3>
-            <p className="text-gray-600 mb-4">
-              Combining your {segments.length} segment{segments.length > 1 ? 's' : ''} into one video...
-            </p>
-            {processingProgress && (
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">
-                  {processingProgress.stage === 'preparing' && 'Preparing...'}
-                  {processingProgress.stage === 'processing' && `Segment ${processingProgress.current} of ${processingProgress.total}`}
-                  {processingProgress.stage === 'complete' && 'Finalizing...'}
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(processingProgress.current / processingProgress.total) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const renderRecorder = () => {
     if (recordingState === 'idle') {
@@ -614,7 +584,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                 )}
               </div>
 
-              {/* Mobile Info Message - Only shown when screen recording is NOT available */}
               {!isScreenRecordingAvailable && (
                 <div className="mt-4 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -680,7 +649,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
               <div className="relative">
                 <video ref={videoRef} className="w-full bg-gray-900 aspect-video" autoPlay muted playsInline />
                 
-                {/* Camera flip button - only for video mode on mobile */}
                 {currentSegment.mode === 'video' && isMobileDevice && (
                   <button
                     onClick={flipCamera}
@@ -698,7 +666,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
                   </button>
                 )}
                 
-                {/* Camera indicator badge - only on mobile */}
                 {currentSegment.mode === 'video' && isMobileDevice && (
                   <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold rounded-full">
                     {facingMode === 'user' ? '📷 Front Camera' : '📷 Back Camera'}
@@ -800,6 +767,12 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     return null;
   };
 
+  // ⭐ NEW: Check if everything is uploaded before allowing proceed
+  const canProceed = 
+    title.trim().length > 0 &&
+    !segmentUpload.hasUploading &&
+    !attachmentUpload.uploads.some(u => u.uploading);
+
   return (
     <div className="space-y-8">
       <div>
@@ -840,6 +813,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
         <div className="text-right text-xs text-gray-500 mt-1">{text.length} / 5000</div>
       </div>
 
+      {/* ⭐ UPDATED: Show attachment upload status */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
           Attach Files <span className="text-gray-500 font-normal">(Optional, max 3)</span>
@@ -850,29 +824,78 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition"
           multiple
           onChange={handleFileChange}
+          disabled={attachmentUpload.uploads.length >= 3}
         />
-        {files.length > 0 && (
+        {attachmentUpload.uploads.length > 0 && (
           <ul className="mt-3 space-y-2">
-            {files.map((file, index) => (
-              <li key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-700 truncate flex-1">{file.name}</span>
-                <button onClick={() => removeFile(index)} className="ml-3 text-red-500 hover:text-red-700 font-semibold text-sm">
-                  Remove
-                </button>
+            {attachmentUpload.uploads.map((upload) => (
+              <li key={upload.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                <span className="text-sm text-gray-700 truncate flex-1">{upload.file.name}</span>
+                <div className="flex items-center gap-2 ml-3">
+                  {upload.uploading && (
+                    <span className="text-xs text-indigo-600 flex items-center gap-1">
+                      <div className="w-3 h-3 border border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                      Uploading...
+                    </span>
+                  )}
+                  {upload.error && (
+                    <>
+                      <span className="text-xs text-red-600">Failed</span>
+                      <button
+                        onClick={() => attachmentUpload.retryUpload(upload.id)}
+                        className="text-xs text-indigo-600 hover:underline"
+                      >
+                        Retry
+                      </button>
+                    </>
+                  )}
+                  {upload.result && (
+                    <span className="text-xs text-green-600">✅ Uploaded</span>
+                  )}
+                  <button
+                    onClick={() => attachmentUpload.removeUpload(upload.id)}
+                    className="ml-2 text-red-500 hover:text-red-700 font-semibold text-sm"
+                  >
+                    Remove
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </div>
 
+      {/* ⭐ UPDATED: Show upload status in button */}
       {!hideButton && (
-        <button
-          onClick={handleProceedToReview}
-          disabled={isProcessing}
-          className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isProcessing ? 'Processing...' : 'Continue to Review'}
-        </button>
+        <div>
+          <button
+            onClick={handleProceedToReview}
+            disabled={!canProceed}
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {!title.trim() 
+              ? 'Enter a title to continue' 
+              : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
+              ? 'Uploading...'
+              : 'Continue to Review'}
+          </button>
+          
+          {/* ⭐ NEW: Upload progress summary */}
+          {(segmentUpload.segments.length > 0 || attachmentUpload.uploads.length > 0) && (
+            <div className="mt-3 text-center text-sm text-gray-600">
+              {segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading) ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  Uploading in background...
+                </span>
+              ) : (
+                <span className="text-green-600">
+                  ✅ All content uploaded! Ready to proceed.
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

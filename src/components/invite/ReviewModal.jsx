@@ -1,4 +1,4 @@
-// src/components/question/ReviewModal.jsx
+// src/components/invite/ReviewModal.jsx
 import React, { useState } from 'react';
 import DeliveryPreview from '@/components/invite/DeliveryPreview';
 
@@ -7,6 +7,14 @@ const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const formatBytes = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 };
 
 function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProposal, onClose, onEdit, onSend }) {
@@ -35,9 +43,14 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
     });
   };
 
-  // Check if duration matches expected (KEY ADDITION)
-  const recordingDuration = questionData.recordingDuration || 0;
-  const isDurationValid = recordingDuration > 0;
+  // Get recording segments and total duration
+  const recordingSegments = questionData.recordingSegments || [];
+  const totalDuration = recordingSegments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
+  const hasRecording = recordingSegments.length > 0;
+
+  // Get attachments
+  const attachments = questionData.attachments || [];
+  const hasAttachments = attachments.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -99,63 +112,53 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                   <p className="text-gray-900 text-sm font-medium">{questionData.title}</p>
                 </div>
 
-                {/* Recording - Shows concatenated video with duration (KEY ADDITION) */}
-                {questionData.mediaBlob && (
+                {/* Recording Segments - Show all segments */}
+                {hasRecording && (
                   <div className="flex items-start">
                     <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">
                       Recording
                     </span>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className={`text-sm font-medium flex items-center gap-2 ${
-                          isDurationValid ? 'text-green-700' : 'text-amber-700'
-                        }`}>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span>
-                            {questionData.recordingMode === 'video' ? 'Video' : 
-                             questionData.recordingMode === 'audio' ? 'Audio' : 'Recording'} Added
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Duration Display with Validation (KEY ADDITION) */}
-                      {isDurationValid && (
-                        <div className="flex items-center gap-2 mt-2 p-2 bg-white rounded border border-gray-200">
-                          <svg className="w-4 h-4 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <div className="flex-1">
-                            <div className="text-xs font-semibold text-gray-900">
-                              Duration: {formatTime(recordingDuration)}
+                      <div className="space-y-2">
+                        {recordingSegments.map((segment, index) => (
+                          <div key={segment.uid || index} className="flex items-center gap-2 p-2 bg-white rounded border border-gray-200">
+                            {/* Segment number */}
+                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                              {index + 1}
                             </div>
-                            <div className="text-xs text-gray-500">
-                              Segments successfully combined
+                            
+                            {/* Segment info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-semibold text-gray-900">
+                                {segment.mode === 'video' ? '📹 Video' : 
+                                 segment.mode === 'audio' ? '🎤 Audio' : 
+                                 segment.mode === 'screen' ? '💻 Screen' : 'Recording'} Segment
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {formatTime(segment.duration || 0)} • {formatBytes(segment.size || 0)}
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex-shrink-0">
-                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                          </div>
-                        </div>
-                      )}
 
-                      {/* Warning state if duration couldn't be determined (KEY ADDITION) */}
-                      {!isDurationValid && questionData.mediaBlob && (
-                        <div className="flex items-center gap-2 mt-2 p-2 bg-amber-50 rounded border border-amber-200">
-                          <svg className="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                          <div className="flex-1">
-                            <div className="text-xs font-semibold text-amber-900">
-                              Recording verification needed
-                            </div>
-                            <div className="text-xs text-amber-700">
-                              Duration could not be determined
+                            {/* Upload status */}
+                            <div className="flex-shrink-0">
+                              <div className="flex items-center gap-1 text-xs">
+                                <span className="text-green-600">✅</span>
+                                <span className="text-green-600 font-medium">Uploaded</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        ))}
+                      </div>
+
+                      {/* Total duration summary */}
+                      <div className="mt-2 flex items-center gap-2 text-xs text-gray-600 bg-indigo-50 px-3 py-2 rounded">
+                        <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="font-semibold text-indigo-900">
+                          Total: {recordingSegments.length} segment{recordingSegments.length > 1 ? 's' : ''} • {formatTime(totalDuration)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -173,21 +176,72 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                   )}
                 </div>
 
-                {/* Attached Files */}
+                {/* Attached Files - Show all files with details */}
                 <div className="flex items-start">
                   <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Files</span>
-                  {questionData.files && questionData.files.length > 0 ? (
-                    <ul className="text-sm list-disc pl-5">
-                      {questionData.files.map((file, index) => (
-                        <li key={index} className="text-gray-800">{file.name}</li>
-                      ))}
-                    </ul>
+                  {hasAttachments ? (
+                    <div className="flex-1">
+                      <div className="space-y-2">
+                        {attachments.map((file, index) => (
+                          <div key={file.url || index} className="flex items-center gap-2 p-2 bg-white rounded border border-gray-200">
+                            {/* File icon */}
+                            <div className="flex-shrink-0">
+                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </div>
+
+                            {/* File info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-semibold text-gray-900 truncate">
+                                {file.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {formatBytes(file.size || 0)}
+                              </div>
+                            </div>
+
+                            {/* Upload status */}
+                            <div className="flex-shrink-0">
+                              <div className="flex items-center gap-1 text-xs">
+                                <span className="text-green-600">✅</span>
+                                <span className="text-green-600 font-medium">Uploaded</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   ) : (
                     <span className="text-sm text-gray-500">No Files Attached</span>
                   )}
                 </div>
               </div>
             </div>
+
+            {/* Summary Card */}
+            {(hasRecording || hasAttachments) && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-green-900 mb-1">All Content Uploaded!</h3>
+                    <p className="text-xs text-green-700">
+                      {hasRecording && `${recordingSegments.length} recording segment${recordingSegments.length > 1 ? 's' : ''}`}
+                      {hasRecording && hasAttachments && ' and '}
+                      {hasAttachments && `${attachments.length} file${attachments.length > 1 ? 's' : ''}`}
+                      {' '}ready to send. Your invitation will be sent instantly.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Edit Button */}
             <button
