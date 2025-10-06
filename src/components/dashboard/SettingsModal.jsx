@@ -155,6 +155,12 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
             const { url } = await uploadResponse.json();
             console.log('Default avatar uploaded:', url);
 
+            // CRITICAL: Save URL to Xano using the dedicated endpoint
+            console.log('Saving default avatar URL to Xano...');
+            await apiClient.post('/upload/profile-picture', {
+              image_url: url
+            });
+
             // Update formData with new URL
             setFormData(prev => ({ 
               ...prev, 
@@ -206,8 +212,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         public: formData.isPublic,
         handle: formData.handle,
         currency: 'USD',
-        avatar_url: avatarUrlToSave,
-        avatar_key: avatarKeyToSave,
+        // Don't send avatar_url/avatar_key here - they're set via /upload/profile-picture endpoint
         professional_title: formData.professional_title || '',
         tagline: formData.tagline || '',
         expertise: Array.isArray(formData.expertise) ? formData.expertise : [],
@@ -217,28 +222,30 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       };
 
       console.log('Saving payload:', payload);
-      console.log('Avatar URL being saved:', payload.avatar_url);
-
-      if (avatarUrlToSave) {
-        localStorage.setItem('qc_avatar', avatarUrlToSave);
-      } else {
-        localStorage.removeItem('qc_avatar');
-        console.log('Removing avatar from localStorage');
-      }
-      localStorage.setItem('qc_charity_percentage', formData.charity_percentage || 0);
-      if (formData.selected_charity) {
-        localStorage.setItem('qc_selected_charity', formData.selected_charity);
-      }
+      console.log('Avatar URL that was uploaded:', avatarUrlToSave);
 
       const response = await apiClient.put('/me/profile', payload);
       
       console.log('API response:', response.data);
       console.log('API returned avatar_url:', response.data.avatar_url);
       
+      // Update localStorage with the avatar from API response
+      if (response.data.avatar_url) {
+        localStorage.setItem('qc_avatar', response.data.avatar_url);
+      } else {
+        localStorage.removeItem('qc_avatar');
+      }
+      
+      localStorage.setItem('qc_charity_percentage', formData.charity_percentage || 0);
+      if (formData.selected_charity) {
+        localStorage.setItem('qc_selected_charity', formData.selected_charity);
+      }
+      
+      // Use the avatar URL from the API response (it should reflect the default avatar we just uploaded)
       const updatedProfile = {
         ...response.data,
-        avatar_url: avatarUrlToSave,
-        avatar_key: avatarKeyToSave,
+        // Override with our local values for immediate UI update
+        avatar_url: response.data.avatar_url || avatarUrlToSave,
         charity_percentage: formData.charity_percentage,
         selected_charity: formData.selected_charity
       };
