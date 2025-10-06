@@ -407,11 +407,13 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               {formData.charity_percentage > 0 && (
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Select Charity</label>
-                  <CharitySelector 
-                    value={formData.selected_charity}
-                    onChange={handleCharityChange}
-                    donationPercentage={formData.charity_percentage}
-                  />
+                  <div className="text-xs [&_label]:text-xs [&_span]:text-xs [&_div]:text-xs">
+                    <CharitySelector 
+                      value={formData.selected_charity}
+                      onChange={handleCharityChange}
+                      donationPercentage={formData.charity_percentage}
+                    />
+                  </div>
                 </div>
               )}
             </div>
