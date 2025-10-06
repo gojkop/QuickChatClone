@@ -55,22 +55,21 @@ export function useRecordingSegmentUpload() {
       console.log('Full base64DataUrl length:', base64DataUrl.length);
       console.log('Base64DataUrl starts with:', base64DataUrl.substring(0, 50));
       
-      // ⭐ FIX: More robust splitting
-      const parts = base64DataUrl.split(',');
-      console.log('Split parts count:', parts.length);
+      // ⭐ FIX: Split only on the FIRST comma (the one before "base64,")
+      const commaIndex = base64DataUrl.indexOf(',');
       
-      if (parts.length !== 2) {
-        throw new Error(`Invalid data URL format. Expected 2 parts, got ${parts.length}`);
+      if (commaIndex === -1) {
+        throw new Error('Invalid data URL: no comma found');
       }
       
-      const base64Data = parts[1];
+      const base64Data = base64DataUrl.substring(commaIndex + 1);
+      
+      console.log('Base64 data length:', base64Data.length);
+      console.log('Base64 data preview:', base64Data.substring(0, 100));
       
       if (!base64Data || base64Data.length < 100) {
         throw new Error(`Base64 data too short: ${base64Data ? base64Data.length : 0} bytes`);
       }
-      
-      console.log('Base64 data length:', base64Data.length);
-      console.log('Base64 data preview:', base64Data.substring(0, 100));
       
       const response = await fetch('/api/media/upload-video', {
         method: 'POST',
