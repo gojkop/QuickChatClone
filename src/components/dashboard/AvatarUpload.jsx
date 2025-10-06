@@ -11,6 +11,11 @@ function AvatarUpload({ currentAvatar, onChange }) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState(null);
 
+  // Update preview when currentAvatar changes (e.g., when removed)
+  React.useEffect(() => {
+    setPreview(currentAvatar);
+  }, [currentAvatar]);
+
   const handleFileChange = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -45,7 +50,6 @@ function AvatarUpload({ currentAvatar, onChange }) {
     }
   };
 
-  // UPDATED FUNCTION - Uses proxy to avoid CORS
   const handleEditExisting = async () => {
     console.log('Edit existing clicked, currentAvatar:', currentAvatar);
     if (!currentAvatar) {
@@ -75,8 +79,6 @@ function AvatarUpload({ currentAvatar, onChange }) {
     } catch (err) {
       console.error('Error loading existing avatar:', err);
       setError('Unable to load existing avatar for editing.');
-      
-      // Show user-friendly message
       alert('Unable to edit existing avatar. Please upload a new photo instead.');
     }
   };
@@ -133,6 +135,7 @@ function AvatarUpload({ currentAvatar, onChange }) {
               className="w-24 h-24 rounded-full object-cover ring-4 ring-gray-100"
             />
           ) : (
+            // Default avatar when no preview
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
               <svg 
                 className="w-12 h-12 text-white" 
@@ -144,7 +147,7 @@ function AvatarUpload({ currentAvatar, onChange }) {
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
                   strokeWidth="2" 
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" 
                 />
               </svg>
             </div>
@@ -176,6 +179,7 @@ function AvatarUpload({ currentAvatar, onChange }) {
               className="hidden"
             />
             
+            {/* Only show Edit button if there's a preview */}
             {preview && !isUploading && (
               <button
                 onClick={(e) => {

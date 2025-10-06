@@ -94,7 +94,7 @@ const SocialLink = ({ platform, url }) => {
       href={formattedUrl} 
       target="_blank" 
       rel="noopener noreferrer" 
-      className="text-gray-400 hover:text-indigo-600 transition-colors transform hover:scale-110 duration-200"
+      className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-lg transition-all transform hover:scale-110 shadow-sm hover:shadow-md"
       title={config.label}
     >
       {config.icon}
@@ -125,18 +125,20 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
 
   if (is100Percent) {
     return (
-      <div className="bg-gradient-to-br from-amber-100 via-yellow-100 to-orange-100 rounded-xl p-4 border-2 border-amber-400 shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-16 h-16 bg-amber-300/20 rounded-full -mr-8 -mt-8"></div>
-        <div className="absolute bottom-0 left-0 w-12 h-12 bg-yellow-300/20 rounded-full -ml-6 -mb-6"></div>
+      <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-amber-300 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-20 h-20 bg-amber-200/20 rounded-full -mr-10 -mt-10"></div>
+        <div className="absolute bottom-0 left-0 w-14 h-14 bg-yellow-200/20 rounded-full -ml-7 -mb-7"></div>
         <div className="relative">
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl">{charity.icon}</span>
-            <div className="flex-1">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="text-base font-bold text-amber-900">100% Donation</span>
-                <span className="text-lg">✨</span>
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center text-lg">
+              {charity.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-bold text-amber-900">100% Donation</span>
+                <span className="text-base">✨</span>
               </div>
-              <p className="text-xs text-amber-800 leading-snug font-medium">
+              <p className="text-xs text-amber-800 leading-relaxed font-medium">
                 All earnings ({formatPrice(donationAmount, currency)}) go to <span className="font-bold">{charity.name}</span>. Your payment directly supports their mission.
               </p>
             </div>
@@ -147,12 +149,16 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
   }
 
   return (
-    <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 rounded-xl p-4 border border-orange-200 shadow-sm">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{charity.icon}</span>
-        <p className="text-sm text-gray-700 leading-snug">
-          A <span className="font-bold">{charityPercentage}% donation</span> ({formatPrice(donationAmount, currency)}) of your payment will go to <span className="font-bold text-gray-900">{charity.name}</span>.
-        </p>
+    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border border-orange-200 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center text-lg">
+          {charity.icon}
+        </div>
+        <div className="flex-1">
+          <p className="text-xs text-gray-700 leading-relaxed">
+            A <span className="font-bold text-gray-900">{charityPercentage}% donation</span> ({formatPrice(donationAmount, currency)}) of your payment goes to <span className="font-bold text-gray-900">{charity.name}</span>.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -161,8 +167,8 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
 // Trust Badge Component
 const TrustBadge = () => {
   return (
-    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full shadow-sm">
-      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-200 rounded-full shadow-sm">
+      <svg className="w-3.5 h-3.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
       </svg>
       <span className="text-xs font-semibold text-green-700">Verified Expert</span>
@@ -173,8 +179,8 @@ const TrustBadge = () => {
 // 100% Charity Badge Component
 const CharityHeroBadge = () => {
   return (
-    <div className="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-400 rounded-full shadow-md animate-pulse">
-      <svg className="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-400 rounded-full shadow-sm">
+      <svg className="w-3.5 h-3.5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
         <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
       </svg>
       <span className="text-xs font-bold text-amber-800">100% to Charity</span>
@@ -315,9 +321,9 @@ function PublicProfilePage() {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="text-center p-12">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-12 text-center">
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading profile...</p>
         </div>
       );
     }
@@ -342,9 +348,9 @@ function PublicProfilePage() {
             <p className="text-gray-600 mb-6">
               But you can invite them to join!
             </p>
-            <a
-              href={'https://quickchat-deploy.vercel.app/invite?expert=' + encodeURIComponent(handle)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+            
+            <a href={'https://quickchat-deploy.vercel.app/invite?expert=' + encodeURIComponent(handle)}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -384,7 +390,7 @@ function PublicProfilePage() {
             
             <a 
               href="/"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
               <span>Browse other experts</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -408,7 +414,7 @@ function PublicProfilePage() {
           
           <a 
             href="/"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
           >
             <span>Go to homepage</span>
           </a>
@@ -424,23 +430,31 @@ function PublicProfilePage() {
       return (
         <React.Fragment>
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden">
-            {/* Enhanced Header Gradient */}
-            <div className="h-32 bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 relative overflow-hidden">
+            {/* Compact Header */}
+            <div className="relative h-32 md:h-36 bg-gradient-to-br from-slate-50 via-gray-50 to-indigo-50 overflow-hidden">
+              {/* Subtle dot pattern */}
               <div className="absolute inset-0 opacity-20">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                  backgroundSize: '32px 32px'
-                }}></div>
+                <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                      <circle cx="2" cy="2" r="1" fill="currentColor" className="text-indigo-400"/>
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#grid)"/>
+                </svg>
               </div>
               
+              {/* Subtle accent line at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50"/>
+              
               {/* Share Button */}
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-3 right-3">
                 <button
                   onClick={handleShare}
-                  className="p-2.5 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-white transition-all transform hover:scale-105 active:scale-95"
+                  className="p-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg hover:bg-white hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
                   title="Share profile"
                 >
-                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
                   </svg>
                 </button>
@@ -452,13 +466,16 @@ function PublicProfilePage() {
               </div>
             </div>
 
-            <div className="p-6 space-y-6 pb-28 md:pb-6">
-              {/* Avatar Section with Activity Badge */}
-              <div className="flex items-start gap-4 -mt-20">
-                <div className="relative flex-shrink-0">
+            <div className="px-5 md:px-6 pb-28 md:pb-6 space-y-5">
+              {/* Avatar Section */}
+              <div className="flex items-start gap-4 -mt-16 md:-mt-18 relative z-10">
+                <div className="relative flex-shrink-0 group">
+                  {/* Subtle glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-violet-400 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity"/>
+                  
                   {profile.avatar_url ? (
                     <img 
-                      className="w-28 h-28 rounded-full object-cover ring-4 ring-white shadow-xl" 
+                      className="relative w-24 h-24 md:w-28 md:h-28 rounded-full object-cover ring-4 ring-white shadow-2xl" 
                       src={profile.avatar_url}
                       alt={(profile.name || 'Expert') + "'s avatar"}
                       onError={function(e) {
@@ -468,22 +485,24 @@ function PublicProfilePage() {
                     />
                   ) : null}
                   <div 
-                    className="w-28 h-28 flex-shrink-0" 
+                    className="relative w-24 h-24 md:w-28 md:h-28 flex-shrink-0" 
                     style={{ display: profile.avatar_url ? 'none' : 'block' }}
                   >
                     <DefaultAvatar size={112} />
                   </div>
                   
-                  {/* Activity Badge */}
-                  <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-green-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
-                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></div>
+                  {/* Activity indicator */}
+                  <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-gradient-to-br from-green-400 to-green-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                    </svg>
                   </div>
                 </div>
                 
                 {/* Social Links */}
                 {hasSocials && (
-                  <div className="pt-16 flex-1">
-                    <div className="flex items-center justify-end gap-3">
+                  <div className="pt-12 md:pt-14 flex-1">
+                    <div className="flex items-center justify-end gap-2 flex-wrap">
                       {profile.socials.twitter && (
                         <SocialLink platform="twitter" url={profile.socials.twitter} />
                       )}
@@ -504,10 +523,12 @@ function PublicProfilePage() {
                 )}
               </div>
 
-              {/* Name, Title, Badge, and Tagline */}
-              <div>
-                <div className="flex items-start gap-2 flex-wrap mb-2">
-                  <h1 className="text-3xl font-bold text-gray-900 leading-tight">{profile.name || 'Expert'}</h1>
+              {/* Name, Title - More prominent */}
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-2.5 flex-wrap">
+                  <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
+                    {profile.name || 'Expert'}
+                  </h1>
                   {profile.charity_percentage === 100 ? (
                     <CharityHeroBadge />
                   ) : (
@@ -515,28 +536,38 @@ function PublicProfilePage() {
                   )}
                 </div>
                 {profile.title && (
-                  <p className="text-lg text-indigo-600 font-semibold">{profile.title}</p>
+                  <p className="text-lg md:text-xl text-gray-600 font-medium leading-tight">
+                    {profile.title}
+                  </p>
                 )}
                 {profile.tagline && (
-                  <p className="mt-3 text-base text-gray-700 leading-relaxed">{profile.tagline}</p>
+                  <p className="text-base text-gray-700 leading-relaxed">
+                    {profile.tagline}
+                  </p>
                 )}
               </div>
 
-              {/* Bio Section */}
+              {/* Bio Section - More prominent */}
               {profile.bio && (
-                <div className="text-gray-600 text-sm leading-relaxed">
-                  {profile.bio}
+                <div className="prose prose-gray max-w-none">
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    {profile.bio}
+                  </p>
                 </div>
               )}
 
-              {/* Expertise Section */}
+              {/* Expertise Section - More prominent */}
               {profile.expertise && profile.expertise.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Expertise</h3>
+                <div className="space-y-3.5">
+                  <h3 className="text-sm font-bold text-gray-900 tracking-wide">Areas of Expertise</h3>
                   <div className="flex flex-wrap gap-2">
                     {profile.expertise.slice(0, 6).map(function(field, index) {
                       return (
-                        <span key={index} className="px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors">
+                        <span 
+                          key={index} 
+                          className="group inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-all shadow-sm hover:shadow-md cursor-default"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 group-hover:bg-indigo-500 transition-colors"/>
                           {field}
                         </span>
                       );
@@ -544,59 +575,40 @@ function PublicProfilePage() {
                   </div>
                 </div>
               )}
-
-              {/* Tags Section */}
-              {profile.tags && profile.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {profile.tags.map(function(tag) {
-                    return (
-                      <span key={tag} className="px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-full">
-                        {tag}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
               
-              {/* Enhanced Price Card */}
-              <div className="bg-white rounded-xl border-2 border-indigo-600 p-4 shadow-lg">
-                <div className="flex items-baseline justify-between mb-3">
+              {/* Compact Price Card */}
+              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-3">
                   <div>
                     <div className="text-2xl font-bold text-gray-900">
                       {formatPrice(profile.price_cents, profile.currency)}
                     </div>
-                    <div className="text-xs text-gray-600">per answer</div>
+                    <div className="text-xs text-gray-500">per answer</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs font-semibold text-indigo-600 flex items-center gap-1">
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
-                      </svg>
-                      <span>{profile.sla_hours}h response</span>
-                    </div>
-                    <div className="text-xs text-gray-500">guaranteed</div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 rounded-lg border border-green-200">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/>
+                    <span className="text-xs font-semibold text-green-700">{profile.sla_hours}h response</span>
                   </div>
                 </div>
                 
-                {/* What's included */}
-                <div className="space-y-1.5 pt-3 border-t border-gray-200">
-                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                <div className="space-y-2 text-xs text-gray-600">
+                  <div className="flex items-center gap-2">
                     <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                     </svg>
                     <span>Up to 90s video question</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                  <div className="flex items-center gap-2">
                     <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                     </svg>
-                    <span>Detailed video/voice answer</span>
+                    <span>Expert video/voice answer</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                  <div className="flex items-center gap-2">
                     <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                     </svg>
-                    <span>Money-back if no reply</span>
+                    <span>Money-back guarantee</span>
                   </div>
                 </div>
               </div>
@@ -617,26 +629,49 @@ function PublicProfilePage() {
           <div className="hidden md:block mt-6">
             <button
               onClick={handleAskQuestion}
-              className="w-full group bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl text-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+              className="w-full group bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-4 px-6 rounded-xl text-base hover:shadow-2xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              Ask Your Question
+              <span>Ask Your Question</span>
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+              </svg>
             </button>
           </div>
 
           {/* Mobile Sticky CTA */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-2xl z-50 md:hidden">
-            <div className="flex items-center gap-3 max-w-md mx-auto">
-              <div className="flex-shrink-0">
-                <div className="text-xs text-gray-600">Ask {profile.name ? profile.name.split(' ')[0] : handle}</div>
-                <div className="text-xl font-bold text-gray-900">
-                  {formatPrice(profile.price_cents, profile.currency)}
+          <div className="fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-md border-t border-gray-200 shadow-2xl z-50 md:hidden">
+            <div className="p-4 max-w-md mx-auto">
+              <div className="flex items-center gap-3 mb-3">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200" alt=""/>
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">{(profile.name || handle)[0]}</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 truncate">
+                    Ask {profile.name?.split(' ')[0] || handle}
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Responds in {profile.sla_hours}h
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-bold text-gray-900">
+                    {formatPrice(profile.price_cents, profile.currency)}
+                  </div>
                 </div>
               </div>
+              
               <button
                 onClick={handleAskQuestion}
-                className="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg active:scale-95 transition-transform"
+                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                Ask Now
+                <span>Ask Your Question</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
               </button>
             </div>
           </div>
@@ -645,22 +680,22 @@ function PublicProfilePage() {
           <div className="pt-8 pb-4">
             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 text-sm text-gray-500">
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                 </svg>
-                <span>Secure payment</span>
+                <span className="font-medium">Secure payment</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
                 </svg>
-                <span>Guaranteed response</span>
+                <span className="font-medium">Guaranteed response</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
                 </svg>
-                <span>Money-back guarantee</span>
+                <span className="font-medium">Money-back guarantee</span>
               </div>
             </div>
           </div>
@@ -671,14 +706,14 @@ function PublicProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex justify-center items-start sm:items-center p-4 pt-28 sm:p-6">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 flex justify-center items-start sm:items-center p-4 pt-20 sm:p-6">
+      <div className="w-full max-w-lg">
         {renderContent()}
         
         <div className="text-center mt-6 mb-6">
           <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors group">
             <span>Powered by</span>
-            <span className="font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            <span className="font-bold bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent">
               QuickChat
             </span>
           </a>
