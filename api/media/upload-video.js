@@ -1,93 +1,44 @@
 import FormData from 'form-data';
 import axios from 'axios';
 
+// In api/media/upload-video.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { videoBase64, mode, segmentIndex, duration } = req.body;
+    const { videoBase64, recordingMode, segmentIndex, duration } = req.body;
 
     if (!videoBase64) {
       return res.status(400).json({ error: 'No video data provided' });
     }
 
-    const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const CLOUDFLARE_STREAM_API_TOKEN = process.env.CLOUDFLARE_STREAM_API_TOKEN;
+    console.log('Received video data length:', videoBase64.length);
+    console.log('Recording mode:', recordingMode);
+    console.log('Segment index:', segmentIndex);
+    console.log('Duration:', duration);
 
-    // Extract base64 data
-    const base64Data = videoBase64.includes(',') 
-      ? videoBase64.split(',')[1] 
-      : videoBase64;
-    
-    const buffer = Buffer.from(base64Data, 'base64');
+    // Convert base64 to buffer
+    const videoBuffer = Buffer.from(videoBase64, 'base64');
+    console.log('Buffer size:', videoBuffer.length);
 
-    console.log('Buffer size:', buffer.length);
-    console.log('First 20 bytes (hex):', buffer.slice(0, 20).toString('hex'));
-    console.log('Mode:', mode);
-
-    // Check if it's a valid WebM file (should start with 1A45DFA3)
-    const magicBytes = buffer.slice(0, 4).toString('hex');
+    // Check magic bytes
+    const magicBytes = videoBuffer.slice(0, 4).toString('hex');
     console.log('Magic bytes:', magicBytes);
     
-    if (!magicBytes.startsWith('1a45dfa')) {
-      console.error('Invalid WebM file - wrong magic bytes');
+    if (magicBytes !== '1a45dfa3') {
       return res.status(400).json({ 
-        error: 'Invalid video file format',
-        magicBytes: magicBytes 
+        error: 'Invalid video format',
+        details: `Expected WebM magic bytes 1a45dfa3, got ${magicBytes}`
       });
     }
 
-    // Create form data
-    const formData = new FormData();
-    formData.append('file', buffer, {
-      filename: `segment-${segmentIndex}.webm`,
-      contentType: 'video/webm',
-    });
-
-    // Upload to Cloudflare
-    const response = await axios.post(
-      `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`,
-      formData,
-      {
-        headers: {
-          'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-          ...formData.getHeaders(),
-        },
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-      }
-    );
-
-    if (!response.data.success) {
-      console.error('Cloudflare error:', response.data);
-      return res.status(500).json({ error: 'Upload failed', details: response.data });
-    }
-
-    const videoId = response.data.result.uid;
-    const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoId}/manifest/video.m3u8`;
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        uid: videoId,
-        playbackUrl: playbackUrl,
-        duration: duration || response.data.result.duration || 0,
-        mode: mode,
-        size: buffer.length,
-        segmentIndex: segmentIndex,
-      },
-    });
-
+    // Upload to Cloudflare Stream
+    // ... rest of your upload logic
+    
   } catch (error) {
-    console.error('Upload error:', error.message);
-    if (error.response) {
-      console.error('Cloudflare response:', error.response.data);
-    }
-    return res.status(500).json({
-      error: 'Upload failed',
-      details: error.message,
-    });
+    console.error('Upload error:', error);
+    return res.status(500).json({ error: error.message });
   }
 }

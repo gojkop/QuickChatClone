@@ -14,7 +14,6 @@ export function useRecordingSegmentUpload() {
   const [uploading, setUploading] = useState(false);
 
   const uploadSegment = async (blob, mode, segmentIndex, duration) => {
-    // ⭐ ADD THIS AT THE START
     console.log('=== UPLOAD SEGMENT CALLED ===');
     console.log('Blob size:', blob.size);
     console.log('Blob type:', blob.type);
@@ -37,52 +36,47 @@ export function useRecordingSegmentUpload() {
 
     try {
       // Convert blob to base64
-      const base64 = await blobToBase64(blob);
+      const base64DataUrl = await blobToBase64(blob);
       
-      // ⭐ ADD THIS
-      console.log('Base64 length:', base64.length);
-      console.log('Base64 prefix (first 100 chars):', base64.substring(0, 100));
+      // ⭐ FIX: Extract just the base64 part (remove the data URL prefix)
+      const base64Data = base64DataUrl.split(',')[1];
       
-      // ... rest of the function
-
-      // Upload through backend to Cloudflare
+      console.log('Base64 data length:', base64Data.length);
+      
+      // ⭐ FIX: Send the correct payload structure
       const response = await fetch('/api/media/upload-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          videoBase64,
-          mode,
+          videoBase64: base64Data,  // ⭐ This must match what the backend expects
+          recordingMode: mode,
           segmentIndex,
           duration,
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.clone().json().catch(() => ({}));
-        throw new Error(errorData.error || 'Upload failed');
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
       }
 
       const result = await response.json();
 
-      setSegments(prev => prev.map(seg =>
+      setSegments(prev => prev.map(seg => 
         seg.id === uploadId
-          ? { ...seg, uploading: false, progress: 100, result: result.data }
+          ? { ...seg, uploading: false, result: result.data }
           : seg
       ));
 
-      setUploading(false);
       return result.data;
 
     } catch (error) {
       console.error('Upload error:', error);
-      
       setSegments(prev => prev.map(seg =>
         seg.id === uploadId
           ? { ...seg, uploading: false, error: error.message }
           : seg
       ));
-
-      setUploading(false);
       throw error;
     }
   };
