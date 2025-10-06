@@ -791,3 +791,347 @@ For issues or questions about this implementation:
 
 *Last Updated: October 6, 2025*  
 *Version: 2.0 - Progressive Upload*
+
+
+markdown---
+
+## Session Updates (October 6, 2025)
+
+### Critical Fixes Implemented
+
+#### 1. Import Path Issues
+**Problem**: Directory was named `cloudflare` but some imports referenced `claudflare` (typo)  
+**Solution**: Standardized all imports to use `cloudflare`
+```bash
+# Fix all occurrences
+find api -type f -name "*.js" -exec sed -i 's/claudflare/cloudflare/g' {} +
+
+Files affected:
+```
+api/media/upload-recording-segment.js
+api/media/upload-attachment.js
+All files in api/lib/cloudflare/
+
+2. Duration Tracking
+Problem: Segment durations showing as 0:00 in review modal
+Solution: Pass duration from frontend through entire upload flow
+Changes:
+
+useRecordingSegmentUpload.js: Added duration parameter to uploadSegment()
+api/media/upload-recording-segment.js: Accept and use duration from request
+QuestionComposer.jsx: Pass currentSegment.duration when uploading
+AskReviewModal.jsx: Safe duration calculation with fallbacks
+
+javascript// Frontend passes duration
+await segmentUpload.uploadSegment(
+  currentSegment.blob,
+  currentSegment.mode,
+  segments.length,
+  currentSegment.duration // ⭐ Added this parameter
+);
+
+// Backend uses frontend duration (more reliable than Stream's)
+const finalDuration = duration || result.duration || 0;
+3. Error Handling - "Body Already Consumed"
+Problem: Response body read multiple times causing errors
+Solution: Clone response before reading
+javascript// Before (caused error)
+const errorData = await response.json();
+const errorText = await response.text(); // ❌ Body already consumed
+
+// After (works correctly)
+const errorData = await response.clone().json(); // ✅ Clone first
+Files updated:
+
+useRecordingSegmentUpload.js
+useAttachmentUpload.js
+AskQuestionPage.jsx
+
+4. Missing File Type Handling
+Problem: File uploads failing when file.type is undefined
+Solution: Add fallback to application/octet-stream
+javascriptconst fileType = file.type || 'application/octet-stream';
+Files updated:
+
+useAttachmentUpload.js
+api/media/upload-attachment.js
+
+5. Environment Variable Issues
+Problem: XANO_BASE_URL vs XANO_API_BASE_URL mismatch
+Solution: Standardized to XANO_BASE_URL and ensured full URL with API path
+bash# Correct format
+XANO_BASE_URL=https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L
+
+# Wrong (missing API path)
+XANO_BASE_URL=https://x8ki-letl-twmt.n7.xano.io
+6. Helper Function Scope Error
+Problem: blobToBase64 function called before declaration causing "ReferenceError"
+Solution: Move helper functions before hook definition
+javascript// ✅ Correct order
+function blobToBase64(blob) { ... }
+
+export function useRecordingSegmentUpload() { ... }
+
+// ❌ Wrong order (causes error)
+export function useRecordingSegmentUpload() { 
+  await blobToBase64(blob); // Error: not defined yet
+}
+
+function blobToBase64(blob) { ... }
+7. totalDuration Calculation
+Problem: totalDuration referenced undefined recordingSegments variable
+Solution: Calculate from segments state and remove as separate state
+javascript// ✅ Correct (computed value)
+const totalDuration = segments.reduce((sum, seg) => {
+  const dur = (seg.duration >= 0) ? seg.duration : 0;
+  return sum + dur;
+}, 0);
+
+// ❌ Wrong (undefined variable)
+const totalDuration = recordingSegments.reduce(...); // recordingSegments doesn't exist
+File updated: QuestionComposer.jsx - moved calculation to top, removed as state
+8. Questions API Endpoint Simplification
+Problem: Helper functions causing 404 errors
+Solution: Use direct fetch calls instead of abstraction layers
+File updated: api/questions/create.js
+
+Removed dependency on getExpertByHandle helper
+Direct fetch to /public/profile endpoint
+Direct fetch to /question and /media_asset endpoints
+Better error logging
+
+
+Orphaned Media Cleanup
+Overview
+Progressive uploads mean media is stored in Cloudflare before questions are created. If users abandon the flow, these uploads become orphaned and waste storage.
+Solution: Scheduled Cleanup Cron Job
+Strategy: Daily cleanup of uploads older than 48 hours not associated with any question.
+Implementation
+Files to Create
+1. Cleanup Endpoint: api/cron/cleanup-orphaned-media.js
+javascript// api/cron/cleanup-orphaned-media.js
+```bash
+// Runs daily to clean up uploads not associated with any question
+
+export default async function handler(req, res) {
+  // Verify cron job authentication
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const XANO_BASE_URL = process.env.XANO_BASE_URL;
+  const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const CLOUDFLARE_STREAM_API_TOKEN = process.env.CLOUDFLARE_STREAM_API_TOKEN;
+
+  try {
+    console.log('Starting orphaned media cleanup...');
+    
+    // Calculate cutoff time (48 hours ago)
+    const cutoffDate = new Date(Date.now() - (48 * 60 * 60 * 1000));
+    
+    // Get all media_assets from Xano older than 48 hours
+    const mediaResponse = await fetch(`${XANO_BASE_URL}/media_asset`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!mediaResponse.ok) {
+      throw new Error('Failed to fetch media assets from Xano');
+    }
+
+    const allMedia = await mediaResponse.json();
+    let deletedCount = 0;
+    let errorCount = 0;
+
+    // Filter for orphaned media (older than 48 hours, not associated with questions)
+    for (const media of allMedia) {
+      const createdAt = new Date(media.created_at);
+      
+      // Check if older than cutoff
+      if (createdAt > cutoffDate) {
+        continue; // Skip recent uploads
+      }
+
+      // Check if associated with a question
+      if (media.owner_type === 'question' && media.owner_id) {
+        // Verify question still exists
+        const questionResponse = await fetch(`${XANO_BASE_URL}/question/${media.owner_id}`);
+        if (questionResponse.ok) {
+          continue; // Question exists, keep the media
+        }
+      }
+
+      // This media is orphaned - delete it
+      console.log(`Deleting orphaned media: ${media.id} (asset: ${media.asset_id})`);
+
+      try {
+        // 1. Delete from Cloudflare Stream
+        if (media.provider === 'cloudflare_stream' && media.asset_id) {
+          const streamDeleteUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${media.asset_id}`;
+          
+          await fetch(streamDeleteUrl, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+            },
+          });
+          
+          console.log(`Deleted from Cloudflare Stream: ${media.asset_id}`);
+        }
+
+        // 2. Delete from Xano
+        const xanoDeleteResponse = await fetch(`${XANO_BASE_URL}/media_asset/${media.id}`, {
+          method: 'DELETE',
+        });
+
+        if (xanoDeleteResponse.ok) {
+          deletedCount++;
+          console.log(`Deleted from Xano: ${media.id}`);
+        }
+
+      } catch (deleteError) {
+        console.error(`Error deleting media ${media.id}:`, deleteError);
+        errorCount++;
+      }
+    }
+
+    console.log('Cleanup complete:', { deletedCount, errorCount });
+
+    return res.status(200).json({
+      success: true,
+      deleted: deletedCount,
+      errors: errorCount,
+      message: `Cleaned up ${deletedCount} orphaned media assets`,
+    });
+
+  } catch (error) {
+    console.error('Cleanup error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+}
+```
+2. Cron Configuration: vercel.json (project root)
+json{
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-orphaned-media",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}
+Schedule: 0 3 * * * = Every day at 3:00 AM UTC
+Setup Steps
+1. Add Environment Variable in Vercel Dashboard → Settings → Environment Variables:
+Name: CRON_SECRET
+Value: [generate a random secure string]
+2. Deploy Files:
+bashmkdir -p api/cron
+git add api/cron/cleanup-orphaned-media.js vercel.json
+git commit -m "feat: Add scheduled cleanup for orphaned media"
+git push
+3. Verify: Check Vercel Dashboard → Settings → Cron Jobs to confirm scheduled
+Testing
+Manual trigger:
+bashcurl -X POST https://your-app.vercel.app/api/cron/cleanup-orphaned-media \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+View logs: Vercel Dashboard → Functions → cleanup-orphaned-media
+Configuration Options
+Adjust cleanup age:
+javascript// 24 hours instead of 48
+const cutoffDate = new Date(Date.now() - (24 * 60 * 60 * 1000));
+
+// 7 days
+const cutoffDate = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000));
+Adjust schedule in vercel.json:
+json"schedule": "0 */6 * * *"  // Every 6 hours
+"schedule": "0 0 * * 0"    // Weekly on Sunday at midnight
+"schedule": "0 2 * * *"    // Daily at 2 AM UTC
+Cost Impact Analysis
+
+Typical user abandonment rate: 20-30%
+Cloudflare Stream pricing: $5/month per 1000 minutes stored
+Example: 100 orphaned 1-minute videos = $0.50/month
+With cleanup: Minimal orphaned storage costs
+Without cleanup: Costs grow linearly with usage
+
+
+Complete Environment Variables List (UPDATED)
+bash# Xano
+XANO_BASE_URL=https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L
+
+# Cloudflare
+CLOUDFLARE_ACCOUNT_ID=your_account_id
+CLOUDFLARE_STREAM_API_TOKEN=your_stream_token
+CLOUDFLARE_R2_ACCESS_KEY=your_r2_access_key
+CLOUDFLARE_R2_SECRET_KEY=your_r2_secret_key
+CLOUDFLARE_R2_BUCKET=your_bucket_name
+
+# Cron Jobs
+CRON_SECRET=your_random_secure_string
+
+# Development
+SKIP_STRIPE=true
+NODE_ENV=development
+Important: All must be set in Vercel Dashboard → Settings → Environment Variables
+
+File Structure (UPDATED)
+project/
+├── api/
+│   ├── cron/
+│   │   └── cleanup-orphaned-media.js          ← NEW
+│   ├── lib/
+│   │   ├── cloudflare/                         ← Renamed from claudflare
+│   │   │   ├── stream.js
+│   │   │   └── r2.js
+│   │   ├── xano/
+│   │   │   ├── client.js
+│   │   │   ├── expert.js
+│   │   │   ├── question.js
+│   │   │   └── media.js
+│   │   └── utils.js
+│   ├── media/
+│   │   ├── upload-recording-segment.js         ← UPDATED (duration param)
+│   │   └── upload-attachment.js                ← UPDATED (file type fallback)
+│   └── questions/
+│       └── create.js                            ← UPDATED (direct fetch)
+├── src/
+│   ├── hooks/
+│   │   ├── useRecordingSegmentUpload.js        ← UPDATED (helper function order)
+│   │   └── useAttachmentUpload.js              ← UPDATED (response clone)
+│   ├── components/
+│   │   └── question/
+│   │       ├── QuestionComposer.jsx            ← UPDATED (totalDuration fix)
+│   │       └── AskReviewModal.jsx              ← UPDATED (safe duration calc)
+│   └── pages/
+│       └── AskQuestionPage.jsx                 ← UPDATED (response clone)
+└── vercel.json                                  ← NEW
+
+Common Errors & Solutions (UPDATED)
+"can't access lexical declaration before initialization"
+Cause: Function called before it's defined
+Solution: Move helper functions to top of file, before usage
+"Body has already been consumed"
+Cause: Reading response body multiple times
+Solution: Use response.clone() before reading:
+javascriptconst errorData = await response.clone().json();
+Duration showing "0:00" or "-1:-1"
+Cause: Duration not passed through upload flow
+Solution:
+
+Pass duration parameter in uploadSegment() call
+Backend uses duration || result.duration || 0
+Handle invalid durations in formatTime() function
+
+"XANO_BASE_URL not configured"
+Cause: Environment variable missing or misnamed
+Solution:
+
+Use exact name XANO_BASE_URL in Vercel
+Include full path: https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L
+
+*Last Updated: October 6, 2025*  
+*Version: 2.1 - Progressive Upload*
