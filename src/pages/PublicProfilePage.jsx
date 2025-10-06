@@ -422,13 +422,12 @@ function PublicProfilePage() {
                 )}
               </div>
 
-              {/* Name, Title, and Handle Section */}
+              {/* Name, Title, and Tagline Section */}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{profile.name || 'Expert'}</h1>
                 {profile.title && (
                   <p className="text-base text-indigo-600 font-semibold mt-0.5">{profile.title}</p>
                 )}
-                <p className="text-sm text-gray-500 font-medium mt-1">@{profile.handle}</p>
                 {profile.tagline && (
                   <p className="mt-2 text-base text-gray-700">{profile.tagline}</p>
                 )}
@@ -475,18 +474,22 @@ function PublicProfilePage() {
                   <div className="font-bold text-gray-900">{formatPrice(profile.price_cents, profile.currency)}</div>
                 </div>
               </div>
-
-              {/* Charity Donation Section */}
-              <SocialImpactCard
-                charityPercentage={profile.charity_percentage}
-                selectedCharity={profile.selected_charity}
-                priceCents={profile.price_cents}
-                currency={profile.currency}
-              />
             </div>
             
+            {/* Charity Donation Section - Above CTA */}
+            {profile.charity_percentage > 0 && profile.selected_charity && (
+              <div className="px-6 pb-4">
+                <SocialImpactCard
+                  charityPercentage={profile.charity_percentage}
+                  selectedCharity={profile.selected_charity}
+                  priceCents={profile.price_cents}
+                  currency={profile.currency}
+                />
+              </div>
+            )}
+
             {/* CTA Button */}
-            <div className="p-6 bg-gray-50/50 border-t border-gray-100">
+            <div className="px-6 pb-6 bg-gray-50/50 border-t border-gray-100 pt-4">
               <button
                 onClick={handleAskQuestion}
                 className="w-full group bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg text-base hover:shadow-lg transition-all"

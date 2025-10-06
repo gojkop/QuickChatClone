@@ -148,7 +148,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div>
@@ -167,12 +167,12 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         </div>
         
         <form onSubmit={handleSave} className="flex-1 overflow-y-auto">
-          <div className="px-6 py-6 space-y-8">
+          <div className="px-6 py-6 space-y-6">
             
-            {/* Profile Header Section */}
-            <div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-2xl p-5 sm:p-6 border border-indigo-100">
-              <div className="flex flex-col sm:flex-row gap-5 sm:gap-6">
-                {/* Avatar Section */}
+            {/* Avatar & Handle Section */}
+            <div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-xl p-5 border border-indigo-100">
+              <div className="flex flex-col sm:flex-row gap-5 items-start">
+                {/* Avatar */}
                 <div className="flex-shrink-0">
                   <AvatarUpload 
                     currentAvatar={formData.avatar_url}
@@ -180,15 +180,14 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                   />
                 </div>
                 
-                {/* Form Fields */}
-                <div className="flex-1 space-y-4">
-                  {/* Handle Input */}
+                {/* Handle & Toggle */}
+                <div className="flex-1 space-y-4 w-full">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
                       Profile Handle
                     </label>
                     <div className="flex items-stretch">
-                      <span className="inline-flex items-center px-4 bg-white/80 border border-r-0 border-gray-300 rounded-l-xl text-sm text-gray-600 font-semibold">
+                      <span className="inline-flex items-center px-3 bg-white/80 border border-r-0 border-gray-300 rounded-l-lg text-sm text-gray-600 font-semibold">
                         /u/
                       </span>
                       <input 
@@ -196,18 +195,18 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                         type="text" 
                         value={formData.handle || ''} 
                         onChange={handleChange} 
-                        className="flex-1 px-4 py-3 bg-white/80 border border-gray-300 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white text-sm font-medium transition-all" 
+                        className="flex-1 px-3 py-2.5 bg-white/80 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white text-sm font-medium transition-all" 
                         placeholder="your-handle"
                         required
                       />
                     </div>
                   </div>
 
-                  {/* Public Toggle */}
-                  <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/40">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {/* Public Toggle - Compact */}
+                  <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/40">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
@@ -231,16 +230,12 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               </div>
             </div>
 
-            {/* Most Important - Pricing & Availability */}
-            <div className="grid sm:grid-cols-2 gap-4">
+            {/* Pricing Grid - Compact */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-                  Consultation Fee
-                </label>
+                <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Consultation Fee</label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-lg">
-                    $
-                  </span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
                   <input 
                     id="priceUsd" 
                     type="number" 
@@ -248,16 +243,14 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                     onChange={handleChange} 
                     min="1" 
                     step="1" 
-                    placeholder="50"
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all text-lg font-semibold" 
+                    placeholder="100"
+                    className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-semibold" 
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-                  Response Time
-                </label>
+                <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Response Time</label>
                 <div className="relative">
                   <input 
                     id="slaHours" 
@@ -266,76 +259,63 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                     onChange={handleChange} 
                     min="1" 
                     step="1" 
-                    placeholder="24"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all text-lg font-semibold" 
+                    placeholder="48"
+                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-semibold" 
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                    hours
-                  </span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-medium">hours</span>
                 </div>
               </div>
             </div>
 
-            {/* Professional Identity */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-                Professional Identity
-              </h4>
+            {/* Professional Identity - Compact */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Professional Identity</h4>
               
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                    Professional Title
-                  </label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Professional Title</label>
                   <input 
                     id="professional_title" 
                     type="text" 
                     value={formData.professional_title || ''} 
                     onChange={handleChange} 
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all" 
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm" 
                     placeholder="Senior Software Engineer"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                    Tagline
-                  </label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Tagline</label>
                   <input 
                     id="tagline" 
                     type="text" 
                     value={formData.tagline || ''} 
                     onChange={handleChange} 
                     maxLength="100"
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all" 
-                    placeholder="Building beautiful products"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm" 
+                    placeholder="Building great products"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                  Bio
-                </label>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Bio</label>
                 <textarea 
                   id="bio" 
                   rows="3" 
                   value={formData.bio || ''} 
                   onChange={handleChange} 
                   maxLength="600" 
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
-                  placeholder="Share your expertise and what makes you unique..."
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all resize-none text-sm"
+                  placeholder="Tell people about your expertise..."
                 />
-                <div className="text-xs text-gray-400 text-right mt-1">
-                  {(formData.bio || '').length}/600
-                </div>
+                <div className="text-xs text-gray-400 text-right mt-1">{(formData.bio || '').length}/600</div>
               </div>
 
+              {/* Expertise Tags */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-gray-600">
-                    Expertise Tags
-                  </label>
+                  <label className="block text-xs font-medium text-gray-600">Expertise Tags</label>
                   <span className={`text-xs font-semibold ${currentExpertise.length >= 6 ? 'text-red-600' : 'text-gray-500'}`}>
                     {currentExpertise.length}/6
                   </span>
@@ -345,12 +325,12 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                   value={expertiseInput}
                   onChange={(e) => setExpertiseInput(e.target.value)}
                   onKeyDown={handleAddExpertise}
-                  placeholder={currentExpertise.length >= 6 ? "Maximum tags reached" : "Type and press Enter (e.g., React, Strategy)"}
+                  placeholder={currentExpertise.length >= 6 ? "Maximum tags reached" : "Type and press Enter"}
                   disabled={currentExpertise.length >= 6}
-                  className={`w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${currentExpertise.length >= 6 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm ${currentExpertise.length >= 6 ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
                 {currentExpertise.length >= 6 && (
-                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
@@ -358,11 +338,11 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                   </p>
                 )}
                 {currentExpertise.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {currentExpertise.map((tag, idx) => (
                       <span 
                         key={idx} 
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-full text-xs font-medium shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-indigo-200 text-indigo-700 rounded-full text-xs font-medium"
                       >
                         {tag}
                         <button
@@ -382,12 +362,10 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               </div>
             </div>
 
-            {/* Social Links - Compact */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-                Connect
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
+            {/* Social Links - Super Compact */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Social Links (Optional)</h4>
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { key: 'twitter', placeholder: '@username', icon: '𝕏' },
                   { key: 'linkedin', placeholder: 'in/username', icon: 'in' },
@@ -395,15 +373,13 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                   { key: 'website', placeholder: 'yoursite.com', icon: '🌐' }
                 ].map(({ key, placeholder, icon }) => (
                   <div key={key} className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                      {icon}
-                    </span>
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">{icon}</span>
                     <input 
                       type="text" 
                       value={currentSocials[key] || ''} 
                       onChange={(e) => handleSocialChange(key, e.target.value)}
                       placeholder={placeholder}
-                      className="w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all text-sm" 
+                      className="w-full pl-8 pr-2.5 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-xs" 
                       aria-label={key}
                     />
                   </div>
@@ -411,31 +387,31 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               </div>
             </div>
 
-            {/* Charity - Collapsible */}
-            <div className="space-y-3 pt-4 border-t border-gray-100">
-              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-                Give Back (Optional)
-              </h4>
-              <CharityDonationSelector 
-                value={formData.charity_percentage || 0}
-                onChange={handleCharityPercentageChange}
-              />
-              
-              {formData.charity_percentage > 0 && (
-                <div className="mt-4">
-                  <CharitySelector 
-                    value={formData.selected_charity}
-                    onChange={handleCharityChange}
-                    donationPercentage={formData.charity_percentage}
-                  />
-                </div>
-              )}
+            {/* Charity - Minimal */}
+            <div className="space-y-2 pt-3 border-t border-gray-100">
+              <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Give Back (Optional)</h4>
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <CharityDonationSelector 
+                  value={formData.charity_percentage || 0}
+                  onChange={handleCharityPercentageChange}
+                />
+                
+                {formData.charity_percentage > 0 && (
+                  <div className="mt-3">
+                    <CharitySelector 
+                      value={formData.selected_charity}
+                      onChange={handleCharityChange}
+                      donationPercentage={formData.charity_percentage}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-xl">
-                <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 <span className="text-sm text-red-800 font-medium">{error}</span>
@@ -457,7 +433,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
             type="submit" 
             onClick={handleSave}
             disabled={isLoading} 
-            className="px-8 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-indigo-500/30"
+            className="px-8 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-indigo-500/20"
           >
             {isLoading && (
               <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
