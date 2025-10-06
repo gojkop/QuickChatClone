@@ -99,51 +99,71 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
                 </div>
               </div>
 
-              {/* Actual Profile Preview - Scaled Down */}
+              {/* Actual Profile Preview - Matches PublicProfilePage exactly */}
               <div className="p-4 bg-gray-50">
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200/50 overflow-hidden max-w-sm mx-auto">
-                  {/* Gradient Header */}
-                  <div className="h-16 bg-gradient-to-br from-indigo-100 to-violet-100"></div>
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden max-w-sm mx-auto">
+                  {/* Gradient Header - Exact Match */}
+                  <div className="h-20 bg-gradient-to-br from-indigo-100 to-violet-100"></div>
 
-                  <div className="px-4 pb-4 space-y-3">
-                    {/* Avatar */}
-                    <div className="flex items-start gap-3 -mt-10">
+                  <div className="px-5 pb-5 space-y-4">
+                    {/* Avatar & Social Links Section - Exact Match */}
+                    <div className="flex items-start gap-3 -mt-14">
                       {profile.avatar_url ? (
                         <img 
-                          className="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-lg" 
+                          className="w-20 h-20 rounded-full object-cover ring-4 ring-white shadow-lg" 
                           src={profile.avatar_url}
                           alt={profile.user?.name || 'Expert'}
                         />
                       ) : (
-                        <div className="ring-4 ring-white shadow-lg rounded-full">
-                          <DefaultAvatar size={64} />
+                        <div className="ring-4 ring-white shadow-lg rounded-full flex-shrink-0">
+                          <DefaultAvatar size={80} />
+                        </div>
+                      )}
+                      
+                      {/* Social Links - if they exist */}
+                      {profile.socials && Object.values(profile.socials).some(url => url && url.trim() !== '') && (
+                        <div className="pt-12 flex-1">
+                          <div className="flex items-center justify-end gap-2">
+                            {profile.socials.twitter && (
+                              <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                            )}
+                            {profile.socials.linkedin && (
+                              <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                            )}
+                            {profile.socials.github && (
+                              <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                            )}
+                            {profile.socials.website && (
+                              <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Name & Title */}
+                    {/* Name, Title, Tagline - Exact Match */}
                     <div>
-                      <h1 className="text-lg font-bold text-gray-900">{profile.user?.name || 'Expert'}</h1>
+                      <h1 className="text-xl font-bold text-gray-900">{profile.user?.name || 'Expert'}</h1>
                       {profile.professional_title && (
-                        <p className="text-sm text-indigo-600 font-semibold">{profile.professional_title}</p>
+                        <p className="text-sm text-indigo-600 font-semibold mt-0.5">{profile.professional_title}</p>
                       )}
                       {profile.tagline && (
-                        <p className="text-xs text-gray-700 mt-1">{profile.tagline}</p>
+                        <p className="mt-1.5 text-sm text-gray-700">{profile.tagline}</p>
                       )}
                     </div>
 
-                    {/* Bio */}
+                    {/* Bio - Exact Match */}
                     {profile.bio && (
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">{profile.bio}</p>
+                      <p className="text-gray-600 text-xs leading-relaxed line-clamp-4">{profile.bio}</p>
                     )}
 
-                    {/* Expertise */}
+                    {/* Expertise - Exact Match */}
                     {profile.expertise && profile.expertise.length > 0 && (
                       <div>
                         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Expertise</h3>
                         <div className="flex flex-wrap gap-1.5">
                           {profile.expertise.slice(0, 6).map((field, index) => (
-                            <span key={index} className="px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-md border border-indigo-200">
+                            <span key={index} className="px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg border border-indigo-200">
                               {field}
                             </span>
                           ))}
@@ -151,51 +171,62 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
                       </div>
                     )}
 
-                    {/* Pricing */}
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 grid grid-cols-2 gap-3">
+                    {/* Response Time and Price - Exact Match */}
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 grid grid-cols-2 items-center gap-3">
                       <div className="text-center">
                         <div className="text-xs text-gray-500">Response</div>
-                        <div className="font-bold text-gray-900 text-sm">{profile.slaHours}h</div>
+                        <div className="font-bold text-gray-900">{profile.slaHours}h</div>
                       </div>
                       <div className="text-center border-l border-gray-200">
                         <div className="text-xs text-gray-500">Price</div>
-                        <div className="font-bold text-gray-900 text-sm">{formatPrice(profile.price_cents, profile.currency)}</div>
+                        <div className="font-bold text-gray-900">{formatPrice(profile.price_cents, profile.currency)}</div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Charity */}
-                    {profile.charity_percentage > 0 && profile.selected_charity && charityInfo[profile.selected_charity] && (
+                  {/* Charity Section - Above CTA - Exact Match */}
+                  {profile.charity_percentage > 0 && profile.selected_charity && charityInfo[profile.selected_charity] && (
+                    <div className="px-5 pb-3">
                       <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 rounded-lg p-3 border border-orange-200">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{charityInfo[profile.selected_charity].icon}</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl">{charityInfo[profile.selected_charity].icon}</span>
                           <p className="text-xs text-gray-700 leading-snug">
-                            <span className="font-bold">{profile.charity_percentage}%</span> donation to{' '}
-                            <span className="font-bold text-gray-900">{charityInfo[profile.selected_charity].name}</span>
+                            A <span className="font-bold">{profile.charity_percentage}% donation</span> ({formatPrice((profile.price_cents * profile.charity_percentage) / 100, profile.currency)}) of your payment will go to <span className="font-bold text-gray-900">{charityInfo[profile.selected_charity].name}</span>.
                           </p>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {/* CTA Button */}
-                    <button className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-2.5 rounded-lg text-sm">
+                  {/* CTA Button - Exact Match */}
+                  <div className="px-5 pb-5 bg-gray-50/50 border-t border-gray-100 pt-3">
+                    <button className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-2.5 px-5 rounded-lg text-sm hover:shadow-lg transition-all">
                       Ask Your Question
                     </button>
                   </div>
                 </div>
 
-                {/* Trust Indicators */}
-                <div className="mt-4 flex justify-center items-center gap-3 text-xs text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>Secure</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>Guaranteed</span>
+                {/* Trust Indicators - Exact Match */}
+                <div className="pt-5">
+                  <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1.5 text-xs text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span>Secure payment</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span>Guaranteed response</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span>Money-back guarantee</span>
+                    </div>
                   </div>
                 </div>
               </div>
