@@ -24,8 +24,8 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
   const [showAnswerRecorder, setShowAnswerRecorder] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [answerData, setAnswerData] = useState(null);
-  const [mediaUrl, setMediaUrl] = useState(null);
   const [attachments, setAttachments] = useState([]);
+  const [recordingSegments, setRecordingSegments] = useState([]);
 
   // Reset state when modal opens/closes or question changes
   useEffect(() => {
@@ -33,21 +33,33 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
       setShowAnswerRecorder(false);
       setShowReviewModal(false);
       setAnswerData(null);
+      setRecordingSegments([]);
+      setAttachments([]);
     }
   }, [isOpen, question]);
 
   useEffect(() => {
-    if (question?.media_asset_id) {
-      // Mock URL - replace with actual media URL fetch
-      setMediaUrl(`/api/media/${question.media_asset_id}`);
+    // Parse recording segments
+    if (question?.recording_segments) {
+      console.log('Recording segments:', question.recording_segments);
+      setRecordingSegments(question.recording_segments);
+    } else {
+      setRecordingSegments([]);
     }
+
+    // Parse attachments
     if (question?.attachments) {
       try {
-        const files = JSON.parse(question.attachments);
-        setAttachments(files);
+        const files = typeof question.attachments === 'string' 
+          ? JSON.parse(question.attachments)
+          : question.attachments;
+        setAttachments(Array.isArray(files) ? files : []);
       } catch (e) {
+        console.error('Error parsing attachments:', e);
         setAttachments([]);
       }
+    } else {
+      setAttachments([]);
     }
   }, [question]);
 
@@ -65,10 +77,7 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
   const handleSubmitAnswer = async (finalData) => {
     console.log('Submitting answer:', finalData);
     // TODO: API call to submit answer
-    // For now, just close everything - the AnswerReviewModal will handle showing success
     
-    // The success modal is now shown by AnswerReviewModal itself
-    // So we just need to close this detail modal after a short delay
     setTimeout(() => {
       setShowReviewModal(false);
       setShowAnswerRecorder(false);
@@ -147,34 +156,75 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                     <p className="text-lg font-semibold text-gray-900">{question.title}</p>
                   </div>
 
-                  {/* Media Content */}
-                  {question.media_asset_id && (
+                  {/* Recording Segments */}
+                  {recordingSegments.length > 0 && (
                     <div>
                       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                        {question.media_type === 'video' ? 'Video Question' : 'Audio Question'}
+                        Recording ({recordingSegments.length} segment{recordingSegments.length > 1 ? 's' : ''})
                       </h3>
-                      <div className="bg-gray-900 rounded-xl overflow-hidden">
-                        {question.media_type === 'video' ? (
-                          <video 
-                            controls 
-                            className="w-full aspect-video"
-                            preload="metadata"
-                          >
-                            <source src={mediaUrl} type="video/webm" />
-                            Your browser does not support the video tag.
-                          </video>
-                        ) : (
-                          <div className="p-8 flex items-center justify-center">
-                            <audio 
-                              controls 
-                              className="w-full max-w-md"
-                              preload="metadata"
-                            >
-                              <source src={mediaUrl} type="audio/webm" />
-                              Your browser does not support the audio tag.
-                            </audio>
-                          </div>
-                        )}
+                      <div className="space-y-3">
+                        {recordingSegments.map((segment, index) => {
+                          let metadata = {};
+                          try {
+                            metadata = segment.metadata ? JSON.parse(segment.metadata) : {};
+                          } catch (e) {
+                            console.error('Error parsing metadata:', e);
+                          }
+                          const isVideo = metadata.mode === 'video';
+                          
+                          return (
+                            <div key={segment.id || index} className="bg-gray-900 rounded-xl overflow-hidden">
+                              <div className="p-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-semibold text-gray-400">
+                                    Segment {index + 1}
+                                  </span>
+                                  {segment.duration_sec > 0 && (
+                                    <span className="text-xs text-gray-500">
+                                      ({Math.round(segment.duration_sec)}s)
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {isVideo ? (
+                                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                  )}
+                                  <span className="text-xs font-medium text-gray-400">
+                                    {isVideo ? 'Video' : 'Audio'}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {isVideo ? (
+                                <video 
+                                  controls 
+                                  className="w-full aspect-video bg-black"
+                                  preload="metadata"
+                                  src={segment.url}
+                                >
+                                  Your browser does not support the video tag.
+                                </video>
+                              ) : (
+                                <div className="p-8 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+                                  <audio 
+                                    controls 
+                                    className="w-full max-w-md"
+                                    preload="metadata"
+                                    src={segment.url}
+                                  >
+                                    Your browser does not support the audio tag.
+                                  </audio>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
