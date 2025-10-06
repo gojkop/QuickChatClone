@@ -394,3 +394,142 @@ OAuth and Xano configuration issues were successfully resolved. The video upload
 **Document Version**: 1.0  
 **Last Updated**: October 6, 2025  
 **Next Review**: After diagnostic logs received
+
+Progressive Video Recording Upload - Implementation Summary
+Project Overview
+Implemented a progressive upload system for multi-segment video/audio recordings in a Q&A platform, where users can record multiple segments (up to 90 seconds total) and have them upload in the background before final form submission.
+Architecture
+Flow
+
+User records segments → Each segment uploads to R2 immediately → Cloudflare Stream pulls from R2 → Returns Stream UID
+User completes form → Frontend sends question data with Stream UIDs
+Backend creates question → Creates media_asset records linking segments to question
+Dashboard displays → Shows all segments with proper video/audio distinction
+
+Key Components Implemented
+Frontend
+1. useRecordingSegmentUpload.js Hook
+
+Manages upload state for multiple segments
+Uploads each segment immediately after recording stops
+Returns: { segments, uploadSegment, retrySegment, removeSegment, getSuccessfulSegments }
+
+2. QuestionComposer.jsx
+
+Records multiple segments (video/audio/screen)
+Shows upload progress for each segment
+Allows reordering and removal
+Validates 90-second total limit
+Passes uploaded segment data on submission
+
+3. QuestionDetailModal.jsx
+
+Displays all segments using Cloudflare Stream iframe player
+Parses metadata to distinguish video vs audio
+Shows attachments with file names and download links
+
+Backend
+1. /api/media/upload-to-r2.js
+javascript// Receives blob from frontend
+// Uploads to R2
+// Triggers Cloudflare Stream to pull from R2
+// Returns: { uid, playbackUrl, duration, mode, status }
+Key fixes made:
+
+Convert status object to string (Xano expects text field)
+Parse duration as integer
+Use public R2 URL for Stream to access
+
+2. /api/questions/create.js
+javascript// 1. Lookup expert profile ID from handle
+// 2. Create question in Xano
+// 3. Create media_asset records for each segment
+// 4. Parse and save attachments
+Key implementation:
+
+Maps expertHandle → expert_profile_id
+Loops through recordingSegments array
+Creates separate media_asset record per segment with segment_index
+
+Database (Xano)
+question table:
+
+attachments (text) - JSON string of attachment objects
+
+media_asset table:
+
+owner_type (text) - "question"
+owner_id (int) - question.id
+provider (text) - "cloudflare_stream"
+asset_id (text) - Stream UID
+url (text) - HLS playback URL
+duration_sec (int)
+status (text) - "ready", "downloading", etc.
+segment_index (int) - Order of segment
+metadata (text) - JSON: {"mode":"video","segmentIndex":0}
+
+GET /me/questions endpoint:
+
+Queries all questions
+For each question: queries media_assets where owner_type='question' AND owner_id=$question.id
+Orders by segment_index ASC
+Returns array with recording_segments nested
+
+Critical Bugs Fixed
+1. CORS Error on R2 Upload
+Problem: Browser blocked direct upload to R2
+Solution: Configured CORS policy on R2 bucket to allow origin
+2. Status Field Type Mismatch
+Problem: Sending status: { state: 'downloading', ... } but Xano expects string
+Solution: Extract status.state string before sending to Xano
+3. Attachments Array Instead of String
+Problem: Xano returning all questions' attachments as single array
+Solution: Fixed Xano query to use $question.attachments not $questions.attachments
+4. JSON Parse Errors in Frontend
+Problem: Attempting to parse attachments/metadata in JSX causing crashes
+Solution: Created helper functions with try/catch to safely parse before rendering
+5. Video Playback Failed
+Problem: HLS .m3u8 URLs don't work with native <video> tag
+Solution: Use Cloudflare Stream iframe embed player
+6. All Segments Showing as Audio
+Problem: Metadata not being parsed correctly
+Solution: Enhanced metadata parsing to handle both string and object types
+Environment Variables Required
+envCLOUDFLARE_ACCOUNT_ID=xxx
+CLOUDFLARE_R2_ACCESS_KEY=xxx
+CLOUDFLARE_R2_SECRET_KEY=xxx
+CLOUDFLARE_R2_BUCKET=xxx
+CLOUDFLARE_R2_PUBLIC_URL=https://pub-xxxxx.r2.dev
+CLOUDFLARE_STREAM_API_TOKEN=xxx
+XANO_BASE_URL=https://x8ki-letl-twmt.n7.xano.io/api:xxx
+Testing Checklist
+
+ Record multiple video segments
+ Record multiple audio segments
+ Upload segments progressively in background
+ Retry failed uploads
+ Remove segments before submission
+ Reorder segments
+ Submit question with segments
+ View question in dashboard with all segments
+ Play video segments in iframe player
+ Distinguish video vs audio icons
+ Upload and display attachments
+ Download attachments
+
+Remaining Considerations
+
+Token management: Currently ~180K/190K tokens used
+Audio segment playback: May need similar iframe treatment if HLS used
+Error handling: Consider retry logic for Stream API failures
+File size limits: Currently handling up to 5MB blobs via base64
+Cleanup: Delete R2 files after Stream successfully processes them
+
+Key Learnings
+
+Always check Xano field types match API payload types
+Parse JSON in useEffect, never in JSX render
+Cloudflare Stream requires iframe player for HLS playback
+R2 public URL must be enabled for Stream to pull files
+Variable naming matters: $question vs $questions in loops
+
