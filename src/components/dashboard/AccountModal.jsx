@@ -35,11 +35,18 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
         zip: formData.postalCode,
       };
 
-      // TODO: API call to update account
-      // await apiClient.put('/api:3B14WLbJ/me/profile', updateData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Make the API call to update account
+      const response = await fetch('/api:3B14WLbJ/me/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
       
       onSave(updateData);
       alert('Account updated successfully!');
