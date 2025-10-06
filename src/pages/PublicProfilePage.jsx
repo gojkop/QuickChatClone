@@ -125,26 +125,21 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
 
   if (is100Percent) {
     return (
-      <div className="bg-gradient-to-br from-amber-100 via-yellow-100 to-orange-100 rounded-xl p-5 border-2 border-amber-400 shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-20 h-20 bg-amber-300/20 rounded-full -mr-10 -mt-10"></div>
-        <div className="absolute bottom-0 left-0 w-16 h-16 bg-yellow-300/20 rounded-full -ml-8 -mb-8"></div>
+      <div className="bg-gradient-to-br from-amber-100 via-yellow-100 to-orange-100 rounded-xl p-4 border-2 border-amber-400 shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-16 h-16 bg-amber-300/20 rounded-full -mr-8 -mt-8"></div>
+        <div className="absolute bottom-0 left-0 w-12 h-12 bg-yellow-300/20 rounded-full -ml-6 -mb-6"></div>
         <div className="relative">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl">{charity.icon}</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">{charity.icon}</span>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg font-bold text-amber-900">100% Donation</span>
-                <span className="text-xl">✨</span>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="text-base font-bold text-amber-900">100% Donation</span>
+                <span className="text-lg">✨</span>
               </div>
-              <p className="text-sm text-amber-800 leading-snug font-medium">
-                This expert donates <span className="font-bold">all earnings</span> ({formatPrice(donationAmount, currency)}) to <span className="font-bold">{charity.name}</span>.
+              <p className="text-xs text-amber-800 leading-snug font-medium">
+                All earnings ({formatPrice(donationAmount, currency)}) go to <span className="font-bold">{charity.name}</span>. Your payment directly supports their mission.
               </p>
             </div>
-          </div>
-          <div className="mt-3 pt-3 border-t border-amber-300">
-            <p className="text-xs text-amber-900 italic">
-              Your payment directly supports {charity.name}'s mission. Thank you for contributing!
-            </p>
           </div>
         </div>
       </div>
@@ -564,41 +559,41 @@ function PublicProfilePage() {
               )}
               
               {/* Enhanced Price Card */}
-              <div className="bg-white rounded-xl border-2 border-indigo-600 p-5 shadow-lg">
-                <div className="flex items-baseline justify-between mb-4">
+              <div className="bg-white rounded-xl border-2 border-indigo-600 p-4 shadow-lg">
+                <div className="flex items-baseline justify-between mb-3">
                   <div>
-                    <div className="text-3xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-gray-900">
                       {formatPrice(profile.price_cents, profile.currency)}
                     </div>
-                    <div className="text-sm text-gray-600 mt-0.5">per answer</div>
+                    <div className="text-xs text-gray-600">per answer</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-indigo-600 flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="text-xs font-semibold text-indigo-600 flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
                       </svg>
                       <span>{profile.sla_hours}h response</span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">guaranteed</div>
+                    <div className="text-xs text-gray-500">guaranteed</div>
                   </div>
                 </div>
                 
                 {/* What's included */}
-                <div className="space-y-2 pt-4 border-t border-gray-200">
-                  <div className="flex items-center gap-2.5 text-sm text-gray-700">
-                    <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <div className="space-y-1.5 pt-3 border-t border-gray-200">
+                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                     </svg>
                     <span>Up to 90s video question</span>
                   </div>
-                  <div className="flex items-center gap-2.5 text-sm text-gray-700">
-                    <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                     </svg>
                     <span>Detailed video/voice answer</span>
                   </div>
-                  <div className="flex items-center gap-2.5 text-sm text-gray-700">
-                    <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                     </svg>
                     <span>Money-back if no reply</span>
