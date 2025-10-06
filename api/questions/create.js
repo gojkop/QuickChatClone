@@ -1,4 +1,3 @@
-// api/questions/create.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -12,156 +11,115 @@ export default async function handler(req, res) {
       payerEmail,
       payerFirstName,
       payerLastName,
-      recordingSegments = [],
-      attachments = [],
+      recordingSegments,
+      attachments,
     } = req.body;
 
-    console.log('Create question request:', {
-      expertHandle,
-      title,
-      segmentCount: recordingSegments.length,
-      attachmentCount: attachments.length,
-    });
+    console.log('=== QUESTION CREATION ===');
+    console.log('Expert:', expertHandle);
+    console.log('Title:', title);
+    console.log('Recording segments:', recordingSegments?.length || 0);
+    console.log('Attachments:', attachments?.length || 0);
 
-    // Validation
-    if (!expertHandle || !title?.trim() || !payerEmail) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
+    // Build payer name
+    const payerName = [payerFirstName, payerLastName]
+      .filter(Boolean)
+      .join(' ') || null;
 
-    const XANO_BASE_URL = process.env.XANO_BASE_URL;
-
-    // 1. Get expert profile
-    console.log('Fetching expert...');
-    const expertResponse = await fetch(
-      `${XANO_BASE_URL}/public/profile?handle=${encodeURIComponent(expertHandle)}`
-    );
-
-    if (!expertResponse.ok) {
-      throw new Error('Expert not found');
-    }
-
-    const expertData = await expertResponse.json();
-    const expert = expertData?.expert_profile ?? expertData;
-    console.log('Expert found:', expert.id);
-
-    // 2. Create question - using minimal required fields
-    console.log('Creating question...');
+    // 1. Create question in Xano
     const questionPayload = {
-      expert_profile_id: expert.id,
-      title: title.trim(),
-      text: text?.trim() || '',
+      expert_handle: expertHandle,
+      title,
+      text: text || null,
       payer_email: payerEmail,
-      price_cents: expert.price_cents || 5000,
-      currency: expert.currency || 'USD',
-      status: 'pending_payment',
-      sla_hours_snapshot: expert.sla_hours || 48,
+      payer_name: payerName,
+      status: 'paid', // or 'pending_payment' if payment is needed first
     };
 
-    // Only add optional fields if they have values
-    if (payerFirstName) questionPayload.payer_first_name = payerFirstName;
-    if (payerLastName) questionPayload.payer_last_name = payerLastName;
-    if (attachments.length > 0) {
+    // Add attachments if any
+    if (attachments && attachments.length > 0) {
       questionPayload.attachments = JSON.stringify(attachments);
     }
 
-    console.log('Question payload:', questionPayload);
+    console.log('Creating question in Xano...');
 
-    const questionResponse = await fetch(`${XANO_BASE_URL}/question`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(questionPayload),
-    });
+    const questionResponse = await fetch(
+      `${process.env.XANO_BASE_URL}/questions`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(questionPayload),
+      }
+    );
 
     if (!questionResponse.ok) {
       const errorText = await questionResponse.text();
-      console.error('Question creation failed:', errorText);
-      throw new Error(`Question creation failed: ${questionResponse.status} - ${errorText}`);
+      console.error('Xano question creation failed:', errorText);
+      throw new Error('Failed to create question in database');
     }
 
     const question = await questionResponse.json();
-    console.log('Question created:', question.id);
+    const questionId = question.id;
 
-    // 3. Create media_asset records for each segment
-    const mediaAssetIds = [];
-    
-    for (let i = 0; i < recordingSegments.length; i++) {
-      const segment = recordingSegments[i];
+    console.log('✅ Question created with ID:', questionId);
+
+    // 2. Create media_asset records for each segment
+    if (recordingSegments && recordingSegments.length > 0) {
+      console.log(`Creating ${recordingSegments.length} media assets...`);
       
-      console.log(`Creating media_asset ${i + 1}/${recordingSegments.length}...`);
-      
-      const mediaPayload = {
-        owner_type: 'question',
-        owner_id: question.id,
-        provider: 'cloudflare_stream',
-        asset_id: segment.uid,
-        duration_sec: Math.round(segment.duration || 0),
-        status: 'ready',
-        url: segment.playbackUrl,
-        segment_index: i,
-        metadata: JSON.stringify({
-          segmentIndex: i,
-          mode: segment.mode,
-        }),
-      };
+      for (let i = 0; i < recordingSegments.length; i++) {
+        const segment = recordingSegments[i];
+        
+        const mediaAssetPayload = {
+          owner_type: 'question',
+          owner_id: questionId,
+          provider: 'cloudflare_stream',
+          asset_id: segment.uid,
+          url: segment.playbackUrl,
+          duration_sec: segment.duration || 0,
+          status: segment.status || 'ready',
+          segment_index: i,
+          metadata: JSON.stringify({
+            mode: segment.mode,
+            segmentIndex: i,
+          }),
+        };
 
-      const mediaResponse = await fetch(`${XANO_BASE_URL}/media_asset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mediaPayload),
-      });
+        console.log(`Creating media asset ${i + 1}/${recordingSegments.length}...`);
 
-      if (!mediaResponse.ok) {
-        console.error(`Failed to create media_asset for segment ${i}`);
-        continue;
+        const mediaResponse = await fetch(
+          `${process.env.XANO_BASE_URL}/media_assets`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mediaAssetPayload),
+          }
+        );
+
+        if (!mediaResponse.ok) {
+          const errorText = await mediaResponse.text();
+          console.error(`Failed to create media asset ${i}:`, errorText);
+          // Continue with other segments even if one fails
+        } else {
+          const mediaAsset = await mediaResponse.json();
+          console.log(`✅ Media asset ${i + 1} created with ID:`, mediaAsset.id);
+        }
       }
-
-      const mediaAsset = await mediaResponse.json();
-      mediaAssetIds.push(mediaAsset.id);
-      console.log(`Media asset created: ${mediaAsset.id}`);
     }
 
-    // 4. Update question with first segment's media_asset_id
-    if (mediaAssetIds.length > 0) {
-      console.log('Updating question with media_asset_id...');
-      await fetch(`${XANO_BASE_URL}/question/${question.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          media_asset_id: mediaAssetIds[0],
-        }),
-      });
-    }
-
-    // 5. Mark as paid (dev mode)
-    if (process.env.SKIP_STRIPE === 'true') {
-      console.log('Dev mode: marking as paid...');
-      await fetch(`${XANO_BASE_URL}/question/${question.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'paid',
-          paid_at: new Date().toISOString(),
-        }),
-      });
-    }
-
-    console.log('✅ Success!');
+    console.log('✅ Question submission complete!');
 
     return res.status(200).json({
       success: true,
       data: {
-        questionId: question.id,
-        mediaAssetIds,
-        segmentCount: recordingSegments.length,
-        attachmentCount: attachments.length,
-        status: process.env.SKIP_STRIPE === 'true' ? 'paid' : 'pending_payment',
+        questionId,
+        mediaAssetsCreated: recordingSegments?.length || 0,
+        attachmentsIncluded: attachments?.length || 0,
       },
-      checkoutUrl: null,
     });
 
   } catch (error) {
-    console.error('❌ Question creation error:', error);
-    console.error('Error stack:', error.stack);
+    console.error('Question creation error:', error);
     
     return res.status(500).json({
       success: false,
