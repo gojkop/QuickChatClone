@@ -44,11 +44,11 @@ export function useAttachmentUpload() {
         let errorMessage = `Upload failed (${response.status})`;
         
         try {
-          const errorData = await response.json();
+          // Clone response to avoid "body consumed" error
+          const errorData = await response.clone().json();
           errorMessage = errorData.error || errorMessage;
         } catch (e) {
-          const errorText = await response.text();
-          console.error('Backend returned non-JSON:', errorText.substring(0, 500));
+          console.error('Could not parse error response');
           errorMessage = `Server error (${response.status})`;
         }
         
