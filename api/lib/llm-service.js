@@ -1,19 +1,21 @@
 // Multi-provider LLM service
-// Set provider via environment variable: LLM_PROVIDER=gemini|openai|anthropic|groq
+// Set provider via environment variable: LLM_PROVIDER=gemini
 
 const PROVIDER = process.env.LLM_PROVIDER || 'gemini'; // Default to free option
 
-// Provider-specific implementations
+// ✅ ONLY import the provider you're using
 import { callGemini } from './llm-providers/gemini.js';
-import { callOpenAI } from './llm-providers/openai.js';
-import { callAnthropic } from './llm-providers/anthropic.js';
-import { callGroq } from './llm-providers/groq.js';
+
+// ❌ REMOVED - these were causing the error:
+// import { callOpenAI } from './llm-providers/openai.js';
+// import { callAnthropic } from './llm-providers/anthropic.js';
+// import { callGroq } from './llm-providers/groq.js';
 
 const providers = {
-  gemini: callGemini,
-  openai: callOpenAI,
-  anthropic: callAnthropic,
-  groq: callGroq
+  gemini: callGemini
+  // openai: callOpenAI,
+  // anthropic: callAnthropic,
+  // groq: callGroq
 };
 
 export async function callLLM(prompt, options = {}) {
@@ -27,7 +29,7 @@ export async function callLLM(prompt, options = {}) {
   const providerFn = providers[PROVIDER];
   
   if (!providerFn) {
-    throw new Error(`Unknown LLM provider: ${PROVIDER}`);
+    throw new Error(`Unknown LLM provider: ${PROVIDER}. Only 'gemini' is available.`);
   }
 
   try {
@@ -53,10 +55,7 @@ export async function callLLM(prompt, options = {}) {
 // Cost estimation (approximate)
 export function estimateCost(provider, inputTokens, outputTokens) {
   const costs = {
-    gemini: { input: 0, output: 0 }, // Free tier
-    openai: { input: 0.00015 / 1000, output: 0.0006 / 1000 },
-    anthropic: { input: 0.003 / 1000, output: 0.015 / 1000 },
-    groq: { input: 0.00027 / 1000, output: 0.00027 / 1000 }
+    gemini: { input: 0, output: 0 } // Free tier
   };
 
   const rate = costs[provider] || costs.gemini;
