@@ -9,6 +9,11 @@ export default async function handler(req, res) {
   try {
     const { recordingBlob, recordingMode, segmentIndex, duration } = req.body;
 
+    // Debug logging
+    console.log('Recording mode:', recordingMode);
+    console.log('Base64 prefix:', recordingBlob?.substring(0, 50));
+    console.log('Base64 length:', recordingBlob?.length);
+
     if (!recordingBlob) {
       return res.status(400).json({ error: 'No recording provided' });
     }
@@ -16,17 +21,33 @@ export default async function handler(req, res) {
     const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
     const CLOUDFLARE_STREAM_API_TOKEN = process.env.CLOUDFLARE_STREAM_API_TOKEN;
 
-    // Extract base64 data (remove data URL prefix)
-    const base64Data = recordingBlob.split(',')[1];
+    // Extract base64 data
+    const base64Data = recordingBlob.includes(',') 
+      ? recordingBlob.split(',')[1] 
+      : recordingBlob;
     
     // Convert base64 to Buffer
     const buffer = Buffer.from(base64Data, 'base64');
+    
+    console.log('Buffer size:', buffer.length, 'bytes');
+
+    // Verify it's a valid WebM file by checking magic bytes
+    const magicBytes = buffer.slice(0, 4).toString('hex');
+    console.log('File magic bytes:', magicBytes);
+    // WebM files should start with 1A 45 DF A3
+    
+    if (buffer.length < 1000) {
+      return res.status(400).json({ 
+        error: 'Video file too small - likely corrupted',
+        size: buffer.length 
+      });
+    }
 
     // Create form data
     const formData = new FormData();
     formData.append('file', buffer, {
       filename: `segment-${segmentIndex}-${Date.now()}.webm`,
-      contentType: recordingMode === 'video' ? 'video/webm' : 'audio/webm',
+      contentType: 'video/webm',
     });
 
     // Upload to Cloudflare Stream
@@ -43,7 +64,10 @@ export default async function handler(req, res) {
 
     if (!uploadResponse.data.success) {
       console.error('Cloudflare upload error:', uploadResponse.data);
-      return res.status(500).json({ error: 'Upload to Cloudflare failed' });
+      return res.status(500).json({ 
+        error: 'Upload to Cloudflare failed',
+        details: uploadResponse.data 
+      });
     }
 
     const videoId = uploadResponse.data.result.uid;
