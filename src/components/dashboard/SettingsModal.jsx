@@ -169,20 +169,26 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         <form onSubmit={handleSave} className="flex-1 overflow-y-auto">
           <div className="px-6 py-6 space-y-8">
             
-            {/* Profile Header Section - Hero */}
-            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl p-6">
-              <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-                <AvatarUpload 
-                  currentAvatar={formData.avatar_url}
-                  onChange={handleAvatarChange}
-                />
-                <div className="flex-1 space-y-3">
+            {/* Profile Header Section */}
+            <div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-2xl p-5 sm:p-6 border border-indigo-100">
+              <div className="flex flex-col sm:flex-row gap-5 sm:gap-6">
+                {/* Avatar Section */}
+                <div className="flex-shrink-0">
+                  <AvatarUpload 
+                    currentAvatar={formData.avatar_url}
+                    onChange={handleAvatarChange}
+                  />
+                </div>
+                
+                {/* Form Fields */}
+                <div className="flex-1 space-y-4">
+                  {/* Handle Input */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-                      Public Profile Handle
+                    <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                      Profile Handle
                     </label>
-                    <div className="flex items-center">
-                      <span className="px-3 py-2.5 bg-white border border-r-0 border-gray-200 rounded-l-lg text-sm text-gray-500 font-medium">
+                    <div className="flex items-stretch">
+                      <span className="inline-flex items-center px-4 bg-white/80 border border-r-0 border-gray-300 rounded-l-xl text-sm text-gray-600 font-semibold">
                         /u/
                       </span>
                       <input 
@@ -190,27 +196,37 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                         type="text" 
                         value={formData.handle || ''} 
                         onChange={handleChange} 
-                        className="flex-1 px-3 py-2.5 bg-white border border-gray-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium" 
+                        className="flex-1 px-4 py-3 bg-white/80 border border-gray-300 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white text-sm font-medium transition-all" 
                         placeholder="your-handle"
                         required
                       />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1.5">
-                      Your unique URL: yoursite.com/u/your-handle
-                    </p>
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      id="isPublic" 
-                      type="checkbox" 
-                      checked={formData.isPublic || false} 
-                      onChange={handleChange} 
-                      className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" 
-                    />
-                    <span className="text-sm font-medium text-gray-700">
-                      Make profile public and discoverable
-                    </span>
-                  </label>
+
+                  {/* Public Toggle */}
+                  <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/40">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900">Public Profile</div>
+                        <div className="text-xs text-gray-600">Let people discover you</div>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        id="isPublic" 
+                        type="checkbox" 
+                        checked={formData.isPublic || false} 
+                        onChange={handleChange} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-indigo-600 peer-checked:to-violet-600"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
