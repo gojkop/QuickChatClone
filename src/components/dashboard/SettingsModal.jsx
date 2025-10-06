@@ -170,11 +170,23 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
             <div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-xl p-5 border border-indigo-100">
               <div className="space-y-4">
                 {/* Avatar - centered */}
-                <div className="flex justify-center">
+                <div className="flex flex-col items-center gap-2">
                   <AvatarUpload 
                     currentAvatar={formData.avatar_url}
                     onChange={handleAvatarChange}
                   />
+                  {formData.avatar_url && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }))}
+                      className="text-xs text-gray-600 hover:text-red-600 font-medium transition-colors flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Remove photo
+                    </button>
+                  )}
                 </div>
                 
                 {/* Fields - full width */}
