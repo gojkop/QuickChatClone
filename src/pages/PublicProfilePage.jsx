@@ -422,13 +422,12 @@ function PublicProfilePage() {
                 )}
               </div>
 
-              {/* Name, Title, and Handle Section */}
+              {/* Name, Title, and Tagline Section */}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{profile.name || 'Expert'}</h1>
                 {profile.title && (
                   <p className="text-base text-indigo-600 font-semibold mt-0.5">{profile.title}</p>
                 )}
-                <p className="text-sm text-gray-500 font-medium mt-1">@{profile.handle}</p>
                 {profile.tagline && (
                   <p className="mt-2 text-base text-gray-700">{profile.tagline}</p>
                 )}
