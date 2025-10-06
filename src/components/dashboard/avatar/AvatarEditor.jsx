@@ -168,6 +168,9 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
                     style={{
                       containerStyle: {
                         backgroundColor: '#1a1a1a'
+                      },
+                      mediaStyle: {
+                        transform: `scaleX(${flip.horizontal ? -1 : 1}) scaleY(${flip.vertical ? -1 : 1})`
                       }
                     }}
                   />
