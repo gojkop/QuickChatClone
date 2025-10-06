@@ -84,9 +84,22 @@ export default async function handler(req, res) {
     
           if (recordingBlob && recordingMode) {
       console.log('📹 Uploading recording to Cloudflare Stream...');
+      console.log('Recording mode:', recordingMode);
+      console.log('Base64 blob length:', recordingBlob.length);
       
       try {
         const buffer = Buffer.from(recordingBlob, 'base64');
+        console.log('Buffer size:', buffer.length);
+        console.log('File header (hex):', buffer.slice(0, 20).toString('hex'));
+        
+        // WebM files should start with: 1a45dfa3
+        const isValidWebM = buffer.slice(0, 4).toString('hex') === '1a45dfa3';
+        console.log('Valid WebM header:', isValidWebM);
+        
+        if (!isValidWebM) {
+          console.error('❌ Invalid WebM file - header mismatch');
+          throw new Error('Invalid video file format');
+        }
         
         const formData = new FormData();
         formData.append('file', buffer, {
