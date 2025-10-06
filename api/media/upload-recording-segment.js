@@ -5,7 +5,7 @@
 
 // ⭐ FIX: Change 'cloudflare' to 'claudflare' to match your actual directory name
 import { uploadToStream } from '../lib/cloudflare/stream.js';
-import { decodeBase64 } from '../lib/cloudflare/utils.js';
+import { decodeBase64 } from '../lib/utils.js';
 
 // Helper function - define locally to avoid import issues
 function getMimeTypeFromMode(mode) {
