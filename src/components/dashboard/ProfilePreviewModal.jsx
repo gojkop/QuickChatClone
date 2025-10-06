@@ -48,9 +48,9 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
 
           {/* Preview Content */}
           {profile.isPublic && publicPageUrl ? (
-            <div className="flex-1 relative bg-gray-100" style={{ minHeight: 0 }}>
+            <div className="flex-1 flex flex-col bg-gray-100 min-h-0">
               {/* Browser Chrome */}
-              <div className="absolute top-0 left-0 right-0 bg-gray-200 border-b border-gray-300 px-3 py-2 flex items-center gap-2 z-10">
+              <div className="bg-gray-200 border-b border-gray-300 px-3 py-2 flex items-center gap-2 flex-shrink-0">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 rounded-full bg-red-400"></div>
                   <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
@@ -61,34 +61,31 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
                 </div>
               </div>
 
-              {/* Loading State */}
-              {iframeLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white z-20 mt-10">
-                  <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-sm text-gray-600">Loading preview...</p>
+              {/* Iframe Container - Takes remaining space */}
+              <div className="flex-1 relative min-h-0">
+                {/* Loading State */}
+                {iframeLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white z-20">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-sm text-gray-600">Loading preview...</p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Iframe Container - Scrollable */}
-              <div className="absolute inset-0 pt-10 overflow-auto">
-                <iframe
-                  src={publicPageUrl}
-                  className="w-full border-0"
-                  style={{ 
-                    height: '100%',
-                    minHeight: '600px',
-                    pointerEvents: 'none'
-                  }}
-                  title="Profile Preview"
-                  onLoad={() => setIframeLoading(false)}
-                />
+                {/* Scrollable iframe wrapper */}
+                <div className="absolute inset-0 overflow-auto">
+                  <iframe
+                    src={publicPageUrl}
+                    className="w-full h-full min-h-[600px] border-0"
+                    title="Profile Preview"
+                    onLoad={() => setIframeLoading(false)}
+                  />
+                </div>
                 
                 {/* Transparent Overlay - Blocks ALL interactions */}
                 <div 
-                  className="absolute inset-0 cursor-default"
-                  style={{ pointerEvents: 'all' }}
+                  className="absolute inset-0 bg-transparent cursor-default z-10"
                   title="Preview only - click 'Open Full Page' to interact"
                 />
               </div>
