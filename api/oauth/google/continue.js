@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
     const { 
       CLIENT_PUBLIC_ORIGIN, 
-      XANO_API_BASE_URL, 
+      XANO_BASE_URL, 
       COOKIE_DOMAIN 
     } = process.env;
 
@@ -20,8 +20,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: "Server configuration error" });
     }
 
-    if (!XANO_API_BASE_URL) {
-      console.error('XANO_API_BASE_URL not set');
+    if (!XANO_BASE_URL) {
+      console.error('XANO_BASE_URL  not set');
       return res.status(500).json({ message: "Server configuration error" });
     }
     
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
 
     // Exchange code for token at Xano
     // NOTE: Xano's continue endpoint might not need redirect_uri, or it needs to match exactly what was used in init
-    const r = await axios.get(`${XANO_API_BASE_URL}/api:fALBm5Ej/oauth/google/continue`, {
+    const r = await axios.get(`${XANO_BASE_URL}/api:fALBm5Ej/oauth/google/continue`, {
       params: { code }, // Only send code, not redirect_uri
       validateStatus: () => true
     });

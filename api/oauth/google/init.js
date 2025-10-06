@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   try {
     const { 
       CLIENT_PUBLIC_ORIGIN, 
-      XANO_API_BASE_URL 
+      XANO_BASE_URL  
     } = process.env;
 
     // Check if environment variables are set
@@ -14,9 +14,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: "Server configuration error: CLIENT_PUBLIC_ORIGIN missing" });
     }
 
-    if (!XANO_API_BASE_URL) {
-      console.error('XANO_API_BASE_URL not set');
-      return res.status(500).json({ message: "Server configuration error: XANO_API_BASE_URL missing" });
+    if (!XANO_BASE_URL) {
+      console.error('XANO_BASE_URL  not set');
+      return res.status(500).json({ message: "Server configuration error: XANO_BASE_URL  missing" });
     }
     
     // Use redirect_uri from query params or construct from CLIENT_PUBLIC_ORIGIN
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     console.log('OAuth init - redirect_uri:', redirect_uri);
 
     // Call Xano's init endpoint
-    const r = await axios.get(`${XANO_API_BASE_URL}/api:fALBm5Ej/oauth/google/init`, {
+    const r = await axios.get(`${XANO_BASE_URL}/api:fALBm5Ej/oauth/google/init`, {
       params: { redirect_uri }, 
       validateStatus: () => true
     });
