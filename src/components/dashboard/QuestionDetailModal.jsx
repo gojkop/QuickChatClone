@@ -39,9 +39,27 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
   }, [isOpen, question]);
 
   useEffect(() => {
+    console.log('=== QUESTION DATA ===');
+    console.log('Full question object:', question);
+    console.log('recording_segments:', question?.recording_segments);
+    console.log('attachments raw:', question?.attachments);
+    
     // Parse recording segments
     if (question?.recording_segments) {
-      console.log('Recording segments:', question.recording_segments);
+      console.log('Recording segments count:', question.recording_segments.length);
+      
+      // Log each segment's metadata
+      question.recording_segments.forEach((seg, i) => {
+        console.log(`Segment ${i} metadata raw:`, seg.metadata);
+        try {
+          const parsed = seg.metadata ? JSON.parse(seg.metadata) : {};
+          console.log(`Segment ${i} metadata parsed:`, parsed);
+          console.log(`Segment ${i} mode:`, parsed.mode);
+        } catch (e) {
+          console.error(`Error parsing segment ${i} metadata:`, e);
+        }
+      });
+      
       setRecordingSegments(question.recording_segments);
     } else {
       setRecordingSegments([]);
@@ -49,16 +67,24 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
 
     // Parse attachments
     if (question?.attachments) {
+      console.log('Attachments type:', typeof question.attachments);
+      console.log('Attachments value:', question.attachments);
+      
       try {
         const files = typeof question.attachments === 'string' 
           ? JSON.parse(question.attachments)
           : question.attachments;
+        
+        console.log('Parsed attachments:', files);
+        console.log('Is array:', Array.isArray(files));
+        
         setAttachments(Array.isArray(files) ? files : []);
       } catch (e) {
         console.error('Error parsing attachments:', e);
         setAttachments([]);
       }
     } else {
+      console.log('No attachments found');
       setAttachments([]);
     }
   }, [question]);
