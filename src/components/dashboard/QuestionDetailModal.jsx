@@ -238,8 +238,9 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                     <div>
                       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Attachments</h3>
                       <div className="space-y-2">
+                        
                         {attachments.map((file, index) => (
-                          
+                          <a
                             key={index}
                             href={file.url || '#'}
                             target="_blank"
