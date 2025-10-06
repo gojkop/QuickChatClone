@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 
 const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
   const [formData, setFormData] = useState({
-    firstName: profile?.user?.name?.split(' ')[0] || '',
-    lastName: profile?.user?.name?.split(' ').slice(1).join(' ') || '',
+    firstName: profile?.user?.fname || '',
+    lastName: profile?.user?.lname || '',
     email: profile?.user?.email || '',
-    address: profile?.address || '',
-    city: profile?.city || '',
-    country: profile?.country || '',
-    postalCode: profile?.postal_code || '',
+    address: profile?.user?.address || '',
+    city: profile?.user?.city || '',
+    country: profile?.user?.country || '',
+    postalCode: profile?.user?.zip || '',
   });
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -25,13 +25,23 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // Prepare data in the format expected by the API
+      const updateData = {
+        fname: formData.firstName,
+        lname: formData.lastName,
+        address: formData.address,
+        city: formData.city,
+        country: formData.country,
+        zip: formData.postalCode,
+      };
+
       // TODO: API call to update account
-      // await apiClient.put('/me/account', formData);
+      // await apiClient.put('/api:3B14WLbJ/me/profile', updateData);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      onSave(formData);
+      onSave(updateData);
       alert('Account updated successfully!');
       onClose();
     } catch (error) {
@@ -66,7 +76,7 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
   };
 
   // Mock data
-  const isStripeConnected = profile?.stripe_account_id ? true : false;
+  const isStripeConnected = profile?.user?.stripe_account_id ? true : false;
   const subscriptionPlan = 'Pro Plan'; // Mock
   const subscriptionStatus = 'Active'; // Mock
 
