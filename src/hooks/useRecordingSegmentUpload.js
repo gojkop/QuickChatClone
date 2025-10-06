@@ -1,6 +1,16 @@
 // src/hooks/useRecordingSegmentUpload.js
 import { useState } from 'react';
 
+// ⭐ Helper functions MUST be defined BEFORE the hook
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
 
@@ -24,6 +34,8 @@ export function useRecordingSegmentUpload() {
       
       console.log('Uploading segment with duration:', duration);
 
+      // Upload to API
+
       // ⭐ FIX: Get duration from blob if available
       let duration = 0;
       if (blob.type.startsWith('video/') || blob.type.startsWith('audio/')) {
@@ -44,6 +56,7 @@ export function useRecordingSegmentUpload() {
           recordingBlob: base64,
           recordingMode: mode,
           segmentIndex: segmentIndex,
+          duration: duration, // ⭐ Send duration from frontend
         }),
       });
 
@@ -132,33 +145,4 @@ export function useRecordingSegmentUpload() {
   };
 }
 
-// Helper function
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-// Helper to get actual duration from blob
-function getBlobDuration(blob) {
-  return new Promise((resolve, reject) => {
-    const isVideo = blob.type.startsWith('video/');
-    const element = document.createElement(isVideo ? 'video' : 'audio');
-    element.preload = 'metadata';
-    
-    element.onloadedmetadata = () => {
-      URL.revokeObjectURL(element.src);
-      resolve(Math.round(element.duration));
-    };
-    
-    element.onerror = () => {
-      URL.revokeObjectURL(element.src);
-      reject(new Error('Could not load media'));
-    };
-    
-    element.src = URL.createObjectURL(blob);
-  });
-}
+// No additional helper functions here - blobToBase64 is already defined at the top
