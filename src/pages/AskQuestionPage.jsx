@@ -131,12 +131,19 @@ function AskQuestionPage() {
         let errorMessage = `Submission failed (${response.status})`;
         
         try {
-          const errorData = await response.json();
+          // ⭐ FIX: Clone response before reading to avoid "body consumed" error
+          const responseClone = response.clone();
+          const errorData = await responseClone.json();
           errorMessage = errorData.error || errorData.message || errorMessage;
         } catch (e) {
-          const errorText = await response.text();
-          console.error('Backend returned non-JSON response:', errorText.substring(0, 500));
-          errorMessage = `Server error (${response.status}). Check backend logs.`;
+          try {
+            const errorText = await response.text();
+            console.error('Backend returned non-JSON response:', errorText.substring(0, 500));
+            errorMessage = `Server error (${response.status}). Check backend logs.`;
+          } catch (textError) {
+            console.error('Could not read error response:', textError);
+            errorMessage = `Server error (${response.status})`;
+          }
         }
         
         throw new Error(errorMessage);

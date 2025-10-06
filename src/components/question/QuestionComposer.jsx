@@ -199,14 +199,15 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     
     mediaRecorderRef.current.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
-      const duration = Math.floor((Date.now() - segmentStartTimeRef.current) / 1000);
+      // ⭐ FIX: Calculate actual duration from timestamps
+      const duration = Math.max(1, Math.floor((Date.now() - segmentStartTimeRef.current) / 1000));
       const url = URL.createObjectURL(blob);
       
       setCurrentSegment(prev => ({
         ...prev,
         blob,
         blobUrl: url,
-        duration: Math.min(duration, remainingTime)
+        duration: Math.min(duration, remainingTime) // ⭐ Ensure it's not more than remaining time
       }));
       setRecordingState('review');
       cleanupStream();
@@ -384,10 +385,28 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   };
 
   const formatTime = (seconds) => {
+    // Handle invalid values
+    if (seconds === undefined || seconds === null || seconds < 0 || isNaN(seconds)) {
+      return '0:00';
+    }
+    
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Also in AskReviewModal.jsx, when displaying segment duration:
+  // BEFORE:
+  // {formatTime(segment.duration || 0)}
+
+  // AFTER:
+  {formatTime(segment.duration >= 0 ? segment.duration : 0)}
+
+  // And for total duration calculation:
+  const totalDuration = recordingSegments.reduce((sum, seg) => {
+    const dur = seg.duration >= 0 ? seg.duration : 0;
+    return sum + dur;
+  }, 0);
 
   // ⭐ UPDATED: Show upload status for each segment
   const ExistingSegmentsDisplay = () => {
