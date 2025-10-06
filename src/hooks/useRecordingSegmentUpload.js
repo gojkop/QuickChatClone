@@ -7,7 +7,6 @@ export function useRecordingSegmentUpload() {
   const uploadSegment = async (blob, mode, segmentIndex, duration) => {
     const uploadId = `${Date.now()}-${segmentIndex}`;
 
-    // Add to segments list with pending status
     setSegments(prev => [...prev, {
       id: uploadId,
       segmentIndex,
@@ -36,28 +35,26 @@ export function useRecordingSegmentUpload() {
       const { data } = await urlResponse.json();
       const { uid, uploadURL } = data;
 
-      // Step 2: Upload directly to Cloudflare
-      const formData = new FormData();
-      formData.append('file', blob, `segment-${segmentIndex}-${Date.now()}.webm`);
-
+      // Step 2: Upload directly to Cloudflare using TUS protocol
       const uploadResponse = await fetch(uploadURL, {
-        method: 'POST',
-        body: formData,
+        method: 'PUT',
+        body: blob,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Upload to Cloudflare failed');
+        const errorText = await uploadResponse.text();
+        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
       }
 
-      const uploadResult = await uploadResponse.json();
+      // TUS upload doesn't return JSON, just check status
+      // The video ID (uid) was already provided in step 1
 
-      if (!uploadResult.success) {
-        throw new Error('Cloudflare upload failed');
-      }
-
-      // Build playback URL
-      const CLOUDFLARE_ACCOUNT_ID = uploadURL.split('/')[4]; // Extract from upload URL
-      const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${uid}/manifest/video.m3u8`;
+      // Extract account ID from upload URL
+      const accountId = uploadURL.split('/')[4];
+      const playbackUrl = `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`;
 
       const result = {
         uid,
@@ -68,7 +65,6 @@ export function useRecordingSegmentUpload() {
         segmentIndex,
       };
 
-      // Update segment status
       setSegments(prev => prev.map(seg =>
         seg.id === uploadId
           ? { ...seg, uploading: false, progress: 100, result }
@@ -96,15 +92,12 @@ export function useRecordingSegmentUpload() {
     const segment = segments.find(s => s.id === uploadId);
     if (!segment) return;
 
-    // Reset and retry
     setSegments(prev => prev.map(s =>
       s.id === uploadId
         ? { ...s, uploading: true, error: null, progress: 0 }
         : s
     ));
 
-    // You'd need to store the original blob to retry
-    // For now, just show error that retry needs re-recording
     setSegments(prev => prev.map(s =>
       s.id === uploadId
         ? { ...s, uploading: false, error: 'Please re-record this segment' }
