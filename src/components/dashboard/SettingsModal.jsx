@@ -179,7 +179,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                 <div className="flex-1 space-y-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-                      Username
+                      Public Profile Handle
                     </label>
                     <div className="flex items-center">
                       <span className="px-3 py-2.5 bg-white border border-r-0 border-gray-200 rounded-l-lg text-sm text-gray-500 font-medium">
@@ -195,6 +195,9 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                         required
                       />
                     </div>
+                    <p className="text-xs text-gray-500 mt-1.5">
+                      Your unique URL: yoursite.com/u/your-handle
+                    </p>
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input 

@@ -153,32 +153,38 @@ function AvatarEditor({ isOpen, onClose, imageSrc, onSave }) {
             {/* Canvas Area */}
             <div className="lg:col-span-2 space-y-4">
               <div className="relative bg-gray-900 rounded-xl overflow-hidden" style={{ height: '400px' }}>
-                {imageSrc ? (
-                  <Cropper
-                    image={imageSrc}
-                    crop={crop}
-                    zoom={zoom}
-                    rotation={rotation}
-                    aspect={1}
-                    cropShape="round"
-                    showGrid={false}
-                    onCropChange={setCrop}
-                    onCropComplete={onCropComplete}
-                    onZoomChange={setZoom}
-                    style={{
-                      containerStyle: {
-                        backgroundColor: '#1a1a1a'
-                      },
-                      mediaStyle: {
-                        transform: `scaleX(${flip.horizontal ? -1 : 1}) scaleY(${flip.vertical ? -1 : 1})`
-                      }
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white">
-                    <p>Loading image...</p>
-                  </div>
-                )}
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    transform: `scaleX(${flip.horizontal ? -1 : 1}) scaleY(${flip.vertical ? -1 : 1})`,
+                    transformOrigin: 'center center'
+                  }}
+                >
+                  {imageSrc ? (
+                    <Cropper
+                      image={imageSrc}
+                      crop={crop}
+                      zoom={zoom}
+                      rotation={rotation}
+                      aspect={1}
+                      cropShape="round"
+                      showGrid={false}
+                      onCropChange={setCrop}
+                      onCropComplete={onCropComplete}
+                      onZoomChange={setZoom}
+                      style={{
+                        containerStyle: {
+                          backgroundColor: '#1a1a1a'
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white">
+                      <p>Loading image...</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Zoom Slider */}
