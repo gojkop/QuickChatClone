@@ -1,6 +1,15 @@
-import { xanoClient } from '../../lib/xano/client.js';
+import { xanoPost, xanoGet } from '../../lib/xano/client.js';
 
 export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -12,16 +21,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Check rate limits
-    const limitsCheck = await xanoClient.post('/coaching/check_limits', {
+    // 1. Check rate limits using helper function
+    const limitsCheck = await xanoPost('/coaching/check_limits', {
       fingerprint
     });
 
-    if (!limitsCheck.data.allowed) {
+    if (!limitsCheck.allowed) {
       return res.status(429).json({
-        error: limitsCheck.data.message,
-        reason: limitsCheck.data.reason,
-        requiresPayment: limitsCheck.data.reason === 'payment_required'
+        error: limitsCheck.message,
+        reason: limitsCheck.reason,
+        requiresPayment: limitsCheck.reason === 'payment_required'
       });
     }
 
@@ -32,18 +41,18 @@ export default async function handler(req, res) {
     // 3. Generate session ID
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // 4. Create coaching session
-    await xanoClient.post('/coaching/create_session', {
+    // 4. Create coaching session using helper function
+    await xanoPost('/coaching/create_session', {
       session_id: sessionId,
       fingerprint,
       initial_transcript: title,
       tier_1_validation: validation,
-      tier_reached: 1,
+      coaching_tier_reached: 1,
       total_ai_cost: 0.002
     });
 
-    // 5. Update rate limits
-    await xanoClient.post('/coaching/increment_limit', {
+    // 5. Update rate limits using helper function
+    await xanoPost('/coaching/increment_limit', {
       fingerprint,
       type: 'started'
     });
