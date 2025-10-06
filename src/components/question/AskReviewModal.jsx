@@ -10,28 +10,15 @@ const formatPrice = (cents, currency = 'USD') => {
 };
 
 const formatTime = (seconds) => {
-    // Handle invalid values
-    if (seconds === undefined || seconds === null || seconds < 0 || isNaN(seconds)) {
-      return '0:00';
-    }
-    
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Also in AskReviewModal.jsx, when displaying segment duration:
-  // BEFORE:
-  // {formatTime(segment.duration || 0)}
-
-  // AFTER:
-  {formatTime(segment.duration >= 0 ? segment.duration : 0)}
-
-  // And for total duration calculation:
-  const totalDuration = recordingSegments.reduce((sum, seg) => {
-    const dur = seg.duration >= 0 ? seg.duration : 0;
-    return sum + dur;
-  }, 0);
+  // ⭐ FIX: Handle invalid values
+  if (seconds === undefined || seconds === null || seconds < 0 || isNaN(seconds)) {
+    return '0:00';
+  }
+  
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
 
 const formatBytes = (bytes) => {
   if (bytes === 0) return '0 Bytes';
@@ -63,9 +50,15 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
     });
   };
 
-  // Get recording segments and total duration
+  // ⭐ FIX: Get recording segments and calculate total duration safely
   const recordingSegments = questionData.recordingSegments || [];
-  const totalDuration = recordingSegments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
+  
+  // ⭐ FIX: Safe duration calculation
+  const totalDuration = recordingSegments.reduce((sum, seg) => {
+    const dur = (seg && seg.duration >= 0) ? seg.duration : 0;
+    return sum + dur;
+  }, 0);
+  
   const hasRecording = recordingSegments.length > 0;
 
   // Get attachments
@@ -128,7 +121,7 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                   <p className="text-gray-900 text-sm font-medium">{questionData.title}</p>
                 </div>
 
-                {/* Recording Segments - NEW: Show all segments */}
+                {/* Recording Segments */}
                 {hasRecording && (
                   <div className="flex items-start">
                     <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">
@@ -151,7 +144,8 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                                  segment.mode === 'screen' ? '💻 Screen' : 'Recording'} Segment
                               </div>
                               <div className="text-xs text-gray-500">
-                                {formatTime(segment.duration || 0)} • {formatBytes(segment.size || 0)}
+                                {/* ⭐ FIX: Safe duration formatting */}
+                                {formatTime(segment.duration >= 0 ? segment.duration : 0)} • {formatBytes(segment.size || 0)}
                               </div>
                             </div>
 
@@ -194,7 +188,7 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                   )}
                 </div>
 
-                {/* Attached Files - NEW: Show all files with details */}
+                {/* Attached Files */}
                 <div className="flex items-start">
                   <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Files</span>
                   {hasAttachments ? (
@@ -333,4 +327,4 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
   );
 }
 
-export default AskReviewModal;
+export default AskReviewModal
