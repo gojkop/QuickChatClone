@@ -168,13 +168,17 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
             
             {/* Avatar & Profile Visibility */}
             <div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-xl p-5 border border-indigo-100">
-              <div className="flex flex-col items-center space-y-4">
-                <AvatarUpload 
-                  currentAvatar={formData.avatar_url}
-                  onChange={handleAvatarChange}
-                />
+              <div className="flex flex-col md:flex-row md:items-start gap-5">
+                {/* Avatar - left side on desktop, centered on mobile */}
+                <div className="flex justify-center md:justify-start flex-shrink-0">
+                  <AvatarUpload 
+                    currentAvatar={formData.avatar_url}
+                    onChange={handleAvatarChange}
+                  />
+                </div>
                 
-                <div className="w-full max-w-md space-y-3">
+                {/* Fields - takes remaining space */}
+                <div className="flex-1 space-y-3">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Profile Handle

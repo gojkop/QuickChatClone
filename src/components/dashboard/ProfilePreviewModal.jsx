@@ -16,11 +16,11 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
         onClick={onClose}
       />
 
-      {/* Modal */}
+      {/* Modal - Wider for desktop */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div 
-          className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col pointer-events-auto transform transition-all"
-          style={{ height: '80vh' }}
+          className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col pointer-events-auto transform transition-all"
+          style={{ height: '85vh' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -62,8 +62,8 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
                 </div>
               </div>
 
-              {/* Iframe Container - Takes remaining space */}
-              <div className="flex-1 relative bg-white">
+              {/* Iframe Container - Scrollable with scaled content */}
+              <div className="flex-1 relative bg-gray-50 overflow-auto">
                 {/* Loading State */}
                 {iframeLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white z-20">
@@ -74,20 +74,27 @@ function ProfilePreviewModal({ isOpen, onClose, profile }) {
                   </div>
                 )}
 
-                {/* Iframe - Full size */}
-                <iframe
-                  src={publicPageUrl}
-                  className="w-full h-full border-0 block"
-                  title="Profile Preview"
-                  onLoad={() => {
-                    console.log('Iframe loaded');
-                    setIframeLoading(false);
-                  }}
-                  onError={() => {
-                    console.error('Iframe failed to load');
-                    setIframeLoading(false);
-                  }}
-                />
+                {/* Scaled iframe wrapper for thumbnail effect */}
+                <div className="w-full" style={{ 
+                  transform: 'scale(0.75)', 
+                  transformOrigin: 'top center',
+                  minHeight: '133.33%' // Compensate for 0.75 scale
+                }}>
+                  <iframe
+                    src={publicPageUrl}
+                    className="w-full border-0 block"
+                    style={{ height: '1200px' }}
+                    title="Profile Preview"
+                    onLoad={() => {
+                      console.log('Iframe loaded');
+                      setIframeLoading(false);
+                    }}
+                    onError={() => {
+                      console.error('Iframe failed to load');
+                      setIframeLoading(false);
+                    }}
+                  />
+                </div>
                 
                 {/* Transparent Overlay - Blocks ALL interactions */}
                 <div 
