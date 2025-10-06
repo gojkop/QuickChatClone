@@ -1,5 +1,15 @@
 import { useState } from 'react';
 
+// Helper function
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -19,62 +29,36 @@ export function useRecordingSegmentUpload() {
     setUploading(true);
 
     try {
-      // Get upload endpoint and token
-      const configResponse = await fetch('/api/media/get-upload-url', {
+      // Convert to base64
+      const base64Data = await blobToBase64(blob);
+
+      // Upload through backend
+      const response = await fetch('/api/media/upload-recording', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoData: base64Data,
+          mode,
+          segmentIndex,
+          duration,
+        }),
       });
 
-      if (!configResponse.ok) {
-        throw new Error('Failed to get upload configuration');
+      if (!response.ok) {
+        const errorData = await response.clone().json().catch(() => ({}));
+        throw new Error(errorData.error || 'Upload failed');
       }
 
-      const { data } = await configResponse.json();
-      const { uploadEndpoint, token, accountId } = data;
-
-      // Upload directly to Cloudflare with multipart form
-      const formData = new FormData();
-      formData.append('file', blob, `segment-${segmentIndex}.webm`);
-
-      const uploadResponse = await fetch(uploadEndpoint, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
-      }
-
-      const uploadResult = await uploadResponse.json();
-
-      if (!uploadResult.success) {
-        throw new Error('Cloudflare upload failed');
-      }
-
-      const uid = uploadResult.result.uid;
-      const playbackUrl = `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`;
-
-      const result = {
-        uid,
-        playbackUrl,
-        duration: duration || uploadResult.result.duration || 0,
-        mode,
-        size: blob.size,
-        segmentIndex,
-      };
+      const result = await response.json();
 
       setSegments(prev => prev.map(seg =>
         seg.id === uploadId
-          ? { ...seg, uploading: false, progress: 100, result }
+          ? { ...seg, uploading: false, progress: 100, result: result.data }
           : seg
       ));
 
       setUploading(false);
-      return result;
+      return result.data;
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -90,13 +74,10 @@ export function useRecordingSegmentUpload() {
     }
   };
 
-  const retrySegment = async (uploadId) => {
-    const segment = segments.find(s => s.id === uploadId);
-    if (!segment) return;
-
+  const retrySegment = (uploadId) => {
     setSegments(prev => prev.map(s =>
       s.id === uploadId
-        ? { ...s, uploading: false, error: 'Please re-record this segment' }
+        ? { ...s, error: 'Please re-record this segment' }
         : s
     ));
   };
