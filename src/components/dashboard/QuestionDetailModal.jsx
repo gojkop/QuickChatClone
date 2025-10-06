@@ -27,7 +27,6 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
   const [attachments, setAttachments] = useState([]);
   const [recordingSegments, setRecordingSegments] = useState([]);
 
-  // Reset state when modal opens/closes or question changes
   useEffect(() => {
     if (!isOpen || !question) {
       setShowAnswerRecorder(false);
@@ -39,55 +38,23 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
   }, [isOpen, question]);
 
   useEffect(() => {
-    console.log('=== RAW QUESTION DATA ===');
-    console.log('Full question:', JSON.stringify(question, null, 2));
-    
-    // Parse recording segments
     if (question?.recording_segments) {
-      console.log('Recording segments type:', typeof question.recording_segments);
-      console.log('Recording segments is array:', Array.isArray(question.recording_segments));
-      console.log('Recording segments:', question.recording_segments);
       setRecordingSegments(question.recording_segments);
     } else {
       setRecordingSegments([]);
     }
 
-    // Parse attachments with better error handling
     if (question?.attachments) {
-      console.log('Attachments raw type:', typeof question.attachments);
-      console.log('Attachments raw value:', question.attachments);
-      console.log('Attachments first 100 chars:', String(question.attachments).substring(0, 100));
-      
       try {
-        let files;
-        
-        if (typeof question.attachments === 'string') {
-          // Try to clean the string first
-          let cleanedString = question.attachments.trim();
-          console.log('Attempting to parse:', cleanedString);
-          files = JSON.parse(cleanedString);
-        } else {
-          files = question.attachments;
-        }
-        
-        console.log('Parsed successfully:', files);
+        const files = typeof question.attachments === 'string' 
+          ? JSON.parse(question.attachments)
+          : question.attachments;
         setAttachments(Array.isArray(files) ? files : []);
       } catch (e) {
-        console.error('JSON parse error:', e.message);
-        console.error('Failed string:', question.attachments);
-        
-        // Try alternative: maybe it's already an object but stringified twice
-        try {
-          const doubleDecoded = JSON.parse(JSON.parse(question.attachments));
-          console.log('Double parse worked:', doubleDecoded);
-          setAttachments(Array.isArray(doubleDecoded) ? doubleDecoded : []);
-        } catch (e2) {
-          console.error('Double parse also failed');
-          setAttachments([]);
-        }
+        console.error('Error parsing attachments:', e);
+        setAttachments([]);
       }
     } else {
-      console.log('No attachments field');
       setAttachments([]);
     }
   }, [question]);
@@ -105,8 +72,6 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
 
   const handleSubmitAnswer = async (finalData) => {
     console.log('Submitting answer:', finalData);
-    // TODO: API call to submit answer
-    
     setTimeout(() => {
       setShowReviewModal(false);
       setShowAnswerRecorder(false);
@@ -116,6 +81,13 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
 
   const isAnswered = question.status === 'answered';
   const isPending = question.status === 'paid' && !question.answered_at;
+
+  // Extract Cloudflare Stream video ID from URL
+  const getStreamVideoId = (url) => {
+    if (!url) return null;
+    const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
+    return match ? match[1] : null;
+  };
 
   return (
     <>
@@ -128,7 +100,6 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
         <div className="flex min-h-full items-center justify-center p-4">
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             
-            {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
                 <h2 className="text-xl font-bold text-gray-900">Question Details</h2>
@@ -144,22 +115,17 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                   </span>
                 )}
               </div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
-              >
+              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition">
                 <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            {/* Content */}
             {!showAnswerRecorder ? (
               <div className="flex-1 overflow-y-auto">
                 <div className="p-6 space-y-6">
                   
-                  {/* Asker Info Card */}
                   <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-5">
                     <div className="flex items-start justify-between">
                       <div>
@@ -179,13 +145,11 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                     </div>
                   </div>
 
-                  {/* Question Title */}
                   <div>
                     <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Question Title</h3>
                     <p className="text-lg font-semibold text-gray-900">{question.title}</p>
                   </div>
 
-                  {/* Recording Segments */}
                   {recordingSegments.length > 0 && (
                     <div>
                       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
@@ -193,13 +157,23 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                       </h3>
                       <div className="space-y-3">
                         {recordingSegments.map((segment, index) => {
-                          let metadata = {};
+                          let metadata = { mode: 'audio' };
+                          let isVideo = false;
+                          
                           try {
-                            metadata = segment.metadata ? JSON.parse(segment.metadata) : {};
+                            if (segment.metadata) {
+                              if (typeof segment.metadata === 'object') {
+                                metadata = segment.metadata;
+                              } else if (typeof segment.metadata === 'string') {
+                                metadata = JSON.parse(segment.metadata);
+                              }
+                              isVideo = metadata.mode === 'video';
+                            }
                           } catch (e) {
-                            console.error('Error parsing metadata:', e);
+                            console.error(`Segment ${index} metadata parse error:`, e);
                           }
-                          const isVideo = metadata.mode === 'video';
+
+                          const videoId = getStreamVideoId(segment.url);
                           
                           return (
                             <div key={segment.id || index} className="bg-gray-900 rounded-xl overflow-hidden">
@@ -230,25 +204,18 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                                 </div>
                               </div>
                               
-                              {isVideo ? (
-                                <video 
-                                  controls 
-                                  className="w-full aspect-video bg-black"
-                                  preload="metadata"
-                                  src={segment.url}
-                                >
-                                  Your browser does not support the video tag.
-                                </video>
+                              {videoId ? (
+                                <div className="w-full aspect-video bg-black">
+                                  <iframe
+                                    src={`https://customer-o9wvts8h9krvlboh.cloudflarestream.com/${videoId}/iframe`}
+                                    style={{ border: 'none', width: '100%', height: '100%' }}
+                                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                    allowFullScreen={true}
+                                  />
+                                </div>
                               ) : (
                                 <div className="p-8 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-                                  <audio 
-                                    controls 
-                                    className="w-full max-w-md"
-                                    preload="metadata"
-                                    src={segment.url}
-                                  >
-                                    Your browser does not support the audio tag.
-                                  </audio>
+                                  <p className="text-white text-sm">Video unavailable</p>
                                 </div>
                               )}
                             </div>
@@ -258,7 +225,6 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                     </div>
                   )}
 
-                  {/* Additional Context */}
                   {question.text && (
                     <div>
                       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Additional Context</h3>
@@ -268,13 +234,13 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                     </div>
                   )}
 
-                  {/* Attachments */}
                   {attachments.length > 0 && (
                     <div>
                       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Attachments</h3>
                       <div className="space-y-2">
+                        
                         {attachments.map((file, index) => (
-                           <a
+                          <a
                             key={index}
                             href={file.url || '#'}
                             target="_blank"
@@ -294,7 +260,6 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                     </div>
                   )}
 
-                  {/* SLA Info */}
                   {isPending && (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                       <div className="flex items-start gap-3">
@@ -322,7 +287,6 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
               </div>
             )}
 
-            {/* Footer */}
             {!showAnswerRecorder && !isAnswered && (
               <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
                 <div className="flex items-center justify-between gap-4">
@@ -347,7 +311,6 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
         </div>
       </div>
 
-      {/* Answer Review Modal */}
       <AnswerReviewModal
         isOpen={showReviewModal}
         onClose={() => setShowReviewModal(false)}
