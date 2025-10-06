@@ -95,8 +95,9 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         public: formData.isPublic,
         handle: formData.handle,
         currency: 'USD',
-        avatar_url: formData.avatar_url,
-        avatar_key: formData.avatar_key,
+        // Explicitly send empty string instead of null to clear avatar
+        avatar_url: formData.avatar_url || '',
+        avatar_key: formData.avatar_key || '',
         professional_title: formData.professional_title || '',
         tagline: formData.tagline || '',
         expertise: Array.isArray(formData.expertise) ? formData.expertise : [],
@@ -106,11 +107,13 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       };
 
       console.log('Saving payload:', payload);
+      console.log('Avatar URL being saved:', payload.avatar_url);
 
       if (formData.avatar_url) {
         localStorage.setItem('qc_avatar', formData.avatar_url);
       } else {
         localStorage.removeItem('qc_avatar');
+        console.log('Removing avatar from localStorage');
       }
       localStorage.setItem('qc_charity_percentage', formData.charity_percentage || 0);
       if (formData.selected_charity) {
@@ -120,13 +123,21 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       const response = await apiClient.put('/me/profile', payload);
       
       console.log('API response:', response.data);
+      console.log('API returned avatar_url:', response.data.avatar_url);
+      
+      // Use empty string as null for avatar_url
+      const savedAvatarUrl = formData.avatar_url || null;
+      console.log('Final avatar_url for profile:', savedAvatarUrl);
       
       const updatedProfile = {
         ...response.data,
-        avatar_url: formData.avatar_url,
+        avatar_url: savedAvatarUrl,
+        avatar_key: formData.avatar_key || null,
         charity_percentage: formData.charity_percentage,
         selected_charity: formData.selected_charity
       };
+      
+      console.log('Updated profile being saved:', updatedProfile);
       
       onSave(updatedProfile);
       onClose();
