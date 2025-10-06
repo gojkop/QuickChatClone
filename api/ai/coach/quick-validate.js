@@ -1,5 +1,4 @@
-import { xanoPost, xanoGet } from '../../lib/xano/client.js';
-
+// ⭐ Mock version - doesn't need Xano yet
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,28 +20,30 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Check rate limits using helper function
-    const limitsCheck = await xanoPost('/coaching/check_limits', {
-      fingerprint
-    });
+    console.log('[Tier 1] Validating question:', { title, fingerprint, expertId });
 
-    if (!limitsCheck.allowed) {
-      return res.status(429).json({
-        error: limitsCheck.message,
-        reason: limitsCheck.reason,
-        requiresPayment: limitsCheck.reason === 'payment_required'
-      });
-    }
+    // ⭐ MOCK: Skip Xano rate limit check for now
+    // In production, this would call Xano
+    const limitsCheck = {
+      allowed: true,
+      limit_info: { started: 0, paid: 0 }
+    };
 
-    // 2. Rule-based validation (no AI, very cheap)
+    console.log('[Tier 1] Rate limits check (mocked):', limitsCheck);
+
+    // Rule-based validation (no AI, very cheap)
     const validation = performRuleBasedValidation(title);
     const feedback = generateQuickFeedback(validation);
 
-    // 3. Generate session ID
+    // Generate session ID
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // 4. Create coaching session using helper function
-    await xanoPost('/coaching/create_session', {
+    console.log('[Tier 1] Validation complete:', { sessionId, clarityScore: validation.clarityScore });
+
+    // ⭐ MOCK: Skip Xano session creation for now
+    // In production, this would save to Xano
+    // For now, we'll just log it
+    console.log('[Tier 1] Would create session in Xano:', {
       session_id: sessionId,
       fingerprint,
       initial_transcript: title,
@@ -51,22 +52,17 @@ export default async function handler(req, res) {
       total_ai_cost: 0.002
     });
 
-    // 5. Update rate limits using helper function
-    await xanoPost('/coaching/increment_limit', {
-      fingerprint,
-      type: 'started'
-    });
-
     return res.json({
       sessionId,
       validation,
       feedback,
       shouldContinue: !validation.isTooShort && !validation.isTooVague,
-      canProceedWithoutCoaching: true
+      canProceedWithoutCoaching: true,
+      mock: true // ⭐ Indicate this is mock data
     });
 
   } catch (error) {
-    console.error('Quick validation failed:', error);
+    console.error('[Tier 1] Validation failed:', error);
     return res.status(500).json({
       error: 'Validation failed',
       message: error.message
@@ -92,27 +88,22 @@ function performRuleBasedValidation(title) {
 }
 
 function calculateClarityScore(text, wordCount) {
-  let score = 50; // Base score
+  let score = 50;
 
-  // Length bonus
   if (wordCount >= 5 && wordCount <= 20) score += 20;
   else if (wordCount >= 3) score += 10;
 
-  // Has question indicator
   if (/\?/.test(text) || /\b(how|what|when|where|why|should)\b/i.test(text)) {
     score += 15;
   }
 
-  // No vague words
   if (!/\b(this|that|it|stuff|thing)\b/gi.test(text)) {
     score += 15;
   }
 
-  // Has specifics (numbers, technical terms, proper nouns)
   if (/\d+/.test(text)) score += 5;
   if (/[A-Z][a-z]+/.test(text)) score += 5;
 
-  // Penalties
   if (/\b(hi|hello|hey)\b/i.test(text)) score -= 20;
   if (wordCount < 3) score -= 30;
 

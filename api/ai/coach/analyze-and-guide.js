@@ -1,7 +1,15 @@
-import { xanoClient } from '../../lib/xano/client.js';
 import { callLLM } from '../../lib/llm-service.js';
 
 export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -13,28 +21,27 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Get session from Xano
-    const sessionResponse = await xanoClient.get(`/coaching/sessions/${sessionId}`);
-    const session = sessionResponse.data;
+    console.log('[Tier 2] Starting AI analysis:', { sessionId, expert: expertProfile.name });
 
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
+    // ⭐ MOCK: Skip Xano session fetch for now
+    // In production, we'd fetch the session from Xano
+    const mockSession = {
+      initial_transcript: 'How should I price my SaaS?', // Mock data
+      tier_1_validation: { clarityScore: 65 }
+    };
 
-    if (session.coaching_tier_reached < 1) {
-      return res.status(400).json({ error: 'Complete validation first' });
-    }
+    const questionTitle = mockSession.initial_transcript;
 
-    const questionTitle = session.initial_transcript;
-
-    // 2. Generate AI analysis
+    // Generate AI analysis
     const analysis = await analyzeQuestion(
       questionTitle,
       questionContext,
       expertProfile
     );
 
-    // 3. Generate clarifying questions
+    console.log('[Tier 2] Analysis complete:', { clarity: analysis.clarity });
+
+    // Generate clarifying questions
     const clarifications = await generateClarifications(
       questionTitle,
       questionContext,
@@ -42,36 +49,31 @@ export default async function handler(req, res) {
       analysis
     );
 
-    // 4. Detect if attachments would help
+    console.log('[Tier 2] Generated clarifications:', clarifications.length);
+
+    // Detect if attachments would help
     const attachmentSuggestions = detectNeededAttachments(
       questionTitle,
       questionContext,
       analysis
     );
 
-    // 5. Update session in Xano
-    await xanoClient.post('/coaching/update_session', {
+    // ⭐ MOCK: Skip Xano update for now
+    console.log('[Tier 2] Would update session in Xano:', {
       session_id: sessionId,
-      updates: {
-        coaching_tier_reached: 2,
-        tier_2_analysis: {
-          analysis,
-          clarifications,
-          attachmentSuggestions,
-          generated_at: new Date().toISOString()
-        },
-        total_ai_cost: (session.total_ai_cost || 0) + 0.021
-      }
+      coaching_tier_reached: 2,
+      total_ai_cost: 0.021
     });
 
     return res.json({
       analysis,
       clarifications,
-      attachmentSuggestions
+      attachmentSuggestions,
+      mock: true // ⭐ Indicate this is mock data
     });
 
   } catch (error) {
-    console.error('AI analysis failed:', error);
+    console.error('[Tier 2] Analysis failed:', error);
     return res.status(500).json({
       error: 'Analysis failed',
       message: error.message
@@ -126,7 +128,6 @@ Rules:
 - Each question should take <30 seconds to answer
 - Be specific and actionable, not generic
 - Focus on what would help the expert give a better answer
-- Questions should feel natural and helpful, not interrogative
 
 Respond in JSON format:
 {
@@ -146,7 +147,6 @@ Respond in JSON format:
     requireJSON: true
   });
 
-  // Ensure we have at most 3 clarifications
   return result.clarifications.slice(0, 3).map((c, index) => ({
     ...c,
     id: `c${index + 1}`
@@ -157,7 +157,6 @@ function detectNeededAttachments(title, context, analysis) {
   const suggestions = [];
   const fullText = `${title} ${context?.text || ''}`.toLowerCase();
 
-  // Pattern matching for common scenarios
   const patterns = [
     {
       regex: /\b(website|landing page|page|site|url|web)\b/i,
@@ -174,18 +173,6 @@ function detectNeededAttachments(title, context, analysis) {
     {
       regex: /\b(data|numbers|metrics|analytics|stats|graph|chart)\b/i,
       suggestion: 'Spreadsheet, data file, or analytics screenshot'
-    },
-    {
-      regex: /\b(document|doc|pdf|contract|agreement)\b/i,
-      suggestion: 'The document you\'re referring to'
-    },
-    {
-      regex: /\b(email|message|communication)\b/i,
-      suggestion: 'Screenshot of the email or message'
-    },
-    {
-      regex: /\b(ad|advertisement|campaign|creative)\b/i,
-      suggestion: 'Screenshot or file of the ad creative'
     }
   ];
 
@@ -195,6 +182,5 @@ function detectNeededAttachments(title, context, analysis) {
     }
   });
 
-  // Limit to top 3 most relevant
   return suggestions.slice(0, 3);
 }
