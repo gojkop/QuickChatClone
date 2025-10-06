@@ -1,17 +1,4 @@
-// ============================================
-// FILE: api/questions/create.js
-// Create question with pre-uploaded content
-// ============================================
-import { getExpertByHandle } from '../lib/xano/expert.js';
-import { createQuestion, updateQuestion } from '../lib/xano/question.js';
-import { createMediaAsset } from '../lib/xano/media.js';
-
-/**
- * Create question using already-uploaded content
- * No uploads happen here - content is already in Cloudflare
- * 
- * ⭐ UPDATED: Now supports multiple recording segments!
- */
+// api/questions/create.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -25,43 +12,28 @@ export default async function handler(req, res) {
       payerEmail,
       payerFirstName,
       payerLastName,
-      
-      // ⭐ NEW: Multiple recording segments (already uploaded!)
-      recordingSegments = [],  // [{uid, playbackUrl, duration, mode, segmentIndex}]
-      
-      // Attachments (already uploaded!)
-      attachments = [],  // [{name, url, type, size}]
-      
-      // ⭐ OLD FORMAT: Support for backward compatibility
-      recordingUid,
-      recordingPlaybackUrl,
-      recordingDuration,
-      recordingMode,
+      recordingSegments = [],
+      attachments = [],
     } = req.body;
 
-    console.log('Question creation request:', {
+    console.log('Create question request:', {
       expertHandle,
       title,
       segmentCount: recordingSegments.length,
       attachmentCount: attachments.length,
-      hasOldFormatRecording: !!recordingUid,
     });
 
-    // Validate required fields
-    if (!expertHandle) {
-      return res.status(400).json({ error: 'expertHandle is required' });
-    }
-    if (!title || title.trim().length === 0) {
-      return res.status(400).json({ error: 'title is required' });
-    }
-    if (!payerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payerEmail)) {
-      return res.status(400).json({ error: 'valid payerEmail is required' });
+    // Validation
+    if (!expertHandle || !title?.trim() || !payerEmail) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    const XANO_BASE_URL = process.env.XANO_BASE_URL;
+
     // 1. Get expert profile
-    console.log('Fetching expert profile...');
+    console.log('Fetching expert...');
     const expertResponse = await fetch(
-      `${process.env.XANO_BASE_URL}/public/profile?handle=${encodeURIComponent(expertHandle)}`
+      `${XANO_BASE_URL}/public/profile?handle=${encodeURIComponent(expertHandle)}`
     );
 
     if (!expertResponse.ok) {
@@ -72,98 +44,108 @@ export default async function handler(req, res) {
     const expert = expertData?.expert_profile ?? expertData;
     console.log('Expert found:', expert.id);
 
-    // 2. Create question record (without media_asset_id initially)
+    // 2. Create question - using minimal required fields
     console.log('Creating question...');
-    const question = await createQuestion({
-      expertProfileId: expert.id,
+    const questionPayload = {
+      expert_profile_id: expert.id,
       title: title.trim(),
       text: text?.trim() || '',
-      attachments: attachments.length > 0 ? attachments : null,
-      payerEmail,
-      payerFirstName: payerFirstName || null,
-      payerLastName: payerLastName || null,
-      priceCents: expert.price_cents || 5000,
+      payer_email: payerEmail,
+      price_cents: expert.price_cents || 5000,
       currency: expert.currency || 'USD',
       status: 'pending_payment',
-      slaHours: expert.sla_hours || 48,
+      sla_hours_snapshot: expert.sla_hours || 48,
+    };
+
+    // Only add optional fields if they have values
+    if (payerFirstName) questionPayload.payer_first_name = payerFirstName;
+    if (payerLastName) questionPayload.payer_last_name = payerLastName;
+    if (attachments.length > 0) {
+      questionPayload.attachments = JSON.stringify(attachments);
+    }
+
+    console.log('Question payload:', questionPayload);
+
+    const questionResponse = await fetch(`${XANO_BASE_URL}/question`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(questionPayload),
     });
+
+    if (!questionResponse.ok) {
+      const errorText = await questionResponse.text();
+      console.error('Question creation failed:', errorText);
+      throw new Error(`Question creation failed: ${questionResponse.status} - ${errorText}`);
+    }
+
+    const question = await questionResponse.json();
     console.log('Question created:', question.id);
 
-    // ⭐ 3. Create media_asset records for MULTIPLE segments
+    // 3. Create media_asset records for each segment
     const mediaAssetIds = [];
     
-    // Handle NEW format (multiple segments)
-    if (recordingSegments.length > 0) {
-      console.log(`Creating ${recordingSegments.length} media assets...`);
+    for (let i = 0; i < recordingSegments.length; i++) {
+      const segment = recordingSegments[i];
       
-      for (let i = 0; i < recordingSegments.length; i++) {
-        const segment = recordingSegments[i];
-        
-        try {
-          const mediaAsset = await createMediaAsset({
-            ownerType: 'question',
-            ownerId: question.id,
-            provider: 'cloudflare_stream',
-            assetId: segment.uid,
-            duration: Math.round(segment.duration || 0),
-            status: 'ready', // Already uploaded!
-            url: segment.playbackUrl,
-            segmentIndex: segment.segmentIndex ?? i,
-            metadata: {
-              segmentIndex: segment.segmentIndex ?? i,
-              mode: segment.mode || 'video',
-            },
-          });
-          
-          mediaAssetIds.push(mediaAsset.id);
-          console.log(`Media asset ${i + 1}/${recordingSegments.length} created:`, mediaAsset.id);
-        } catch (error) {
-          console.error(`Failed to create media asset for segment ${i}:`, error);
-          // Continue with other segments
-        }
-      }
-    } 
-    // Handle OLD format (single recording) for backward compatibility
-    else if (recordingUid && recordingPlaybackUrl) {
-      console.log('Creating single media asset (old format)...');
+      console.log(`Creating media_asset ${i + 1}/${recordingSegments.length}...`);
       
-      const mediaAsset = await createMediaAsset({
-        ownerType: 'question',
-        ownerId: question.id,
+      const mediaPayload = {
+        owner_type: 'question',
+        owner_id: question.id,
         provider: 'cloudflare_stream',
-        assetId: recordingUid,
-        duration: recordingDuration || 0,
+        asset_id: segment.uid,
+        duration_sec: Math.round(segment.duration || 0),
         status: 'ready',
-        url: recordingPlaybackUrl,
-        segmentIndex: 0,
-        metadata: {
-          segmentIndex: 0,
-          mode: recordingMode || 'video',
-        },
+        url: segment.playbackUrl,
+        segment_index: i,
+        metadata: JSON.stringify({
+          segmentIndex: i,
+          mode: segment.mode,
+        }),
+      };
+
+      const mediaResponse = await fetch(`${XANO_BASE_URL}/media_asset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mediaPayload),
       });
-      
+
+      if (!mediaResponse.ok) {
+        console.error(`Failed to create media_asset for segment ${i}`);
+        continue;
+      }
+
+      const mediaAsset = await mediaResponse.json();
       mediaAssetIds.push(mediaAsset.id);
-      console.log('Media asset created:', mediaAsset.id);
+      console.log(`Media asset created: ${mediaAsset.id}`);
     }
 
     // 4. Update question with first segment's media_asset_id
     if (mediaAssetIds.length > 0) {
-      console.log('Updating question with first media_asset_id...');
-      await updateQuestion(question.id, {
-        mediaAssetId: mediaAssetIds[0],
+      console.log('Updating question with media_asset_id...');
+      await fetch(`${XANO_BASE_URL}/question/${question.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          media_asset_id: mediaAssetIds[0],
+        }),
       });
     }
 
-    // 5. Mark as paid (dev mode only)
+    // 5. Mark as paid (dev mode)
     if (process.env.SKIP_STRIPE === 'true') {
       console.log('Dev mode: marking as paid...');
-      await updateQuestion(question.id, {
-        status: 'paid',
-        paidAt: new Date().toISOString(),
+      await fetch(`${XANO_BASE_URL}/question/${question.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'paid',
+          paid_at: new Date().toISOString(),
+        }),
       });
     }
 
-    console.log('✅ Question created successfully!');
+    console.log('✅ Success!');
 
     return res.status(200).json({
       success: true,
@@ -174,7 +156,6 @@ export default async function handler(req, res) {
         attachmentCount: attachments.length,
         status: process.env.SKIP_STRIPE === 'true' ? 'paid' : 'pending_payment',
       },
-      // TODO: Add Stripe checkout URL in production
       checkoutUrl: null,
     });
 
@@ -185,7 +166,6 @@ export default async function handler(req, res) {
     return res.status(500).json({
       success: false,
       error: error.message || 'Failed to create question',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 }
