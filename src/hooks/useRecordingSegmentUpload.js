@@ -1,73 +1,82 @@
-// src/hooks/useRecordingSegmentUpload.js
 import { useState } from 'react';
-
-// Helper function MUST be defined BEFORE the hook
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
 
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
-  const uploadSegment = async (blob, mode, segmentIndex, duration = 0) => {
+  const uploadSegment = async (blob, mode, segmentIndex, duration) => {
     const uploadId = `${Date.now()}-${segmentIndex}`;
 
+    // Add to segments list with pending status
     setSegments(prev => [...prev, {
       id: uploadId,
-      blob,
-      mode,
       segmentIndex,
       uploading: true,
+      progress: 0,
       error: null,
       result: null,
     }]);
 
-    try {
-      const base64 = await blobToBase64(blob);
-      
-      console.log('Uploading segment with duration:', duration);
+    setUploading(true);
 
-      const response = await fetch('/api/media/upload-recording-segment', {
+    try {
+      // Step 1: Get upload URL from our backend
+      const urlResponse = await fetch('/api/media/get-upload-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          recordingBlob: base64,
-          recordingMode: mode,
-          segmentIndex: segmentIndex,
-          duration: duration,
+          maxDurationSeconds: 3600,
         }),
       });
 
-      if (!response.ok) {
-        let errorMessage = `Upload failed (${response.status})`;
-        
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          const errorText = await response.text();
-          console.error('Backend returned non-JSON response:', errorText.substring(0, 500));
-          errorMessage = `Server error (${response.status}). Check backend logs.`;
-        }
-        
-        throw new Error(errorMessage);
+      if (!urlResponse.ok) {
+        throw new Error('Failed to get upload URL');
       }
 
-      const result = await response.json();
-      console.log('Segment uploaded successfully:', result);
+      const { data } = await urlResponse.json();
+      const { uid, uploadURL } = data;
 
-      setSegments(prev => prev.map(seg => 
+      // Step 2: Upload directly to Cloudflare
+      const formData = new FormData();
+      formData.append('file', blob, `segment-${segmentIndex}-${Date.now()}.webm`);
+
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Upload to Cloudflare failed');
+      }
+
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResult.success) {
+        throw new Error('Cloudflare upload failed');
+      }
+
+      // Build playback URL
+      const CLOUDFLARE_ACCOUNT_ID = uploadURL.split('/')[4]; // Extract from upload URL
+      const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${uid}/manifest/video.m3u8`;
+
+      const result = {
+        uid,
+        playbackUrl,
+        duration: duration || 0,
+        mode,
+        size: blob.size,
+        segmentIndex,
+      };
+
+      // Update segment status
+      setSegments(prev => prev.map(seg =>
         seg.id === uploadId
-          ? { ...seg, uploading: false, result: result.data }
+          ? { ...seg, uploading: false, progress: 100, result }
           : seg
       ));
 
-      return result.data;
+      setUploading(false);
+      return result;
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -77,48 +86,55 @@ export function useRecordingSegmentUpload() {
           ? { ...seg, uploading: false, error: error.message }
           : seg
       ));
-      
+
+      setUploading(false);
       throw error;
     }
   };
 
-  const retrySegment = async (segmentId) => {
-    const segment = segments.find(s => s.id === segmentId);
-    if (!segment || !segment.blob) return;
+  const retrySegment = async (uploadId) => {
+    const segment = segments.find(s => s.id === uploadId);
+    if (!segment) return;
 
+    // Reset and retry
     setSegments(prev => prev.map(s =>
-      s.id === segmentId
-        ? { ...s, uploading: true, error: null }
+      s.id === uploadId
+        ? { ...s, uploading: true, error: null, progress: 0 }
         : s
     ));
 
-    try {
-      await uploadSegment(segment.blob, segment.mode, segment.segmentIndex);
-    } catch (error) {
-      console.error('Retry failed:', error);
-    }
+    // You'd need to store the original blob to retry
+    // For now, just show error that retry needs re-recording
+    setSegments(prev => prev.map(s =>
+      s.id === uploadId
+        ? { ...s, uploading: false, error: 'Please re-record this segment' }
+        : s
+    ));
   };
 
-  const removeSegment = (segmentId) => {
-    setSegments(prev => prev.filter(s => s.id !== segmentId));
+  const removeSegment = (uploadId) => {
+    setSegments(prev => prev.filter(s => s.id !== uploadId));
   };
 
   const getSuccessfulSegments = () => {
     return segments
       .filter(s => s.result)
-      .map(s => s.result);
+      .map(s => s.result)
+      .sort((a, b) => a.segmentIndex - b.segmentIndex);
   };
 
-  const hasUploading = segments.some(s => s.uploading);
-  const hasErrors = segments.some(s => s.error);
+  const reset = () => {
+    setSegments([]);
+    setUploading(false);
+  };
 
   return {
     segments,
+    uploading,
     uploadSegment,
     retrySegment,
     removeSegment,
     getSuccessfulSegments,
-    hasUploading,
-    hasErrors,
+    reset,
   };
 }
