@@ -188,11 +188,11 @@ function ExpertDashboardPage() {
         <div className="mb-4 lg:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* Clickable Avatar with Preview */}
+              {/* Clickable Avatar - Opens Profile Settings */}
               <button
-                onClick={() => setIsPreviewModalOpen(true)}
+                onClick={() => navigate('#profile-settings')}
                 className="flex-shrink-0 group relative"
-                title="Preview your public profile"
+                title="Edit your profile"
               >
                 {profile?.avatar_url ? (
                   <img 
@@ -208,8 +208,7 @@ function ExpertDashboardPage() {
                 {/* Hover indicator */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
                   <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </div>
               </button>
