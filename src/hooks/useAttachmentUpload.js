@@ -1,24 +1,14 @@
-// ============================================
-// FILE: src/hooks/useAttachmentUpload.js
-// Hook for progressive attachment upload
-// ============================================
+// src/hooks/useAttachmentUpload.js
 import { useState } from 'react';
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 export function useAttachmentUpload() {
   const [uploads, setUploads] = useState([]);
+  // uploads: [{ id, file, uploading, progress, error, result }]
 
   const uploadAttachment = async (file) => {
     const uploadId = `${Date.now()}-${file.name}`;
 
+    // Add to uploads list
     setUploads(prev => [...prev, {
       id: uploadId,
       file,
@@ -29,7 +19,14 @@ export function useAttachmentUpload() {
     }]);
 
     try {
+      // Convert to base64
       const base64 = await fileToBase64(file);
+
+      console.log('Uploading file:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
 
       const response = await fetch('/api/media/upload-attachment', {
         method: 'POST',
@@ -37,19 +34,31 @@ export function useAttachmentUpload() {
         body: JSON.stringify({
           file: {
             name: file.name,
-            type: file.type,
-            data: base64.split(',')[1],
+            type: file.type || 'application/octet-stream',  // ⭐ ENSURE type is always present
+            data: base64.split(',')[1], // Remove data URL prefix
           },
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
+        let errorMessage = `Upload failed (${response.status})`;
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          const errorText = await response.text();
+          console.error('Backend returned non-JSON:', errorText.substring(0, 500));
+          errorMessage = `Server error (${response.status})`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
+      console.log('File uploaded successfully:', result.data);
 
+      // Update upload state
       setUploads(prev => prev.map(upload => 
         upload.id === uploadId
           ? { ...upload, uploading: false, progress: 100, result: result.data }
@@ -59,11 +68,14 @@ export function useAttachmentUpload() {
       return result.data;
 
     } catch (error) {
+      console.error('Upload error:', error);
+      
       setUploads(prev => prev.map(upload =>
         upload.id === uploadId
           ? { ...upload, uploading: false, error: error.message }
           : upload
       ));
+      
       throw error;
     }
   };
@@ -72,12 +84,9 @@ export function useAttachmentUpload() {
     const upload = uploads.find(u => u.id === uploadId);
     if (!upload || !upload.file) return;
 
-    setUploads(prev => prev.map(u =>
-      u.id === uploadId
-        ? { ...u, uploading: true, error: null, progress: 0 }
-        : u
-    ));
-
+    // Remove old upload and try again
+    setUploads(prev => prev.filter(u => u.id !== uploadId));
+    
     try {
       await uploadAttachment(upload.file);
     } catch (error) {
@@ -100,4 +109,14 @@ export function useAttachmentUpload() {
     removeUpload,
     reset,
   };
+}
+
+// Helper function
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
