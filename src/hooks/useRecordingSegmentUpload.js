@@ -48,55 +48,23 @@ export function useRecordingSegmentUpload() {
   }]);
 
   try {
-    // Step 1: Get presigned upload URL
-    const urlResponse = await fetch('/api/media/get-upload-url', {
+    const uploadResponse = await fetch('/api/media/upload-to-r2', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        segmentIndex,
-        mode,
-        duration,
-      }),
-    });
-
-    if (!urlResponse.ok) {
-      throw new Error('Failed to get upload URL');
-    }
-
-    const { data: { uploadUrl, fileName } } = await urlResponse.json();
-
-    // Step 2: Upload directly to R2
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'PUT',
       headers: {
         'Content-Type': 'video/webm',
+        'X-Segment-Index': String(segmentIndex),
+        'X-Mode': mode,
+        'X-Duration': String(duration),
       },
       body: blob,
     });
 
     if (!uploadResponse.ok) {
-      throw new Error('R2 upload failed');
+      const error = await uploadResponse.json();
+      throw new Error(error.error || 'Upload failed');
     }
 
-    console.log('✅ Uploaded to R2:', fileName);
-
-    // Step 3: Trigger Stream transcoding
-    const streamResponse = await fetch('/api/media/trigger-stream', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fileName,
-        segmentIndex,
-        mode,
-        duration,
-      }),
-    });
-
-    if (!streamResponse.ok) {
-      throw new Error('Stream trigger failed');
-    }
-
-    const result = await streamResponse.json();
+    const result = await uploadResponse.json();
 
     setSegments(prev => prev.map(seg => 
       seg.id === uploadId
