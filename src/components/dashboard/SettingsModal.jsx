@@ -151,14 +151,6 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
   const currentExpertise = Array.isArray(formData.expertise) ? formData.expertise : [];
   const currentSocials = formData.socials || {};
 
-  // Debug charity values
-  useEffect(() => {
-    console.log('FormData charity values:', {
-      charity_percentage: formData.charity_percentage,
-      selected_charity: formData.selected_charity
-    });
-  }, [formData.charity_percentage, formData.selected_charity]);
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
       <div className="bg-white w-full max-w-xl rounded-xl shadow-2xl max-h-[85vh] flex flex-col">
