@@ -4,8 +4,8 @@
 // ============================================
 
 // ⭐ FIX: Change 'cloudflare' to 'claudflare'
-import { uploadMultipleToR2 } from '../lib/claudflare/r2.js';
-import { validateAttachment } from '../lib/claudflare/validator.js';
+import { uploadMultipleToR2 } from '../lib/cloudflare/r2.js';
+import { validateAttachment } from '../lib/cloudflare/validator.js';
 
 export default async function handler(req, res) {
   // CORS headers

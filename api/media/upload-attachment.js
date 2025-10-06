@@ -4,7 +4,7 @@
 // ============================================
 
 // ⭐ FIX: Change 'cloudflare' to 'claudflare'
-import { uploadToR2 } from '../lib/claudflare/r2.js';
+import { uploadToR2 } from '../lib/cloudflare/r2.js';
 
 export default async function handler(req, res) {
   // CORS headers
