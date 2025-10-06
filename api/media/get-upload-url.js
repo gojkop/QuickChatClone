@@ -1,13 +1,9 @@
-import axios from 'axios';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { maxDurationSeconds } = req.body;
-
     const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
     const CLOUDFLARE_STREAM_API_TOKEN = process.env.CLOUDFLARE_STREAM_API_TOKEN;
 
@@ -15,40 +11,22 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Cloudflare credentials not configured' });
     }
 
-    // Request a direct upload URL from Cloudflare
-    const response = await axios.post(
-      `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/direct_upload`,
-      {
-        maxDurationSeconds: maxDurationSeconds || 3600,
-        requireSignedURLs: false,
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.data.success) {
-      console.error('Cloudflare error:', response.data);
-      return res.status(500).json({ error: 'Failed to get upload URL' });
-    }
-
-    const { uid, uploadURL } = response.data.result;
+    // Just return the endpoint - let frontend upload with FormData
+    const uploadEndpoint = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream?direct_user=true`;
 
     return res.status(200).json({
       success: true,
       data: {
-        uid,
-        uploadURL,
+        uploadEndpoint,
+        token: CLOUDFLARE_STREAM_API_TOKEN,
+        accountId: CLOUDFLARE_ACCOUNT_ID,
       },
     });
 
   } catch (error) {
     console.error('Get upload URL error:', error.message);
     return res.status(500).json({
-      error: 'Failed to get upload URL',
+      error: 'Failed to get upload endpoint',
       details: error.message,
     });
   }
