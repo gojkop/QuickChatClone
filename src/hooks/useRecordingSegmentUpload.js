@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as tus from 'tus-js-client';
 
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
@@ -18,85 +19,96 @@ export function useRecordingSegmentUpload() {
 
     setUploading(true);
 
-    try {
-      // Step 1: Get upload URL from our backend
-      const urlResponse = await fetch('/api/media/get-upload-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          maxDurationSeconds: 3600,
-        }),
-      });
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Step 1: Get upload URL from backend
+        const urlResponse = await fetch('/api/media/get-upload-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            maxDurationSeconds: 3600,
+          }),
+        });
 
-      if (!urlResponse.ok) {
-        throw new Error('Failed to get upload URL');
+        if (!urlResponse.ok) {
+          throw new Error('Failed to get upload URL');
+        }
+
+        const { data } = await urlResponse.json();
+        const { uid, uploadURL } = data;
+
+        // Step 2: Upload using TUS protocol
+        const upload = new tus.Upload(blob, {
+          endpoint: uploadURL,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          metadata: {
+            filename: `segment-${segmentIndex}-${Date.now()}.webm`,
+            filetype: mode === 'video' ? 'video/webm' : 'audio/webm',
+          },
+          onError: (error) => {
+            console.error('TUS upload error:', error);
+            setSegments(prev => prev.map(seg =>
+              seg.id === uploadId
+                ? { ...seg, uploading: false, error: error.message }
+                : seg
+            ));
+            setUploading(false);
+            reject(error);
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+            setSegments(prev => prev.map(seg =>
+              seg.id === uploadId
+                ? { ...seg, progress: parseFloat(percentage) }
+                : seg
+            ));
+          },
+          onSuccess: () => {
+            console.log('Upload completed successfully');
+
+            // Extract account ID from upload URL
+            const accountId = uploadURL.split('/')[4];
+            const playbackUrl = `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`;
+
+            const result = {
+              uid,
+              playbackUrl,
+              duration: duration || 0,
+              mode,
+              size: blob.size,
+              segmentIndex,
+            };
+
+            setSegments(prev => prev.map(seg =>
+              seg.id === uploadId
+                ? { ...seg, uploading: false, progress: 100, result }
+                : seg
+            ));
+
+            setUploading(false);
+            resolve(result);
+          },
+        });
+
+        // Start the upload
+        upload.start();
+
+      } catch (error) {
+        console.error('Upload setup error:', error);
+        setSegments(prev => prev.map(seg =>
+          seg.id === uploadId
+            ? { ...seg, uploading: false, error: error.message }
+            : seg
+        ));
+        setUploading(false);
+        reject(error);
       }
-
-      const { data } = await urlResponse.json();
-      const { uid, uploadURL } = data;
-
-      // Step 2: Upload directly to Cloudflare using TUS protocol
-      const uploadResponse = await fetch(uploadURL, {
-        method: 'PUT',
-        body: blob,
-        headers: {
-          'Content-Type': 'application/octet-stream',
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
-      }
-
-      // TUS upload doesn't return JSON, just check status
-      // The video ID (uid) was already provided in step 1
-
-      // Extract account ID from upload URL
-      const accountId = uploadURL.split('/')[4];
-      const playbackUrl = `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`;
-
-      const result = {
-        uid,
-        playbackUrl,
-        duration: duration || 0,
-        mode,
-        size: blob.size,
-        segmentIndex,
-      };
-
-      setSegments(prev => prev.map(seg =>
-        seg.id === uploadId
-          ? { ...seg, uploading: false, progress: 100, result }
-          : seg
-      ));
-
-      setUploading(false);
-      return result;
-
-    } catch (error) {
-      console.error('Upload error:', error);
-      
-      setSegments(prev => prev.map(seg =>
-        seg.id === uploadId
-          ? { ...seg, uploading: false, error: error.message }
-          : seg
-      ));
-
-      setUploading(false);
-      throw error;
-    }
+    });
   };
 
   const retrySegment = async (uploadId) => {
     const segment = segments.find(s => s.id === uploadId);
     if (!segment) return;
-
-    setSegments(prev => prev.map(s =>
-      s.id === uploadId
-        ? { ...s, uploading: true, error: null, progress: 0 }
-        : s
-    ));
 
     setSegments(prev => prev.map(s =>
       s.id === uploadId
