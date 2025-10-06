@@ -55,46 +55,57 @@ export async function getCroppedImg(
     throw new Error('No 2d context');
   }
 
+  console.log('getCroppedImg called with:', { rotation, flip, pixelCrop });
+
   // Set canvas size to the desired output size (512x512 for optimal profile picture)
   const targetSize = 512;
   canvas.width = targetSize;
   canvas.height = targetSize;
 
-  // Calculate the center of the canvas
-  const centerX = targetSize / 2;
-  const centerY = targetSize / 2;
+  // Clear canvas
+  ctx.clearRect(0, 0, targetSize, targetSize);
 
   // Save the context state
   ctx.save();
 
-  // Move to center of canvas
-  ctx.translate(centerX, centerY);
+  // Move origin to center of canvas
+  ctx.translate(targetSize / 2, targetSize / 2);
 
-  // Apply rotation (convert degrees to radians)
+  // Apply rotation around center
   if (rotation !== 0) {
+    console.log('Applying rotation:', rotation);
     ctx.rotate((rotation * Math.PI) / 180);
   }
 
-  // Apply flip transforms
+  // Apply flip by scaling
   const scaleX = flip.horizontal ? -1 : 1;
   const scaleY = flip.vertical ? -1 : 1;
+  console.log('Applying flip scale:', { scaleX, scaleY });
   ctx.scale(scaleX, scaleY);
 
-  // Draw the cropped image centered and scaled to target size
+  // Draw image centered on the transformed canvas
+  // After transforms, we draw from center (negative half-size)
+  const drawX = -targetSize / 2;
+  const drawY = -targetSize / 2;
+  
+  console.log('Drawing image at:', { drawX, drawY, targetSize });
+  
   ctx.drawImage(
     image,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    -targetSize / 2,  // Draw from center
-    -targetSize / 2,
-    targetSize,
-    targetSize
+    pixelCrop.x,      // Source X
+    pixelCrop.y,      // Source Y
+    pixelCrop.width,  // Source Width
+    pixelCrop.height, // Source Height
+    drawX,            // Destination X (from center)
+    drawY,            // Destination Y (from center)
+    targetSize,       // Destination Width
+    targetSize        // Destination Height
   );
 
   // Restore context state
   ctx.restore();
+
+  console.log('Image drawn, converting to blob...');
 
   // Convert to blob with compression
   return new Promise((resolve, reject) => {
@@ -104,6 +115,7 @@ export async function getCroppedImg(
           reject(new Error('Canvas is empty'));
           return;
         }
+        console.log('Blob created, size:', blob.size);
         resolve(blob);
       },
       'image/webp', // Use WebP for better compression
