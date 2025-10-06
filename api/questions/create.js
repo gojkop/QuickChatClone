@@ -16,35 +16,46 @@ export default async function handler(req, res) {
     } = req.body;
 
     console.log('=== QUESTION CREATION ===');
-    console.log('Expert:', expertHandle);
-    console.log('Title:', title);
+    console.log('Expert handle:', expertHandle);
     console.log('Recording segments:', recordingSegments?.length || 0);
-    console.log('Attachments:', attachments?.length || 0);
 
-    // Build payer name
-    const payerName = [payerFirstName, payerLastName]
-      .filter(Boolean)
-      .join(' ') || null;
+    // 1. First, get the expert profile ID from the handle
+    console.log('Looking up expert profile ID...');
+    
+    const profileResponse = await fetch(
+      `${process.env.XANO_BASE_URL}/public/profile?handle=${encodeURIComponent(expertHandle)}`
+    );
 
-    // 1. Create question in Xano
-    const questionPayload = {
-      expert_handle: expertHandle,
-      title,
-      text: text || null,
-      payer_email: payerEmail,
-      payer_name: payerName,
-      status: 'paid', // or 'pending_payment' if payment is needed first
-    };
-
-    // Add attachments if any
-    if (attachments && attachments.length > 0) {
-      questionPayload.attachments = JSON.stringify(attachments);
+    if (!profileResponse.ok) {
+      throw new Error('Expert profile not found');
     }
 
-    console.log('Creating question in Xano...');
+    const profileData = await profileResponse.json();
+    const expertProfileId = profileData.expert_profile?.id || profileData.id;
+    const priceCents = profileData.expert_profile?.price_cents || profileData.price_cents;
+    const currency = profileData.expert_profile?.currency || profileData.currency || 'USD';
+    const slaHours = profileData.expert_profile?.sla_hours || profileData.sla_hours;
+
+    console.log('Expert profile ID:', expertProfileId);
+    console.log('Price:', priceCents, currency);
+
+    // 2. Create question in Xano with the correct fields
+    const questionPayload = {
+      expert_profile_id: expertProfileId,
+      payer_email: payerEmail,
+      price_cents: priceCents,
+      currency: currency,
+      status: 'paid', // or 'pending_payment'
+      sla_hours_snapshot: slaHours,
+      title: title,
+      text: text || null,
+      attachments: attachments && attachments.length > 0 ? JSON.stringify(attachments) : null,
+    };
+
+    console.log('Creating question with payload:', questionPayload);
 
     const questionResponse = await fetch(
-      `${process.env.XANO_BASE_URL}/questions`,
+      `${process.env.XANO_BASE_URL}/question`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +74,7 @@ export default async function handler(req, res) {
 
     console.log('✅ Question created with ID:', questionId);
 
-    // 2. Create media_asset records for each segment
+    // 3. Create media_asset records for each segment
     if (recordingSegments && recordingSegments.length > 0) {
       console.log(`Creating ${recordingSegments.length} media assets...`);
       
@@ -85,8 +96,6 @@ export default async function handler(req, res) {
           }),
         };
 
-        console.log(`Creating media asset ${i + 1}/${recordingSegments.length}...`);
-
         const mediaResponse = await fetch(
           `${process.env.XANO_BASE_URL}/media_assets`,
           {
@@ -99,10 +108,9 @@ export default async function handler(req, res) {
         if (!mediaResponse.ok) {
           const errorText = await mediaResponse.text();
           console.error(`Failed to create media asset ${i}:`, errorText);
-          // Continue with other segments even if one fails
         } else {
           const mediaAsset = await mediaResponse.json();
-          console.log(`✅ Media asset ${i + 1} created with ID:`, mediaAsset.id);
+          console.log(`✅ Media asset ${i + 1} created:`, mediaAsset.id);
         }
       }
     }
