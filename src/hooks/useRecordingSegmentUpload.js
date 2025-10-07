@@ -1,5 +1,5 @@
 // src/hooks/useRecordingSegmentUpload.js
-// COMPLETE FIXED VERSION - Uses FormData for Cloudflare
+// COMPLETE VERSION - Video to Stream, Audio to R2
 
 import { useState, useCallback } from 'react';
 
@@ -37,6 +37,52 @@ export function useRecordingSegmentUpload() {
     }]);
 
     try {
+      // ⭐ ROUTE BASED ON MODE
+      if (mode === 'audio') {
+        // === AUDIO UPLOAD TO R2 ===
+        console.log('🎤 Uploading audio to R2...');
+        
+        setSegments(prev => prev.map(s =>
+          s.id === segmentId ? { ...s, progress: 10 } : s
+        ));
+
+        const uploadResponse = await fetch('/api/media/upload-audio', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'audio/webm',
+          },
+          body: blob,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.error('❌ R2 audio upload error:', errorText);
+          throw new Error(`Audio upload failed: ${uploadResponse.status} - ${errorText}`);
+        }
+
+        const audioResult = await uploadResponse.json();
+        console.log('✅ Audio uploaded to R2:', audioResult.data);
+
+        const result = {
+          uid: audioResult.data.uid,
+          playbackUrl: audioResult.data.playbackUrl,
+          duration,
+          mode: 'audio',
+          size: blob.size,
+          segmentIndex,
+        };
+
+        setSegments(prev => prev.map(s =>
+          s.id === segmentId
+            ? { ...s, uploading: false, progress: 100, result }
+            : s
+        ));
+
+        console.log('✅ Audio segment complete:', result);
+        return result;
+      }
+
+      // === VIDEO/SCREEN UPLOAD TO STREAM (EXISTING CODE - UNCHANGED) ===
       // Step 1: Get upload URL from backend
       console.log('📡 Requesting upload URL...');
       

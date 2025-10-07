@@ -1,0 +1,627 @@
+# Xano API Endpoints for Answer System
+
+Complete guide for creating all required Xano endpoints.
+
+---
+
+## 1️⃣ Create Media Asset
+
+**Endpoint**: `POST /media_asset`  
+**Purpose**: Create a media_asset record after upload to Cloudflare
+
+### Input Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| uid | text | Yes | Cloudflare Stream/R2 UID |
+| url | text | Yes | Full playback URL |
+| duration | int | Yes | Duration in seconds |
+| type | text | Yes | 'video' or 'audio' |
+| size | int | Yes | File size in bytes |
+| mime_type | text | No | MIME type (e.g., 'video/webm') |
+| storage | text | Yes | 'stream' or 'r2' |
+
+### Function Stack
+
+```
+1. Add Record to media_asset table
+   - uid: input.uid
+   - url: input.url
+   - duration: input.duration
+   - type: input.type
+   - size: input.size
+   - mime_type: input.mime_type || null
+   - storage: input.storage
+   - created_at: Date.now()
+
+2. Response
+   - Return: created media_asset record
+```
+
+### Example Request
+
+```json
+POST /media_asset
+Content-Type: application/json
+
+{
+  "uid": "abc123xyz",
+  "url": "https://customer-xxx.cloudflarestream.com/abc123xyz/manifest/video.m3u8",
+  "duration": 847,
+  "type": "video",
+  "size": 5242880,
+  "mime_type": "video/webm",
+  "storage": "stream"
+}
+```
+
+### Example Response
+
+```json
+{
+  "id": 123,
+  "uid": "abc123xyz",
+  "url": "https://customer-xxx.cloudflarestream.com/abc123xyz/manifest/video.m3u8",
+  "duration": 847,
+  "type": "video",
+  "size": 5242880,
+  "mime_type": "video/webm",
+  "storage": "stream",
+  "created_at": 1696723456789
+}
+```
+
+---
+
+## 2️⃣ Create Answer
+
+**Endpoint**: `POST /answer`  
+**Purpose**: Create answer record after media and attachments are uploaded
+
+### Input Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| question_id | int | Yes | The question being answered |
+| user_id | int | Yes | Expert providing answer |
+| media_asset_id | int | No | Reference to media_asset if video/audio included |
+| text_response | text | No | Written answer text |
+| attachments | text | No | JSON string of attachment objects |
+
+### Validation Logic
+
+```javascript
+// Must have either media or text
+if (!input.media_asset_id && !input.text_response) {
+  return {
+    error: "Answer must include either media or text response"
+  }
+}
+
+// Verify question exists and is not already answered
+const question = var.questions.get(input.question_id)
+if (!question) {
+  return { error: "Question not found" }
+}
+if (question.answered_at) {
+  return { error: "Question already answered" }
+}
+```
+
+### Function Stack
+
+```
+1. Run Function: Validate Input (see above)
+
+2. Run Function: Generate Review Token
+   const timestamp = Date.now().toString(36)
+   const random = Math.random().toString(36).substring(2, 15)
+   var.review_token = timestamp + '-' + random
+
+3. Add Record to answer table
+   - question_id: input.question_id
+   - user_id: input.user_id
+   - media_asset_id: input.media_asset_id || null
+   - text_response: input.text_response || ""
+   - attachments: input.attachments || null
+   - review_token: var.review_token
+   - view_count: 0
+   - created_at: Date.now()
+   - sent_at: Date.now()
+
+4. Update question record
+   - question.status = "answered"
+   - question.answered_at = Date.now()
+
+5. Run Function: Send Email Notification (TODO)
+   - Email question.payer_email
+   - Include review link: /r/{review_token}
+
+6. Response
+   - Return answer with review_token
+```
+
+### Example Request
+
+```json
+POST /answer
+Content-Type: application/json
+
+{
+  "question_id": 123,
+  "user_id": 456,
+  "media_asset_id": 789,
+  "text_response": "Here's my detailed answer...",
+  "attachments": "[{\"name\":\"file.pdf\",\"url\":\"https://...\",\"size\":1024}]"
+}
+```
+
+### Example Response
+
+```json
+{
+  "id": 999,
+  "question_id": 123,
+  "user_id": 456,
+  "media_asset_id": 789,
+  "text_response": "Here's my detailed answer...",
+  "attachments": "[{\"name\":\"file.pdf\",\"url\":\"https://...\",\"size\":1024}]",
+  "review_token": "l7x9k2p-a8f3j5x",
+  "view_count": 0,
+  "created_at": 1696723456789,
+  "sent_at": 1696723456789,
+  "rating": null,
+  "feedback_text": null,
+  "feedback_at": null
+}
+```
+
+---
+
+## 3️⃣ Get Answer by Review Token
+
+**Endpoint**: `GET /answer/review/{review_token}`  
+**Purpose**: Public endpoint for viewing answer (no auth required)
+
+### URL Parameter
+
+- `review_token` - The unique token from email link
+
+### Function Stack
+
+```
+1. Get Record from answer table
+   - WHERE: review_token = {review_token}
+   - If not found: return 404
+
+2. Increment view_count
+   - answer.view_count = answer.view_count + 1
+
+3. Get Related question
+   - query: questions where id = answer.question_id
+
+4. Get Related media_asset (if exists)
+   - query: media_asset where id = answer.media_asset_id
+
+5. Get Related user (expert info)
+   - query: users where id = answer.user_id
+
+6. Parse attachments JSON
+   - var.attachments = JSON.parse(answer.attachments || "[]")
+
+7. Response
+   - Return combined data
+```
+
+### Example Request
+
+```
+GET /answer/review/l7x9k2p-a8f3j5x
+```
+
+### Example Response
+
+```json
+{
+  "answer": {
+    "id": 999,
+    "text_response": "Here's my detailed answer...",
+    "view_count": 5,
+    "rating": 5,
+    "feedback_text": "Great answer!",
+    "created_at": 1696723456789
+  },
+  "question": {
+    "id": 123,
+    "title": "How do I fix this bug?",
+    "text": "I'm getting an error...",
+    "attachments": [...]
+  },
+  "media": {
+    "id": 789,
+    "url": "https://customer-xxx.cloudflarestream.com/abc123xyz/manifest/video.m3u8",
+    "duration": 847,
+    "type": "video"
+  },
+  "expert": {
+    "id": 456,
+    "name": "Expert Name",
+    "handle": "experthandle",
+    "avatar_url": "https://..."
+  },
+  "attachments": [
+    {
+      "name": "file.pdf",
+      "url": "https://...",
+      "size": 1024
+    }
+  ]
+}
+```
+
+---
+
+## 4️⃣ Submit Feedback
+
+**Endpoint**: `POST /answer/review/{review_token}/feedback`  
+**Purpose**: Allow asker to rate and provide feedback
+
+### URL Parameter
+
+- `review_token` - Token from review link
+
+### Input Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| rating | int | Yes | 1-5 stars |
+| feedback_text | text | No | Written feedback |
+
+### Validation
+
+```javascript
+// Validate rating
+if (input.rating < 1 || input.rating > 5) {
+  return { error: "Rating must be between 1 and 5" }
+}
+
+// Check if already has feedback
+if (answer.feedback_at) {
+  return { error: "Feedback already submitted" }
+}
+```
+
+### Function Stack
+
+```
+1. Get Record from answer table
+   - WHERE: review_token = {review_token}
+   - If not found: return 404
+
+2. Run Function: Validate (see above)
+
+3. Update answer record
+   - rating: input.rating
+   - feedback_text: input.feedback_text || null
+   - feedback_at: Date.now()
+
+4. Run Function: Notify Expert (TODO)
+   - Email expert about feedback
+   - Include rating and feedback text
+
+5. Response
+   - Return success message
+```
+
+### Example Request
+
+```json
+POST /answer/review/l7x9k2p-a8f3j5x/feedback
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "feedback_text": "Excellent answer, very helpful!"
+}
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Feedback submitted successfully"
+}
+```
+
+---
+
+## 5️⃣ Get Answers by Question
+
+**Endpoint**: `GET /question/{question_id}/answers`  
+**Purpose**: Get all answers for a question (admin/debug use)
+
+### Function Stack
+
+```
+1. Query answer table
+   - WHERE: question_id = {question_id}
+   - ORDER BY: created_at DESC
+
+2. For each answer, get related media_asset
+
+3. Response
+   - Return array of answers with media
+```
+
+### Example Response
+
+```json
+[
+  {
+    "id": 999,
+    "user_id": 456,
+    "text_response": "...",
+    "created_at": 1696723456789,
+    "rating": 5,
+    "media": {
+      "url": "...",
+      "duration": 847
+    }
+  }
+]
+```
+
+---
+
+## 6️⃣ Get Expert's Answers
+
+**Endpoint**: `GET /expert/{user_id}/answers`  
+**Purpose**: Get all answers by an expert (for their dashboard)
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| limit | int | 20 | Number of results |
+| offset | int | 0 | Pagination offset |
+| status | text | all | Filter by question.status |
+
+### Function Stack
+
+```
+1. Query answer table
+   - WHERE: user_id = {user_id}
+   - ORDER BY: created_at DESC
+   - LIMIT: input.limit
+   - OFFSET: input.offset
+
+2. For each answer:
+   - Get related question
+   - Get related media_asset
+   - Parse attachments JSON
+
+3. Get total count
+   - COUNT(*) WHERE user_id = {user_id}
+
+4. Response
+   - Return answers array + pagination info
+```
+
+### Example Response
+
+```json
+{
+  "answers": [
+    {
+      "id": 999,
+      "question": {
+        "id": 123,
+        "title": "...",
+        "status": "answered"
+      },
+      "media": {...},
+      "created_at": 1696723456789,
+      "rating": 5,
+      "view_count": 12
+    }
+  ],
+  "pagination": {
+    "total": 45,
+    "limit": 20,
+    "offset": 0,
+    "has_more": true
+  }
+}
+```
+
+---
+
+## 7️⃣ Get Answer Statistics
+
+**Endpoint**: `GET /expert/{user_id}/stats`  
+**Purpose**: Get expert's answer statistics for dashboard
+
+### Function Stack
+
+```
+1. Count total answers
+   - SELECT COUNT(*) FROM answer WHERE user_id = {user_id}
+
+2. Calculate average rating
+   - SELECT AVG(rating) FROM answer 
+     WHERE user_id = {user_id} AND rating IS NOT NULL
+
+3. Count answers this month
+   - WHERE created_at > (start of current month)
+
+4. Get total views
+   - SELECT SUM(view_count) FROM answer WHERE user_id = {user_id}
+
+5. Response
+   - Return statistics object
+```
+
+### Example Response
+
+```json
+{
+  "total_answers": 45,
+  "average_rating": 4.7,
+  "answers_this_month": 12,
+  "total_views": 347,
+  "rating_distribution": {
+    "5": 30,
+    "4": 10,
+    "3": 3,
+    "2": 1,
+    "1": 1
+  }
+}
+```
+
+---
+
+## 🔐 Authentication
+
+### Public Endpoints (No Auth)
+- `GET /answer/review/{token}` - Anyone with link can view
+- `POST /answer/review/{token}/feedback` - Anyone with link can feedback
+
+### Authenticated Endpoints (API Key or JWT)
+- `POST /media_asset` - Vercel backend only
+- `POST /answer` - Vercel backend only
+- `GET /expert/{user_id}/answers` - Expert or admin only
+- `GET /expert/{user_id}/stats` - Expert or admin only
+
+---
+
+## 📊 Database Queries Summary
+
+### Frequently Used
+```sql
+-- Get answer by token (most common)
+SELECT * FROM answer WHERE review_token = ? LIMIT 1;
+
+-- Get expert's recent answers
+SELECT * FROM answer 
+WHERE user_id = ? 
+ORDER BY created_at DESC 
+LIMIT 20;
+
+-- Get unanswered questions
+SELECT * FROM question 
+WHERE status = 'pending_answer' 
+ORDER BY created_at ASC;
+```
+
+### Performance Indexes
+- `answer.review_token` (unique, btree)
+- `answer.user_id` (btree)
+- `answer.question_id` (btree)
+- `media_asset.uid` (unique, btree)
+
+---
+
+## 🧪 Test Sequence
+
+Test endpoints in this order:
+
+```bash
+# 1. Create media asset
+POST /media_asset
+→ Get media_asset_id
+
+# 2. Create answer
+POST /answer
+→ Get review_token
+
+# 3. View answer
+GET /answer/review/{review_token}
+→ Verify view_count increments
+
+# 4. Submit feedback
+POST /answer/review/{review_token}/feedback
+→ Verify rating saved
+
+# 5. Get expert answers
+GET /expert/{user_id}/answers
+→ Verify answer appears
+```
+
+---
+
+## 🔄 Error Handling
+
+All endpoints should return consistent error format:
+
+```json
+{
+  "error": "Descriptive error message",
+  "code": "ERROR_CODE",
+  "status": 400
+}
+```
+
+### Common Error Codes
+- `MISSING_PARAM` - Required parameter missing
+- `INVALID_TOKEN` - Review token not found
+- `ALREADY_ANSWERED` - Question already has answer
+- `ALREADY_RATED` - Feedback already submitted
+- `INVALID_RATING` - Rating not between 1-5
+
+---
+
+## 📧 Email Notifications (TODO)
+
+### When Answer Created
+```javascript
+// In POST /answer, after creating record
+sendEmail({
+  to: question.payer_email,
+  subject: "🎉 Your question has been answered!",
+  template: "answer_notification",
+  data: {
+    question_title: question.title,
+    expert_name: expert.name,
+    review_url: `${BASE_URL}/r/${review_token}`,
+    has_video: !!media_asset_id
+  }
+});
+```
+
+### When Feedback Received
+```javascript
+// In POST /answer/review/{token}/feedback, after saving
+sendEmail({
+  to: expert.email,
+  subject: "⭐ You received feedback on your answer",
+  template: "feedback_notification",
+  data: {
+    question_title: question.title,
+    rating: input.rating,
+    feedback_text: input.feedback_text
+  }
+});
+```
+
+---
+
+## ✅ Xano Setup Checklist
+
+- [ ] `answer` table updated with new columns
+- [ ] `media_asset` table created (or verified)
+- [ ] All indexes added
+- [ ] POST /media_asset endpoint created
+- [ ] POST /answer endpoint created
+- [ ] GET /answer/review/{token} endpoint created
+- [ ] POST /answer/review/{token}/feedback endpoint created
+- [ ] Test data inserted successfully
+- [ ] All endpoints tested with Postman
+- [ ] Ready for frontend integration
+
+---
+
+## 🎯 Next Step
+
+After creating these endpoints in Xano, we'll update the frontend API calls to match this structure.

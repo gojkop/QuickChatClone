@@ -1,0 +1,522 @@
+# Xano Database Setup for Answers
+
+Complete guide for setting up the answers system in Xano.
+
+---
+
+## Table: `answers`
+
+### Step-by-Step Creation
+
+1. Go to your Xano workspace
+2. Click "Database" → "Add Table"
+3. Name it `answers`
+4. Add the following fields:
+
+### Field Specifications
+
+| Field | Type | Settings | Default | Notes |
+|-------|------|----------|---------|-------|
+| **id** | Integer | Auto-increment, Primary Key | - | Unique answer ID |
+| **question_id** | Integer | Required, Indexed | - | Foreign key to questions table |
+| **expert_id** | Integer | Required, Indexed | - | Foreign key to users/experts table |
+| **text_response** | Text (Long) | Optional | "" | Written answer content |
+| **media_uid** | Text | Optional, Indexed | null | Cloudflare media UID |
+| **media_url** | Text | Optional | null | Full playback URL |
+| **media_duration** | Integer | Optional | 0 | Duration in seconds |
+| **media_type** | Text | Optional | null | 'video' or 'audio' |
+| **attachments** | JSON | Optional | [] | Array of attachment objects |
+| **status** | Text | Required | "submitted" | Answer status |
+| **view_count** | Integer | Required | 0 | Number of views |
+| **rating** | Integer | Optional | null | 1-5 star rating |
+| **feedback_text** | Text | Optional | null | Feedback from asker |
+| **feedback_at** | Timestamp | Optional | null | When feedback was given |
+| **created_at** | Timestamp | Required, Auto-generate | NOW() | Creation timestamp |
+| **updated_at** | Timestamp | Required, Auto-update | NOW() | Last update timestamp |
+
+---
+
+## Attachment JSON Structure
+
+The `attachments` field stores an array of objects:
+
+```json
+[
+  {
+    "name": "document.pdf",
+    "url": "https://pub-xxx.r2.dev/question-attachments/...",
+    "type": "application/pdf",
+    "size": 245760
+  },
+  {
+    "name": "image.png",
+    "url": "https://pub-xxx.r2.dev/question-attachments/...",
+    "type": "image/png",
+    "size": 102400
+  }
+]
+```
+
+---
+
+## Status Values
+
+The `status` field can have these values:
+
+| Status | Description |
+|--------|-------------|
+| `submitted` | Answer has been submitted by expert |
+| `viewed` | Asker has viewed the answer |
+| `rated` | Asker has provided rating/feedback |
+| `disputed` | Answer is under dispute/review |
+| `archived` | Answer is archived |
+
+---
+
+## API Endpoints to Create
+
+### 1. Create Answer (POST)
+
+**Endpoint**: `/answer`  
+**Method**: POST  
+**Auth**: API Key Required
+
+**Request Body**:
+```json
+{
+  "question_id": 123,
+  "expert_id": 456,
+  "text_response": "Here's my detailed answer...",
+  "media_uid": "abc123xyz",
+  "media_url": "https://customer-xxx.cloudflarestream.com/.../manifest/video.m3u8",
+  "media_duration": 847,
+  "media_type": "video",
+  "attachments": "[{\"name\":\"file.pdf\",\"url\":\"https://...\"}]"
+}
+```
+
+**Function Stack**:
+1. Add Record to `answers` table
+2. Run Function: "Update Question Status"
+   ```javascript
+   // Set question.status = 'answered'
+   // Set question.answered_at = NOW()
+   ```
+3. Run Function: "Send Answer Notification"
+   ```javascript
+   // Send email to question asker
+   // Include review link
+   ```
+4. Return created answer
+
+**Response**:
+```json
+{
+  "id": 789,
+  "question_id": 123,
+  "expert_id": 456,
+  "status": "submitted",
+  "created_at": 1696723456789
+}
+```
+
+---
+
+### 2. Get Answer by ID (GET)
+
+**Endpoint**: `/answer/{id}`  
+**Method**: GET  
+**Auth**: None (public with token)
+
+**Function Stack**:
+1. Get Record from `answers` where `id = {id}`
+2. Increment `view_count`
+3. If first view, set status to "viewed"
+4. Join with `questions` table
+5. Join with `users` table (expert info)
+6. Return answer with related data
+
+**Response**:
+```json
+{
+  "id": 789,
+  "question": {
+    "id": 123,
+    "title": "Question title...",
+    "text": "Question details..."
+  },
+  "expert": {
+    "id": 456,
+    "name": "Expert Name",
+    "handle": "experthandle",
+    "avatar_url": "https://..."
+  },
+  "text_response": "Answer text...",
+  "media_url": "https://...",
+  "media_duration": 847,
+  "media_type": "video",
+  "attachments": [...],
+  "status": "viewed",
+  "view_count": 1,
+  "created_at": 1696723456789
+}
+```
+
+---
+
+### 3. Submit Feedback (POST)
+
+**Endpoint**: `/answer/{id}/feedback`  
+**Method**: POST  
+**Auth**: Token from email link
+
+**Request Body**:
+```json
+{
+  "rating": 5,
+  "feedback_text": "Great answer, very helpful!"
+}
+```
+
+**Function Stack**:
+1. Get Record from `answers` where `id = {id}`
+2. Validate token matches answer
+3. Update fields:
+   - `rating = {rating}`
+   - `feedback_text = {feedback_text}`
+   - `feedback_at = NOW()`
+   - `status = 'rated'`
+4. Run Function: "Notify Expert of Feedback"
+5. Return updated answer
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Feedback submitted successfully"
+}
+```
+
+---
+
+### 4. Get Answers by Question (GET)
+
+**Endpoint**: `/question/{question_id}/answers`  
+**Method**: GET  
+**Auth**: API Key
+
+**Response**:
+```json
+[
+  {
+    "id": 789,
+    "expert": {...},
+    "created_at": 1696723456789,
+    "status": "rated",
+    "rating": 5
+  }
+]
+```
+
+---
+
+### 5. Get Answers by Expert (GET)
+
+**Endpoint**: `/expert/{expert_id}/answers`  
+**Method**: GET  
+**Auth**: API Key or JWT
+
+**Query Params**:
+- `status` - Filter by status
+- `limit` - Number of results (default: 20)
+- `offset` - Pagination offset
+
+**Response**:
+```json
+{
+  "answers": [
+    {
+      "id": 789,
+      "question": {...},
+      "created_at": 1696723456789,
+      "status": "rated",
+      "rating": 5,
+      "view_count": 12
+    }
+  ],
+  "total": 45,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+---
+
+## Table Relationships
+
+### Link to Questions
+
+1. In `answers` table, add relationship field `question`
+2. Type: One-to-One
+3. Related table: `questions`
+4. Foreign key: `question_id`
+
+### Link to Experts
+
+1. In `answers` table, add relationship field `expert`
+2. Type: One-to-One
+3. Related table: `users` or `experts`
+4. Foreign key: `expert_id`
+
+---
+
+## Indexes for Performance
+
+Add these indexes for better query performance:
+
+1. **question_id** - For finding answers to a question
+2. **expert_id** - For finding expert's answers
+3. **status** - For filtering by status
+4. **created_at** - For sorting by date
+5. **media_uid** - For looking up by Cloudflare UID
+
+---
+
+## Additional Tables
+
+### Table: `answer_review_tokens`
+
+For secure public access to answers:
+
+| Field | Type | Settings |
+|-------|------|----------|
+| id | Integer | Auto-increment, PK |
+| answer_id | Integer | Required, FK |
+| token | Text | Required, Unique, Indexed |
+| expires_at | Timestamp | Required |
+| used_count | Integer | Default: 0 |
+| created_at | Timestamp | Auto-generate |
+
+**Purpose**: Each answer gets a unique token for public viewing. Tokens can expire and be tracked.
+
+---
+
+## Validation Rules
+
+Add these in Xano function stack:
+
+### On Answer Creation:
+```javascript
+// Must have either media or text
+if (!input.media_uid && !input.text_response) {
+  return {
+    error: "Answer must include media or text response"
+  }
+}
+
+// Validate media_type
+if (input.media_uid) {
+  if (!['video', 'audio'].includes(input.media_type)) {
+    return {
+      error: "Invalid media_type. Must be 'video' or 'audio'"
+    }
+  }
+}
+
+// Validate duration
+if (input.media_duration > 900) {
+  return {
+    error: "Media duration cannot exceed 15 minutes (900 seconds)"
+  }
+}
+
+// Validate rating (if provided)
+if (input.rating && (input.rating < 1 || input.rating > 5)) {
+  return {
+    error: "Rating must be between 1 and 5"
+  }
+}
+```
+
+---
+
+## Update Questions Table
+
+After answer is submitted, update the question:
+
+```javascript
+// In answers.POST endpoint, add Function Stack step:
+// Update question status
+
+const question = xano.api.get('questions', input.question_id);
+xano.api.patch('questions', question.id, {
+  status: 'answered',
+  answered_at: Date.now(),
+  answer_id: created_answer.id
+});
+```
+
+---
+
+## Email Notifications
+
+### When Answer is Submitted
+
+**To**: Question asker  
+**Subject**: "🎉 Your question has been answered!"
+
+**Variables needed**:
+- Asker name
+- Expert name
+- Question title
+- Review link with token
+- Answer preview
+
+### When Feedback is Received
+
+**To**: Expert  
+**Subject**: "⭐ You received feedback on your answer"
+
+**Variables needed**:
+- Expert name
+- Question title
+- Rating (stars)
+- Feedback text
+- Link to view full feedback
+
+---
+
+## Migration from Old System
+
+If you have existing answers, migrate them:
+
+```sql
+-- Example migration query
+INSERT INTO answers (
+  question_id,
+  expert_id,
+  text_response,
+  status,
+  created_at
+)
+SELECT 
+  question_id,
+  expert_id,
+  answer_text,
+  'submitted',
+  created_date
+FROM old_answers_table;
+```
+
+---
+
+## Testing Data
+
+Create test answers for development:
+
+```json
+{
+  "question_id": 1,
+  "expert_id": 1,
+  "text_response": "This is a test answer with text only.",
+  "status": "submitted"
+}
+```
+
+```json
+{
+  "question_id": 2,
+  "expert_id": 1,
+  "media_uid": "test123",
+  "media_url": "https://customer-xxx.cloudflarestream.com/test123/manifest/video.m3u8",
+  "media_duration": 120,
+  "media_type": "video",
+  "text_response": "Additional written notes...",
+  "attachments": "[{\"name\":\"test.pdf\",\"url\":\"https://...\",\"size\":1024}]",
+  "status": "submitted"
+}
+```
+
+---
+
+## Monitoring Queries
+
+Useful queries for monitoring:
+
+### Answers per day
+```sql
+SELECT 
+  DATE(created_at) as date,
+  COUNT(*) as answer_count
+FROM answers
+GROUP BY DATE(created_at)
+ORDER BY date DESC
+LIMIT 30;
+```
+
+### Average rating
+```sql
+SELECT 
+  AVG(rating) as avg_rating,
+  COUNT(rating) as total_ratings
+FROM answers
+WHERE rating IS NOT NULL;
+```
+
+### Top experts by answers
+```sql
+SELECT 
+  expert_id,
+  COUNT(*) as answer_count,
+  AVG(rating) as avg_rating
+FROM answers
+GROUP BY expert_id
+ORDER BY answer_count DESC
+LIMIT 10;
+```
+
+### Unanswered questions
+```sql
+SELECT 
+  q.id,
+  q.title,
+  q.created_at
+FROM questions q
+LEFT JOIN answers a ON q.id = a.question_id
+WHERE a.id IS NULL
+AND q.status = 'pending'
+ORDER BY q.created_at ASC;
+```
+
+---
+
+## Backup Strategy
+
+Regularly backup answer data:
+
+1. **Daily**: Export answers table to JSON
+2. **Weekly**: Export media URLs and verify accessibility
+3. **Monthly**: Archive old answered questions
+
+---
+
+## Performance Optimization
+
+### Caching Strategy
+
+1. Cache answer records for 5 minutes
+2. Cache expert profile data for 1 hour
+3. Cache answer counts for 15 minutes
+4. Invalidate cache on new answer
+
+### CDN Configuration
+
+1. Cache media URLs at edge
+2. Set long TTL for uploaded media (30 days)
+3. Use separate domain for media
+
+---
+
+**Setup Complete**: ✅  
+**Ready for**: API Integration  
+**Next Step**: Create endpoints in Xano

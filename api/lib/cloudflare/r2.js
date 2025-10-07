@@ -12,9 +12,14 @@ export async function uploadToR2(buffer, key, contentType) {
   const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_KEY;
   const bucket = process.env.CLOUDFLARE_R2_BUCKET;
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const publicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL; // ⭐ USE CONFIGURED URL
 
   if (!accessKeyId || !secretAccessKey || !bucket || !accountId) {
     throw new Error('Cloudflare R2 credentials not configured');
+  }
+
+  if (!publicUrl) {
+    throw new Error('CLOUDFLARE_R2_PUBLIC_URL environment variable not configured');
   }
 
   const r2Client = new S3Client({
@@ -36,9 +41,15 @@ export async function uploadToR2(buffer, key, contentType) {
       })
     );
 
-    return `https://pub-${accountId}.r2.dev/${key}`;
+    // ⭐ USE CONFIGURED PUBLIC URL
+    const fullUrl = publicUrl.endsWith('/') 
+      ? `${publicUrl}${key}` 
+      : `${publicUrl}/${key}`;
+    
+    console.log('✅ R2 upload successful:', fullUrl);
+    return fullUrl;
   } catch (error) {
-    console.error('R2 upload error:', error);
+    console.error('❌ R2 upload error:', error);
     throw new Error(`Failed to upload to R2: ${error.message}`);
   }
 }
