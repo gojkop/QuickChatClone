@@ -74,32 +74,13 @@ export function useRecordingSegmentUpload() {
 
       // Step 2: Upload directly to Cloudflare using TUS v2+
       return new Promise((resolve, reject) => {
-        // Create unique fingerprint for this upload
-        const blobFingerprint = `cf-segment-${segmentIndex}-${blob.size}-${Date.now()}`;
-        
         const upload = new tus.Upload(blob, {
-          // Extract base URL (remove the upload ID part)
-          endpoint: uploadURL.substring(0, uploadURL.lastIndexOf('/')),
+          endpoint: uploadURL, // Use full pre-created Cloudflare URL
           retryDelays: [0, 3000, 5000, 10000, 20000],
           chunkSize: 5242880, // 5MB chunks
-          // Provide consistent fingerprint
-          fingerprint: () => Promise.resolve(blobFingerprint),
-          // Return Cloudflare's pre-created URL as a "resumed" upload
-          urlStorage: {
-            async findUploadsByFingerprint(fingerprint) {
-              // Tell TUS this upload already exists at Cloudflare's URL
-              if (fingerprint === blobFingerprint) {
-                return [uploadURL];
-              }
-              return [];
-            },
-            async removeUpload() {
-              // No cleanup needed
-            },
-            async addUpload() {
-              // Don't store anything
-            },
-          },
+          // Disable fingerprint storage to prevent creation attempts
+          storeFingerprintForResuming: false,
+          removeFingerprintOnSuccess: false,
 
           onError: (error) => {
             console.error('❌ TUS upload error:', {
