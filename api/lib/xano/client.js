@@ -16,6 +16,9 @@ const xanoClient = axios.create({
   },
 });
 
+// ⭐ ADD THIS EXPORT
+export { xanoClient };
+
 /**
  * Generic GET request
  */
@@ -54,3 +57,25 @@ export async function xanoPatch(endpoint, data) {
     throw new Error(`Xano API error: ${error.message}`);
   }
 }
+
+/**
+ * Generic DELETE request
+ */
+export async function xanoDelete(endpoint) {
+  try {
+    const response = await xanoClient.delete(endpoint);
+    return response.data;
+  } catch (error) {
+    console.error(`Xano DELETE ${endpoint} error:`, error.response?.data || error.message);
+    throw new Error(`Xano API error: ${error.message}`);
+  }
+}
+
+// ⭐ OR export as default
+export default {
+  get: xanoGet,
+  post: xanoPost,
+  patch: xanoPatch,
+  delete: xanoDelete,
+  client: xanoClient
+};

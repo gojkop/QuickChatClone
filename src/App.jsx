@@ -19,6 +19,8 @@ import InviteSentPage from '@/pages/InviteSentPage';
 import AskQuestionPage from '@/pages/AskQuestionPage';
 import QuestionSentPage from '@/pages/QuestionSentPage';
 import AnswerReviewPage from '@/pages/AnswerReviewPage';
+import TestAICoachPage from '@/pages/TestAICoachPage';
+
 
 
 // Import Common Components
@@ -58,6 +60,8 @@ const AppLayout = () => {
           <Route path="/question-sent" element={<QuestionSentPage />} />
           <Route path="/u/:handle" element={<PublicProfilePage />} />
           <Route path="/r/:token" element={<AnswerReviewPage />} />
+          <Route path="/test-ai-coach" element={<TestAICoachPage />} />
+
 
           
           {/* Auth Routes */}

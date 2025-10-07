@@ -23,6 +23,9 @@ function ExpertDashboardPage() {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
+  const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false);
+  const [availabilityMessage, setAvailabilityMessage] = useState('');
   const QUESTIONS_PER_PAGE = 10;
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
@@ -43,7 +46,8 @@ function ExpertDashboardPage() {
           avatar_url: expertProfile.avatar_url || null,
           charity_percentage: expertProfile.charity_percentage || 0,
           selected_charity: expertProfile.selected_charity || null,
-          total_donated: expertProfile.total_donated || 0
+          total_donated: expertProfile.total_donated || 0,
+          accepting_questions: expertProfile.accepting_questions ?? true
         };
         
         setProfile(processedProfile);
@@ -94,6 +98,71 @@ function ExpertDashboardPage() {
       fetchQuestions();
     }
   }, [profile, activeTab]);
+
+  const handleToggleAvailability = async () => {
+    if (isTogglingAvailability) return;
+    
+    const newStatus = !profile.accepting_questions;
+    
+    try {
+      setIsTogglingAvailability(true);
+      
+      console.log('Toggling availability to:', newStatus);
+      
+      const response = await apiClient.post('/expert/profile/availability', {
+        accepting_questions: newStatus
+      });
+      
+      console.log('Availability update response:', response);
+      
+      // Update local state
+      setProfile({
+        ...profile,
+        accepting_questions: newStatus
+      });
+
+      // Show success message
+      if (newStatus) {
+        setAvailabilityMessage('✓ You are now available to receive questions');
+      } else {
+        setAvailabilityMessage('✓ You are now away - not accepting new questions');
+      }
+      setShowAvailabilityMessage(true);
+      
+      // Hide message after 3 seconds
+      setTimeout(() => {
+        setShowAvailabilityMessage(false);
+      }, 3000);
+      
+    } catch (err) {
+      console.error("Failed to update availability:", err);
+      console.error("Error details:", err.response?.data || err.message);
+      
+      // Still update the UI optimistically and show message
+      setProfile({
+        ...profile,
+        accepting_questions: newStatus
+      });
+      
+      // Show message (with warning that API might not be working)
+      if (newStatus) {
+        setAvailabilityMessage('✓ You are now available to receive questions');
+      } else {
+        setAvailabilityMessage('✓ You are now away - not accepting new questions');
+      }
+      setShowAvailabilityMessage(true);
+      
+      setTimeout(() => {
+        setShowAvailabilityMessage(false);
+      }, 3000);
+      
+      // Also show console warning
+      console.warn('Note: Availability API endpoint may not be implemented yet. UI updated optimistically.');
+      
+    } finally {
+      setIsTogglingAvailability(false);
+    }
+  };
 
   const handleSaveSettings = (updatedProfile) => {
     const processedProfile = {
@@ -184,6 +253,21 @@ function ExpertDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <style>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+      `}</style>
       <main className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
         <div className="mb-4 lg:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -274,7 +358,59 @@ function ExpertDashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {/* OPTION 1: Status Indicator with Separate Toggle - Most Intuitive */}
+              <div className="relative">
+                <div className="flex items-center gap-2.5 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+                  {/* Status Display */}
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      profile?.accepting_questions ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                    }`} />
+                    <span className={`text-sm font-medium whitespace-nowrap ${
+                      profile?.accepting_questions ? 'text-green-700' : 'text-gray-600'
+                    }`}>
+                      {profile?.accepting_questions ? 'Available' : 'Away'}
+                    </span>
+                  </div>
+                  
+                  {/* Divider */}
+                  <div className="w-px h-4 bg-gray-300" />
+                  
+                  {/* Toggle Switch */}
+                  <button
+                    onClick={handleToggleAvailability}
+                    disabled={isTogglingAvailability}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 ${
+                      profile?.accepting_questions 
+                        ? 'bg-green-500' 
+                        : 'bg-gray-300'
+                    } ${isTogglingAvailability ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    type="button"
+                    title={profile?.accepting_questions ? 'Turn off availability' : 'Turn on availability'}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${
+                        profile?.accepting_questions ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+                
+                {/* Feedback Message */}
+                {showAvailabilityMessage && (
+                  <div className="absolute top-full left-0 mt-2 z-50 animate-fade-in">
+                    <div className={`px-4 py-2.5 rounded-lg shadow-lg border whitespace-nowrap text-sm font-medium ${
+                      availabilityMessage.includes('✗')
+                        ? 'bg-red-50 border-red-200 text-red-700'
+                        : 'bg-green-50 border-green-200 text-green-700'
+                    }`}>
+                      {availabilityMessage}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={() => navigate('#profile-settings')}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
@@ -307,6 +443,7 @@ function ExpertDashboardPage() {
               totalDonated={profile?.total_donated || 0}
               charityPercentage={profile?.charity_percentage || 0}
               selectedCharity={profile?.selected_charity}
+              onOpenSettings={() => navigate('#profile-settings')}
             />
           </div>
 

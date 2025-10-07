@@ -56,10 +56,25 @@ function AskQuestionPage() {
           throw new Error('This expert profile is private.');
         }
 
+        // Check if expert is accepting questions
+        const acceptingQuestionsValue = expertProfile?.accepting_questions;
+        const isAcceptingQuestions = acceptingQuestionsValue === true || 
+                                     acceptingQuestionsValue === 1 || 
+                                     acceptingQuestionsValue === '1' || 
+                                     acceptingQuestionsValue === 'true';
+
+        if (!isAcceptingQuestions) {
+          // Redirect to public profile with a message
+          console.log('Expert is not accepting questions, redirecting to profile...');
+          navigate(`/u/${handle}`, { replace: true });
+          return;
+        }
+
         setExpert({
           ...expertProfile,
           user: data?.user ?? expertProfile?.user,
           name: expertProfile?.name ?? data?.user?.name,
+          accepting_questions: isAcceptingQuestions,
         });
       } catch (err) {
         console.error("Failed to fetch expert profile:", err);
@@ -70,7 +85,7 @@ function AskQuestionPage() {
     };
 
     fetchExpertProfile();
-  }, [location.search]);
+  }, [location.search, navigate]);
 
   const handleContinueToReview = async () => {
     if (composerRef.current) {
