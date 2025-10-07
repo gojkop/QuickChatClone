@@ -443,6 +443,7 @@ function ExpertDashboardPage() {
               totalDonated={profile?.total_donated || 0}
               charityPercentage={profile?.charity_percentage || 0}
               selectedCharity={profile?.selected_charity}
+              onOpenSettings={() => navigate('#profile-settings')}
             />
           </div>
 
