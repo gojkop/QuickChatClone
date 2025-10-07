@@ -105,7 +105,7 @@ Respond in JSON format:
 
   return await callLLM(prompt, {
     temperature: 0.5,
-    max_tokens: 400,
+    max_tokens: 1000,  // ✅ INCREASED from 400
     requireJSON: true
   });
 }
@@ -143,7 +143,7 @@ Respond in JSON format:
 
   const result = await callLLM(prompt, {
     temperature: 0.7,
-    max_tokens: 500,
+    max_tokens: 1500,  // ✅ INCREASED from 500
     requireJSON: true
   });
 
