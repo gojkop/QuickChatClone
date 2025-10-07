@@ -268,6 +268,9 @@ function PublicProfilePage() {
         if (!socialsData || typeof socialsData !== 'object') {
           socialsData = {};
         }
+
+        // Handle accepting_questions field
+        const acceptingQuestions = coercePublic(ep.accepting_questions);
         
         setProfile({
           ...ep,
@@ -280,7 +283,8 @@ function PublicProfilePage() {
           charity_percentage: ep.charity_percentage ?? 0,
           selected_charity: ep.selected_charity ?? null,
           socials: socialsData,
-          expertise: expertiseData
+          expertise: expertiseData,
+          accepting_questions: acceptingQuestions
         });
       } catch (err) {
         setError(err.message || 'Could not load profile.');
@@ -293,6 +297,9 @@ function PublicProfilePage() {
   }, [handle]);
 
   const handleAskQuestion = () => {
+    if (profile && !profile.accepting_questions) {
+      return; // Don't navigate if not accepting questions
+    }
     navigate('/ask?expert=' + handle);
   };
 
@@ -426,6 +433,8 @@ function PublicProfilePage() {
       const hasSocials = profile.socials && Object.values(profile.socials).some(function(url) {
         return url && url.trim() !== '';
       });
+
+      const isAcceptingQuestions = profile.accepting_questions;
       
       return (
         <React.Fragment>
@@ -492,10 +501,20 @@ function PublicProfilePage() {
                   </div>
                   
                   {/* Activity indicator */}
-                  <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-gradient-to-br from-green-400 to-green-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
-                    </svg>
+                  <div className={`absolute -bottom-1 -right-1 w-9 h-9 rounded-full border-4 border-white shadow-lg flex items-center justify-center ${
+                    isAcceptingQuestions 
+                      ? 'bg-gradient-to-br from-green-400 to-green-500' 
+                      : 'bg-gradient-to-br from-yellow-400 to-yellow-500'
+                  }`}>
+                    {isAcceptingQuestions ? (
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
                   </div>
                 </div>
                 
@@ -585,10 +604,19 @@ function PublicProfilePage() {
                     </div>
                     <div className="text-xs text-gray-500">per answer</div>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 rounded-lg border border-green-200">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/>
-                    <span className="text-xs font-semibold text-green-700">{profile.sla_hours}h response</span>
-                  </div>
+                  {isAcceptingQuestions ? (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 rounded-lg border border-green-200">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/>
+                      <span className="text-xs font-semibold text-green-700">{profile.sla_hours}h response</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-yellow-50 rounded-lg border border-yellow-300">
+                      <svg className="w-3.5 h-3.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-xs font-semibold text-yellow-700">Not accepting</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2 text-xs text-gray-600">
@@ -611,6 +639,18 @@ function PublicProfilePage() {
                     <span>Money-back guarantee</span>
                   </div>
                 </div>
+
+                {/* Unavailable Notice */}
+                {!isAcceptingQuestions && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-start gap-2 text-xs text-gray-600">
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>This expert is currently not accepting new questions. Check back later!</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Charity Donation Section */}
@@ -629,12 +669,19 @@ function PublicProfilePage() {
           <div className="hidden md:block mt-6">
             <button
               onClick={handleAskQuestion}
-              className="w-full group bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-4 px-6 rounded-xl text-base hover:shadow-2xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+              disabled={!isAcceptingQuestions}
+              className={`w-full group font-bold py-4 px-6 rounded-xl text-base flex items-center justify-center gap-2 transition-all duration-300 ${
+                isAcceptingQuestions
+                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:shadow-2xl hover:from-indigo-700 hover:to-indigo-800 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+              }`}
             >
-              <span>Ask Your Question</span>
-              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-              </svg>
+              <span>{isAcceptingQuestions ? 'Ask Your Question' : 'Not Accepting Questions'}</span>
+              {isAcceptingQuestions && (
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+              )}
             </button>
           </div>
 
@@ -654,7 +701,7 @@ function PublicProfilePage() {
                     Ask {profile.name?.split(' ')[0] || handle}
                   </div>
                   <div className="text-xs text-gray-600">
-                    Responds in {profile.sla_hours}h
+                    {isAcceptingQuestions ? `Responds in ${profile.sla_hours}h` : 'Not accepting questions'}
                   </div>
                 </div>
                 <div className="text-right">
@@ -666,12 +713,19 @@ function PublicProfilePage() {
               
               <button
                 onClick={handleAskQuestion}
-                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                disabled={!isAcceptingQuestions}
+                className={`w-full font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
+                  isAcceptingQuestions
+                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white active:scale-[0.98]'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                }`}
               >
-                <span>Ask Your Question</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                </svg>
+                <span>{isAcceptingQuestions ? 'Ask Your Question' : 'Not Available'}</span>
+                {isAcceptingQuestions && (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                  </svg>
+                )}
               </button>
             </div>
           </div>
