@@ -578,7 +578,7 @@ function PublicProfilePage() {
               {/* Expertise Section - More prominent */}
               {profile.expertise && profile.expertise.length > 0 && (
                 <div className="space-y-3.5">
-                  <h3 className="text-sm font-bold text-gray-900 tracking-wide">Areas of Expertise</h3>
+                  <h3 className="text-sm font-bold text-gray-900 tracking-wide">Aske me about</h3>
                   <div className="flex flex-wrap gap-2">
                     {profile.expertise.slice(0, 6).map(function(field, index) {
                       return (
