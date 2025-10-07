@@ -14,6 +14,7 @@ function ExpertDashboardPage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [questions, setQuestions] = useState([]);
+  const [allQuestions, setAllQuestions] = useState([]); // Store all questions for count
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [error, setError] = useState('');
@@ -70,10 +71,30 @@ function ExpertDashboardPage() {
     }
   }, [location]);
 
+  // Fetch ALL questions once when profile loads
+  useEffect(() => {
+    const fetchAllQuestions = async () => {
+      if (!profile) return;
+      
+      try {
+        const response = await apiClient.get('/me/questions');
+        setAllQuestions(response.data || []);
+      } catch (err) {
+        console.error("Failed to fetch all questions:", err);
+      }
+    };
+
+    fetchAllQuestions();
+  }, [profile]);
+
+  // Fetch filtered questions when tab changes
   useEffect(() => {
     const fetchQuestions = async () => {
+      if (!profile) return;
+
       try {
         setIsLoadingQuestions(true);
+        
         const statusMap = {
           'pending': 'paid',
           'answered': 'answered',
@@ -94,9 +115,7 @@ function ExpertDashboardPage() {
       }
     };
 
-    if (profile) {
-      fetchQuestions();
-    }
+    fetchQuestions();
   }, [profile, activeTab]);
 
   const handleToggleAvailability = async () => {
@@ -202,7 +221,8 @@ function ExpertDashboardPage() {
     }
   };
 
-  const pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
+  // Calculate pending count from ALL questions (always use allQuestions, not filtered)
+  const pendingCount = allQuestions.filter(q => q.status === 'paid' && !q.answered_at).length;
 
   const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
   const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;

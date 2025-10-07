@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 
 function QuestionActionsDropdown({ question, onAction }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, openUpward: false });
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
@@ -18,21 +18,26 @@ function QuestionActionsDropdown({ question, onAction }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Check if dropdown should open upward
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - buttonRect.bottom;
-      const spaceAbove = buttonRect.top;
+  // Calculate dropdown position when opened
+  const handleToggle = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top;
       
-      // If less than 200px below and more space above, open upward
-      if (spaceBelow < 200 && spaceAbove > spaceBelow) {
-        setOpenUpward(true);
-      } else {
-        setOpenUpward(false);
-      }
+      // Dropdown height is approximately 120px (adjust based on content)
+      const dropdownHeight = isPending ? 120 : 80;
+      const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+      
+      setDropdownPosition({
+        top: shouldOpenUpward ? rect.top - dropdownHeight - 8 : rect.bottom + 8,
+        left: rect.right - 224, // 224px is dropdown width (56 * 4)
+        openUpward: shouldOpenUpward
+      });
     }
-  }, [isOpen]);
+    setIsOpen(!isOpen);
+  };
 
   const handleAction = (action) => {
     onAction(action, question);
@@ -42,38 +47,46 @@ function QuestionActionsDropdown({ question, onAction }) {
   const isPending = question.status === 'paid' && !question.answered_at;
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
-        title="More actions"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-        </svg>
-      </button>
+    <>
+      <div className="relative" ref={dropdownRef}>
+        <button
+          ref={buttonRef}
+          onClick={handleToggle}
+          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+          title="More actions"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+          </svg>
+        </button>
+      </div>
 
+      {/* Fixed position dropdown to prevent overflow */}
       {isOpen && (
         <div 
-          className={`absolute right-0 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 ${
-            openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
-          }`}
+          style={{
+            position: 'fixed',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            zIndex: 9999
+          }}
+          className="w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5"
         >
           <div className="py-1">
             {isPending && (
-              <button
-                onClick={() => handleAction('refund')}
-                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
-              >
-                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                </svg>
-                <span>Refund & Decline</span>
-              </button>
+              <>
+                <button
+                  onClick={() => handleAction('refund')}
+                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                >
+                  <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                  <span>Refund & Decline</span>
+                </button>
+                <div className="border-t border-gray-200 my-1"></div>
+              </>
             )}
-
-            {isPending && <div className="border-t border-gray-200 my-1"></div>}
 
             <button
               onClick={() => handleAction('delete')}
@@ -87,8 +100,8 @@ function QuestionActionsDropdown({ question, onAction }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
-export default QuestionActionsDropdown;
+export default QuestionActionsDropdown; 
