@@ -75,7 +75,7 @@ export function useRecordingSegmentUpload() {
       // Step 2: Upload directly to Cloudflare using TUS
       return new Promise((resolve, reject) => {
         const upload = new tus.Upload(blob, {
-          endpoint: uploadURL, // Cloudflare's CORS-enabled TUS endpoint
+          uploadUrl: uploadURL, // ✅ Use pre-created upload URL (not endpoint!)
           retryDelays: [0, 3000, 5000, 10000, 20000], // Retry strategy
           chunkSize: 5242880, // 5MB chunks for better reliability
           metadata: {
