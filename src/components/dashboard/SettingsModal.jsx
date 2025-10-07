@@ -87,21 +87,30 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       console.log('Removing avatar...');
       
       // Call the dedicated endpoint to clear avatar
+      // Try empty string if null doesn't work
       await apiClient.post('/upload/profile-picture', {
-        image_url: null
+        image_url: '' // or try null if backend is fixed
       });
+      
+      console.log('Avatar removal request sent');
+      
+      // Verify it was actually removed by fetching the profile
+      const verifyResponse = await apiClient.get('/me/profile');
+      console.log('Verified avatar after removal:', verifyResponse.data.avatar_url);
+      
+      if (verifyResponse.data.avatar_url) {
+        // Backend didn't clear it
+        throw new Error('Backend did not clear avatar. Check Xano configuration.');
+      }
       
       console.log('Avatar removed successfully');
       
       // Update local state
       setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }));
       localStorage.removeItem('qc_avatar');
-      
-      // Show success feedback (optional)
-      // You could add a toast notification here
     } catch (err) {
       console.error('Error removing avatar:', err);
-      setError('Failed to remove avatar. Please try again.');
+      setError('Failed to remove avatar. Backend may not support null values. Please contact support.');
     }
   };
 
