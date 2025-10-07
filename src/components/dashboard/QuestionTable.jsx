@@ -15,10 +15,14 @@ const hasAttachments = (question) => {
   }
 };
 
-// Helper to format time ago
+// Helper to format time ago - FIXED
 const getTimeAgo = (timestamp) => {
   const now = Date.now() / 1000;
-  const diff = now - timestamp;
+  
+  // Normalize timestamp: if it's in milliseconds (> year 2100 in seconds), convert it
+  const timestampSeconds = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
+  
+  const diff = now - timestampSeconds;
   
   if (diff < 60) return 'just now';
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -27,10 +31,14 @@ const getTimeAgo = (timestamp) => {
   return `${Math.floor(diff / 604800)}w ago`;
 };
 
-// Helper to format SLA remaining time
+// Helper to format SLA remaining time - FIXED
 const formatSLA = (slaHours, createdAt) => {
   const now = Date.now() / 1000;
-  const elapsed = now - createdAt;
+  
+  // Normalize createdAt: if it's in milliseconds (> year 2100 in seconds), convert it
+  const createdAtSeconds = createdAt > 4102444800 ? createdAt / 1000 : createdAt;
+  
+  const elapsed = now - createdAtSeconds;
   const slaSeconds = slaHours * 3600;
   const remaining = slaSeconds - elapsed;
   
