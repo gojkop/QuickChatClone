@@ -28,20 +28,23 @@ export function useRecordingSegmentUpload() {
 
       console.log(`📤 Uploading chunk: ${offset}-${chunkEnd}/${totalSize} (${isFirstChunk ? 'POST' : 'PATCH'})`);
 
-      // First chunk uses POST, subsequent chunks use PATCH
-      const method = isFirstChunk ? 'POST' : 'PATCH';
       const headers = {
-        'Content-Type': 'application/offset+octet-stream',
         'Tus-Resumable': '1.0.0',
       };
 
-      // Only add Upload-Offset for PATCH requests
-      if (!isFirstChunk) {
+      if (isFirstChunk) {
+        // First chunk: POST with Upload-Length and data
+        headers['Upload-Length'] = totalSize.toString();
+        headers['Content-Type'] = 'application/offset+octet-stream';
+        headers['Upload-Offset'] = '0';
+      } else {
+        // Subsequent chunks: PATCH with Upload-Offset
+        headers['Content-Type'] = 'application/offset+octet-stream';
         headers['Upload-Offset'] = offset.toString();
       }
 
       const response = await fetch(uploadURL, {
-        method,
+        method: isFirstChunk ? 'POST' : 'PATCH',
         headers,
         body: chunk,
       });
