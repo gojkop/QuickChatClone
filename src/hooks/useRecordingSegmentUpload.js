@@ -20,20 +20,29 @@ export function useRecordingSegmentUpload() {
     const chunkSize = 5 * 1024 * 1024; // 5MB chunks
     let offset = 0;
     const totalSize = blob.size;
+    let isFirstChunk = true;
 
     while (offset < totalSize) {
       const chunk = blob.slice(offset, offset + chunkSize);
       const chunkEnd = Math.min(offset + chunkSize, totalSize);
 
-      console.log(`📤 Uploading chunk: ${offset}-${chunkEnd}/${totalSize}`);
+      console.log(`📤 Uploading chunk: ${offset}-${chunkEnd}/${totalSize} (${isFirstChunk ? 'POST' : 'PATCH'})`);
+
+      // First chunk uses POST, subsequent chunks use PATCH
+      const method = isFirstChunk ? 'POST' : 'PATCH';
+      const headers = {
+        'Content-Type': 'application/offset+octet-stream',
+        'Tus-Resumable': '1.0.0',
+      };
+
+      // Only add Upload-Offset for PATCH requests
+      if (!isFirstChunk) {
+        headers['Upload-Offset'] = offset.toString();
+      }
 
       const response = await fetch(uploadURL, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/offset+octet-stream',
-          'Upload-Offset': offset.toString(),
-          'Tus-Resumable': '1.0.0',
-        },
+        method,
+        headers,
         body: chunk,
       });
 
@@ -47,6 +56,8 @@ export function useRecordingSegmentUpload() {
       onProgress(percentage, offset, totalSize);
 
       console.log(`✅ Chunk uploaded: ${percentage}%`);
+      
+      isFirstChunk = false;
     }
 
     console.log('🎉 All chunks uploaded successfully!');
