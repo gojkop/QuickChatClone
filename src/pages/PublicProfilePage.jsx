@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '@/api';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 
 // Helper to format price from cents
 const formatPrice = (cents, currency = 'USD') => {
@@ -269,7 +272,6 @@ function PublicProfilePage() {
           socialsData = {};
         }
 
-        // Handle accepting_questions field
         const acceptingQuestions = coercePublic(ep.accepting_questions);
         
         setProfile({
@@ -298,7 +300,7 @@ function PublicProfilePage() {
 
   const handleAskQuestion = () => {
     if (profile && !profile.accepting_questions) {
-      return; // Don't navigate if not accepting questions
+      return;
     }
     navigate('/ask?expert=' + handle);
   };
@@ -441,7 +443,6 @@ function PublicProfilePage() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden">
             {/* Compact Header */}
             <div className="relative h-32 md:h-36 bg-gradient-to-br from-slate-50 via-gray-50 to-indigo-50 overflow-hidden">
-              {/* Subtle dot pattern */}
               <div className="absolute inset-0 opacity-20">
                 <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                   <defs>
@@ -453,7 +454,6 @@ function PublicProfilePage() {
                 </svg>
               </div>
               
-              {/* Subtle accent line at bottom */}
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50"/>
               
               {/* Share Button */}
@@ -479,7 +479,6 @@ function PublicProfilePage() {
               {/* Avatar Section */}
               <div className="flex items-start gap-4 -mt-16 md:-mt-18 relative z-10">
                 <div className="relative flex-shrink-0 group">
-                  {/* Subtle glow effect */}
                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-violet-400 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity"/>
                   
                   {profile.avatar_url ? (
@@ -542,7 +541,7 @@ function PublicProfilePage() {
                 )}
               </div>
 
-              {/* Name, Title - More prominent */}
+              {/* Name, Title */}
               <div className="space-y-2.5">
                 <div className="flex items-start gap-2.5 flex-wrap">
                   <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
@@ -566,19 +565,38 @@ function PublicProfilePage() {
                 )}
               </div>
 
-              {/* Bio Section - More prominent */}
+              {/* Bio Section with Markdown */}
               {profile.bio && (
-                <div className="prose prose-gray max-w-none">
-                  <p className="text-gray-700 leading-relaxed text-base">
+                <div className="prose prose-gray prose-sm max-w-none">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeSanitize]}
+                    components={{
+                      p: ({node, ...props}) => <p className="text-gray-700 leading-relaxed text-base mb-3 last:mb-0" {...props} />,
+                      strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                      em: ({node, ...props}) => <em className="italic" {...props} />,
+                      a: ({node, ...props}) => (
+                        <a 
+                          className="text-indigo-600 hover:text-indigo-700 font-medium hover:underline" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          {...props} 
+                        />
+                      ),
+                      ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3 text-gray-700" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-1 mb-3 text-gray-700" {...props} />,
+                      li: ({node, ...props}) => <li className="text-gray-700 text-base" {...props} />,
+                    }}
+                  >
                     {profile.bio}
-                  </p>
+                  </ReactMarkdown>
                 </div>
               )}
 
-              {/* Expertise Section - More prominent */}
+              {/* Expertise Section - Changed heading */}
               {profile.expertise && profile.expertise.length > 0 && (
                 <div className="space-y-3.5">
-                  <h3 className="text-sm font-bold text-gray-900 tracking-wide">Aske me about</h3>
+                  <h3 className="text-sm font-bold text-gray-900 tracking-wide">Ask me about</h3>
                   <div className="flex flex-wrap gap-2">
                     {profile.expertise.slice(0, 6).map(function(field, index) {
                       return (
@@ -640,7 +658,6 @@ function PublicProfilePage() {
                   </div>
                 </div>
 
-                {/* Unavailable Notice */}
                 {!isAcceptingQuestions && (
                   <div className="mt-3 pt-3 border-t border-gray-200">
                     <div className="flex items-start gap-2 text-xs text-gray-600">
@@ -676,7 +693,7 @@ function PublicProfilePage() {
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
               }`}
             >
-              <span>{isAcceptingQuestions ? 'Ask Your Question' : 'Temporary Not Accepting Questions'}</span>
+              <span>{isAcceptingQuestions ? 'Ask Your Question' : 'Temporarily Not Accepting Questions'}</span>
               {isAcceptingQuestions && (
                 <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
