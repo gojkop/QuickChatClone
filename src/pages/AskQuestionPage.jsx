@@ -112,7 +112,9 @@ function AskQuestionPage() {
         payerLastName: askerInfo.lastName || null,
         recordingSegments: questionData.recordingSegments || [],
         attachments: questionData.attachments || [],
-        slaHours: expert.sla_hours 
+        slaHours: expert.sla_hours,
+        sla_hours: expert.sla_hours 
+ 
       };
 
       console.log('Submitting question with payload:', {
@@ -120,7 +122,7 @@ function AskQuestionPage() {
         recordingSegments: payload.recordingSegments.length + ' segments',
         attachments: payload.attachments.length + ' attachments'
       });
-
+      
       const response = await fetch('/api/questions/create', {
         method: 'POST',
         headers: {
