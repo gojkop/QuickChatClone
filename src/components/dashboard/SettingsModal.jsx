@@ -1,15 +1,18 @@
-// client/src/components/dashboard/SettingsModal.jsx
 import React, { useState, useEffect } from 'react';
 import apiClient from '@/api';
 import AvatarUpload from './AvatarUpload';
 import CharityDonationSelector from './CharityDonationSelector';
 import CharitySelector from './CharitySelector';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 
 function SettingsModal({ isOpen, onClose, profile, onSave }) {
   const [formData, setFormData] = useState(profile);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [expertiseInput, setExpertiseInput] = useState('');
+  const [showBioPreview, setShowBioPreview] = useState(false);
 
   useEffect(() => {
     setFormData(profile);
@@ -86,14 +89,12 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
     try {
       console.log('Removing avatar...');
       
-      // Call the endpoint with null now that backend accepts it
       await apiClient.post('/upload/profile-picture', { 
         image_url: null 
       });
       
       console.log('Avatar removed successfully');
       
-      // Update local state
       setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }));
       localStorage.removeItem('qc_avatar');
       
@@ -116,18 +117,17 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         public: formData.isPublic,
         handle: formData.handle,
         currency: 'USD',
-        // Don't send avatar_url/avatar_key - they're managed via /upload/profile-picture endpoint
         professional_title: formData.professional_title || '',
         tagline: formData.tagline || '',
         expertise: Array.isArray(formData.expertise) ? formData.expertise : [],
         socials: formData.socials || {},
         charity_percentage: Number(formData.charity_percentage) || 0,
-        selected_charity: formData.selected_charity || null
+        selected_charity: formData.selected_charity || null,
+        accepting_questions: formData.accepting_questions
       };
 
       console.log('Saving payload:', payload);
 
-      // Update localStorage (avatar is handled separately via /upload/profile-picture)
       localStorage.setItem('qc_charity_percentage', formData.charity_percentage || 0);
       if (formData.selected_charity) {
         localStorage.setItem('qc_selected_charity', formData.selected_charity);
@@ -188,13 +188,11 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               <div className="space-y-4">
                 {/* Avatar - centered */}
                 <div className="flex flex-col items-center gap-2">
-                  {/* ALWAYS render AvatarUpload, just pass null when no avatar */}
                   <AvatarUpload 
                     currentAvatar={formData.avatar_url || null}
                     onChange={handleAvatarChange}
                   />
                   
-                  {/* Show remove button only if avatar exists */}
                   {formData.avatar_url && (
                     <button
                       type="button"
@@ -252,6 +250,30 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-indigo-600 peer-checked:to-violet-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-white/70 rounded-lg px-4 py-3 border border-green-200/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900">Accepting Questions</div>
+                        <div className="text-xs text-gray-600">Allow people to ask you questions</div>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                      <input 
+                        id="accepting_questions" 
+                        type="checkbox" 
+                        checked={formData.accepting_questions || false} 
+                        onChange={handleChange} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-green-600 peer-checked:to-emerald-600"></div>
                     </label>
                   </div>
                 </div>
@@ -334,22 +356,76 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-                  <textarea 
-                    id="bio" 
-                    rows="4" 
-                    value={formData.bio || ''} 
-                    onChange={handleChange} 
-                    maxLength="600" 
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-sm leading-relaxed"
-                    placeholder="Tell people about your expertise, experience, and what makes you uniquely qualified to help them..."
-                  />
-                  <div className="text-xs text-gray-400 text-right mt-1">{(formData.bio || '').length}/600</div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Bio <span className="text-xs text-gray-500">(Supports Markdown)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowBioPreview(!showBioPreview)}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                    >
+                      {showBioPreview ? (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                          Edit
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Preview
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {showBioPreview ? (
+                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg min-h-[120px]">
+                      <div className="prose prose-sm max-w-none prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-strong:font-bold">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeSanitize]}
+                        >
+                          {formData.bio || '*No bio yet. Start typing to see your formatted bio here.*'}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  ) : (
+                    <textarea 
+                      id="bio" 
+                      rows="5" 
+                      value={formData.bio || ''} 
+                      onChange={handleChange} 
+                      maxLength="600" 
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-sm leading-relaxed font-mono"
+                      placeholder="Tell people about your expertise. Use **bold**, *italic*, or [links](url) for formatting..."
+                    />
+                  )}
+                  
+                  <div className="flex items-center justify-between mt-1">
+                    <a 
+                      href="https://www.markdownguide.org/basic-syntax/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-gray-500 hover:text-indigo-600 flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Markdown guide
+                    </a>
+                    <div className="text-xs text-gray-400">{(formData.bio || '').length}/600</div>
+                  </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">Expertise Tags</label>
+                    <label className="block text-sm font-medium text-gray-700">Ask me about</label>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${currentExpertise.length >= 6 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
                       {currentExpertise.length}/6
                     </span>
