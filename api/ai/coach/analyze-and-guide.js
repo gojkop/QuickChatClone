@@ -23,14 +23,11 @@ export default async function handler(req, res) {
   try {
     console.log('[Tier 2] Starting AI analysis:', { sessionId, expert: expertProfile.name });
 
-    // ⭐ MOCK: Skip Xano session fetch for now
-    // In production, we'd fetch the session from Xano
-    const mockSession = {
-      initial_transcript: 'How should I price my SaaS?', // Mock data
-      tier_1_validation: { clarityScore: 65 }
-    };
-
-    const questionTitle = mockSession.initial_transcript;
+    // ⭐ MOCK: Use questionContext.title if provided, otherwise use mock
+    // In production, we'd fetch the actual session from Xano using sessionId
+    const questionTitle = questionContext?.title || 'How should I price my SaaS?';
+    
+    console.log('[Tier 2] Analyzing question:', questionTitle);
 
     // Generate AI analysis
     const analysis = await analyzeQuestion(
@@ -76,7 +73,8 @@ export default async function handler(req, res) {
     console.error('[Tier 2] Analysis failed:', error);
     return res.status(500).json({
       error: 'Analysis failed',
-      message: error.message
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
@@ -105,7 +103,7 @@ Respond in JSON format:
 
   return await callLLM(prompt, {
     temperature: 0.5,
-    max_tokens: 3000,  // ✅ Much higher to account for thinking tokens
+    max_tokens: 3000,
     requireJSON: true
   });
 }
@@ -143,7 +141,7 @@ Respond in JSON format:
 
   const result = await callLLM(prompt, {
     temperature: 0.7,
-    max_tokens: 3000,  // ✅ Much higher to account for thinking tokens
+    max_tokens: 3000,
     requireJSON: true
   });
 

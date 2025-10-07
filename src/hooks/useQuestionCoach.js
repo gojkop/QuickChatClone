@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 
-// ✅ Create a separate axios instance for Vercel serverless functions
 const vercelApi = axios.create({
-  baseURL: '/api', // Vercel functions are at /api/*
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,6 +14,9 @@ export function useQuestionCoach() {
   const [tier2Result, setTier2Result] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // ⭐ Store the question title so we can pass it to Tier 2
+  const [questionTitle, setQuestionTitle] = useState('');
   
   const getFingerprint = () => {
     const nav = navigator;
@@ -35,15 +37,19 @@ export function useQuestionCoach() {
     setError(null);
     
     try {
-      // ✅ Calls /api/ai/coach/quick-validate on Vercel
+      console.log('[Coach] Starting Tier 1 validation:', { title, expertId });
+      
       const result = await vercelApi.post('/ai/coach/quick-validate', {
         title,
         fingerprint: getFingerprint(),
         expertId
       });
       
+      console.log('[Coach] Tier 1 result:', result.data);
+      
       setSessionId(result.data.sessionId);
       setTier1Result(result.data);
+      setQuestionTitle(title); // ⭐ Store the title
       
       return result.data;
     } catch (err) {
@@ -55,7 +61,7 @@ export function useQuestionCoach() {
     }
   };
   
-  const getCoaching = async (expertProfile, questionContext = null) => {
+  const getCoaching = async (expertProfile, additionalContext = null) => {
     if (!sessionId) {
       throw new Error('No session ID - validate question first');
     }
@@ -64,12 +70,19 @@ export function useQuestionCoach() {
     setError(null);
     
     try {
-      // ✅ Calls /api/ai/coach/analyze-and-guide on Vercel
+      console.log('[Coach] Starting Tier 2 coaching:', { sessionId, expertProfile });
+      
+      // ⭐ Pass the question title in questionContext
       const result = await vercelApi.post('/ai/coach/analyze-and-guide', {
         sessionId,
         expertProfile,
-        questionContext
+        questionContext: {
+          title: questionTitle, // ⭐ Include the title from Tier 1
+          text: additionalContext?.text || ''
+        }
       });
+      
+      console.log('[Coach] Tier 2 result:', result.data);
       
       setTier2Result(result.data);
       return result.data;
@@ -86,7 +99,7 @@ export function useQuestionCoach() {
     if (!sessionId) return;
     
     try {
-      // ✅ Calls /api/ai/coach/save-responses on Vercel
+      console.log('[Coach] Saving clarification responses:', responses);
       await vercelApi.post('/ai/coach/save-responses', {
         sessionId,
         responses
@@ -100,6 +113,7 @@ export function useQuestionCoach() {
     setSessionId(null);
     setTier1Result(null);
     setTier2Result(null);
+    setQuestionTitle('');
     setError(null);
   };
   
