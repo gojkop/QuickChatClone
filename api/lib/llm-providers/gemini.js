@@ -12,9 +12,9 @@ function getClient() {
 export async function callGemini(prompt, options = {}) {
   const client = getClient();
   
-  // Use gemini-2.5-pro (works on free tier)
+  // Use gemini-1.5-pro (no thinking mode, more reliable for JSON)
   const model = client.getGenerativeModel({ 
-    model: 'gemini-2.5-pro',
+    model: 'gemini-2.0-flash',
     generationConfig: {
       temperature: options.temperature || 0.7,
       maxOutputTokens: options.max_tokens || 2048,  // ✅ Increased default
