@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api from '../api/apiClient';
+import api from '@/api/apiClient';
 
 export function useQuestionCoach() {
   const [sessionId, setSessionId] = useState(null);
