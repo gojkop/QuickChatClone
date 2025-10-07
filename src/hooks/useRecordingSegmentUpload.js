@@ -79,11 +79,9 @@ export function useRecordingSegmentUpload() {
           uploadSize: blob.size, // Must specify size explicitly
           uploadDataDuringCreation: true, // Start upload immediately
           retryDelays: [0, 3000, 5000, 10000, 20000], // Retry strategy
-          chunkSize: 5242880, // 5MB chunks for better reliability
-          metadata: {
-            filename: `segment-${segmentIndex}-${Date.now()}.webm`,
-            filetype: mode === 'video' ? 'video/webm' : 'audio/webm',
-          },
+          chunkSize: 5242880, // 5MB chunks
+          // No metadata - Cloudflare Direct Upload already created with metadata
+
           onError: (error) => {
             console.error('❌ TUS upload error:', {
               segmentId,
