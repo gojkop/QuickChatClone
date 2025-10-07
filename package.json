@@ -21,7 +21,8 @@
     "@aws-sdk/client-s3": "^3.490.0",
     "@anthropic-ai/sdk": "^0.24.0",
     "@google/generative-ai": "^0.2.0",
-    "form-data": "^4.0.0"
+    "form-data": "^4.0.0",
+    "tus-js-client": "^4.2.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

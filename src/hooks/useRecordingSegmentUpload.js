@@ -1,121 +1,271 @@
-import { useState } from 'react';
+// ============================================================================
+// FILE 2: src/hooks/useRecordingSegmentUpload.js
+// ============================================================================
+// REPLACE YOUR EXISTING FILE with this TUS implementation
 
-// Helper function to convert blob to base64
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      // ⭐ FIX: Ensure we have the complete result
-      const result = reader.result;
-      console.log('FileReader result type:', typeof result);
-      console.log('FileReader result length:', result ? result.length : 0);
-      console.log('FileReader result preview:', result ? result.substring(0, 100) : 'null');
-      
-      if (!result) {
-        reject(new Error('FileReader returned empty result'));
-        return;
-      }
-      
-      resolve(result);
-    };
-    reader.onerror = () => {
-      reject(new Error('FileReader failed: ' + reader.error));
-    };
-    // ⭐ CRITICAL: Use readAsDataURL (not readAsText or readAsBinaryString)
-    reader.readAsDataURL(blob);
-  });
-}
+import { useState, useCallback } from 'react';
+import * as tus from 'tus-js-client';
 
+/**
+ * Hook for uploading video/audio segments using TUS protocol
+ * Uploads directly to Cloudflare Stream, bypassing Vercel's 4.5MB limit
+ */
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
-  const [uploading, setUploading] = useState(false);
+  // segments: [{ id, blob, mode, segmentIndex, duration, uploading, progress, error, result, uploadInstance }]
 
-  const uploadSegment = async (blob, mode, segmentIndex, duration) => {
-  console.log('=== UPLOAD SEGMENT CALLED ===');
-  console.log('Blob size:', blob.size);
-  
-  const uploadId = `${Date.now()}-${segmentIndex}`;
+  /**
+   * Upload a recording segment using TUS protocol
+   * @param {Blob} blob - The video/audio blob to upload
+   * @param {string} mode - 'video', 'audio', 'screen', or 'screen-camera'
+   * @param {number} segmentIndex - Index of this segment (0, 1, 2, etc.)
+   * @param {number} duration - Duration in seconds
+   */
+  const uploadSegment = useCallback(async (blob, mode, segmentIndex, duration) => {
+    const segmentId = `${Date.now()}-${segmentIndex}`;
 
-  setSegments(prev => [...prev, {
-    id: uploadId,
-    blob,
-    mode,
-    segmentIndex,
-    duration,
-    uploading: true,
-    error: null,
-    result: null,
-  }]);
-
-  try {
-    const uploadResponse = await fetch('/api/media/upload-to-r2', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'video/webm',
-        'X-Segment-Index': String(segmentIndex),
-        'X-Mode': mode,
-        'X-Duration': String(duration),
-      },
-      body: blob,
+    console.log('🚀 Starting TUS upload:', {
+      segmentId,
+      mode,
+      segmentIndex,
+      duration,
+      blobSize: blob.size,
+      blobType: blob.type,
     });
 
-    if (!uploadResponse.ok) {
-      const error = await uploadResponse.json();
-      throw new Error(error.error || 'Upload failed');
+    // Add to segments list with initial state
+    setSegments(prev => [...prev, {
+      id: segmentId,
+      blob,
+      mode,
+      segmentIndex,
+      duration,
+      uploading: true,
+      progress: 0,
+      error: null,
+      result: null,
+      uploadInstance: null,
+    }]);
+
+    try {
+      // Step 1: Get TUS upload URL from Cloudflare via our Vercel endpoint
+      console.log('📡 Requesting upload URL from Cloudflare...');
+      
+      const urlResponse = await fetch('/api/media/get-upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          maxDurationSeconds: 90,
+        }),
+      });
+
+      if (!urlResponse.ok) {
+        const error = await urlResponse.json();
+        throw new Error(error.error || 'Failed to get upload URL');
+      }
+
+      const { data: uploadData } = await urlResponse.json();
+      const { uploadURL, uid } = uploadData;
+
+      console.log('✅ Got upload URL:', {
+        uid,
+        uploadURL: uploadURL.substring(0, 50) + '...',
+      });
+
+      // Step 2: Upload directly to Cloudflare using TUS
+      return new Promise((resolve, reject) => {
+        const upload = new tus.Upload(blob, {
+          endpoint: uploadURL, // Cloudflare's CORS-enabled TUS endpoint
+          retryDelays: [0, 3000, 5000, 10000, 20000], // Retry strategy
+          chunkSize: 5242880, // 5MB chunks for better reliability
+          metadata: {
+            filename: `segment-${segmentIndex}-${Date.now()}.webm`,
+            filetype: mode === 'video' ? 'video/webm' : 'audio/webm',
+          },
+          onError: (error) => {
+            console.error('❌ TUS upload error:', {
+              segmentId,
+              error: error.message,
+              details: error,
+            });
+            
+            setSegments(prev => prev.map(segment =>
+              segment.id === segmentId
+                ? { ...segment, uploading: false, error: error.message }
+                : segment
+            ));
+            
+            reject(error);
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            
+            console.log('📊 Upload progress:', {
+              segmentId,
+              percentage,
+              bytesUploaded,
+              bytesTotal,
+            });
+            
+            setSegments(prev => prev.map(segment =>
+              segment.id === segmentId
+                ? { ...segment, progress: percentage }
+                : segment
+            ));
+          },
+          onSuccess: () => {
+            console.log('✅ TUS upload complete:', {
+              segmentId,
+              uid,
+              duration,
+            });
+
+            // Get Cloudflare Account ID from environment (Vite uses VITE_ prefix)
+            const accountId = import.meta.env.VITE_CLOUDFLARE_ACCOUNT_ID;
+            
+            // Construct the result object
+            const result = {
+              uid,
+              playbackUrl: accountId 
+                ? `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`
+                : `https://cloudflarestream.com/${uid}/manifest/video.m3u8`,
+              duration,
+              mode,
+              size: blob.size,
+              segmentIndex,
+            };
+
+            setSegments(prev => prev.map(segment =>
+              segment.id === segmentId
+                ? { ...segment, uploading: false, progress: 100, result }
+                : segment
+            ));
+
+            resolve(result);
+          },
+        });
+
+        // Store upload instance for potential cancellation
+        setSegments(prev => prev.map(segment =>
+          segment.id === segmentId
+            ? { ...segment, uploadInstance: upload }
+            : segment
+        ));
+
+        // Start the upload
+        console.log('⬆️ Starting TUS upload to Cloudflare...');
+        upload.start();
+      });
+
+    } catch (error) {
+      console.error('❌ Upload segment error:', error);
+      
+      setSegments(prev => prev.map(segment =>
+        segment.id === segmentId
+          ? { ...segment, uploading: false, error: error.message }
+          : segment
+      ));
+      
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Retry a failed segment upload
+   */
+  const retrySegment = useCallback(async (segmentId) => {
+    const segment = segments.find(s => s.id === segmentId);
+    if (!segment) {
+      console.warn('⚠️ Segment not found for retry:', segmentId);
+      return;
     }
 
-    const result = await uploadResponse.json();
+    console.log('🔄 Retrying segment:', segmentId);
 
-    setSegments(prev => prev.map(seg => 
-      seg.id === uploadId
-        ? { ...seg, uploading: false, result: result.data }
-        : seg
-    ));
-
-    return result.data;
-
-  } catch (error) {
-    console.error('Upload error:', error);
-    setSegments(prev => prev.map(seg =>
-      seg.id === uploadId
-        ? { ...seg, uploading: false, error: error.message }
-        : seg
-    ));
-    throw error;
-  }
-};
-
-  const retrySegment = (uploadId) => {
+    // Reset error state
     setSegments(prev => prev.map(s =>
-      s.id === uploadId
-        ? { ...s, error: 'Please re-record this segment' }
+      s.id === segmentId
+        ? { ...s, uploading: true, error: null, progress: 0 }
         : s
     ));
-  };
 
-  const removeSegment = (uploadId) => {
-    setSegments(prev => prev.filter(s => s.id !== uploadId));
-  };
+    try {
+      await uploadSegment(segment.blob, segment.mode, segment.segmentIndex, segment.duration);
+    } catch (error) {
+      console.error('❌ Retry failed:', error);
+    }
+  }, [segments, uploadSegment]);
 
-  const getSuccessfulSegments = () => {
+  /**
+   * Cancel an in-progress upload
+   */
+  const cancelSegment = useCallback((segmentId) => {
+    const segment = segments.find(s => s.id === segmentId);
+    
+    if (segment?.uploadInstance) {
+      segment.uploadInstance.abort();
+      console.log('🛑 Upload cancelled:', segmentId);
+    }
+
+    setSegments(prev => prev.filter(s => s.id !== segmentId));
+  }, [segments]);
+
+  /**
+   * Remove a segment from the list
+   */
+  const removeSegment = useCallback((segmentId) => {
+    console.log('🗑️ Removing segment:', segmentId);
+    setSegments(prev => prev.filter(s => s.id !== segmentId));
+  }, []);
+
+  /**
+   * Get all successfully uploaded segments
+   */
+  const getSuccessfulSegments = useCallback(() => {
     return segments
       .filter(s => s.result)
       .map(s => s.result)
       .sort((a, b) => a.segmentIndex - b.segmentIndex);
-  };
+  }, [segments]);
 
-  const reset = () => {
+  /**
+   * Reset all segments
+   */
+  const reset = useCallback(() => {
+    // Cancel any in-progress uploads
+    segments.forEach(segment => {
+      if (segment.uploadInstance) {
+        segment.uploadInstance.abort();
+      }
+    });
+    console.log('🔄 Reset: cleared all segments');
     setSegments([]);
-    setUploading(false);
-  };
+  }, [segments]);
+
+  /**
+   * Check if all uploads are complete
+   */
+  const allUploadsComplete = segments.length > 0 && 
+    segments.every(s => s.result || s.error);
+
+  /**
+   * Check if any uploads are in progress
+   */
+  const hasUploadsInProgress = segments.some(s => s.uploading);
+
+  // Expose hasUploading for backward compatibility with your existing code
+  const hasUploading = hasUploadsInProgress;
 
   return {
     segments,
-    uploading,
     uploadSegment,
     retrySegment,
+    cancelSegment,
     removeSegment,
     getSuccessfulSegments,
     reset,
+    allUploadsComplete,
+    hasUploadsInProgress,
+    hasUploading, // Backward compatibility
   };
 }
