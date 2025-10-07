@@ -2,10 +2,11 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
+import { InlineAICoach } from './InlineAICoach';
 
 const MAX_RECORDING_SECONDS = 90;
 
-const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
+const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, expertProfile }, ref) => {
   // Form state
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
@@ -20,13 +21,13 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
   const [facingMode, setFacingMode] = useState('user');
   const [isFlipping, setIsFlipping] = useState(false);
 
-  // ⭐ Calculate total duration from segments (NOT state, just computed!)
+  // Calculate total duration from segments
   const totalDuration = segments.reduce((sum, seg) => {
     const dur = (seg.duration >= 0) ? seg.duration : 0;
     return sum + dur;
   }, 0);
 
-  // ⭐ Progressive upload hooks
+  // Progressive upload hooks
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
 
@@ -201,28 +202,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     };
     
     mediaRecorderRef.current.onstop = () => {
-      // ⭐ ADD THESE DEBUG LOGS
-      console.log('=== RECORDING STOPPED ===');
-      console.log('Chunks collected:', chunks.length);
-      console.log('Chunk sizes:', chunks.map(c => c.size));
-      console.log('Total bytes in chunks:', chunks.reduce((sum, c) => sum + c.size, 0));
-      
       const blob = new Blob(chunks, { type: mimeType });
-      
-      // ⭐ ADD THESE DEBUG LOGS
-      console.log('Final blob size:', blob.size);
-      console.log('Final blob type:', blob.type);
-      
-      // Check magic bytes
-      const reader = new FileReader();
-      reader.onload = () => {
-        const arr = new Uint8Array(reader.result).slice(0, 4);
-        const magicBytes = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-        console.log('Blob magic bytes:', magicBytes);
-        console.log('Expected WebM magic bytes: 1a45dfa3');
-      };
-      reader.readAsArrayBuffer(blob.slice(0, 4));
-      
       const duration = Math.max(1, Math.floor((Date.now() - segmentStartTimeRef.current) / 1000));
       const url = URL.createObjectURL(blob);
       
@@ -311,13 +291,13 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
       
       setSegments(prev => [...prev, segmentData]);
       
-      // ⭐ Upload immediately in background WITH DURATION
+      // Upload immediately in background WITH DURATION
       try {
         await segmentUpload.uploadSegment(
           currentSegment.blob,
           currentSegment.mode,
           segments.length,
-          currentSegment.duration // ⭐ Pass duration!
+          currentSegment.duration
         );
         console.log('Segment uploaded successfully with duration:', currentSegment.duration);
       } catch (error) {
@@ -367,6 +347,14 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
     const newSegments = [...segments];
     [newSegments[index], newSegments[index + 1]] = [newSegments[index + 1], newSegments[index]];
     setSegments(newSegments);
+  };
+
+  // 🆕 Handle AI Coach suggestions
+  const handleApplyAISuggestions = (suggestions) => {
+    if (suggestions.additionalContext) {
+      // Append to existing text
+      setText(prev => (prev + suggestions.additionalContext).trim());
+    }
   };
 
   const handleProceedToReview = async () => {
@@ -885,6 +873,21 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false }, ref) => {
           </ul>
         )}
       </div>
+
+      {/* 🆕 AI COACH - At the end as final polish step */}
+      {expertId && expertProfile && title.trim() && (
+        <div className="pt-4 border-t-2 border-gray-200">
+          <InlineAICoach
+            questionTitle={title}
+            questionText={text}
+            recordingSegments={segments}
+            attachments={attachmentUpload.uploads.filter(u => u.result).map(u => u.result)}
+            expertId={expertId}
+            expertProfile={expertProfile}
+            onApplySuggestions={handleApplyAISuggestions}
+          />
+        </div>
+      )}
 
       {!hideButton && (
         <div>

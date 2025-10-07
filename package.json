@@ -23,7 +23,9 @@
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.0",
     "rehype-sanitize": "^6.0.0",
-    "form-data": "^4.0.0"
+    "form-data": "^4.0.0",
+     "lucide-react": "^0.263.1",
+    "tus-js-client": "^4.2.3"
 
   },
   "devDependencies": {
