@@ -80,8 +80,8 @@ export function ValidationFeedback({
         </div>
       )}
 
-      {/* AI Coaching Option */}
-      {!hasCriticalIssues && clarityScore < 80 && (
+      {/* AI Coaching Option - ✅ ALWAYS SHOW (removed condition) */}
+      {!hasCriticalIssues && (
         <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border-2 border-indigo-200 rounded-xl p-4">
           <div className="flex items-start gap-3 mb-3">
             <div className="flex-shrink-0">
@@ -91,7 +91,9 @@ export function ValidationFeedback({
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold text-indigo-900 mb-1">
-                Want help making this even better?
+                {clarityScore >= 80 
+                  ? 'Want even more specific guidance?' 
+                  : 'Want help making this even better?'}
               </h3>
               <p className="text-xs text-indigo-700">
                 Our AI coach can analyze your question and suggest specific clarifications that will help the expert give you the best possible answer.
