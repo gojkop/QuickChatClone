@@ -68,51 +68,23 @@ export async function uploadDocument(file, folder = 'documents') {
  * @returns {Promise<Object>} - { uid, thumbnail, playback, preview }
  */
 export async function uploadToStream(blob, metadata = {}) {
-  try {
-    // 1. Get a unique, one-time upload URL from your backend.
-    // This endpoint securely communicates with Cloudflare to generate the URL.
-    const urlResponse = await fetch('/api/media/get-upload-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ metadata }) // Send any metadata needed
-    });
+  const formData = new FormData();
+  formData.append('file', blob, 'recording.webm');
+  
+  if (metadata.title) formData.append('title', metadata.title);
+  if (metadata.userId) formData.append('userId', metadata.userId);
 
-    if (!urlResponse.ok) {
-      throw new Error('Could not get an upload URL.');
-    }
+  const response = await fetch('/api/upload/stream', {
+    method: 'POST',
+    body: formData,
+  });
 
-    const { uploadURL } = await urlResponse.json();
-
-    // 2. Upload the file DIRECTLY to the Cloudflare URL.
-    // Do NOT send this to your /api/ endpoint.
-    // Use the Blob directly as the body.
-    const uploadResponse = await fetch(uploadURL, {
-      method: 'POST',
-      body: blob,
-      headers: {
-        // Cloudflare's TUS protocol might require this
-        'Content-Type': 'application/offset+octet-stream'
-      }
-    });
-
-    if (!uploadResponse.ok) {
-      throw new Error('Direct upload to Cloudflare failed.');
-    }
-    
-    // 3. (Optional but Recommended) You can now get the video UID from the
-    // 'stream-media-id' header of the uploadResponse and notify your backend
-    // that the upload is complete, linking the video ID to your user.
-
-    const videoId = uploadResponse.headers.get('stream-media-id');
-    console.log('Successfully uploaded video with ID:', videoId);
-
-    // Return the result or handle it as needed
-    return { success: true, uid: videoId };
-
-  } catch (error) {
-    console.error('Stream upload process failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Stream upload failed');
   }
+
+  return response.json();
 }
 
 /**

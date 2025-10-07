@@ -1,64 +1,30 @@
-// ============================================================================
-// FILE: src/hooks/useRecordingSegmentUpload.js
-// ============================================================================
-// REPLACE ENTIRE FILE - Custom chunked uploader (no tus-js-client dependency)
-
+// src/hooks/useRecordingSegmentUpload.js
 import { useState, useCallback } from 'react';
 
 /**
- * Hook for uploading video/audio segments using custom chunked upload
- * Uploads directly to Cloudflare Stream, bypassing Vercel's 4.5MB limit
- * NO TUS CLIENT LIBRARY - uses raw fetch for full control
+ * Hook for uploading video/audio segments to Cloudflare Stream
+ * Uses Direct Creator Upload (simple POST)
  */
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
 
-  /**
-   * Upload entire blob in one request using POST
-   * Cloudflare Direct Creator Upload expects POST with full file
-   */
-  const uploadEntireFile = async (blob, uploadURL, segmentId, onProgress) => {
-    const totalSize = blob.size;
-
-    console.log(`📤 Uploading entire file: ${totalSize} bytes (${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
-
-    // Simulate progress (we can't track real progress with single upload)
-    onProgress(0, 0, totalSize);
-
-    const response = await fetch(uploadURL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/offset+octet-stream',
-        'Tus-Resumable': '1.0.0',
-      },
-      body: blob, // Send entire blob at once
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-    }
-
-    onProgress(100, totalSize, totalSize);
-    console.log('✅ Upload complete: 100%');
-  };
-
-  /**
-   * Upload a recording segment
-   */
   const uploadSegment = useCallback(async (blob, mode, segmentIndex, duration) => {
     const segmentId = `${Date.now()}-${segmentIndex}`;
 
-    console.log('🚀 Starting custom chunked upload:', {
+    console.log('🚀 Starting upload:', {
       segmentId,
       mode,
-      segmentIndex,
       duration,
       blobSize: blob.size,
       blobType: blob.type,
     });
 
-    // Add to segments list with initial state
+    // CRITICAL: Verify blob is valid
+    if (!blob || blob.size === 0) {
+      throw new Error('Invalid blob - size is 0 bytes. Recording may have failed.');
+    }
+
+    // Add to segments list
     setSegments(prev => [...prev, {
       id: segmentId,
       blob,
@@ -72,14 +38,19 @@ export function useRecordingSegmentUpload() {
     }]);
 
     try {
-      // Step 1: Get upload URL from Cloudflare
-      console.log('📡 Requesting upload URL from Cloudflare...');
+      // Step 1: Get upload URL from YOUR backend
+      console.log('📡 Requesting upload URL...');
       
       const urlResponse = await fetch('/api/media/get-upload-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           maxDurationSeconds: 90,
+          metadata: {
+            mode,
+            segmentIndex,
+            duration
+          }
         }),
       });
 
@@ -91,74 +62,72 @@ export function useRecordingSegmentUpload() {
       const { data: uploadData } = await urlResponse.json();
       const { uploadURL, uid } = uploadData;
 
-      console.log('✅ Got upload URL:', {
-        uid,
-        uploadURL: uploadURL.substring(0, 50) + '...',
+      console.log('✅ Got upload URL for video:', uid);
+
+      // Step 2: Upload DIRECTLY to Cloudflare
+      // ⚠️ CRITICAL: Send raw blob, no TUS headers for Direct Creator Upload
+      console.log('📤 Uploading to Cloudflare Stream...');
+      
+      setSegments(prev => prev.map(s =>
+        s.id === segmentId ? { ...s, progress: 10 } : s
+      ));
+
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'POST',
+        body: blob, // ✅ Raw blob - NO FormData, NO JSON
+        // ⚠️ Don't set Content-Type - let browser set it with boundary
       });
 
-      // Step 2: Upload entire file at once
-      await uploadEntireFile(
-        blob,
-        uploadURL,
-        segmentId,
-        (percentage, bytesUploaded, bytesTotal) => {
-          setSegments(prev => prev.map(segment =>
-            segment.id === segmentId
-              ? { ...segment, progress: percentage }
-              : segment
-          ));
-        }
-      );
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error('❌ Cloudflare upload failed:', errorText);
+        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
+      }
 
-      // Step 3: Success!
+      console.log('✅ Upload complete!');
+
+      // Step 3: Build result
       const accountId = import.meta.env.VITE_CLOUDFLARE_ACCOUNT_ID;
       
       const result = {
         uid,
         playbackUrl: accountId 
           ? `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`
-          : `https://cloudflarestream.com/${uid}/manifest/video.m3u8`,
+          : null,
         duration,
         mode,
         size: blob.size,
         segmentIndex,
       };
 
-      setSegments(prev => prev.map(segment =>
-        segment.id === segmentId
-          ? { ...segment, uploading: false, progress: 100, result }
-          : segment
+      setSegments(prev => prev.map(s =>
+        s.id === segmentId
+          ? { ...s, uploading: false, progress: 100, result }
+          : s
       ));
 
-      console.log('✅ Upload complete:', result);
+      console.log('✅ Segment uploaded:', result);
       return result;
 
     } catch (error) {
-      console.error('❌ Upload segment error:', error);
+      console.error('❌ Upload failed:', error);
       
-      setSegments(prev => prev.map(segment =>
-        segment.id === segmentId
-          ? { ...segment, uploading: false, error: error.message }
-          : segment
+      setSegments(prev => prev.map(s =>
+        s.id === segmentId
+          ? { ...s, uploading: false, error: error.message }
+          : s
       ));
       
       throw error;
     }
   }, []);
 
-  /**
-   * Retry a failed segment upload
-   */
   const retrySegment = useCallback(async (segmentId) => {
     const segment = segments.find(s => s.id === segmentId);
-    if (!segment) {
-      console.warn('⚠️ Segment not found for retry:', segmentId);
-      return;
-    }
+    if (!segment) return;
 
     console.log('🔄 Retrying segment:', segmentId);
 
-    // Reset error state
     setSegments(prev => prev.map(s =>
       s.id === segmentId
         ? { ...s, uploading: true, error: null, progress: 0 }
@@ -172,17 +141,10 @@ export function useRecordingSegmentUpload() {
     }
   }, [segments, uploadSegment]);
 
-  /**
-   * Remove a segment from the list
-   */
   const removeSegment = useCallback((segmentId) => {
-    console.log('🗑️ Removing segment:', segmentId);
     setSegments(prev => prev.filter(s => s.id !== segmentId));
   }, []);
 
-  /**
-   * Get all successfully uploaded segments
-   */
   const getSuccessfulSegments = useCallback(() => {
     return segments
       .filter(s => s.result)
@@ -190,27 +152,12 @@ export function useRecordingSegmentUpload() {
       .sort((a, b) => a.segmentIndex - b.segmentIndex);
   }, [segments]);
 
-  /**
-   * Reset all segments
-   */
   const reset = useCallback(() => {
-    console.log('🔄 Reset: cleared all segments');
     setSegments([]);
   }, []);
 
-  /**
-   * Check if all uploads are complete
-   */
-  const allUploadsComplete = segments.length > 0 && 
-    segments.every(s => s.result || s.error);
-
-  /**
-   * Check if any uploads are in progress
-   */
-  const hasUploadsInProgress = segments.some(s => s.uploading);
-
-  // Expose hasUploading for backward compatibility
-  const hasUploading = hasUploadsInProgress;
+  const hasUploading = segments.some(s => s.uploading);
+  const hasErrors = segments.some(s => s.error);
 
   return {
     segments,
@@ -219,8 +166,7 @@ export function useRecordingSegmentUpload() {
     removeSegment,
     getSuccessfulSegments,
     reset,
-    allUploadsComplete,
-    hasUploadsInProgress,
     hasUploading,
+    hasErrors,
   };
 }
