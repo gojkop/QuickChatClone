@@ -14,56 +14,34 @@ export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
 
   /**
-   * Upload a blob in chunks using TUS protocol via fetch
+   * Upload entire blob in one request using TUS protocol
+   * Cloudflare Direct Creator Upload expects full file, not chunks
    */
-  const uploadInChunks = async (blob, uploadURL, segmentId, onProgress) => {
-    const chunkSize = 5 * 1024 * 1024; // 5MB chunks
-    let offset = 0;
+  const uploadEntireFile = async (blob, uploadURL, segmentId, onProgress) => {
     const totalSize = blob.size;
-    let isFirstChunk = true;
 
-    while (offset < totalSize) {
-      const chunk = blob.slice(offset, offset + chunkSize);
-      const chunkEnd = Math.min(offset + chunkSize, totalSize);
+    console.log(`📤 Uploading entire file: ${totalSize} bytes (${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
 
-      console.log(`📤 Uploading chunk: ${offset}-${chunkEnd}/${totalSize} (${isFirstChunk ? 'POST' : 'PATCH'})`);
+    // Simulate progress (we can't track real progress with single upload)
+    onProgress(0, 0, totalSize);
 
-      const headers = {
+    const response = await fetch(uploadURL, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/offset+octet-stream',
+        'Upload-Offset': '0',
         'Tus-Resumable': '1.0.0',
-      };
+      },
+      body: blob, // Send entire blob at once
+    });
 
-      if (isFirstChunk) {
-        // First chunk: POST with Upload-Length and data
-        headers['Upload-Length'] = totalSize.toString();
-        headers['Content-Type'] = 'application/offset+octet-stream';
-        headers['Upload-Offset'] = '0';
-      } else {
-        // Subsequent chunks: PATCH with Upload-Offset
-        headers['Content-Type'] = 'application/offset+octet-stream';
-        headers['Upload-Offset'] = offset.toString();
-      }
-
-      const response = await fetch(uploadURL, {
-        method: isFirstChunk ? 'POST' : 'PATCH',
-        headers,
-        body: chunk,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Chunk upload failed: ${response.status} - ${errorText}`);
-      }
-
-      offset = chunkEnd;
-      const percentage = Math.round((offset / totalSize) * 100);
-      onProgress(percentage, offset, totalSize);
-
-      console.log(`✅ Chunk uploaded: ${percentage}%`);
-      
-      isFirstChunk = false;
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
     }
 
-    console.log('🎉 All chunks uploaded successfully!');
+    onProgress(100, totalSize, totalSize);
+    console.log('✅ Upload complete: 100%');
   };
 
   /**
@@ -119,8 +97,8 @@ export function useRecordingSegmentUpload() {
         uploadURL: uploadURL.substring(0, 50) + '...',
       });
 
-      // Step 2: Upload in chunks
-      await uploadInChunks(
+      // Step 2: Upload entire file at once
+      await uploadEntireFile(
         blob,
         uploadURL,
         segmentId,
