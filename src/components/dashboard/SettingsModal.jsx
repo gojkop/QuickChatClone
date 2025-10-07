@@ -82,37 +82,25 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
     setFormData(prev => ({ ...prev, selected_charity: charityId }));
   };
 
-  const handleRemoveAvatar = () => {
-    // TEMPORARY: Backend doesn't support removing avatars yet
-    setError('Cannot remove avatar: Backend endpoint needs to be configured. Please upload a new photo to replace the current one, or ask your developer to add support for deleting avatars (see console for details).');
-    
-    console.error('Backend Configuration Needed:');
-    console.error('The /upload/profile-picture endpoint returns 400 when receiving null or empty string.');
-    console.error('Solution 1: Create DELETE /me/avatar endpoint in Xano');
-    console.error('Solution 2: Modify /upload/profile-picture to accept null values without validation');
-    console.error('See: https://docs.xano.com for implementation details');
-    
-    // TODO: Once backend is fixed, replace above code with:
-    /*
-    async () => {
-      try {
-        console.log('Removing avatar...');
-        
-        // Option A: If using DELETE endpoint
-        await apiClient.delete('/me/avatar');
-        
-        // Option B: If /upload/profile-picture accepts null
-        // await apiClient.post('/upload/profile-picture', { image_url: null });
-        
-        console.log('Avatar removed successfully');
-        setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }));
-        localStorage.removeItem('qc_avatar');
-      } catch (err) {
-        console.error('Error removing avatar:', err);
-        setError('Failed to remove avatar. Please try again.');
-      }
+  const handleRemoveAvatar = async () => {
+    try {
+      console.log('Removing avatar...');
+      
+      // Call the endpoint with null now that backend accepts it
+      await apiClient.post('/upload/profile-picture', { 
+        image_url: null 
+      });
+      
+      console.log('Avatar removed successfully');
+      
+      // Update local state
+      setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }));
+      localStorage.removeItem('qc_avatar');
+      
+    } catch (err) {
+      console.error('Error removing avatar:', err);
+      setError('Failed to remove avatar. Please try again.');
     }
-    */
   };
 
   const handleSave = async (e) => {
