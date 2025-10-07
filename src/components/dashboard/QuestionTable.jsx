@@ -31,8 +31,13 @@ const getTimeAgo = (timestamp) => {
   return `${Math.floor(diff / 604800)}w ago`;
 };
 
-// Helper to format SLA remaining time - FIXED
+// Helper to format SLA remaining time - FIXED with null handling
 const formatSLA = (slaHours, createdAt) => {
+  // Handle null or undefined slaHours
+  if (!slaHours || slaHours <= 0) {
+    return <span className="text-gray-400">—</span>;
+  }
+
   const now = Date.now() / 1000;
   
   // Normalize createdAt: if it's in milliseconds (> year 2100 in seconds), convert it
