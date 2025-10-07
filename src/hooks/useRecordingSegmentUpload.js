@@ -77,7 +77,6 @@ export function useRecordingSegmentUpload() {
         const upload = new tus.Upload(blob, {
           endpoint: uploadURL, // Cloudflare Direct Upload URL (pre-created)
           uploadSize: blob.size, // Must specify size explicitly
-          uploadDataDuringCreation: true, // Start upload immediately
           retryDelays: [0, 3000, 5000, 10000, 20000], // Retry strategy
           chunkSize: 5242880, // 5MB chunks
           // No metadata - Cloudflare Direct Upload already created with metadata
