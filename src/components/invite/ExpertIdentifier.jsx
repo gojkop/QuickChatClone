@@ -4,57 +4,99 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
   const [identifier, setIdentifier] = useState(initialValue);
   const [detectedType, setDetectedType] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [expertExists, setExpertExists] = useState(null);
+  const [expertProfile, setExpertProfile] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (!identifier.trim()) {
       setDetectedType(null);
-      setExpertExists(null);
+      setExpertProfile(null);
       setErrorMessage('');
       return;
     }
 
     const value = identifier.trim();
 
+    // Email detection
     if (value.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       setDetectedType('email');
-      checkIfExpertExists(value);
+      setExpertProfile(null);
+      setErrorMessage('');
       return;
     }
 
+    // LinkedIn URL detection
     if (value.includes('linkedin.com/')) {
       setDetectedType('linkedin');
-      setExpertExists(null);
+      setExpertProfile(null);
+      setErrorMessage('');
       return;
     }
 
-    if (value.startsWith('@')) {
-      setDetectedType('social');
-      setExpertExists(null);
+    // QuickChat handle detection (@handle or handle)
+    const handleValue = value.startsWith('@') ? value.substring(1) : value;
+    
+    // Check if it looks like a handle (single word, no spaces, alphanumeric + hyphens/underscores)
+    if (/^[a-zA-Z0-9_-]+$/.test(handleValue)) {
+      setDetectedType('handle');
+      checkQuickChatHandle(handleValue);
       return;
     }
 
+    // Otherwise treat as name (multiple words or contains spaces)
     setDetectedType('name');
-    setExpertExists(null);
+    setExpertProfile(null);
+    setErrorMessage('');
   }, [identifier]);
 
-  const checkIfExpertExists = async (email) => {
+  const checkQuickChatHandle = async (handle) => {
     setIsChecking(true);
     setErrorMessage('');
+    setExpertProfile(null);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const exists = Math.random() < 0.2;
-      setExpertExists(exists);
+      const response = await fetch(
+        `https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/public/profile?handle=${encodeURIComponent(handle)}`
+      );
       
-      if (exists) {
-        setErrorMessage('This person is already on QuickChat! Redirecting to their profile...');
-        setTimeout(() => {
-        }, 2000);
+      if (response.ok) {
+        const data = await response.json();
+        const ep = data?.expert_profile ?? data;
+        
+        // Check if profile is public
+        const coercePublic = (val) => {
+          if (val === null || val === undefined) return false;
+          if (typeof val === 'boolean') return val;
+          if (typeof val === 'number') return val === 1;
+          if (typeof val === 'string') {
+            const v = val.trim().toLowerCase();
+            return v === '1' || v === 'true' || v === 't' || v === 'yes' || v === 'on';
+          }
+          return false;
+        };
+        
+        const publicValue = ep?.public ?? ep?.is_public ?? ep?.isPublic;
+        const isPublic = coercePublic(publicValue);
+        
+        if (isPublic) {
+          setExpertProfile({
+            handle: ep.handle,
+            name: ep.name,
+            title: ep.professional_title || ep.title,
+            avatar_url: ep.avatar_url
+          });
+        } else {
+          // Profile exists but is private - treat as name
+          setDetectedType('name');
+        }
+      } else {
+        // Handle doesn't exist - treat as name
+        setDetectedType('name');
       }
     } catch (error) {
-      console.error('Error checking expert:', error);
+      console.error('Error checking handle:', error);
+      // On error, treat as name
+      setDetectedType('name');
     } finally {
       setIsChecking(false);
     }
@@ -63,6 +105,11 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
   const handleContinue = () => {
     if (!identifier.trim()) {
       setErrorMessage('Please enter who you want to ask');
+      return;
+    }
+
+    // If expert exists on QuickChat, don't continue - user should use button to visit profile
+    if (expertProfile) {
       return;
     }
 
@@ -80,20 +127,21 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
       return value.split('@')[0].replace(/[._-]/g, ' ');
     }
     
-    if (detectedType === 'social') {
-      return value.substring(1);
-    }
-    
     if (detectedType === 'linkedin') {
       const match = value.match(/linkedin\.com\/in\/([^\/]+)/);
       return match ? match[1].replace(/-/g, ' ') : 'this person';
     }
+
+    if (detectedType === 'handle') {
+      return value.startsWith('@') ? value.substring(1) : value;
+    }
     
+    // For name type
     return value;
   };
 
   const getPlaceholder = () => {
-    return "email@example.com, @username, or LinkedIn URL";
+    return "Email, @handle, LinkedIn URL, or their name";
   };
 
   const getIconForType = () => {
@@ -110,10 +158,14 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
           </svg>
         );
-      case 'social':
-        return (
-          <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+      case 'handle':
+        return expertProfile ? (
+          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ) : (
+          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         );
       case 'name':
@@ -131,7 +183,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
     switch (detectedType) {
       case 'email': return 'Email detected';
       case 'linkedin': return 'LinkedIn profile';
-      case 'social': return 'Social handle';
+      case 'handle': return expertProfile ? 'Expert found on QuickChat!' : 'Checking handle...';
       case 'name': return 'Name';
       default: return null;
     }
@@ -141,7 +193,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Who would you like to ask?</h2>
-        <p className="text-gray-600">Enter their email, LinkedIn, social handle, or name</p>
+        <p className="text-gray-600">Enter their email, @handle, LinkedIn, or name</p>
       </div>
 
       <div className="space-y-4">
@@ -166,7 +218,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
           )}
         </div>
 
-        {detectedType && !errorMessage && !expertExists && (
+        {detectedType && !errorMessage && (
           <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
               {getIconForType()}
@@ -175,19 +227,59 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
           </div>
         )}
 
-        {expertExists && (
-          <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="flex-1">
-              <p className="font-semibold text-green-900">Great news!</p>
-              <p className="text-sm text-green-700 mt-1">This person is already on QuickChat. You can ask them directly without needing to invite them.</p>
+        {/* Expert Found on QuickChat */}
+        {expertProfile && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-5 shadow-sm">
+            <div className="flex items-start gap-4 mb-4">
+              {expertProfile.avatar_url ? (
+                <img 
+                  src={expertProfile.avatar_url} 
+                  alt={expertProfile.name}
+                  className="w-16 h-16 rounded-full object-cover ring-2 ring-green-200"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">
+                    {expertProfile.name?.charAt(0) || '?'}
+                  </span>
+                </div>
+              )}
+              
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-xl font-bold text-gray-900">{expertProfile.name}</h3>
+                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+                {expertProfile.title && (
+                  <p className="text-sm text-gray-700 font-medium">{expertProfile.title}</p>
+                )}
+                <p className="text-sm text-green-800 font-semibold mt-2">
+                  @{expertProfile.handle} is already on QuickChat!
+                </p>
+              </div>
             </div>
+
+            <div className="bg-white/80 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                <span className="font-semibold text-gray-900">Great news!</span> You can ask them directly without needing to send an invitation. Visit their profile to see their expertise and rates.
+              </p>
+            </div>
+
+            
+              href={`/@${expertProfile.handle}`}
+              className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
+            >
+              <span>Visit {expertProfile.name}'s Profile</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </a>
           </div>
         )}
 
-        {errorMessage && !expertExists && (
+        {errorMessage && (
           <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
             <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -200,6 +292,15 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <p className="text-sm font-semibold text-gray-700 mb-3">Examples:</p>
             <div className="space-y-2 text-sm text-gray-600">
+              <button 
+                onClick={() => setIdentifier('@johndoe')}
+                className="flex items-center gap-2 hover:text-indigo-600 transition"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>@johndoe (QuickChat handle)</span>
+              </button>
               <button 
                 onClick={() => setIdentifier('sarah@example.com')}
                 className="flex items-center gap-2 hover:text-indigo-600 transition"
@@ -219,25 +320,28 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
                 <span>linkedin.com/in/johndoe</span>
               </button>
               <button 
-                onClick={() => setIdentifier('@marketingpro')}
+                onClick={() => setIdentifier('Jane Smith')}
                 className="flex items-center gap-2 hover:text-indigo-600 transition"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span>@marketingpro</span>
+                <span>Jane Smith</span>
               </button>
             </div>
           </div>
         )}
 
-        <button
-          onClick={handleContinue}
-          disabled={!identifier.trim() || isChecking || expertExists}
-          className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-        >
-          {isChecking ? 'Checking...' : 'Continue'}
-        </button>
+        {/* Continue Button - Only show if expert NOT found */}
+        {!expertProfile && (
+          <button
+            onClick={handleContinue}
+            disabled={!identifier.trim() || isChecking}
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {isChecking ? 'Checking...' : 'Continue to Compose Question'}
+          </button>
+        )}
       </div>
     </div>
   );
