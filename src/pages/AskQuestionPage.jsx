@@ -111,7 +111,8 @@ function AskQuestionPage() {
         payerFirstName: askerInfo.firstName || null,
         payerLastName: askerInfo.lastName || null,
         recordingSegments: questionData.recordingSegments || [],
-        attachments: questionData.attachments || []
+        attachments: questionData.attachments || [],
+        slaHours: expert.sla_hours 
       };
 
       console.log('Submitting question with payload:', {
