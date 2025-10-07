@@ -12,7 +12,7 @@ function getClient() {
 export async function callGemini(prompt, options = {}) {
   const client = getClient();
   
-  // ✅ Use gemini-1.5-pro (works on both v1 and v1beta)
+  // Use gemini-2.5-pro (works on free tier)
   const model = client.getGenerativeModel({ 
     model: 'gemini-2.5-pro',
     generationConfig: {
@@ -23,7 +23,7 @@ export async function callGemini(prompt, options = {}) {
 
   // Add JSON instruction if needed
   const fullPrompt = options.requireJSON
-    ? `${prompt}\n\nIMPORTANT: Respond with ONLY valid JSON. No markdown, no explanation, just the JSON object.`
+    ? `${prompt}\n\nIMPORTANT: Respond with ONLY valid JSON. No markdown code blocks, no explanation, no extra text - just the raw JSON object starting with { and ending with }.`
     : prompt;
 
   const result = await model.generateContent(fullPrompt);
@@ -32,15 +32,31 @@ export async function callGemini(prompt, options = {}) {
 
   // Parse JSON if required
   if (options.requireJSON) {
-    // Clean up markdown if present
-    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    // Log the raw response for debugging
+    console.log('[Gemini] Raw response:', text.substring(0, 200));
+    
+    // Clean up markdown and extra text
+    text = text.trim();
+    
+    // Remove markdown code blocks
+    text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+    
+    // Try to extract JSON if there's extra text
+    // Look for content between first { and last }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      text = text.substring(firstBrace, lastBrace + 1);
+    }
     
     try {
       const parsed = JSON.parse(text);
       text = parsed; // Return parsed object
     } catch (e) {
-      console.error('Failed to parse Gemini JSON:', text);
-      throw new Error('Invalid JSON response from Gemini');
+      console.error('[Gemini] Failed to parse JSON:', text);
+      console.error('[Gemini] Parse error:', e.message);
+      throw new Error('Invalid JSON response from Gemini: ' + text.substring(0, 100));
     }
   }
 
