@@ -14,7 +14,7 @@ export async function callGemini(prompt, options = {}) {
   
   // ✅ Use gemini-1.5-pro (works on both v1 and v1beta)
   const model = client.getGenerativeModel({ 
-    model: 'gemini-1.5-pro',
+    model: 'gemini-2.5-pro',
     generationConfig: {
       temperature: options.temperature || 0.7,
       maxOutputTokens: options.max_tokens || 1024,
