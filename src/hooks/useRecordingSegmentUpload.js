@@ -1,5 +1,5 @@
 // src/hooks/useRecordingSegmentUpload.js
-// COMPLETE FIXED VERSION - Uses FormData for Cloudflare
+// UPDATED VERSION - Routes audio to R2, video to Stream
 
 import { useState, useCallback } from 'react';
 
@@ -37,74 +37,14 @@ export function useRecordingSegmentUpload() {
     }]);
 
     try {
-      // Step 1: Get upload URL from backend
-      console.log('📡 Requesting upload URL...');
-      
-      const urlResponse = await fetch('/api/media/get-upload-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          maxDurationSeconds: 90,
-        }),
-      });
-
-      if (!urlResponse.ok) {
-        const error = await urlResponse.json();
-        throw new Error(error.error || 'Failed to get upload URL');
+      // ⭐ ROUTE BASED ON MODE
+      if (mode === 'audio') {
+        // Audio → Upload to R2
+        return await uploadAudioToR2(blob, segmentId, segmentIndex, duration, setSegments);
+      } else {
+        // Video/Screen → Upload to Stream
+        return await uploadVideoToStream(blob, mode, segmentId, segmentIndex, duration, setSegments);
       }
-
-      const { data: uploadData } = await urlResponse.json();
-      const { uploadURL, uid } = uploadData;
-
-      console.log('✅ Got upload URL:', { uid });
-
-      // Step 2: Upload to Cloudflare using FormData
-      console.log('📤 Uploading to Cloudflare...');
-      
-      setSegments(prev => prev.map(s =>
-        s.id === segmentId ? { ...s, progress: 10 } : s
-      ));
-
-      // ✅ CRITICAL: Cloudflare expects FormData with 'file' field
-      const formData = new FormData();
-      formData.append('file', blob, `segment-${segmentIndex}.webm`);
-
-      const uploadResponse = await fetch(uploadURL, {
-        method: 'POST',
-        body: formData,
-        // ⚠️ DO NOT set Content-Type - browser sets it with boundary
-      });
-
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.error('❌ Cloudflare error:', errorText);
-        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
-      }
-
-      console.log('✅ Upload successful!');
-
-      // Step 3: Build result
-      const accountId = import.meta.env.VITE_CLOUDFLARE_ACCOUNT_ID;
-      
-      const result = {
-        uid,
-        playbackUrl: accountId 
-          ? `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`
-          : null,
-        duration,
-        mode,
-        size: blob.size,
-        segmentIndex,
-      };
-
-      setSegments(prev => prev.map(s =>
-        s.id === segmentId
-          ? { ...s, uploading: false, progress: 100, result }
-          : s
-      ));
-
-      console.log('✅ Segment uploaded:', result);
-      return result;
 
     } catch (error) {
       console.error('❌ Upload failed:', error);
