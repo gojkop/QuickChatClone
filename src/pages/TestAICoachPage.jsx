@@ -3,7 +3,8 @@ import { useQuestionCoach } from '../hooks/useQuestionCoach';
 import { ValidationFeedback } from '../components/question/ValidationFeedback';
 import { QuestionCoachDialog } from '../components/question/QuestionCoachDialog';
 
-export function TestAICoachPage() {
+// ✅ Changed from "export function" to "export default function"
+export default function TestAICoachPage() {
   const [step, setStep] = useState('input'); // input, validation, coaching, done
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
