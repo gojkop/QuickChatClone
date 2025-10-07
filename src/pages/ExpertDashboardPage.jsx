@@ -301,44 +301,44 @@ function ExpertDashboardPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              {/* Availability Toggle */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">
-                    Accepting
-                  </span>
-                  <button
-                    onClick={handleToggleAvailability}
-                    disabled={isTogglingAvailability}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                      profile?.accepting_questions 
-                        ? 'bg-green-500' 
-                        : 'bg-gray-300'
-                    } ${isTogglingAvailability ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                    type="button"
-                    title={profile?.accepting_questions ? 'Currently accepting questions' : 'Not accepting questions'}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
-                        profile?.accepting_questions ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <div className={`flex items-center gap-1 ${
-                  profile?.accepting_questions ? 'text-green-600' : 'text-gray-500'
-                }`}>
+              {/* Question Availability Toggle */}
+              <button
+                onClick={handleToggleAvailability}
+                disabled={isTogglingAvailability}
+                className={`group flex items-center gap-2 px-3 py-2.5 rounded-lg font-semibold text-sm shadow-sm transition-all ${
+                  profile?.accepting_questions
+                    ? 'bg-green-50 border-2 border-green-500 text-green-700 hover:bg-green-100'
+                    : 'bg-gray-100 border-2 border-gray-300 text-gray-600 hover:bg-gray-200'
+                } ${isTogglingAvailability ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                type="button"
+                title={profile?.accepting_questions ? 'Click to stop accepting questions' : 'Click to start accepting questions'}
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span className="whitespace-nowrap">
                   {profile?.accepting_questions ? (
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
-                    </svg>
+                    <>
+                      <span className="hidden sm:inline">Questions: </span>
+                      <span className="font-bold">Open</span>
+                    </>
                   ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <>
+                      <span className="hidden sm:inline">Questions: </span>
+                      <span className="font-bold">Closed</span>
+                    </>
                   )}
-                </div>
-              </div>
+                </span>
+                {profile?.accepting_questions ? (
+                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                )}
+              </button>
 
               <button
                 onClick={() => navigate('#profile-settings')}

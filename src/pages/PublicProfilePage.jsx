@@ -676,7 +676,7 @@ function PublicProfilePage() {
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
               }`}
             >
-              <span>{isAcceptingQuestions ? 'Ask Your Question' : 'Not Accepting Questions'}</span>
+              <span>{isAcceptingQuestions ? 'Ask Your Question' : 'Temporary Not Accepting Questions'}</span>
               {isAcceptingQuestions && (
                 <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
