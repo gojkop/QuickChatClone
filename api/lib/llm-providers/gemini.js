@@ -17,7 +17,7 @@ export async function callGemini(prompt, options = {}) {
     model: 'gemini-2.5-pro',
     generationConfig: {
       temperature: options.temperature || 0.7,
-      maxOutputTokens: options.max_tokens || 1024,
+      maxOutputTokens: options.max_tokens || 2048,  // ✅ Increased default
     }
   });
 
@@ -26,14 +26,26 @@ export async function callGemini(prompt, options = {}) {
     ? `${prompt}\n\nIMPORTANT: Respond with ONLY valid JSON. No markdown code blocks, no explanation, no extra text - just the raw JSON object starting with { and ending with }.`
     : prompt;
 
+  console.log('[Gemini] Calling API with maxOutputTokens:', options.max_tokens || 1024);
+  
   const result = await model.generateContent(fullPrompt);
   const response = result.response;
   let text = response.text();
 
+  console.log('[Gemini] Response received, length:', text.length);
+  console.log('[Gemini] Token usage:', response.usageMetadata);
+  
+  // Check if response is empty or too short
+  if (!text || text.length < 10) {
+    console.error('[Gemini] Response too short or empty!');
+    throw new Error('Gemini returned an empty or very short response');
+  }
+
   // Parse JSON if required
   if (options.requireJSON) {
     // Log the raw response for debugging
-    console.log('[Gemini] Raw response:', text.substring(0, 200));
+    console.log('[Gemini] Raw response (first 500 chars):', text.substring(0, 500));
+    console.log('[Gemini] Raw response (last 100 chars):', text.substring(Math.max(0, text.length - 100)));
     
     // Clean up markdown and extra text
     text = text.trim();
