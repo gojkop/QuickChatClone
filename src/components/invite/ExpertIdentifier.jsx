@@ -268,7 +268,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
             </div>
 
             
-              href={`/@${expertProfile.handle}`}
+              <a href={`/@${expertProfile.handle}`}
               className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
             >
               <span>Visit {expertProfile.name}'s Profile</span>
