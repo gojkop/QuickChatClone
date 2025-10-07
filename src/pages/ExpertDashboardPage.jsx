@@ -23,6 +23,7 @@ function ExpertDashboardPage() {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
   const QUESTIONS_PER_PAGE = 10;
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
@@ -43,7 +44,8 @@ function ExpertDashboardPage() {
           avatar_url: expertProfile.avatar_url || null,
           charity_percentage: expertProfile.charity_percentage || 0,
           selected_charity: expertProfile.selected_charity || null,
-          total_donated: expertProfile.total_donated || 0
+          total_donated: expertProfile.total_donated || 0,
+          accepting_questions: expertProfile.accepting_questions ?? true
         };
         
         setProfile(processedProfile);
@@ -94,6 +96,30 @@ function ExpertDashboardPage() {
       fetchQuestions();
     }
   }, [profile, activeTab]);
+
+  const handleToggleAvailability = async () => {
+    if (isTogglingAvailability) return;
+    
+    try {
+      setIsTogglingAvailability(true);
+      const newStatus = !profile.accepting_questions;
+      
+      const response = await apiClient.post('/expert/profile/availability', {
+        accepting_questions: newStatus
+      });
+      
+      // Update local state
+      setProfile({
+        ...profile,
+        accepting_questions: newStatus
+      });
+    } catch (err) {
+      console.error("Failed to update availability:", err);
+      alert("Could not update your availability status. Please try again.");
+    } finally {
+      setIsTogglingAvailability(false);
+    }
+  };
 
   const handleSaveSettings = (updatedProfile) => {
     const processedProfile = {
@@ -274,7 +300,46 @@ function ExpertDashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {/* Availability Toggle */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                    Accepting
+                  </span>
+                  <button
+                    onClick={handleToggleAvailability}
+                    disabled={isTogglingAvailability}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                      profile?.accepting_questions 
+                        ? 'bg-green-500' 
+                        : 'bg-gray-300'
+                    } ${isTogglingAvailability ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    type="button"
+                    title={profile?.accepting_questions ? 'Currently accepting questions' : 'Not accepting questions'}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                        profile?.accepting_questions ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className={`flex items-center gap-1 ${
+                  profile?.accepting_questions ? 'text-green-600' : 'text-gray-500'
+                }`}>
+                  {profile?.accepting_questions ? (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+
               <button
                 onClick={() => navigate('#profile-settings')}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
