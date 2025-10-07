@@ -1,10 +1,8 @@
 // src/hooks/useRecordingSegmentUpload.js
+// COMPLETE FIXED VERSION - Replace entire file with this
+
 import { useState, useCallback } from 'react';
 
-/**
- * Hook for uploading video/audio segments to Cloudflare Stream
- * Uses Direct Creator Upload (simple POST)
- */
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
 
@@ -14,14 +12,15 @@ export function useRecordingSegmentUpload() {
     console.log('🚀 Starting upload:', {
       segmentId,
       mode,
+      segmentIndex,
       duration,
       blobSize: blob.size,
       blobType: blob.type,
     });
 
-    // CRITICAL: Verify blob is valid
+    // Validate blob
     if (!blob || blob.size === 0) {
-      throw new Error('Invalid blob - size is 0 bytes. Recording may have failed.');
+      throw new Error('Invalid blob - size is 0 bytes');
     }
 
     // Add to segments list
@@ -38,7 +37,7 @@ export function useRecordingSegmentUpload() {
     }]);
 
     try {
-      // Step 1: Get upload URL from YOUR backend
+      // Step 1: Get upload URL from backend
       console.log('📡 Requesting upload URL...');
       
       const urlResponse = await fetch('/api/media/get-upload-url', {
@@ -46,11 +45,6 @@ export function useRecordingSegmentUpload() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           maxDurationSeconds: 90,
-          metadata: {
-            mode,
-            segmentIndex,
-            duration
-          }
         }),
       });
 
@@ -62,29 +56,29 @@ export function useRecordingSegmentUpload() {
       const { data: uploadData } = await urlResponse.json();
       const { uploadURL, uid } = uploadData;
 
-      console.log('✅ Got upload URL for video:', uid);
+      console.log('✅ Got upload URL:', { uid });
 
-      // Step 2: Upload DIRECTLY to Cloudflare
-      // ⚠️ CRITICAL: Send raw blob, no TUS headers for Direct Creator Upload
-      console.log('📤 Uploading to Cloudflare Stream...');
+      // Step 2: Upload directly to Cloudflare
+      console.log('📤 Uploading to Cloudflare...');
       
       setSegments(prev => prev.map(s =>
         s.id === segmentId ? { ...s, progress: 10 } : s
       ));
 
+      // ✅ CRITICAL: Clean POST with NO headers
       const uploadResponse = await fetch(uploadURL, {
         method: 'POST',
-        body: blob, // ✅ Raw blob - NO FormData, NO JSON
-        // ⚠️ Don't set Content-Type - let browser set it with boundary
+        body: blob, // Raw blob only
+        // DO NOT set any headers - browser handles it
       });
 
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text();
-        console.error('❌ Cloudflare upload failed:', errorText);
+        console.error('❌ Cloudflare error:', errorText);
         throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
       }
 
-      console.log('✅ Upload complete!');
+      console.log('✅ Upload successful!');
 
       // Step 3: Build result
       const accountId = import.meta.env.VITE_CLOUDFLARE_ACCOUNT_ID;
@@ -124,7 +118,10 @@ export function useRecordingSegmentUpload() {
 
   const retrySegment = useCallback(async (segmentId) => {
     const segment = segments.find(s => s.id === segmentId);
-    if (!segment) return;
+    if (!segment) {
+      console.warn('⚠️ Segment not found:', segmentId);
+      return;
+    }
 
     console.log('🔄 Retrying segment:', segmentId);
 
@@ -142,6 +139,7 @@ export function useRecordingSegmentUpload() {
   }, [segments, uploadSegment]);
 
   const removeSegment = useCallback((segmentId) => {
+    console.log('🗑️ Removing segment:', segmentId);
     setSegments(prev => prev.filter(s => s.id !== segmentId));
   }, []);
 
@@ -153,6 +151,7 @@ export function useRecordingSegmentUpload() {
   }, [segments]);
 
   const reset = useCallback(() => {
+    console.log('🔄 Reset all segments');
     setSegments([]);
   }, []);
 
