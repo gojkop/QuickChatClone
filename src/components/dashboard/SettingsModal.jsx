@@ -82,6 +82,29 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
     setFormData(prev => ({ ...prev, selected_charity: charityId }));
   };
 
+  const handleRemoveAvatar = async () => {
+    try {
+      console.log('Removing avatar...');
+      
+      // Call the dedicated endpoint to clear avatar
+      await apiClient.post('/upload/profile-picture', {
+        image_url: null
+      });
+      
+      console.log('Avatar removed successfully');
+      
+      // Update local state
+      setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }));
+      localStorage.removeItem('qc_avatar');
+      
+      // Show success feedback (optional)
+      // You could add a toast notification here
+    } catch (err) {
+      console.error('Error removing avatar:', err);
+      setError('Failed to remove avatar. Please try again.');
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -95,9 +118,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         public: formData.isPublic,
         handle: formData.handle,
         currency: 'USD',
-        // Send null to clear avatar, or the URL if it exists
-        avatar_url: formData.avatar_url,
-        avatar_key: formData.avatar_key,
+        // Don't send avatar_url/avatar_key - they're managed via /upload/profile-picture endpoint
         professional_title: formData.professional_title || '',
         tagline: formData.tagline || '',
         expertise: Array.isArray(formData.expertise) ? formData.expertise : [],
@@ -108,13 +129,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
 
       console.log('Saving payload:', payload);
 
-      // Update localStorage
-      if (formData.avatar_url) {
-        localStorage.setItem('qc_avatar', formData.avatar_url);
-      } else {
-        localStorage.removeItem('qc_avatar');
-      }
-      
+      // Update localStorage (avatar is handled separately via /upload/profile-picture)
       localStorage.setItem('qc_charity_percentage', formData.charity_percentage || 0);
       if (formData.selected_charity) {
         localStorage.setItem('qc_selected_charity', formData.selected_charity);
@@ -185,10 +200,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                   {formData.avatar_url && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }));
-                        localStorage.removeItem('qc_avatar');
-                      }}
+                      onClick={handleRemoveAvatar}
                       className="text-xs text-gray-600 hover:text-red-600 font-medium transition-colors flex items-center gap-1"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
