@@ -6,12 +6,14 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
   const [isChecking, setIsChecking] = useState(false);
   const [expertProfile, setExpertProfile] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [hasCheckedHandle, setHasCheckedHandle] = useState(false);
 
   useEffect(() => {
     if (!identifier.trim()) {
       setDetectedType(null);
       setExpertProfile(null);
       setErrorMessage('');
+      setHasCheckedHandle(false);
       return;
     }
 
@@ -22,6 +24,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
       setDetectedType('email');
       setExpertProfile(null);
       setErrorMessage('');
+      setHasCheckedHandle(false);
       return;
     }
 
@@ -30,29 +33,34 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
       setDetectedType('linkedin');
       setExpertProfile(null);
       setErrorMessage('');
+      setHasCheckedHandle(false);
       return;
     }
 
-    // QuickChat handle detection (@handle or handle)
-    const handleValue = value.startsWith('@') ? value.substring(1) : value;
-    
-    // Check if it looks like a handle (single word, no spaces, alphanumeric + hyphens/underscores)
-    if (/^[a-zA-Z0-9_-]+$/.test(handleValue)) {
-      setDetectedType('handle');
-      checkQuickChatHandle(handleValue);
-      return;
+    // QuickChat handle detection - ONLY if starts with @
+    if (value.startsWith('@')) {
+      const handleValue = value.substring(1);
+      
+      // Check if it looks like a handle (single word, no spaces, alphanumeric + hyphens/underscores)
+      if (/^[a-zA-Z0-9_-]+$/.test(handleValue) && handleValue.length > 0) {
+        setDetectedType('handle');
+        // Don't check automatically - wait for Enter key
+        return;
+      }
     }
 
-    // Otherwise treat as name (multiple words or contains spaces)
+    // Otherwise treat as name (multiple words or contains spaces or doesn't start with @)
     setDetectedType('name');
     setExpertProfile(null);
     setErrorMessage('');
+    setHasCheckedHandle(false);
   }, [identifier]);
 
   const checkQuickChatHandle = async (handle) => {
     setIsChecking(true);
     setErrorMessage('');
     setExpertProfile(null);
+    setHasCheckedHandle(true);
     
     try {
       const response = await fetch(
@@ -88,17 +96,32 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
         } else {
           // Profile exists but is private - treat as name
           setDetectedType('name');
+          setErrorMessage('This handle exists but the profile is private. You can still invite them by name.');
         }
       } else {
-        // Handle doesn't exist - treat as name
-        setDetectedType('name');
+        // Handle doesn't exist
+        setErrorMessage('No expert found with this handle. You can still send them an invitation.');
       }
     } catch (error) {
       console.error('Error checking handle:', error);
-      // On error, treat as name
-      setDetectedType('name');
+      setErrorMessage('Could not check handle. You can still send an invitation.');
     } finally {
       setIsChecking(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission
+      
+      // If it's a handle type and we haven't checked yet, check now
+      if (detectedType === 'handle' && !hasCheckedHandle && !isChecking) {
+        const handleValue = identifier.trim().substring(1); // Remove @
+        checkQuickChatHandle(handleValue);
+      } else if (!expertProfile) {
+        // If not a handle or already checked, continue to next step
+        handleContinue();
+      }
     }
   };
 
@@ -183,7 +206,10 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
     switch (detectedType) {
       case 'email': return 'Email detected';
       case 'linkedin': return 'LinkedIn profile';
-      case 'handle': return expertProfile ? 'Expert found on QuickChat!' : 'Checking handle...';
+      case 'handle': 
+        if (expertProfile) return 'Expert found on QuickChat!';
+        if (hasCheckedHandle) return 'Handle checked';
+        return 'QuickChat handle - Press Enter to check';
       case 'name': return 'Name';
       default: return null;
     }
@@ -202,6 +228,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
             type="text"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={getPlaceholder()}
             className="w-full px-4 py-4 pr-12 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-lg"
             autoFocus
@@ -218,11 +245,25 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
           )}
         </div>
 
-        {detectedType && !errorMessage && (
+        {detectedType && !errorMessage && !expertProfile && (
           <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
               {getIconForType()}
               <span className="font-medium text-gray-700">{getTypeLabel()}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Handle check prompt */}
+        {detectedType === 'handle' && !hasCheckedHandle && !expertProfile && (
+          <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm text-blue-700 font-medium">
+                Press <kbd className="px-2 py-0.5 bg-white border border-blue-300 rounded text-xs font-mono">Enter</kbd> to check if this expert is on QuickChat
+              </p>
             </div>
           </div>
         )}
@@ -267,11 +308,11 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
               </p>
             </div>
 
-            
-              <a href={`/@${expertProfile.handle}`}
+            <a
+              href={`/u/${expertProfile.handle}`}
               className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
             >
-              <span>Visit {expertProfile.name}'s Profile</span>
+              <span>Visit {expertProfile.name || expertProfile.handle}'s Profile</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
@@ -280,11 +321,11 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
         )}
 
         {errorMessage && (
-          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm text-red-700">{errorMessage}</p>
+            <p className="text-sm text-yellow-700">{errorMessage}</p>
           </div>
         )}
 
