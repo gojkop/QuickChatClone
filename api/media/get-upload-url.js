@@ -37,12 +37,12 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           maxDurationSeconds,
           requireSignedURLs: false,
-          // ⭐ YOUR DOMAINS - already configured!
+          // ⭐ YOUR DOMAINS - NO PROTOCOL! Cloudflare rejects http:// or https://
           allowedOrigins: [
-            'http://localhost:3000',
-            'http://localhost:3001', 
-            'https://quickchat-deploy.vercel.app',
-            'https://quickchat-deploy-*.vercel.app', // Preview deployments
+            'localhost:3000',
+            'localhost:3001', 
+            'quickchat-deploy.vercel.app',
+            '*.vercel.app', // All Vercel deployments (including previews)
           ],
         }),
       }
