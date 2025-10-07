@@ -157,8 +157,9 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                       </h3>
                       <div className="space-y-3">
                         {recordingSegments.map((segment, index) => {
+                          // Parse metadata
                           let metadata = { mode: 'audio' };
-                          let isVideo = false;
+                          let mode = 'audio';
                           
                           try {
                             if (segment.metadata) {
@@ -167,16 +168,20 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                               } else if (typeof segment.metadata === 'string') {
                                 metadata = JSON.parse(segment.metadata);
                               }
-                              isVideo = metadata.mode === 'video';
+                              mode = metadata.mode || 'audio';
                             }
                           } catch (e) {
                             console.error(`Segment ${index} metadata parse error:`, e);
                           }
 
-                          const videoId = getStreamVideoId(segment.url);
+                          const isVideo = mode === 'video' || mode === 'screen' || mode === 'screen-camera';
+                          const isAudio = mode === 'audio';
+                          
+                          const videoId = isVideo ? getStreamVideoId(segment.url) : null;
                           
                           return (
                             <div key={segment.id || index} className="bg-gray-900 rounded-xl overflow-hidden">
+                              {/* Header */}
                               <div className="p-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-semibold text-gray-400">
@@ -204,7 +209,9 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                                 </div>
                               </div>
                               
-                              {videoId ? (
+                              {/* Player */}
+                              {isVideo && videoId ? (
+                                // VIDEO: Cloudflare Stream iframe
                                 <div className="w-full aspect-video bg-black">
                                   <iframe
                                     src={`https://customer-o9wvts8h9krvlboh.cloudflarestream.com/${videoId}/iframe`}
@@ -213,9 +220,40 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                                     allowFullScreen={true}
                                   />
                                 </div>
-                              ) : (
+                              ) : isAudio && segment.url ? (
+                                // AUDIO: Direct R2 URL with HTML5 audio player
                                 <div className="p-8 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-                                  <p className="text-white text-sm">Video unavailable</p>
+                                  <audio 
+                                    controls 
+                                    className="w-full max-w-md"
+                                    preload="metadata"
+                                    style={{
+                                      filter: 'invert(1) hue-rotate(180deg)',
+                                      height: '40px'
+                                    }}
+                                  >
+                                    <source src={segment.url} type="audio/webm" />
+                                    <source src={segment.url} type="audio/mp4" />
+                                    Your browser does not support audio playback.
+                                  </audio>
+                                </div>
+                              ) : (
+                                // FALLBACK: Unavailable
+                                <div className="p-8 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+                                  <svg className="w-12 h-12 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                  </svg>
+                                  <p className="text-white text-sm">Media unavailable</p>
+                                  {segment.url && (
+                                    <a 
+                                      href={segment.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-indigo-400 hover:text-indigo-300 mt-2 underline"
+                                    >
+                                      Try direct link
+                                    </a>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -238,7 +276,6 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
                     <div>
                       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Attachments</h3>
                       <div className="space-y-2">
-                        
                         {attachments.map((file, index) => (
                           <a
                             key={index}
