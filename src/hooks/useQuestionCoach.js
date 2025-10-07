@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import api from '@/api/apiClient';
+import axios from 'axios';
+
+// ✅ Create a separate axios instance for Vercel serverless functions
+const vercelApi = axios.create({
+  baseURL: '/api', // Vercel functions are at /api/*
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export function useQuestionCoach() {
   const [sessionId, setSessionId] = useState(null);
@@ -8,13 +16,11 @@ export function useQuestionCoach() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Generate fingerprint for rate limiting
   const getFingerprint = () => {
     const nav = navigator;
     const screen = window.screen;
     const fingerprint = `${nav.userAgent}_${screen.width}x${screen.height}_${nav.language}`;
     
-    // Simple hash function
     let hash = 0;
     for (let i = 0; i < fingerprint.length; i++) {
       const char = fingerprint.charCodeAt(i);
@@ -29,15 +35,12 @@ export function useQuestionCoach() {
     setError(null);
     
     try {
-      console.log('[Coach] Starting Tier 1 validation:', { title, expertId });
-      
-      const result = await api.post('/ai/coach/quick-validate', {
+      // ✅ Calls /api/ai/coach/quick-validate on Vercel
+      const result = await vercelApi.post('/ai/coach/quick-validate', {
         title,
         fingerprint: getFingerprint(),
         expertId
       });
-      
-      console.log('[Coach] Tier 1 result:', result.data);
       
       setSessionId(result.data.sessionId);
       setTier1Result(result.data);
@@ -61,15 +64,12 @@ export function useQuestionCoach() {
     setError(null);
     
     try {
-      console.log('[Coach] Starting Tier 2 coaching:', { sessionId, expertProfile });
-      
-      const result = await api.post('/ai/coach/analyze-and-guide', {
+      // ✅ Calls /api/ai/coach/analyze-and-guide on Vercel
+      const result = await vercelApi.post('/ai/coach/analyze-and-guide', {
         sessionId,
         expertProfile,
         questionContext
       });
-      
-      console.log('[Coach] Tier 2 result:', result.data);
       
       setTier2Result(result.data);
       return result.data;
@@ -83,20 +83,16 @@ export function useQuestionCoach() {
   };
   
   const submitClarificationResponses = async (responses) => {
-    if (!sessionId) {
-      throw new Error('No session ID');
-    }
+    if (!sessionId) return;
     
     try {
-      console.log('[Coach] Saving clarification responses:', responses);
-      // This will fail without Xano, but that's OK for testing
-      await api.post('/ai/coach/save-responses', {
+      // ✅ Calls /api/ai/coach/save-responses on Vercel
+      await vercelApi.post('/ai/coach/save-responses', {
         sessionId,
         responses
       });
     } catch (err) {
-      console.warn('[Coach] Save responses failed (expected without Xano):', err);
-      // Don't throw - continue with flow
+      console.warn('[Coach] Save responses failed:', err);
     }
   };
   
@@ -108,14 +104,11 @@ export function useQuestionCoach() {
   };
   
   return {
-    // State
     sessionId,
     tier1Result,
     tier2Result,
     loading,
     error,
-    
-    // Methods
     validateQuestion,
     getCoaching,
     submitClarificationResponses,
