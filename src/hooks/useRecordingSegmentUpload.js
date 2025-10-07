@@ -14,24 +14,19 @@ export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
 
   /**
-   * Upload entire blob in one request using POST
-   * Cloudflare Direct Creator Upload expects POST with full file
+   * Upload entire blob in one simple POST
+   * No TUS headers - just raw video data
    */
   const uploadEntireFile = async (blob, uploadURL, segmentId, onProgress) => {
     const totalSize = blob.size;
 
     console.log(`📤 Uploading entire file: ${totalSize} bytes (${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
 
-    // Simulate progress (we can't track real progress with single upload)
     onProgress(0, 0, totalSize);
 
     const response = await fetch(uploadURL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/offset+octet-stream',
-        'Tus-Resumable': '1.0.0',
-      },
-      body: blob, // Send entire blob at once
+      body: blob, // Just the raw blob, no special headers
     });
 
     if (!response.ok) {
