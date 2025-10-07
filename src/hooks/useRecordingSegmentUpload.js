@@ -14,8 +14,8 @@ export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
 
   /**
-   * Upload entire blob in one request using TUS protocol
-   * Cloudflare Direct Creator Upload expects full file, not chunks
+   * Upload entire blob in one request using POST
+   * Cloudflare Direct Creator Upload expects POST with full file
    */
   const uploadEntireFile = async (blob, uploadURL, segmentId, onProgress) => {
     const totalSize = blob.size;
@@ -26,10 +26,9 @@ export function useRecordingSegmentUpload() {
     onProgress(0, 0, totalSize);
 
     const response = await fetch(uploadURL, {
-      method: 'PATCH',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/offset+octet-stream',
-        'Upload-Offset': '0',
         'Tus-Resumable': '1.0.0',
       },
       body: blob, // Send entire blob at once
