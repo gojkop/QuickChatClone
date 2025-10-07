@@ -1,5 +1,5 @@
 // src/hooks/useRecordingSegmentUpload.js
-// COMPLETE FIXED VERSION - Replace entire file with this
+// COMPLETE FIXED VERSION - Uses FormData for Cloudflare
 
 import { useState, useCallback } from 'react';
 
@@ -58,18 +58,21 @@ export function useRecordingSegmentUpload() {
 
       console.log('✅ Got upload URL:', { uid });
 
-      // Step 2: Upload directly to Cloudflare
+      // Step 2: Upload to Cloudflare using FormData
       console.log('📤 Uploading to Cloudflare...');
       
       setSegments(prev => prev.map(s =>
         s.id === segmentId ? { ...s, progress: 10 } : s
       ));
 
-      // ✅ CRITICAL: Clean POST with NO headers
+      // ✅ CRITICAL: Cloudflare expects FormData with 'file' field
+      const formData = new FormData();
+      formData.append('file', blob, `segment-${segmentIndex}.webm`);
+
       const uploadResponse = await fetch(uploadURL, {
         method: 'POST',
-        body: blob, // Raw blob only
-        // DO NOT set any headers - browser handles it
+        body: formData,
+        // ⚠️ DO NOT set Content-Type - browser sets it with boundary
       });
 
       if (!uploadResponse.ok) {
