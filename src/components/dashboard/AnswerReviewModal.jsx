@@ -1,5 +1,5 @@
 // src/components/dashboard/AnswerReviewModal.jsx
-// Updated with real upload and submission logic
+// FIXED - Safe handling of attachments and files arrays
 import React, { useState } from 'react';
 import { useAnswerUpload } from '@/hooks/useAnswerUpload';
 import AnswerSubmittedModal from './AnswerSubmittedModal';
@@ -30,7 +30,9 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
       console.log('Answer data:', {
         hasMedia: !!answerData.mediaBlob,
         hasText: !!answerData.text,
-        hasFiles: answerData.files?.length > 0,
+        hasRecordingSegments: (answerData.recordingSegments || []).length > 0,
+        hasAttachments: (answerData.attachments || []).length > 0,
+        hasFiles: (answerData.files || []).length > 0,
         recordingMode: answerData.recordingMode,
         recordingDuration: answerData.recordingDuration,
         userId,
@@ -66,9 +68,15 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
     answerUpload.reset();
   };
 
-  const hasRecording = !!answerData.mediaBlob;
+  // ✅ FIXED: Safe array handling
+  const hasRecordingSegments = Array.isArray(answerData.recordingSegments) && answerData.recordingSegments.length > 0;
+  const hasRecording = !!answerData.mediaBlob || hasRecordingSegments;
   const hasText = !!answerData.text && answerData.text.trim().length > 0;
-  const hasFiles = answerData.files && answerData.files.length > 0;
+  
+  // ✅ FIXED: Safely get files/attachments
+  const files = answerData.files || answerData.attachments || [];
+  const hasFiles = Array.isArray(files) && files.length > 0;
+  
   const recordingDuration = answerData.recordingDuration || 0;
   const isDurationValid = recordingDuration > 0;
 
@@ -202,8 +210,7 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                           </svg>
                           <span>
-                            {answerData.recordingMode === 'video' ? 'Video' : 
-                             answerData.recordingMode === 'audio' ? 'Audio' : 'Recording'} Added
+                            {hasRecordingSegments ? `${answerData.recordingSegments.length} segment(s)` : 'Recording'} Added
                           </span>
                         </div>
                         
@@ -218,7 +225,7 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
                                 Duration: {formatTime(recordingDuration)}
                               </div>
                               <div className="text-xs text-gray-500">
-                                Segments successfully combined
+                                {hasRecordingSegments ? 'Segments successfully uploaded' : 'Recording ready'}
                               </div>
                             </div>
                             <div className="flex-shrink-0">
@@ -277,11 +284,11 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                           </svg>
-                          <span>{answerData.files.length} file{answerData.files.length !== 1 ? 's' : ''} attached</span>
+                          <span>{files.length} file{files.length !== 1 ? 's' : ''} attached</span>
                         </div>
                         <ul className="text-sm list-disc pl-5 text-gray-700">
-                          {answerData.files.map((file, index) => (
-                            <li key={index}>{file.name}</li>
+                          {files.map((file, index) => (
+                            <li key={index}>{file.name || file.filename || `File ${index + 1}`}</li>
                           ))}
                         </ul>
                       </div>
