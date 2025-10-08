@@ -35,6 +35,29 @@ export default async function handler(req, res) {
     if (segments && Array.isArray(segments) && segments.length > 0) {
       console.log('Creating media_asset for multi-segment recording:', segments.length, 'segments');
       
+      // Build the payload WITHOUT owner_id (since it's causing the error)
+      const payload = {
+        owner_type: owner_type || 'answer',
+        // owner_id is omitted entirely - will be null in DB
+        provider: 'cloudflare_stream', // Assuming video segments
+        asset_id: segments[0].uid, // Use first segment's UID as reference
+        duration_sec: Math.round(totalDuration || 0),
+        status: 'ready',
+        url: segments[0].playback_url || segments[0].playbackUrl, // First segment URL
+        metadata: {
+          type: mode || 'multi-segment',
+          mime_type: 'video/webm',
+          segments: segments.map(seg => ({
+            uid: seg.uid,
+            playback_url: seg.playback_url || seg.playbackUrl,
+            duration: seg.duration,
+            mode: seg.mode,
+          })),
+          segment_count: segments.length,
+        },
+        segment_index: null, // Parent record has no segment index
+      };
+      
       // Create a parent media_asset record that represents the full recording
       const xanoResponse = await fetch(
         `${process.env.XANO_BASE_URL}/media_asset`,
@@ -44,27 +67,7 @@ export default async function handler(req, res) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${process.env.XANO_API_KEY}`,
           },
-          body: JSON.stringify({
-            owner_type: owner_type || 'answer',
-            owner_id: owner_id || null,
-            provider: 'cloudflare_stream', // Assuming video segments
-            asset_id: segments[0].uid, // Use first segment's UID as reference
-            duration_sec: Math.round(totalDuration || 0),
-            status: 'ready',
-            url: segments[0].playback_url || segments[0].playbackUrl, // First segment URL
-            metadata: {
-              type: mode || 'multi-segment',
-              mime_type: 'video/webm',
-              segments: segments.map(seg => ({
-                uid: seg.uid,
-                playback_url: seg.playback_url || seg.playbackUrl,
-                duration: seg.duration,
-                mode: seg.mode,
-              })),
-              segment_count: segments.length,
-            },
-            segment_index: null, // Parent record has no segment index
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -128,6 +131,19 @@ export default async function handler(req, res) {
       size: size || 0,
     };
 
+    // Build the payload WITHOUT owner_id (omit it entirely)
+    const payload = {
+      owner_type: owner_type || 'answer',
+      // owner_id is omitted - will be null in DB, updated later by /answer endpoint
+      provider,
+      asset_id,
+      duration_sec: Math.round(duration || 0),
+      status: 'ready',
+      url,
+      metadata,
+      segment_index: null, // Single concatenated file
+    };
+
     // Create media_asset record in Xano
     const xanoResponse = await fetch(
       `${process.env.XANO_BASE_URL}/media_asset`,
@@ -137,17 +153,7 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${process.env.XANO_API_KEY}`,
         },
-        body: JSON.stringify({
-          owner_type: owner_type || 'answer',
-          owner_id: owner_id || null,
-          provider,
-          asset_id,
-          duration_sec: Math.round(duration || 0),
-          status: 'ready',
-          url,
-          metadata,
-          segment_index: null, // Single concatenated file
-        }),
+        body: JSON.stringify(payload),
       }
     );
 

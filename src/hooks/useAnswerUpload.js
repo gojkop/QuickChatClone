@@ -256,12 +256,12 @@ export function useAnswerUpload() {
       let mediaAssetId = null;
       let mediaResult = null;
 
-      // ✅ UPDATED: Handle recordingSegments (progressive upload)
+      // ✅ STEP 1: Create media_asset record if we have segments
       if (answerData.recordingSegments && answerData.recordingSegments.length > 0) {
-        console.log('📤 Processing recording segments...');
+        console.log('📤 Creating media_asset record from segments...');
         
-        // Segments are already uploaded progressively
-        // Just need to create a media_asset record that references them
+        // Segments are already uploaded to Cloudflare
+        // Create a media_asset record in Xano
         const response = await fetch('/api/media/create-asset', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -275,7 +275,7 @@ export function useAnswerUpload() {
             mode: answerData.recordingMode || 'multi-segment',
             totalDuration: answerData.recordingDuration || 0,
             owner_type: 'answer',
-            owner_id: null, // Will be updated after answer creation
+            // owner_id omitted - will be updated by /answer endpoint
           }),
         });
 
@@ -284,7 +284,7 @@ export function useAnswerUpload() {
           let errorMessage;
           try {
             const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || 'Failed to finalize recording';
+            errorMessage = errorJson.error || 'Failed to create media asset';
           } catch (e) {
             errorMessage = `Server error (${response.status}): ${errorText.substring(0, 100)}`;
           }
@@ -292,12 +292,12 @@ export function useAnswerUpload() {
         }
 
         const result = await response.json();
-        mediaAssetId = result.data?.id;
+        mediaAssetId = result.data?.id || result.data?.media_asset_id;
         mediaResult = result.data;
         
-        console.log('✅ Recording finalized, media_asset_id:', mediaAssetId);
+        console.log('✅ Media asset created, ID:', mediaAssetId);
       }
-      // ✅ LEGACY: Handle single mediaBlob (if still used anywhere)
+      // Legacy: Handle single mediaBlob (if still used anywhere)
       else if (answerData.mediaBlob && answerData.recordingMode) {
         console.log('📤 Uploading single media blob...');
         
@@ -357,7 +357,7 @@ export function useAnswerUpload() {
         text_response: answerData.text || '',
       };
 
-      // Add media_asset_id if we have media
+      // Add media_asset_id (database ID) if we have media
       if (mediaAssetId) {
         payload.media_asset_id = mediaAssetId;
       }

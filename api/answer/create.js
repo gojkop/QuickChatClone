@@ -80,14 +80,18 @@ export default async function handler(req, res) {
 
     const answer = await xanoResponse.json();
 
-    console.log('✅ Answer created successfully:', answer.id);
+    console.log('✅ Answer created successfully:', answer);
 
     // Get question's playback_token_hash for review URL
-    // The Xano endpoint should return this, or we fetch it
-    const playbackTokenHash = answer.playback_token_hash || answer.question?.playback_token_hash;
+    // Try multiple possible response structures
+    const playbackTokenHash = 
+      answer.playback_token_hash || 
+      answer.question?.playback_token_hash ||
+      answer.data?.playback_token_hash;
 
     if (!playbackTokenHash) {
       console.warn('⚠️ No playback_token_hash in response - review URL will not work');
+      console.warn('Response structure:', answer);
     }
 
     // TODO: Send notification email to question.payer_email with review link
@@ -100,7 +104,7 @@ export default async function handler(req, res) {
       success: true,
       data: {
         answer_id: answer.id,
-        question_id: answer.question_id,
+        question_id: answer.question_id || question_id,
         playback_token_hash: playbackTokenHash,
         review_url: reviewUrl,
         created_at: answer.created_at,
@@ -140,3 +144,12 @@ async function updateQuestionStatus(questionId, status) {
   // Update question record in Xano
   // Mark as 'answered' so it doesn't show in pending questions
 }
+
+// ✅ FIXED: Removed duplicate config export
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '1mb',
+    },
+  },
+};
