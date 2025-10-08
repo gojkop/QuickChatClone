@@ -15,7 +15,7 @@ function ExpertDashboardPage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [allQuestions, setAllQuestions] = useState([]); // Store all questions for count
+  const [allQuestions, setAllQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [error, setError] = useState('');
@@ -29,7 +29,6 @@ function ExpertDashboardPage() {
   const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState('');
   
-  // NEW: State for question detail modal
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [showQuestionDetailModal, setShowQuestionDetailModal] = useState(false);
   
@@ -68,7 +67,6 @@ function ExpertDashboardPage() {
     fetchProfile();
   }, []);
 
-  // NEW: Handle hash navigation for settings AND questions
   useEffect(() => {
     const hash = location.hash;
     
@@ -77,7 +75,6 @@ function ExpertDashboardPage() {
     } else if (hash === '#account-settings') {
       setIsAccountModalOpen(true);
     } else if (hash.startsWith('#question-')) {
-      // Extract question ID from hash like #question-80
       const questionId = parseInt(hash.replace('#question-', ''), 10);
       
       if (!isNaN(questionId) && allQuestions.length > 0) {
@@ -88,14 +85,12 @@ function ExpertDashboardPage() {
           setShowQuestionDetailModal(true);
         } else {
           console.warn(`Question with ID ${questionId} not found`);
-          // Clear hash if question not found
           navigate('/expert', { replace: true });
         }
       }
     }
   }, [location.hash, allQuestions, navigate]);
 
-  // Fetch ALL questions once when profile loads
   useEffect(() => {
     const fetchAllQuestions = async () => {
       if (!profile) return;
@@ -111,7 +106,6 @@ function ExpertDashboardPage() {
     fetchAllQuestions();
   }, [profile]);
 
-  // Fetch filtered questions when tab changes
   useEffect(() => {
     const fetchQuestions = async () => {
       if (!profile) return;
@@ -158,13 +152,11 @@ function ExpertDashboardPage() {
       
       console.log('Availability update response:', response);
       
-      // Update local state
       setProfile({
         ...profile,
         accepting_questions: newStatus
       });
 
-      // Show success message
       if (newStatus) {
         setAvailabilityMessage('✓ You are now available to receive questions');
       } else {
@@ -172,7 +164,6 @@ function ExpertDashboardPage() {
       }
       setShowAvailabilityMessage(true);
       
-      // Hide message after 3 seconds
       setTimeout(() => {
         setShowAvailabilityMessage(false);
       }, 3000);
@@ -181,13 +172,11 @@ function ExpertDashboardPage() {
       console.error("Failed to update availability:", err);
       console.error("Error details:", err.response?.data || err.message);
       
-      // Still update the UI optimistically and show message
       setProfile({
         ...profile,
         accepting_questions: newStatus
       });
       
-      // Show message (with warning that API might not be working)
       if (newStatus) {
         setAvailabilityMessage('✓ You are now available to receive questions');
       } else {
@@ -199,7 +188,6 @@ function ExpertDashboardPage() {
         setShowAvailabilityMessage(false);
       }, 3000);
       
-      // Also show console warning
       console.warn('Note: Availability API endpoint may not be implemented yet. UI updated optimistically.');
       
     } finally {
@@ -236,21 +224,17 @@ function ExpertDashboardPage() {
     }
   };
 
-  // NEW: Handle question detail modal close
   const handleCloseQuestionDetail = () => {
     setShowQuestionDetailModal(false);
     setSelectedQuestion(null);
-    // Clear the hash
     if (location.hash.startsWith('#question-')) {
       navigate('/expert', { replace: true });
     }
   };
 
-  // NEW: Handle question click from table
   const handleQuestionClick = (question) => {
     setSelectedQuestion(question);
     setShowQuestionDetailModal(true);
-    // Optionally update URL hash
     navigate(`#question-${question.id}`, { replace: false });
   };
   
@@ -263,7 +247,6 @@ function ExpertDashboardPage() {
     }
   };
 
-  // Calculate pending count from ALL questions (always use allQuestions, not filtered)
   const pendingCount = allQuestions.filter(q => q.status === 'paid' && !q.answered_at).length;
 
   const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
@@ -334,7 +317,6 @@ function ExpertDashboardPage() {
         <div className="mb-4 lg:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* Clickable Avatar - Opens Profile Settings */}
               <button
                 onClick={() => navigate('#profile-settings')}
                 className="flex-shrink-0 group relative"
@@ -351,7 +333,6 @@ function ExpertDashboardPage() {
                     <DefaultAvatar size={48} />
                   </div>
                 )}
-                {/* Hover indicator */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
                   <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -366,8 +347,7 @@ function ExpertDashboardPage() {
                   </h1>
                   {profile?.handle && profile.isPublic && (
                     <div className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg">
-                      
-                        <a href={`/u/${profile.handle}`}
+                      <a href={`/u/${profile.handle}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 hover:opacity-80 transition"
@@ -421,10 +401,8 @@ function ExpertDashboardPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              {/* Status Indicator with Separate Toggle */}
               <div className="relative">
                 <div className="flex items-center gap-2.5 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
-                  {/* Status Display */}
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${
                       profile?.accepting_questions ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
@@ -436,10 +414,8 @@ function ExpertDashboardPage() {
                     </span>
                   </div>
                   
-                  {/* Divider */}
                   <div className="w-px h-4 bg-gray-300" />
                   
-                  {/* Toggle Switch */}
                   <button
                     onClick={handleToggleAvailability}
                     disabled={isTogglingAvailability}
@@ -459,7 +435,6 @@ function ExpertDashboardPage() {
                   </button>
                 </div>
                 
-                {/* Feedback Message */}
                 {showAvailabilityMessage && (
                   <div className="absolute top-full left-0 mt-2 z-50 animate-fade-in">
                     <div className={`px-4 py-2.5 rounded-lg shadow-lg border whitespace-nowrap text-sm font-medium ${
@@ -588,11 +563,12 @@ function ExpertDashboardPage() {
             profile={profile}
           />
           
-          {/* NEW: Question Detail Modal at Dashboard Level */}
+          {/* ✅ UPDATED: Pass userId to QuestionDetailModal */}
           <QuestionDetailModal
             isOpen={showQuestionDetailModal}
             onClose={handleCloseQuestionDetail}
             question={selectedQuestion}
+            userId={profile?.user?.id || profile?.id}
           />
         </>
       )}
