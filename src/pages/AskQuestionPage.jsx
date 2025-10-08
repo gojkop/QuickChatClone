@@ -150,25 +150,49 @@ function AskQuestionPage() {
       }
 
       const result = await response.json();
-      console.log('Question submitted successfully:', result);
+      console.log('✅ Full backend response:', result);
+      console.log('📦 Result.data structure:', result.data);
 
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl;
       } else {
         const expertName = expert.name || expert.user?.name || expert.handle;
-        const questionId = result.data.questionId;
-        const reviewToken = result.data.reviewToken; // Get review token from backend
+        const questionId = result.data?.questionId || result.data?.id;
+        
+        // Try multiple possible field names for the review token
+        const reviewToken = result.data?.reviewToken || 
+                           result.data?.review_token || 
+                           result.data?.token ||
+                           result.reviewToken ||
+                           result.review_token ||
+                           result.token;
+        
+        console.log('🔍 Review token found:', reviewToken);
+        console.log('🔍 Question ID:', questionId);
         
         // Build the query string with review_token
         const params = new URLSearchParams({
           question_id: questionId,
           expert: expert.handle,
           expertName: expertName,
-          ...(reviewToken && { review_token: reviewToken }), // Include review_token if available
-          dev_mode: 'true'
         });
         
-        navigate(`/question-sent?${params.toString()}`);
+        // Only add review_token if it exists
+        if (reviewToken) {
+          params.append('review_token', reviewToken);
+          console.log('✅ Added review_token to URL params');
+        } else {
+          console.warn('⚠️ No review_token found in response. Check backend API response.');
+          console.warn('⚠️ Available fields in result.data:', Object.keys(result.data || {}));
+        }
+        
+        // Always include dev_mode for testing
+        params.append('dev_mode', 'true');
+        
+        const navigationUrl = `/question-sent?${params.toString()}`;
+        console.log('🚀 Navigating to:', navigationUrl);
+        
+        navigate(navigationUrl);
       }
 
     } catch (error) {
