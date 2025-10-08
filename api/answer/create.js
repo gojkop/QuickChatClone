@@ -54,10 +54,20 @@ export default async function handler(req, res) {
     const payload = {
       question_id: parseInt(question_id),
       user_id: parseInt(user_id),
-      media_asset_id: media_asset_id ? parseInt(media_asset_id) : null,
       text_response: text_response || '',
-      attachments: attachments || null, // Already JSON string or null
     };
+
+    // Add media_asset_id if provided (it's the database ID, not Cloudflare UID)
+    if (media_asset_id) {
+      payload.media_asset_id = parseInt(media_asset_id);
+    }
+
+    // Add attachments if provided (already JSON string or null)
+    if (attachments) {
+      payload.attachments = attachments;
+    }
+
+    console.log('Sending to Xano /answer:', payload);
 
     // Create answer in Xano (this endpoint should also update question status and media_asset owner_id)
     const xanoResponse = await fetch(
@@ -73,9 +83,17 @@ export default async function handler(req, res) {
     );
 
     if (!xanoResponse.ok) {
-      const errorData = await xanoResponse.json();
-      console.error('Xano error creating answer:', errorData);
-      throw new Error(errorData.message || 'Failed to create answer in database');
+      const errorText = await xanoResponse.text();
+      console.error('Xano error response:', errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        throw new Error(`Xano returned status ${xanoResponse.status}: ${errorText.substring(0, 200)}`);
+      }
+      
+      throw new Error(errorData.message || errorData.error || 'Failed to create answer in database');
     }
 
     const answer = await xanoResponse.json();
@@ -91,7 +109,7 @@ export default async function handler(req, res) {
 
     if (!playbackTokenHash) {
       console.warn('⚠️ No playback_token_hash in response - review URL will not work');
-      console.warn('Response structure:', answer);
+      console.warn('Response structure:', JSON.stringify(answer, null, 2));
     }
 
     // TODO: Send notification email to question.payer_email with review link
@@ -113,7 +131,8 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error creating answer:', error);
+    console.error('❌ Error creating answer:', error);
+    console.error('Error stack:', error.stack);
     
     return res.status(500).json({
       success: false,
@@ -122,30 +141,6 @@ export default async function handler(req, res) {
   }
 }
 
-/**
- * Send notification email to question asker
- * TODO: Implement email service integration
- */
-async function sendAnswerNotificationEmail(answer) {
-  console.log('TODO: Send answer notification email');
-  // Integration with email service (SendGrid, etc.)
-  // Should include:
-  // - Answer preview
-  // - Link to view full answer
-  // - Expert information
-}
-
-/**
- * Update question status after answer is submitted
- * TODO: Implement status update
- */
-async function updateQuestionStatus(questionId, status) {
-  console.log('TODO: Update question status to:', status);
-  // Update question record in Xano
-  // Mark as 'answered' so it doesn't show in pending questions
-}
-
-// ✅ FIXED: Removed duplicate config export
 export const config = {
   api: {
     bodyParser: {
