@@ -36,7 +36,7 @@ function QuestionSentPage() {
     }
   }, [location.search]);
 
-  const reviewUrl = reviewToken ? `${window.location.origin}/review/${reviewToken}` : '';
+  const reviewUrl = reviewToken ? `${window.location.origin}/r/${reviewToken}` : '';
 
   const handleCopyLink = () => {
     if (reviewUrl) {
