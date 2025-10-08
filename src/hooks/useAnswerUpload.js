@@ -214,7 +214,7 @@ export function useAnswerUpload() {
         mime_type: mediaResult.mode === 'video' ? 'video/webm' : 'audio/webm',
         storage: mediaResult.mode === 'video' ? 'stream' : 'r2',
         owner_type: 'answer',                   // Always 'answer' for this flow
-        // owner_id NOT sent - will be null in DB, updated by /answer endpoint
+        owner_id: 0,                            // Placeholder - will be updated by /answer endpoint
       }),
     });
 
@@ -275,7 +275,7 @@ export function useAnswerUpload() {
             mode: answerData.recordingMode || 'multi-segment',
             totalDuration: answerData.recordingDuration || 0,
             owner_type: 'answer',
-            // owner_id NOT sent - will be null, updated by /answer endpoint
+            owner_id: 0, // Placeholder - will be updated by /answer endpoint
           }),
         });
 
