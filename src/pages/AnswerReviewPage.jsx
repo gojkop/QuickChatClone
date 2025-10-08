@@ -120,6 +120,21 @@ function AnswerReviewPage() {
     return date.toLocaleDateString();
   };
 
+  // Extract Cloudflare Stream video ID and customer subdomain from URL
+  const getStreamVideoInfo = (url) => {
+    if (!url) return null;
+    // Match: https://customer-{ID}.cloudflarestream.com/{VIDEO_ID}/manifest/video.m3u8
+    const match = url.match(/https:\/\/(customer-[a-zA-Z0-9]+)\.cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
+    if (match) {
+      return {
+        customerSubdomain: match[1],
+        videoId: match[2],
+        iframeUrl: `https://${match[1]}.cloudflarestream.com/${match[2]}/iframe`
+      };
+    }
+    return null;
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -246,37 +261,100 @@ function AnswerReviewPage() {
               
               {data.media_assets
                 .sort((a, b) => a.segment_index - b.segment_index)
-                .map((segment) => (
-                  <div key={segment.id} className="relative">
-                    {data.media_assets.length > 1 && (
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
-                          Part {segment.segment_index + 1}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {segment.metadata?.mode === 'video' ? '🎥 Video' : '🎤 Audio'} 
-                          • {segment.duration_sec}s
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className="bg-gray-900 rounded-xl overflow-hidden aspect-video">
-                      {segment.metadata?.mode === 'video' || segment.url.includes('cloudflarestream.com') ? (
-                        <video className="w-full h-full" controls playsInline>
-                          <source src={segment.url} type="application/x-mpegURL" />
-                          Your browser does not support video.
-                        </video>
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <audio className="w-full max-w-md" controls>
+                .map((segment) => {
+                  const isVideo = segment.metadata?.mode === 'video' || 
+                                  segment.metadata?.mode === 'screen' || 
+                                  segment.metadata?.mode === 'screen-camera' ||
+                                  segment.url?.includes('cloudflarestream.com');
+                  const isAudio = segment.metadata?.mode === 'audio' || 
+                                  segment.url?.includes('.webm') || 
+                                  !isVideo;
+                  
+                  const streamInfo = isVideo ? getStreamVideoInfo(segment.url) : null;
+                  
+                  return (
+                    <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
+                      {/* Header */}
+                      {data.media_assets.length > 1 && (
+                        <div className="p-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-gray-400">
+                              Segment {segment.segment_index + 1}
+                            </span>
+                            {segment.duration_sec > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ({Math.round(segment.duration_sec)}s)
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isVideo ? (
+                              <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                              </svg>
+                            )}
+                            <span className="text-xs font-medium text-gray-400">
+                              {isVideo ? 'Video' : 'Audio'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Player */}
+                      {isVideo && streamInfo ? (
+                        // VIDEO: Cloudflare Stream iframe
+                        <div className="w-full aspect-video bg-black">
+                          <iframe
+                            src={streamInfo.iframeUrl}
+                            style={{ border: 'none', width: '100%', height: '100%' }}
+                            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                            allowFullScreen={true}
+                            title={`Video segment ${segment.segment_index + 1}`}
+                          />
+                        </div>
+                      ) : isAudio && segment.url ? (
+                        // AUDIO: Direct R2 URL with HTML5 audio player
+                        <div className="p-8 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+                          <audio 
+                            controls 
+                            className="w-full max-w-md"
+                            preload="metadata"
+                            style={{
+                              filter: 'invert(1) hue-rotate(180deg)',
+                              height: '40px'
+                            }}
+                          >
                             <source src={segment.url} type="audio/webm" />
-                            Your browser does not support audio.
+                            <source src={segment.url} type="audio/mp4" />
+                            Your browser does not support audio playback.
                           </audio>
+                        </div>
+                      ) : (
+                        // FALLBACK: Unavailable
+                        <div className="p-8 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+                          <svg className="w-12 h-12 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                          <p className="text-white text-sm">Media unavailable</p>
+                          {segment.url && (
+                            <a 
+                              href={segment.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-indigo-400 hover:text-indigo-300 mt-2 underline"
+                            >
+                              Try direct link
+                            </a>
+                          )}
                         </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           )}
 
@@ -336,15 +414,34 @@ function AnswerReviewPage() {
             {/* Answer Video Player */}
             {data.answer.media_url && (
               <div className="bg-gray-900">
-                <div className="relative aspect-video">
-                  <video 
-                    className="w-full h-full"
-                    controls
-                    playsInline
-                  >
-                    <source src={data.answer.media_url} type="application/x-mpegURL" />
-                    Your browser does not support video.
-                  </video>
+                <div className="w-full aspect-video bg-black">
+                  {(() => {
+                    const streamInfo = getStreamVideoInfo(data.answer.media_url);
+                    if (streamInfo) {
+                      // Cloudflare Stream video
+                      return (
+                        <iframe
+                          src={streamInfo.iframeUrl}
+                          style={{ border: 'none', width: '100%', height: '100%' }}
+                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                          allowFullScreen={true}
+                          title="Answer video"
+                        />
+                      );
+                    } else {
+                      // Fallback to video tag for other sources
+                      return (
+                        <video 
+                          className="w-full h-full"
+                          controls
+                          playsInline
+                        >
+                          <source src={data.answer.media_url} type="video/mp4" />
+                          Your browser does not support video.
+                        </video>
+                      );
+                    }
+                  })()}
                 </div>
               </div>
             )}
