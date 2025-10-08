@@ -1,7 +1,7 @@
-// src/pages/AnswerReviewPage.jsx - Updated Header & CTA
+// src/pages/AnswerReviewPage.jsx - Complete with Feedback Submission
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import logo from '@/assets/images/logo.svg'; // ✅ ADD THIS IMPORT
+import logo from '@/assets/images/logo.svg';
 
 const XANO_BASE_URL = import.meta.env.VITE_XANO_BASE_URL || 'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L';
 
@@ -56,7 +56,7 @@ function AnswerReviewPage() {
           } : null,
           expert_profile: {
             ...rawData.expert_profile,
-            handle: rawData.expert_profile?.handle, // ✅ Preserve handle for links
+            handle: rawData.expert_profile?.handle,
             user: {
               name: rawData.user || rawData.expert_profile?.professional_title || 'Expert'
             }
@@ -87,7 +87,20 @@ function AnswerReviewPage() {
     }
 
     try {
-      console.log('Submitting feedback:', { rating, feedback, allowTestimonial, questionId: data.id });
+      const response = await fetch(`${XANO_BASE_URL}/review/${token}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating,
+          feedback_text: feedback.trim(),
+          allow_testimonial: allowTestimonial
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit feedback');
+      }
+
       setHasSubmittedFeedback(true);
     } catch (err) {
       console.error('Error submitting feedback:', err);
@@ -175,11 +188,11 @@ function AnswerReviewPage() {
   const hasAnswer = data.answer?.media_url || data.answer?.text;
   const expertName = data.expert_profile?.user?.name || 'Expert';
   const expertAvatar = data.expert_profile?.avatar_url;
-  const expertHandle = data.expert_profile?.handle; // ✅ Extract expert handle for links
+  const expertHandle = data.expert_profile?.handle;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
-      {/* ✅ UPDATED HEADER WITH LOGO */}
+      {/* Header with Logo */}
       <header className="bg-white/95 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 py-4 max-w-4xl">
           <div className="flex items-center justify-between">
@@ -207,7 +220,7 @@ function AnswerReviewPage() {
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl pb-24">
         
-        {/* ✅ ELEGANT EXPERT CARD WITH SUBTLE ACTION BUTTONS */}
+        {/* Expert Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
           <div className="flex items-start gap-4">
             {/* Clickable Avatar */}
@@ -270,7 +283,7 @@ function AnswerReviewPage() {
               <p className="text-sm text-gray-600 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
             </div>
             
-            {/* Subtle Action Buttons */}
+            {/* Action Buttons */}
             {expertHandle && (
               <div className="flex flex-col gap-2 flex-shrink-0">
                 <a
@@ -652,7 +665,7 @@ function AnswerReviewPage() {
           </div>
         )}
 
-        {/* ✅ COMPACT CTA SECTION */}
+        {/* CTA Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
           <div className="p-6 text-center">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-indigo-50 rounded-full mb-3">
