@@ -4,16 +4,28 @@ import { useLocation, Link } from 'react-router-dom';
 function QuestionSentPage() {
   const location = useLocation();
   const [questionId, setQuestionId] = useState('');
+  const [reviewToken, setReviewToken] = useState('');
   const [expertHandle, setExpertHandle] = useState('');
   const [expertName, setExpertName] = useState('the expert');
-
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setQuestionId(params.get('question_id'));
+    setReviewToken(params.get('review_token'));
     setExpertHandle(params.get('expert'));
     setExpertName(params.get('expertName') || 'the expert');
   }, [location.search]);
+
+  const reviewUrl = reviewToken ? `${window.location.origin}/review/${reviewToken}` : '';
+
+  const handleCopyLink = () => {
+    if (reviewUrl) {
+      navigator.clipboard.writeText(reviewUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-green-50">
@@ -82,10 +94,36 @@ function QuestionSentPage() {
                 </div>
               </div>
 
-              {questionId && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center mb-6">
-                  <p className="text-sm text-gray-600">
-                    Your question ID is: <span className="font-semibold text-gray-800">{questionId}</span>
+              {reviewToken && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-gray-700 mb-3 text-center">
+                    You can see your question and answer (once it is available) at this location:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/review/${reviewToken}`}
+                      className="flex-1 bg-white border border-indigo-200 text-indigo-600 font-semibold py-3 px-4 rounded-lg hover:bg-indigo-50 transition text-sm truncate text-center"
+                    >
+                      View Question & Answer
+                    </Link>
+                    <button
+                      onClick={handleCopyLink}
+                      className="flex-shrink-0 bg-white border border-indigo-200 text-indigo-600 p-3 rounded-lg hover:bg-indigo-50 transition"
+                      title="Copy link"
+                    >
+                      {copied ? (
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    Bookmark this link to check back for the answer
                   </p>
                 </div>
               )}
