@@ -65,38 +65,6 @@ const formatPrice = (cents, currency = 'USD') => {
   return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
 };
 
-// Helper to get status display - FIXED
-const getStatusDisplay = (question) => {
-  // Check if answered (answered_at > 0 or status is 'closed' or 'answered')
-  const isAnswered = (question.answered_at && question.answered_at > 0) || 
-                     question.status === 'closed' || 
-                     question.status === 'answered';
-  
-  if (isAnswered) {
-    return { 
-      label: 'Answered', 
-      color: 'bg-green-100 text-green-700',
-      isPending: false 
-    };
-  }
-  
-  // Check if pending (paid but not answered)
-  if (question.status === 'paid') {
-    return { 
-      label: 'Pending', 
-      color: 'bg-amber-100 text-amber-700',
-      isPending: true 
-    };
-  }
-  
-  // Default to unpaid
-  return { 
-    label: 'Unpaid', 
-    color: 'bg-gray-100 text-gray-600',
-    isPending: false 
-  };
-};
-
 const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages, onPageChange, onQuestionClick }) => {
   const handleAction = (action, question) => {
     console.log('Action:', action, 'Question:', question);
@@ -181,7 +149,17 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
             </thead>
             <tbody className="divide-y divide-gray-200">
             {questions.map((question) => {
-                const statusDisplay = getStatusDisplay(question);
+                const isPending = question.status === 'paid' && !question.answered_at;
+                
+                // Better status mapping
+                let statusDisplay;
+                if (question.answered_at || question.status === 'answered') {
+                  statusDisplay = { label: 'Answered', color: 'bg-green-100 text-green-700' };
+                } else if (question.status === 'paid') {
+                  statusDisplay = { label: 'Pending', color: 'bg-amber-100 text-amber-700' };
+                } else {
+                  statusDisplay = { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' };
+                }
 
                 return (
                   <tr 
@@ -191,7 +169,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                   >
                     <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusDisplay.color}`}>
-                        {statusDisplay.isPending && (
+                        {isPending && (
                           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
                         )}
                         {statusDisplay.label}
@@ -238,7 +216,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-semibold">
-                        {statusDisplay.isPending ? formatSLA(question.sla_hours_snapshot, question.created_at) : '—'}
+                        {isPending ? formatSLA(question.sla_hours_snapshot, question.created_at) : '—'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
@@ -259,7 +237,17 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
         {/* Mobile View */}
         <div className="lg:hidden divide-y divide-gray-200">
           {questions.map((question) => {
-            const statusDisplay = getStatusDisplay(question);
+            const isPending = question.status === 'paid' && !question.answered_at;
+            
+            // Better status mapping
+            let statusDisplay;
+            if (question.answered_at || question.status === 'answered') {
+              statusDisplay = { label: 'Answered', color: 'bg-green-100 text-green-700' };
+            } else if (question.status === 'paid') {
+              statusDisplay = { label: 'Pending', color: 'bg-amber-100 text-amber-700' };
+            } else {
+              statusDisplay = { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' };
+            }
 
             return (
               <div 
@@ -272,12 +260,12 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                   <div className="flex-1 min-w-0 mr-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${statusDisplay.color}`}>
-                        {statusDisplay.isPending && (
+                        {isPending && (
                           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
                         )}
                         {statusDisplay.label}
                       </span>
-                      {statusDisplay.isPending && (
+                      {isPending && (
                         <span className="text-xs font-semibold text-gray-600">
                           {formatSLA(question.sla_hours_snapshot, question.created_at)}
                         </span>
