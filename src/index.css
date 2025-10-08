@@ -30,6 +30,21 @@ body {
     animation: animated-gradient 10s ease infinite;
 }
 
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
 /* ENGAGEMENT ELEMENT: Subtle Pulse on CTA Buttons */
 @keyframes subtle-pulse {
     0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }

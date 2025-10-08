@@ -1,11 +1,15 @@
 // src/components/dashboard/QuestionActionsDropdown.jsx
 import React, { useState, useRef, useEffect } from 'react';
+import ScheduleWorkModal from './ScheduleWorkModal';
+import { Toast, useToast } from '@/components/common/Toast';
 
 function QuestionActionsDropdown({ question, onAction }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, openUpward: false });
+  const [openUpward, setOpenUpward] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -18,25 +22,28 @@ function QuestionActionsDropdown({ question, onAction }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Calculate dropdown position when opened
-  const handleToggle = () => {
-    if (!isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const spaceBelow = viewportHeight - rect.bottom;
-      const spaceAbove = rect.top;
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - buttonRect.bottom;
+      const spaceAbove = buttonRect.top;
       
-      // Dropdown height is approximately 120px (adjust based on content)
-      const dropdownHeight = isPending ? 120 : 80;
-      const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
-      
-      setDropdownPosition({
-        top: shouldOpenUpward ? rect.top - dropdownHeight - 8 : rect.bottom + 8,
-        left: rect.right - 224, // 224px is dropdown width (56 * 4)
-        openUpward: shouldOpenUpward
-      });
+      if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+        setOpenUpward(true);
+      } else {
+        setOpenUpward(false);
+      }
     }
-    setIsOpen(!isOpen);
+  }, [isOpen]);
+
+  const handleScheduleClick = (e) => {
+    e.stopPropagation();
+    setShowScheduleModal(true);
+    setIsOpen(false);
+  };
+
+  const handleScheduled = (data) => {
+    showToast(`📅 Added to ${data.service} Calendar!`, 'success');
   };
 
   const handleAction = (action) => {
@@ -51,7 +58,7 @@ function QuestionActionsDropdown({ question, onAction }) {
       <div className="relative" ref={dropdownRef}>
         <button
           ref={buttonRef}
-          onClick={handleToggle}
+          onClick={() => setIsOpen(!isOpen)}
           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
           title="More actions"
         >
@@ -59,22 +66,34 @@ function QuestionActionsDropdown({ question, onAction }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
           </svg>
         </button>
-      </div>
 
-      {/* Fixed position dropdown to prevent overflow */}
-      {isOpen && (
-        <div 
-          style={{
-            position: 'fixed',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            zIndex: 9999
-          }}
-          className="w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5"
-        >
-          <div className="py-1">
-            {isPending && (
-              <>
+        {isOpen && (
+          <div 
+            className={`absolute right-0 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 ${
+              openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+            }`}
+          >
+            <div className="py-1">
+              {/* NEW: Schedule Work Time */}
+              <button
+                onClick={handleScheduleClick}
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 text-left group transition"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-gray-900">Schedule Work Time</div>
+                  <div className="text-xs text-gray-500">Plan when to answer</div>
+                </div>
+              </button>
+
+              <div className="border-t border-gray-200 my-1"></div>
+
+              {/* Existing actions */}
+              {isPending && (
                 <button
                   onClick={() => handleAction('refund')}
                   className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
@@ -84,24 +103,42 @@ function QuestionActionsDropdown({ question, onAction }) {
                   </svg>
                   <span>Refund & Decline</span>
                 </button>
-                <div className="border-t border-gray-200 my-1"></div>
-              </>
-            )}
+              )}
 
-            <button
-              onClick={() => handleAction('delete')}
-              className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              <span>Delete Question</span>
-            </button>
+              {isPending && <div className="border-t border-gray-200 my-1"></div>}
+
+              <button
+                onClick={() => handleAction('delete')}
+                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>Delete Question</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+      </div>
+
+      {/* Schedule Modal */}
+      <ScheduleWorkModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        question={question}
+        onScheduled={handleScheduled}
+      />
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
+        />
       )}
     </>
   );
 }
 
-export default QuestionActionsDropdown; 
+export default QuestionActionsDropdown;
