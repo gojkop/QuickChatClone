@@ -1,4 +1,4 @@
-// src/pages/AnswerReviewPage.jsx - Improved Design
+// src/pages/AnswerReviewPage.jsx - Improved Design (WORKING VERSION)
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -15,7 +15,6 @@ function AnswerReviewPage() {
   const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState(false);
   const [showQuestion, setShowQuestion] = useState(false);
   const [allowTestimonial, setAllowTestimonial] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [showPrivacyReminder, setShowPrivacyReminder] = useState(true);
 
   useEffect(() => {
@@ -137,15 +136,6 @@ function AnswerReviewPage() {
 
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
-  const handleCopyProfileLink = () => {
-    if (data?.expert_profile?.handle) {
-      const url = `${window.location.origin}/u/${data.expert_profile.handle}`;
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -179,17 +169,16 @@ function AnswerReviewPage() {
     );
   }
 
-  const hasAnswer = data.answer?.media_url;
+  const hasAnswer = data.answer?.media_url || data.answer?.text;
   const expertName = data.expert_profile?.user?.name || 'Expert';
   const expertAvatar = data.expert_profile?.avatar_url;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
-      {/* Unified Header - Navigation + Context */}
+      {/* Unified Header */}
       <header className="bg-white/95 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 py-4 max-w-4xl">
           <div className="flex items-center justify-between">
-            {/* Logo */}
             <a href="/" className="flex items-center gap-2 group">
               <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,7 +188,6 @@ function AnswerReviewPage() {
               <span className="font-bold text-gray-900 hidden sm:block">QuickChat</span>
             </a>
             
-            {/* Delivery Badge - Only shows when answered */}
             {hasAnswer && getDeliveryTime() && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
                 <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,10 +204,9 @@ function AnswerReviewPage() {
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl pb-24">
         
-        {/* Expert Card - Redesigned without X handle */}
+        {/* Expert Card - Redesigned */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
           <div className="flex items-start gap-4">
-            {/* Avatar with verified badge */}
             <div className="relative flex-shrink-0">
               {expertAvatar ? (
                 <img 
@@ -234,7 +221,6 @@ function AnswerReviewPage() {
                   </span>
                 </div>
               )}
-              {/* Verified Badge */}
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
                 <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -242,27 +228,21 @@ function AnswerReviewPage() {
               </div>
             </div>
             
-            {/* Expert Info - No X handle */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
                   Answer from
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate">
-                {expertName}
-              </h2>
-              <p className="text-sm text-gray-600 truncate">
-                {data.expert_profile?.professional_title || 'Expert'}
-              </p>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate">{expertName}</h2>
+              <p className="text-sm text-gray-600 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
             </div>
           </div>
         </div>
 
-        {/* Answer Section - No Share Button */}
+        {/* Answer Section */}
         {hasAnswer ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-            {/* Header - Removed share button */}
             <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-5 sm:px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
@@ -272,7 +252,7 @@ function AnswerReviewPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-white font-bold text-base">Your Answer</h3>
-                  {data.answer.media_duration && (
+                  {data.answer?.media_duration && (
                     <p className="text-slate-300 text-xs sm:text-sm">
                       {formatDuration(data.answer.media_duration)} video response
                     </p>
@@ -281,8 +261,7 @@ function AnswerReviewPage() {
               </div>
             </div>
 
-            {/* Video Player */}
-            {data.answer.media_url && (
+            {data.answer?.media_url && (
               <div className="bg-black">
                 <div className="w-full aspect-video">
                   {(() => {
@@ -312,8 +291,7 @@ function AnswerReviewPage() {
               </div>
             )}
 
-            {/* Text Answer */}
-            {data.answer.text && (
+            {data.answer?.text && (
               <div className="p-5 sm:p-6">
                 <p className="text-gray-800 leading-relaxed text-sm sm:text-base whitespace-pre-wrap">
                   {data.answer.text}
@@ -321,7 +299,6 @@ function AnswerReviewPage() {
               </div>
             )}
 
-            {/* Privacy Reminder - New Section */}
             {showPrivacyReminder && (
               <div className="mx-5 sm:mx-6 mb-5 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <div className="flex gap-3">
@@ -349,7 +326,6 @@ function AnswerReviewPage() {
               </div>
             )}
 
-            {/* Action Bar - Simplified */}
             <div className="px-5 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
               <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -612,10 +588,9 @@ function AnswerReviewPage() {
           </div>
         )}
 
-        {/* Revised CTA Section - Only verified claims */}
+        {/* CTA Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
           <div className="p-8 sm:p-10 text-center">
-            {/* Trust Indicators */}
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full mb-4">
               <div className="flex -space-x-1.5">
                 {[1,2,3].map(i => (
@@ -632,7 +607,6 @@ function AnswerReviewPage() {
               Set your price, answer on your schedule, and monetize your expertise
             </p>
 
-            {/* Verified Benefits - Only from pricing page */}
             <div className="flex flex-col gap-2 mb-6 text-sm text-left max-w-sm mx-auto">
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -654,7 +628,6 @@ function AnswerReviewPage() {
               </div>
             </div>
 
-            {/* CTA Button */}
             <a
               href="/?ref=answer_page"
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-8 py-3.5 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105 min-h-[44px]"
@@ -665,7 +638,6 @@ function AnswerReviewPage() {
               </svg>
             </a>
 
-            {/* Pricing Link */}
             <p className="text-xs text-gray-500 mt-4">
               <a href="/pricing" className="hover:text-indigo-600 transition-colors underline">
                 View full pricing details
@@ -674,7 +646,7 @@ function AnswerReviewPage() {
           </div>
         </div>
 
-        {/* Footer - Simplified */}
+        {/* Footer */}
         <div className="text-center py-4">
           <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors group">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
