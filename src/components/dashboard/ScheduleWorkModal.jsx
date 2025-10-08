@@ -373,30 +373,63 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
               </div>
             )}
 
-            {/* Compact Calendar Service Selection */}
+            {/* Calendar Service Selection - FIXED WITH HARDCODED BUTTONS */}
             {canSchedule && (
-              <div className="border-t border-gray-200 pt-4">
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  📅 Add to calendar
-                </label>
+              <div className="border-t border-gray-200 pt-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <label className="text-xs font-bold text-gray-900">
+                    Add to calendar
+                  </label>
+                </div>
                 
                 <div className="grid grid-cols-2 gap-2">
-                  {CALENDAR_SERVICES.map((service) => (
-                    <button
-                      key={service.id}
-                      onClick={() => handleCalendarClick(service.id)}
-                      className={`group relative p-3 rounded-lg bg-gradient-to-br ${service.color} ${service.hoverColor} text-white font-bold shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95`}
-                    >
-                      <div className="flex items-center justify-center gap-1.5">
-                        <span className="text-lg">{service.icon}</span>
-                        <span className="text-xs">{service.name}</span>
-                      </div>
-                      
-                      {/* Shimmer effect */}
-                      <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity transform -skew-x-12"></div>
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => handleCalendarClick('google')}
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 hover:border-blue-400 transition-all hover:shadow-sm active:scale-95"
+                  >
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-gray-700">Google</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleCalendarClick('outlook')}
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 hover:border-sky-400 transition-all hover:shadow-sm active:scale-95"
+                  >
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-gray-700">Outlook</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleCalendarClick('office365')}
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 hover:border-orange-400 transition-all hover:shadow-sm active:scale-95"
+                  >
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-gray-700">Office 365</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleCalendarClick('apple')}
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all hover:shadow-sm active:scale-95"
+                  >
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-gray-700">Apple</span>
+                  </button>
                 </div>
+                
+                <p className="text-xs text-center text-gray-500 mt-2">
+                  Opens in new tab
+                </p>
               </div>
             )}
 
