@@ -56,6 +56,7 @@ function AnswerReviewPage() {
           } : null,
           expert_profile: {
             ...rawData.expert_profile,
+            handle: rawData.expert_profile?.handle, // ✅ Preserve handle for links
             user: {
               name: rawData.user || rawData.expert_profile?.professional_title || 'Expert'
             }
@@ -63,6 +64,7 @@ function AnswerReviewPage() {
         };
         
         console.log('✅ Transformed data:', transformedData);
+        console.log('🔗 Expert handle:', transformedData.expert_profile?.handle);
         setData(transformedData);
         
       } catch (err) {
@@ -173,14 +175,15 @@ function AnswerReviewPage() {
   const hasAnswer = data.answer?.media_url || data.answer?.text;
   const expertName = data.expert_profile?.user?.name || 'Expert';
   const expertAvatar = data.expert_profile?.avatar_url;
+  const expertHandle = data.expert_profile?.handle; // ✅ Extract expert handle for links
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
       {/* ✅ UPDATED HEADER WITH LOGO */}
       <header className="bg-white/95 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 py-4 max-w-4xl">
-          <div className="flex items-center justify-between">
-            <a href="/" className="flex items-center group">
+          <div className="flex items-center justify-between gap-3">
+            <a href="/" className="flex items-center group flex-shrink-0">
               <img 
                 src={logo} 
                 alt="QuickChat" 
@@ -188,57 +191,127 @@ function AnswerReviewPage() {
               />
             </a>
             
-            {hasAnswer && getDeliveryTime() && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
-                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-xs font-semibold text-green-700">
-                  Delivered in {getDeliveryTime()}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              {/* Ask Another Question Button */}
+              {expertHandle && (
+                <a
+                  href={`/ask?expert=${expertHandle}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-sm"
+                  title="Ask another question"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <span className="hidden sm:inline">Ask Another</span>
+                  <span className="sm:hidden">Ask</span>
+                </a>
+              )}
+              
+              {/* Delivery Time Badge */}
+              {hasAnswer && getDeliveryTime() && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-xs font-semibold text-green-700">
+                    Delivered in {getDeliveryTime()}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl pb-24">
         
-        {/* Expert Card - Redesigned */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
-          <div className="flex items-start gap-4">
-            <div className="relative flex-shrink-0">
-              {expertAvatar ? (
-                <img 
-                  src={expertAvatar} 
-                  alt={expertName}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-indigo-100"
-                />
-              ) : (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-indigo-100">
-                  <span className="text-2xl sm:text-3xl font-bold text-white">
-                    {expertName.charAt(0)}
+        {/* ✅ CLICKABLE EXPERT CARD */}
+        {expertHandle ? (
+          <a 
+            href={`/u/${expertHandle}`}
+            className="block bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6 hover:shadow-md hover:border-indigo-200 transition-all duration-200 group"
+          >
+            <div className="flex items-start gap-4">
+              <div className="relative flex-shrink-0">
+                {expertAvatar ? (
+                  <img 
+                    src={expertAvatar} 
+                    alt={expertName}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-indigo-100 group-hover:ring-indigo-300 transition-all"
+                  />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-indigo-100 group-hover:ring-indigo-300 transition-all">
+                    <span className="text-2xl sm:text-3xl font-bold text-white">
+                      {expertName.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
+                    Answer from
                   </span>
                 </div>
-              )}
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
-                <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate group-hover:text-indigo-600 transition-colors">
+                  {expertName}
+                </h2>
+                <p className="text-sm text-gray-600 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
+              </div>
+              
+              {/* View Profile Indicator */}
+              <div className="flex-shrink-0 self-center">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 group-hover:bg-indigo-50 border border-gray-200 group-hover:border-indigo-300 transition-all">
+                  <span className="text-xs font-medium text-gray-600 group-hover:text-indigo-600 hidden sm:inline">View Profile</span>
+                  <svg className="w-4 h-4 text-gray-400 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
               </div>
             </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
-                  Answer from
-                </span>
+          </a>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="relative flex-shrink-0">
+                {expertAvatar ? (
+                  <img 
+                    src={expertAvatar} 
+                    alt={expertName}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-indigo-100"
+                  />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-indigo-100">
+                    <span className="text-2xl sm:text-3xl font-bold text-white">
+                      {expertName.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate">{expertName}</h2>
-              <p className="text-sm text-gray-600 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
+                    Answer from
+                  </span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate">{expertName}</h2>
+                <p className="text-sm text-gray-600 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Answer Section */}
         {hasAnswer ? (
