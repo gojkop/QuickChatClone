@@ -203,19 +203,27 @@ export function useAnswerUpload() {
   const createMediaAsset = async (mediaResult) => {
     console.log('💾 Creating media_asset record...');
     
-    const response = await apiClient.post('/media_asset', {
-      asset_id: mediaResult.uid,              // Cloudflare UID
-      url: mediaResult.playbackUrl,           // Full URL
-      duration: mediaResult.duration,         // Seconds
-      type: mediaResult.mode,                 // 'video' or 'audio'
-      size: mediaResult.size,                 // Bytes
+    const provider = mediaResult.mode === 'video' ? 'cloudflare_stream' : 'cloudflare_r2';
+    
+    const metadata = {
+      type: mediaResult.mode,
       mime_type: mediaResult.mode === 'video' ? 'video/webm' : 'audio/webm',
-      storage: mediaResult.mode === 'video' ? 'stream' : 'r2',
-      owner_type: 'answer',                   // Always 'answer' for this flow
-      owner_id: 0,                            // Placeholder - will be updated by /answer endpoint
+      size: mediaResult.size || 0,
+    };
+    
+    const response = await apiClient.post('/media_asset', {
+      owner_type: 'answer',
+      owner_id: 0, // Placeholder
+      provider: provider,
+      asset_id: mediaResult.uid, // Cloudflare UID
+      duration_sec: Math.round(mediaResult.duration || 0),
+      status: 'ready',
+      url: mediaResult.playbackUrl,
+      metadata: JSON.stringify(metadata), // ← Stringify for Xano
+      segment_index: null,
     });
 
-    console.log('✅ Media asset record created:', response.data.media_asset_id);
+    console.log('✅ Media asset record created:', response.data.id);
     
     return response.data;
   };
@@ -251,22 +259,36 @@ export function useAnswerUpload() {
       if (answerData.recordingSegments && answerData.recordingSegments.length > 0) {
         console.log('📤 Creating media_asset record from segments...');
         
-        // Segments are already uploaded to Cloudflare
-        // Create a media_asset record in Xano using apiClient
-        const response = await apiClient.post('/media_asset', {
+        // Transform segments data to match Xano schema
+        const firstSegment = answerData.recordingSegments[0];
+        
+        // Build metadata as an object first, then stringify for Xano
+        const metadata = {
+          type: answerData.recordingMode || 'multi-segment',
+          mime_type: 'video/webm',
           segments: answerData.recordingSegments.map(seg => ({
             uid: seg.uid,
             playback_url: seg.playbackUrl,
             duration: seg.duration,
             mode: seg.mode,
+            segment_index: seg.segmentIndex,
           })),
-          mode: answerData.recordingMode || 'multi-segment',
-          totalDuration: answerData.recordingDuration || 0,
+          segment_count: answerData.recordingSegments.length,
+        };
+        
+        const response = await apiClient.post('/media_asset', {
           owner_type: 'answer',
-          owner_id: 0, // Placeholder - will be updated by /answer endpoint
+          owner_id: 0, // Placeholder
+          provider: 'cloudflare_stream',
+          asset_id: firstSegment.uid, // First segment's Cloudflare UID
+          duration_sec: Math.round(answerData.recordingDuration || 0),
+          status: 'ready',
+          url: firstSegment.playbackUrl, // First segment's URL
+          metadata: JSON.stringify(metadata), // ← Stringify for Xano
+          segment_index: null, // Parent record
         });
 
-        mediaAssetId = response.data?.id || response.data?.media_asset_id;
+        mediaAssetId = response.data?.id;
         mediaResult = response.data;
         
         console.log('✅ Media asset created, ID:', mediaAssetId);
