@@ -2,59 +2,43 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
+const XANO_BASE_URL = import.meta.env.VITE_XANO_BASE_URL || 'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L';
+
 function AnswerReviewPage() {
   const { token } = useParams();
+  const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState(false);
 
-  // Mock data - replace with actual API call
-  const mockData = {
-    expert: {
-      name: 'Sarah Johnson',
-      avatar_url: null,
-      handle: 'sarahjohnson'
-    },
-    question: {
-      title: 'Can you review my landing page copy for my SaaS product?',
-      text: 'I\'m launching a project management tool and need feedback on the messaging. Is it clear? Does it resonate?',
-      media_type: 'video',
-      media_url: null, // Would be actual video URL
-      attachments: [
-        { name: 'landing-page-v1.pdf', url: '#' },
-        { name: 'copy-draft.docx', url: '#' }
-      ],
-      created_at: Date.now() / 1000 - 86400 // 1 day ago
-    },
-    answer: {
-      media_type: 'video',
-      media_url: null, // Would be actual video URL
-      media_duration: 847, // seconds
-      text_response: `Great question! I've reviewed your landing page copy and have some specific suggestions.
-
-Your headline is strong, but I'd recommend making your value proposition clearer in the first 3 seconds. Your target audience needs to immediately understand "what's in it for them."
-
-The pricing section could benefit from clearer tier differentiation. I've outlined specific changes in the video that will help increase conversions.
-
-Overall, you're on the right track - just needs some polish!`,
-      attachments: [
-        { name: 'annotated-copy-suggestions.pdf', url: '#', size: '2.4 MB' }
-      ],
-      created_at: Date.now() / 1000 - 3600, // 1 hour ago
-      view_count: 0
-    }
-  };
-
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
+    async function fetchData() {
+      try {
+        const response = await fetch(`${XANO_BASE_URL}/review/${token}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('This link is invalid or has expired.');
+          }
+          throw new Error('Failed to load answer.');
+        }
 
-    // Track view analytics
-    console.log('Recording view for token:', token);
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        console.error('Error fetching review data:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (token) {
+      fetchData();
+    }
   }, [token]);
 
   const handleSubmitFeedback = async () => {
@@ -63,10 +47,14 @@ Overall, you're on the right track - just needs some polish!`,
       return;
     }
 
-    // TODO: API call to submit feedback
-    console.log('Submitting feedback:', { rating, feedback });
-    
-    setHasSubmittedFeedback(true);
+    try {
+      // TODO: Create Xano endpoint for feedback submission
+      console.log('Submitting feedback:', { rating, feedback, questionId: data.id });
+      setHasSubmittedFeedback(true);
+    } catch (err) {
+      console.error('Error submitting feedback:', err);
+      alert('Failed to submit feedback. Please try again.');
+    }
   };
 
   const formatDuration = (seconds) => {
@@ -76,16 +64,19 @@ Overall, you're on the right track - just needs some polish!`,
   };
 
   const getTimeAgo = (timestamp) => {
-    const now = Date.now() / 1000;
-    const diff = now - timestamp;
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSecs = Math.floor(diffMs / 1000);
     
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
-    return new Date(timestamp * 1000).toLocaleDateString();
+    if (diffSecs < 60) return 'just now';
+    if (diffSecs < 3600) return `${Math.floor(diffSecs / 60)} minutes ago`;
+    if (diffSecs < 86400) return `${Math.floor(diffSecs / 3600)} hours ago`;
+    if (diffSecs < 604800) return `${Math.floor(diffSecs / 86400)} days ago`;
+    return date.toLocaleDateString();
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -96,6 +87,28 @@ Overall, you're on the right track - just needs some polish!`,
       </div>
     );
   }
+
+  // Error state
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Link Not Found</h2>
+          <p className="text-gray-600">{error || 'This link is invalid or has expired.'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const hasAnswer = data.answer?.media_asset?.url;
+  const expertName = data.expert_profile?.user?.name || 'Expert';
+  const expertHandle = data.expert_profile?.handle || '';
+  const expertAvatar = data.expert_profile?.avatar_url;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -110,14 +123,20 @@ Overall, you're on the right track - just needs some polish!`,
                 </svg>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Your Answer</h1>
-                <p className="text-xs text-gray-500">Delivered {getTimeAgo(mockData.answer.created_at)}</p>
+                <h1 className="text-lg font-bold text-gray-900">
+                  {hasAnswer ? 'Your Answer' : 'Your Question'}
+                </h1>
+                <p className="text-xs text-gray-500">
+                  {hasAnswer 
+                    ? `Delivered ${getTimeAgo(data.answer.created_at)}`
+                    : `Asked ${getTimeAgo(data.created_at)}`
+                  }
+                </p>
               </div>
             </div>
             
-            {/* Desktop: Powered by */}
             <div className="hidden sm:block text-xs text-gray-500">
-              Powered by <span className="font-semibold text-indigo-600">QuestionCharge</span>
+              Powered by <span className="font-semibold text-indigo-600">QuickChat</span>
             </div>
           </div>
         </div>
@@ -128,46 +147,76 @@ Overall, you're on the right track - just needs some polish!`,
         {/* Expert Card */}
         <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 rounded-2xl p-6 mb-8">
           <div className="flex items-center gap-4 mb-3">
-            {mockData.expert.avatar_url ? (
+            {expertAvatar ? (
               <img 
-                src={mockData.expert.avatar_url} 
-                alt={mockData.expert.name}
+                src={expertAvatar} 
+                alt={expertName}
                 className="w-16 h-16 rounded-full object-cover ring-4 ring-white"
               />
             ) : (
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center ring-4 ring-white">
                 <span className="text-2xl font-bold text-white">
-                  {mockData.expert.name.charAt(0)}
+                  {expertName.charAt(0)}
                 </span>
               </div>
             )}
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">Answer from {mockData.expert.name}</h2>
-              <p className="text-sm text-indigo-700">@{mockData.expert.handle}</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                {hasAnswer ? `Answer from ${expertName}` : `Question to ${expertName}`}
+              </h2>
+              {expertHandle && (
+                <p className="text-sm text-indigo-700">@{expertHandle}</p>
+              )}
+              {data.expert_profile?.professional_title && (
+                <p className="text-sm text-gray-600">{data.expert_profile.professional_title}</p>
+              )}
             </div>
           </div>
+          {data.expert_profile?.tagline && (
+            <p className="text-sm text-gray-700 italic">{data.expert_profile.tagline}</p>
+          )}
         </div>
 
         {/* Your Question Section */}
         <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">You Asked:</h3>
-          <p className="text-lg font-semibold text-gray-900 mb-4">{mockData.question.title}</p>
           
-          {mockData.question.text && (
+          {data.title && (
+            <p className="text-lg font-semibold text-gray-900 mb-4">{data.title}</p>
+          )}
+          
+          {data.text && (
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <p className="text-gray-700 text-sm leading-relaxed">{mockData.question.text}</p>
+              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{data.text}</p>
             </div>
           )}
 
-          {mockData.question.attachments && mockData.question.attachments.length > 0 && (
+          {/* Question Video/Media */}
+          {data.media_asset?.url && (
+            <div className="mb-4">
+              <div className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video">
+                <video 
+                  className="w-full h-full"
+                  controls
+                  playsInline
+                >
+                  <source src={data.media_asset.url} type="video/mp4" />
+                  Your browser does not support video.
+                </video>
+              </div>
+            </div>
+          )}
+
+          {/* Question Attachments */}
+          {data.attachments && data.attachments.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Your Attachments:</p>
-              {mockData.question.attachments.map((file, index) => (
+              {data.attachments.map((file, index) => (
                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg text-sm">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
-                  <span className="flex-1 text-gray-700">{file.name}</span>
+                  <span className="flex-1 text-gray-700">{file}</span>
                 </div>
               ))}
             </div>
@@ -175,107 +224,74 @@ Overall, you're on the right track - just needs some polish!`,
         </section>
 
         {/* Answer Section */}
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Your Answer</h3>
-                <p className="text-sm text-gray-600">
-                  {mockData.answer.media_type === 'video' ? 'Video' : 'Audio'} Response • {formatDuration(mockData.answer.media_duration)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Video/Audio Player */}
-          <div className="bg-gray-900">
-            {mockData.answer.media_type === 'video' ? (
-              <div className="aspect-video flex items-center justify-center">
-                {/* Placeholder - replace with actual video player */}
-                <div className="text-center text-white p-8">
-                  <svg className="w-20 h-20 mx-auto mb-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        {hasAnswer ? (
+          <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <p className="text-lg font-semibold mb-2">Video Answer</p>
-                  <p className="text-sm text-gray-400">Duration: {formatDuration(mockData.answer.media_duration)}</p>
-                  <div className="mt-6">
-                    <button className="px-6 py-3 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition">
-                      ▶ Play Video
-                    </button>
-                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Your Answer</h3>
+                  {data.answer.media_asset?.duration_sec && (
+                    <p className="text-sm text-gray-600">
+                      Video Response • {formatDuration(data.answer.media_asset.duration_sec)}
+                    </p>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="aspect-video flex items-center justify-center p-8">
-                {/* Audio player placeholder */}
-                <div className="w-full max-w-md">
-                  <div className="bg-gray-800 rounded-lg p-6 text-center">
-                    <svg className="w-16 h-16 mx-auto mb-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                    </svg>
-                    <p className="text-white font-semibold mb-2">Audio Answer</p>
-                    <p className="text-sm text-gray-400 mb-4">{formatDuration(mockData.answer.media_duration)}</p>
-                    <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
-                      <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '0%' }}></div>
-                    </div>
-                    <button className="w-full py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition">
-                      ▶ Play Audio
-                    </button>
-                  </div>
+            </div>
+
+            {/* Answer Video Player */}
+            <div className="bg-gray-900">
+              <div className="relative aspect-video">
+                <video 
+                  className="w-full h-full"
+                  controls
+                  playsInline
+                >
+                  <source src={data.answer.media_asset.url} type="video/mp4" />
+                  Your browser does not support video.
+                </video>
+              </div>
+            </div>
+
+            {/* Written Response (if exists) */}
+            {data.answer.text && (
+              <div className="p-6 border-t border-gray-200">
+                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Written Response:</h4>
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{data.answer.text}</p>
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Written Response */}
-          {mockData.answer.text_response && (
-            <div className="p-6 border-t border-gray-200">
-              <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Written Response:</h4>
-              <div className="prose prose-sm max-w-none">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{mockData.answer.text_response}</p>
+          </section>
+        ) : (
+          /* Waiting for Answer */
+          <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Answer In Progress</h3>
+              <p className="text-gray-600 mb-4">
+                {expertName} is working on your answer. You'll receive an email when it's ready.
+              </p>
+              {data.sla_hours_snapshot && (
+                <p className="text-sm text-gray-500">
+                  Expected within <span className="font-semibold text-indigo-600">{data.sla_hours_snapshot} hours</span>
+                </p>
+              )}
             </div>
-          )}
+          </section>
+        )}
 
-          {/* Answer Attachments */}
-          {mockData.answer.attachments && mockData.answer.attachments.length > 0 && (
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
-              <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Attachments:</h4>
-              <div className="space-y-2">
-                {mockData.answer.attachments.map((file, index) => (
-                  <a
-                    key={index}
-                    href={file.url}
-                    download
-                    className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">{file.name}</p>
-                        <p className="text-xs text-gray-500">{file.size}</p>
-                      </div>
-                    </div>
-                    <svg className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Feedback Section */}
-        {!hasSubmittedFeedback ? (
+        {/* Feedback Section - Only show if answer exists */}
+        {hasAnswer && !hasSubmittedFeedback && (
           <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-xl font-bold text-gray-900 mb-4">How was this answer?</h3>
             
@@ -347,7 +363,9 @@ Overall, you're on the right track - just needs some polish!`,
               Submit Feedback
             </button>
           </section>
-        ) : (
+        )}
+
+        {hasSubmittedFeedback && (
           <section className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -355,13 +373,27 @@ Overall, you're on the right track - just needs some polish!`,
               </svg>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Thank you for your feedback!</h3>
-            <p className="text-gray-600">Your feedback has been shared with {mockData.expert.name}.</p>
+            <p className="text-gray-600">Your feedback has been shared with {expertName}.</p>
           </section>
         )}
 
+        {/* CTA Footer */}
+        <div className="mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-center text-white shadow-lg">
+          <h3 className="font-bold text-xl mb-2">Want to become an expert?</h3>
+          <p className="mb-4 opacity-90">
+            Share your knowledge and earn money answering questions.
+          </p>
+          <a 
+            href="/"
+            className="inline-block bg-white text-indigo-600 font-semibold px-6 py-3 rounded-full hover:bg-slate-50 transition-colors"
+          >
+            Get Your QuickChat Link
+          </a>
+        </div>
+
         {/* Mobile: Powered by */}
         <div className="sm:hidden text-center text-xs text-gray-500 mt-8 pb-4">
-          Powered by <span className="font-semibold text-indigo-600">QuestionCharge</span>
+          Powered by <span className="font-semibold text-indigo-600">QuickChat</span>
         </div>
       </main>
     </div>
