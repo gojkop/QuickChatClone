@@ -1,4 +1,4 @@
-// src/pages/AnswerReviewPage.jsx - Complete with Feedback Submission
+// src/pages/AnswerReviewPage.jsx - Complete with Feedback Submission & Display
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import logo from '@/assets/images/logo.svg';
@@ -14,6 +14,7 @@ function AnswerReviewPage() {
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState(false);
+  const [existingFeedback, setExistingFeedback] = useState(null);
   const [showQuestion, setShowQuestion] = useState(false);
   const [allowTestimonial, setAllowTestimonial] = useState(false);
   const [showPrivacyReminder, setShowPrivacyReminder] = useState(true);
@@ -63,6 +64,18 @@ function AnswerReviewPage() {
           }
         };
         
+        // Check if feedback already exists
+        if (rawData.rating && rawData.rating > 0) {
+          setExistingFeedback({
+            rating: rawData.rating,
+            feedback_text: rawData.feedback_text || '',
+            allow_testimonial: rawData.allow_testimonial || false,
+            created_at: rawData.feedback_created_at || rawData.updated_at
+          });
+          setHasSubmittedFeedback(true);
+          console.log('✅ Existing feedback found:', rawData.rating);
+        }
+        
         console.log('✅ Transformed data:', transformedData);
         console.log('🔗 Expert handle:', transformedData.expert_profile?.handle);
         setData(transformedData);
@@ -101,6 +114,13 @@ function AnswerReviewPage() {
         throw new Error('Failed to submit feedback');
       }
 
+      // Set the newly submitted feedback
+      setExistingFeedback({
+        rating,
+        feedback_text: feedback.trim(),
+        allow_testimonial: allowTestimonial,
+        created_at: new Date().toISOString()
+      });
       setHasSubmittedFeedback(true);
     } catch (err) {
       console.error('Error submitting feedback:', err);
@@ -567,8 +587,71 @@ function AnswerReviewPage() {
           </div>
         </div>
 
-        {/* Feedback Section */}
-        {hasAnswer && !hasSubmittedFeedback && (
+        {/* Feedback Section - Show existing feedback OR allow new submission */}
+        {hasAnswer && existingFeedback ? (
+          // Display existing feedback (read-only)
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-5 sm:p-6 mb-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Your Feedback</h3>
+              <p className="text-sm text-gray-600">
+                Submitted {existingFeedback.created_at && getTimeAgo(existingFeedback.created_at)}
+              </p>
+            </div>
+            
+            {/* Display stars (read-only) */}
+            <div className="flex justify-center gap-2 mb-4">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <svg
+                  key={star}
+                  className={`w-8 h-8 ${
+                    star <= existingFeedback.rating
+                      ? 'text-amber-400 fill-current'
+                      : 'text-gray-300'
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1"
+                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                  />
+                </svg>
+              ))}
+            </div>
+
+            {/* Display feedback text if provided */}
+            {existingFeedback.feedback_text && (
+              <div className="bg-white rounded-xl p-4 mb-4">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {existingFeedback.feedback_text}
+                </p>
+                {existingFeedback.allow_testimonial && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Allowed as testimonial</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <p className="text-center text-sm text-gray-600">
+              Thank you for your feedback! 🙏
+            </p>
+          </div>
+        ) : hasAnswer && !hasSubmittedFeedback ? (
+          // Show feedback submission form
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-200 p-5 sm:p-6 mb-6">
             <div className="text-center mb-5">
               <h3 className="text-lg font-bold text-gray-900 mb-1">How was your answer?</h3>
@@ -651,19 +734,7 @@ function AnswerReviewPage() {
               {rating === 0 ? 'Select a rating to continue' : 'Submit Feedback'}
             </button>
           </div>
-        )}
-
-        {hasSubmittedFeedback && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center mb-6 animate-fadeIn">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-base font-bold text-gray-900 mb-1">Thank you!</p>
-            <p className="text-sm text-gray-600">Your feedback has been shared with {expertName}.</p>
-          </div>
-        )}
+        ) : null}
 
         {/* CTA Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
