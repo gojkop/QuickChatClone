@@ -13,10 +13,13 @@ function AnswerReviewPage() {
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState(false);
+  const [showQuestion, setShowQuestion] = useState(false);
+  const [allowTestimonial, setAllowTestimonial] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       try {
+        console.log('🔍 Fetching data for token:', token);
         const response = await fetch(`${XANO_BASE_URL}/review/${token}`);
         
         if (!response.ok) {
@@ -26,10 +29,42 @@ function AnswerReviewPage() {
           throw new Error('Failed to load answer.');
         }
 
-        const result = await response.json();
-        setData(result);
+        const rawData = await response.json();
+        console.log('📦 Raw API response:', rawData);
+        
+        const transformedData = {
+          id: rawData.id,
+          title: rawData.title,
+          text: rawData.text,
+          created_at: rawData.created_at,
+          price_cents: rawData.price_cents,
+          currency: rawData.currency,
+          status: rawData.status,
+          sla_hours_snapshot: rawData.sla_hours_snapshot,
+          attachments: rawData.attachments ? JSON.parse(rawData.attachments) : [],
+          media_assets: rawData.media_asset || [],
+          answer: rawData.answer && rawData.answer.length > 0 ? {
+            id: rawData.answer[0].id,
+            created_at: rawData.answer[0].created_at,
+            sent_at: rawData.answer[0].sent_at,
+            text: rawData.answer[0].text_response,
+            media_url: rawData.answer[0].media_url,
+            media_duration: rawData.answer[0].media_duration,
+            media_type: rawData.answer[0].media_type,
+          } : null,
+          expert_profile: {
+            ...rawData.expert_profile,
+            user: {
+              name: rawData.user || rawData.expert_profile?.professional_title || 'Expert'
+            }
+          }
+        };
+        
+        console.log('✅ Transformed data:', transformedData);
+        setData(transformedData);
+        
       } catch (err) {
-        console.error('Error fetching review data:', err);
+        console.error('❌ Error fetching review data:', err);
         setError(err.message);
       } finally {
         setIsLoading(false);
@@ -48,8 +83,7 @@ function AnswerReviewPage() {
     }
 
     try {
-      // TODO: Create Xano endpoint for feedback submission
-      console.log('Submitting feedback:', { rating, feedback, questionId: data.id });
+      console.log('Submitting feedback:', { rating, feedback, allowTestimonial, questionId: data.id });
       setHasSubmittedFeedback(true);
     } catch (err) {
       console.error('Error submitting feedback:', err);
@@ -58,6 +92,7 @@ function AnswerReviewPage() {
   };
 
   const formatDuration = (seconds) => {
+    if (!seconds) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -76,36 +111,70 @@ function AnswerReviewPage() {
     return date.toLocaleDateString();
   };
 
-  // Loading state
+  const getDeliveryTime = () => {
+    if (!data?.answer?.created_at || !data?.created_at) return '';
+    const asked = new Date(data.created_at);
+    const answered = new Date(data.answer.created_at);
+    const diffHours = Math.floor((answered - asked) / (1000 * 60 * 60));
+    if (diffHours < 1) return 'under 1h';
+    if (diffHours < 24) return `${diffHours}h`;
+    return `${Math.floor(diffHours / 24)}d`;
+  };
+
+  const getStreamVideoId = (url) => {
+    if (!url) return null;
+    const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
+    return match ? match[1] : null;
+  };
+
+  const getCustomerCode = (url) => {
+    if (!url) return null;
+    const match = url.match(/https:\/\/(customer-[a-zA-Z0-9]+)\.cloudflarestream\.com/);
+    return match ? match[1] : null;
+  };
+
+  const handleShare = () => {
+    const shareText = `Just got an amazing answer from ${data.expert_profile?.user?.name || 'an expert'} via @QuickChat! 🎯`;
+    const shareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+    window.open(shareUrl, '_blank', 'width=550,height=420');
+  };
+
+  const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your answer...</p>
+          <p className="text-sm font-medium text-gray-600">Loading your answer...</p>
         </div>
       </div>
     );
   }
 
-  // Error state
   if (error || !data) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Link Not Found</h2>
-          <p className="text-gray-600">{error || 'This link is invalid or has expired.'}</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Link Not Found</h2>
+          <p className="text-sm text-gray-600 mb-6">{error || 'This link is invalid or has expired.'}</p>
+          <a 
+            href="/"
+            className="inline-block bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition-colors"
+          >
+            Go to Homepage
+          </a>
         </div>
       </div>
     );
   }
 
-  const hasAnswer = data.answer?.media_asset?.url;
+  const hasAnswer = data.answer?.media_url;
   const expertName = data.expert_profile?.user?.name || 'Expert';
   const expertHandle = data.expert_profile?.handle || '';
   const expertAvatar = data.expert_profile?.avatar_url;
@@ -113,289 +182,491 @@ function AnswerReviewPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4 max-w-4xl">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-lg bg-white/95">
+        <div className="container mx-auto px-4 sm:px-6 py-4 max-w-4xl">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="/" className="flex items-center gap-2 group">
+              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">
-                  {hasAnswer ? 'Your Answer' : 'Your Question'}
-                </h1>
-                <p className="text-xs text-gray-500">
-                  {hasAnswer 
-                    ? `Delivered ${getTimeAgo(data.answer.created_at)}`
-                    : `Asked ${getTimeAgo(data.created_at)}`
-                  }
-                </p>
-              </div>
-            </div>
+              <span className="font-bold text-gray-900 hidden sm:block">QuickChat</span>
+            </a>
             
-            <div className="hidden sm:block text-xs text-gray-500">
-              Powered by <span className="font-semibold text-indigo-600">QuickChat</span>
-            </div>
+            <span className="text-xs sm:text-sm text-gray-500 font-medium">
+              {hasAnswer ? `Delivered ${getTimeAgo(data.answer.created_at)}` : `Asked ${getTimeAgo(data.created_at)}`}
+            </span>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl pb-24">
         
-        {/* Expert Card */}
-        <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 rounded-2xl p-6 mb-8">
-          <div className="flex items-center gap-4 mb-3">
-            {expertAvatar ? (
-              <img 
-                src={expertAvatar} 
-                alt={expertName}
-                className="w-16 h-16 rounded-full object-cover ring-4 ring-white"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center ring-4 ring-white">
-                <span className="text-2xl font-bold text-white">
-                  {expertName.charAt(0)}
-                </span>
-              </div>
-            )}
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                {hasAnswer ? `Answer from ${expertName}` : `Question to ${expertName}`}
-              </h2>
-              {expertHandle && (
-                <p className="text-sm text-indigo-700">@{expertHandle}</p>
+        {/* Compact Expert Profile Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-shrink-0">
+              {expertAvatar ? (
+                <img 
+                  src={expertAvatar} 
+                  alt={expertName}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-gray-100"
+                />
+              ) : (
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-gray-100">
+                  <span className="text-2xl sm:text-3xl font-bold text-white">
+                    {expertName.charAt(0)}
+                  </span>
+                </div>
               )}
-              {data.expert_profile?.professional_title && (
-                <p className="text-sm text-gray-600">{data.expert_profile.professional_title}</p>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate">{expertName}</h2>
+              <p className="text-sm text-gray-600 mb-1.5 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
+              {expertHandle && (
+                <a 
+                  href={`https://x.com/${expertHandle}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium group"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                  @{expertHandle}
+                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
               )}
             </div>
           </div>
-          {data.expert_profile?.tagline && (
-            <p className="text-sm text-gray-700 italic">{data.expert_profile.tagline}</p>
-          )}
         </div>
 
-        {/* Your Question Section */}
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">You Asked:</h3>
-          
-          {data.title && (
-            <p className="text-lg font-semibold text-gray-900 mb-4">{data.title}</p>
-          )}
-          
-          {data.text && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{data.text}</p>
-            </div>
-          )}
-
-          {/* Question Video/Media */}
-          {data.media_asset?.url && (
-            <div className="mb-4">
-              <div className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video">
-                <video 
-                  className="w-full h-full"
-                  controls
-                  playsInline
-                >
-                  <source src={data.media_asset.url} type="video/mp4" />
-                  Your browser does not support video.
-                </video>
-              </div>
-            </div>
-          )}
-
-          {/* Question Attachments */}
-          {data.attachments && data.attachments.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Your Attachments:</p>
-              {data.attachments.map((file, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg text-sm">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                  </svg>
-                  <span className="flex-1 text-gray-700">{file}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Answer Section */}
+        {/* Subtle Answer Section */}
         {hasAnswer ? (
-          <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100 px-6 py-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Your Answer</h3>
-                  {data.answer.media_asset?.duration_sec && (
-                    <p className="text-sm text-gray-600">
-                      Video Response • {formatDuration(data.answer.media_asset.duration_sec)}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-5 sm:px-6 py-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-base">Your Answer</h3>
+                    <p className="text-slate-300 text-xs sm:text-sm">
+                      {getDeliveryTime() && `Delivered in ${getDeliveryTime()}`}
+                      {data.answer.media_duration && ` • ${formatDuration(data.answer.media_duration)}`}
                     </p>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Answer Video Player */}
-            <div className="bg-gray-900">
-              <div className="relative aspect-video">
-                <video 
-                  className="w-full h-full"
-                  controls
-                  playsInline
+                <button 
+                  onClick={handleShare}
+                  className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all"
+                  title="Share on X"
                 >
-                  <source src={data.answer.media_asset.url} type="video/mp4" />
-                  Your browser does not support video.
-                </video>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </button>
               </div>
             </div>
 
-            {/* Written Response (if exists) */}
-            {data.answer.text && (
-              <div className="p-6 border-t border-gray-200">
-                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Written Response:</h4>
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{data.answer.text}</p>
+            {data.answer.media_url && (
+              <div className="bg-black">
+                <div className="w-full aspect-video">
+                  {(() => {
+                    const videoId = getStreamVideoId(data.answer.media_url);
+                    const extractedCustomerCode = getCustomerCode(data.answer.media_url);
+                    const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+                    
+                    if (videoId && customerCode) {
+                      return (
+                        <iframe
+                          src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                          style={{ border: 'none', width: '100%', height: '100%' }}
+                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                          allowFullScreen={true}
+                          title="Answer video"
+                        />
+                      );
+                    } else {
+                      return (
+                        <video className="w-full h-full" controls playsInline>
+                          <source src={data.answer.media_url} type="video/mp4" />
+                        </video>
+                      );
+                    }
+                  })()}
                 </div>
               </div>
             )}
-          </section>
+
+            {data.answer.text && (
+              <div className="p-5 sm:p-6">
+                <p className="text-gray-800 leading-relaxed text-sm sm:text-base whitespace-pre-wrap">
+                  {data.answer.text}
+                </p>
+              </div>
+            )}
+
+            <div className="px-5 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+              <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download
+              </button>
+              <button 
+                onClick={handleShare}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                Share
+              </button>
+            </div>
+          </div>
         ) : (
-          /* Waiting for Answer */
-          <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
             <div className="text-center">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Answer In Progress</h3>
-              <p className="text-gray-600 mb-4">
-                {expertName} is working on your answer. You'll receive an email when it's ready.
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Answer In Progress</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                {expertName} is working on your answer.
               </p>
               {data.sla_hours_snapshot && (
                 <p className="text-sm text-gray-500">
-                  Expected within <span className="font-semibold text-indigo-600">{data.sla_hours_snapshot} hours</span>
+                  Expected within <span className="font-semibold text-indigo-600">{data.sla_hours_snapshot}h</span>
                 </p>
               )}
             </div>
-          </section>
+          </div>
         )}
 
-        {/* Feedback Section - Only show if answer exists */}
-        {hasAnswer && !hasSubmittedFeedback && (
-          <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">How was this answer?</h3>
-            
-            {/* Star Rating */}
-            <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Rating</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    className="focus:outline-none transition-transform hover:scale-110"
-                  >
-                    <svg
-                      className={`w-10 h-10 ${
-                        star <= (hoverRating || rating)
-                          ? 'text-yellow-400 fill-current'
-                          : 'text-gray-300'
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1"
-                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                      />
-                    </svg>
-                  </button>
-                ))}
+        {/* Question Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+          <button
+            onClick={() => setShowQuestion(!showQuestion)}
+            className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              {data.media_assets?.[0] && (
+                <div className="w-12 h-12 rounded-lg bg-gray-900 overflow-hidden flex-shrink-0 hidden sm:flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white/70" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
+              
+              <div className="text-left">
+                <span className="text-sm font-semibold text-gray-900">Your Question</span>
+                {!showQuestion && data.title && (
+                  <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{data.title}</p>
+                )}
               </div>
-              {rating > 0 && (
-                <p className="text-sm text-gray-600 mt-2">
-                  {rating === 5 && '⭐ Excellent!'}
-                  {rating === 4 && '😊 Great!'}
-                  {rating === 3 && '👍 Good'}
-                  {rating === 2 && '😐 Okay'}
-                  {rating === 1 && '😞 Needs improvement'}
-                </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {!showQuestion && data.media_assets?.length > 0 && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full font-medium hidden sm:inline">
+                  {data.media_assets.length} {data.media_assets.length === 1 ? 'part' : 'parts'}
+                </span>
+              )}
+              <svg 
+                className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${showQuestion ? 'rotate-180' : ''} group-hover:text-gray-600`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+
+          <div className={`transition-all duration-300 ease-in-out ${showQuestion ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+            <div className="p-5 border-t border-gray-200 space-y-4">
+              {data.title && (
+                <div>
+                  <p className="text-sm sm:text-base font-semibold text-gray-900">{data.title}</p>
+                </div>
+              )}
+              
+              {data.text && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap">{data.text}</p>
+                </div>
+              )}
+
+              {data.media_assets && data.media_assets.length > 0 && (
+                <div className="space-y-3">
+                  {data.media_assets
+                    .sort((a, b) => a.segment_index - b.segment_index)
+                    .map((segment, arrayIndex) => {
+                      const isVideo = segment.metadata?.mode === 'video' || 
+                                      segment.metadata?.mode === 'screen' || 
+                                      segment.metadata?.mode === 'screen-camera' ||
+                                      segment.url?.includes('cloudflarestream.com');
+                      const isAudio = segment.metadata?.mode === 'audio' || 
+                                      segment.url?.includes('.webm') || 
+                                      !isVideo;
+                      
+                      const videoId = isVideo ? getStreamVideoId(segment.url) : null;
+                      const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+                      const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+                      
+                      return (
+                        <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
+                          {data.media_assets.length > 1 && (
+                            <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
+                              <span className="text-xs font-semibold text-gray-300">
+                                Part {arrayIndex + 1}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
+                              </span>
+                            </div>
+                          )}
+                          
+                          {isVideo && videoId && customerCode ? (
+                            <div className="w-full aspect-video bg-black">
+                              <iframe
+                                src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                                style={{ border: 'none', width: '100%', height: '100%' }}
+                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                allowFullScreen={true}
+                                title={`Video segment ${arrayIndex + 1}`}
+                              />
+                            </div>
+                          ) : isAudio && segment.url ? (
+                            <div className="p-4 flex items-center justify-center">
+                              <audio controls className="w-full max-w-md" preload="metadata">
+                                <source src={segment.url} type="audio/webm" />
+                              </audio>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              {data.attachments && data.attachments.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Attachments</p>
+                  {data.attachments.map((file, index) => (
+                    <a
+                      key={index}
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
+                    >
+                      <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                      <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
+          </div>
+        </div>
 
-            {/* Feedback Text */}
-            <div className="mb-6">
-              <label htmlFor="feedback" className="block text-sm font-semibold text-gray-700 mb-2">
-                Additional Feedback <span className="text-gray-500 font-normal">(Optional)</span>
-              </label>
-              <textarea
-                id="feedback"
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                rows="4"
-                maxLength="1000"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
-                placeholder="Share your thoughts about this answer..."
-              />
-              <div className="text-right text-xs text-gray-500 mt-1">{feedback.length} / 1000</div>
+        {/* Feedback Section - Without star icon in header */}
+        {hasAnswer && !hasSubmittedFeedback && (
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-200 p-5 sm:p-6 mb-6">
+            <div className="text-center mb-5">
+              <h3 className="text-lg font-bold text-gray-900 mb-1">How was your answer?</h3>
+              <p className="text-sm text-gray-600">Your feedback helps {expertName} improve</p>
             </div>
+            
+            <div className="flex justify-center gap-2 sm:gap-3 mb-6">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="focus:outline-none transition-all hover:scale-110 active:scale-95 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                >
+                  <svg
+                    className={`w-9 h-9 sm:w-10 sm:h-10 transition-all ${
+                      star <= (hoverRating || rating)
+                        ? 'text-amber-400 fill-current drop-shadow-md'
+                        : 'text-gray-300 hover:text-amber-200'
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1"
+                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                    />
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            {rating > 0 && (
+              <div className="bg-white rounded-xl p-4 sm:p-5 mb-4 animate-fadeIn">
+                <p className="text-sm font-semibold text-gray-700 mb-3">
+                  {rating === 5 && '⭐ Amazing! Mind sharing what made it great?'}
+                  {rating === 4 && '😊 Great! What did you like most?'}
+                  {rating === 3 && '👍 Good. How could it be better?'}
+                  {rating === 2 && '😐 How can we improve?'}
+                  {rating === 1 && '😞 Sorry to hear. How can we improve?'}
+                </p>
+                <textarea
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  rows="4"
+                  maxLength="500"
+                  className="w-full px-4 py-3 text-sm sm:text-base border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-300 focus:border-amber-400 focus:outline-none transition-all resize-none"
+                  placeholder={rating >= 4 
+                    ? "This testimonial might appear on QuickChat (optional)" 
+                    : "Help us understand how to improve..."
+                  }
+                />
+                <div className="flex items-center justify-between mt-2.5">
+                  <span className="text-xs text-gray-500">{feedback.length}/500</span>
+                  {rating >= 4 && feedback.length > 20 && (
+                    <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={allowTestimonial}
+                        onChange={(e) => setAllowTestimonial(e.target.checked)}
+                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" 
+                      />
+                      <span className="font-medium">OK to use as testimonial</span>
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
 
             <button
               onClick={handleSubmitFeedback}
-              className="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300"
+              disabled={rating === 0}
+              className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-base font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 active:scale-[0.98] transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-amber-500 disabled:hover:to-orange-500 disabled:active:scale-100 min-h-[44px]"
             >
-              Submit Feedback
+              {rating === 0 ? 'Select a rating to continue' : 'Submit Feedback'}
             </button>
-          </section>
+          </div>
         )}
 
         {hasSubmittedFeedback && (
-          <section className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center mb-6 animate-fadeIn">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Thank you for your feedback!</h3>
-            <p className="text-gray-600">Your feedback has been shared with {expertName}.</p>
-          </section>
+            <p className="text-base font-bold text-gray-900 mb-1">Thank you!</p>
+            <p className="text-sm text-gray-600">Your feedback has been shared with {expertName}.</p>
+          </div>
         )}
 
-        {/* CTA Footer */}
-        <div className="mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-center text-white shadow-lg">
-          <h3 className="font-bold text-xl mb-2">Want to become an expert?</h3>
-          <p className="mb-4 opacity-90">
-            Share your knowledge and earn money answering questions.
-          </p>
-          <a 
-            href="/"
-            className="inline-block bg-white text-indigo-600 font-semibold px-6 py-3 rounded-full hover:bg-slate-50 transition-colors"
-          >
-            Get Your QuickChat Link
-          </a>
+        {/* Minimalistic Modern CTA */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+          <div className="p-8 sm:p-10 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full mb-4">
+              <div className="flex -space-x-1.5">
+                {[1,2,3].map(i => (
+                  <div key={i} className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-500 border-2 border-white"></div>
+                ))}
+              </div>
+              <span className="text-xs font-semibold text-indigo-700">Join 1,240+ experts</span>
+            </div>
+
+            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
+              Monetize your expertise
+            </h3>
+            <p className="text-base text-gray-600 mb-6 max-w-md mx-auto">
+              Set your price, answer on your schedule, and get paid for your knowledge
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+              <a 
+                href="/?ref=answer_page"
+                className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-6 sm:px-8 py-3.5 rounded-lg font-semibold text-base hover:bg-gray-800 active:scale-[0.98] transition-all min-h-[44px] group"
+              >
+                Get Your Link
+                <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </a>
+              
+              <button 
+                onClick={handleShare}
+                className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-6 sm:px-8 py-3.5 rounded-lg font-semibold text-base hover:bg-gray-200 active:scale-[0.98] transition-all min-h-[44px]"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                Share
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-500">
+              <span className="font-semibold text-gray-700">No fees</span> for 6 months • 
+              <span className="font-semibold text-gray-700"> €342</span> avg. first month
+            </p>
+          </div>
         </div>
 
-        {/* Mobile: Powered by */}
-        <div className="sm:hidden text-center text-xs text-gray-500 mt-8 pb-4">
-          Powered by <span className="font-semibold text-indigo-600">QuickChat</span>
+        {/* Powered by QuickChat */}
+        <div className="text-center py-4">
+          <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors group">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span>Powered by <span className="font-semibold">QuickChat</span></span>
+            <svg className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
         </div>
       </main>
+
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 }

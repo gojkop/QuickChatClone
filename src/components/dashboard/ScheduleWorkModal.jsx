@@ -137,25 +137,54 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
     switch (serviceId) {
       case 'google':
         url = getGoogleCalendarUrl(question, options);
+        window.open(url, '_blank');
         break;
       case 'outlook':
         url = getOutlookCalendarUrl(question, options);
+        window.open(url, '_blank');
         break;
       case 'office365':
         url = getOffice365CalendarUrl(question, options);
+        window.open(url, '_blank');
         break;
       case 'apple':
-        url = getAppleCalendarUrl(question, options);
-        // Apple uses data URL, needs different handling
-        window.location.href = url;
+        // Special handling for Apple Calendar - better iOS support
+        const icsContent = getAppleCalendarUrl(question, options);
+        
+        // Detect iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        
+        if (isIOS) {
+          // For iOS: Create blob and trigger download with proper MIME type
+          const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+          const blobUrl = URL.createObjectURL(blob);
+          
+          // Create temporary link and click it
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = `question-${question.id}.ics`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Clean up
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+          
+          // Show helpful message for iOS users
+          setTimeout(() => {
+            alert('Calendar file downloaded! Tap on the file in your Downloads to add it to Calendar.');
+          }, 500);
+        } else {
+          // For desktop: Use data URL (works better on macOS)
+          window.location.href = icsContent;
+        }
+        
         onScheduled?.({ questionId: question.id, service: serviceId });
         onClose();
         return;
       default:
         return;
     }
-    
-    window.open(url, '_blank');
     
     if (onScheduled) {
       onScheduled({ 

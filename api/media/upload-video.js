@@ -40,6 +40,8 @@ export default async function handler(req, res) {
     // ⭐ Upload to Cloudflare Stream
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     const apiToken = process.env.CLOUDFLARE_STREAM_API_TOKEN;
+    const customerCode = process.env.CLOUDFLARE_STREAM_CUSTOMER_CODE; // Add this
+
 
     if (!accountId || !apiToken) {
       throw new Error('Missing Cloudflare credentials');
@@ -94,7 +96,7 @@ export default async function handler(req, res) {
       success: true,
       data: {
         uid: video.uid,
-        playbackUrl: `https://customer-${accountId.substring(0, 8)}.cloudflarestream.com/${video.uid}/manifest/video.m3u8`,
+        playbackUrl: `https://${customerCode}.cloudflarestream.com/${video.uid}/manifest/video.m3u8`,
         thumbnail: video.thumbnail,
         duration: duration || 0,
         mode: recordingMode,
