@@ -203,97 +203,67 @@ function AnswerReviewPage() {
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl pb-24">
         
-        {/* Enhanced Expert Profile Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-6 transform hover:shadow-xl transition-shadow">
-          <div className="relative h-28 sm:h-32 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-20"></div>
-          </div>
-          
-          <div className="px-5 sm:px-6 pb-6 -mt-16 sm:-mt-12 relative">
-            <div className="flex items-end justify-between mb-4 flex-wrap gap-3">
-              <div className="relative">
-                {expertAvatar ? (
-                  <img 
-                    src={expertAvatar} 
-                    alt={expertName}
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-4 ring-white shadow-xl"
-                  />
-                ) : (
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-4 ring-white shadow-xl">
-                    <span className="text-3xl sm:text-4xl font-bold text-white">
-                      {expertName.charAt(0)}
-                    </span>
-                  </div>
-                )}
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center ring-4 ring-white shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
+        {/* Compact Expert Profile Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-shrink-0">
+              {expertAvatar ? (
+                <img 
+                  src={expertAvatar} 
+                  alt={expertName}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-gray-100"
+                />
+              ) : (
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-gray-100">
+                  <span className="text-2xl sm:text-3xl font-bold text-white">
+                    {expertName.charAt(0)}
+                  </span>
                 </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <div className="px-3 py-1.5 bg-indigo-50 rounded-full">
-                  <span className="text-xs font-bold text-indigo-700">4.9★</span>
-                </div>
-                <div className="px-3 py-1.5 bg-green-50 rounded-full">
-                  <span className="text-xs font-bold text-green-700">Fast</span>
-                </div>
+              )}
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
               </div>
             </div>
             
-            <div className="mb-4">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{expertName}</h2>
-              <p className="text-sm sm:text-base text-gray-600 mb-2">{data.expert_profile?.professional_title || 'Expert'}</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate">{expertName}</h2>
+              <p className="text-sm text-gray-600 mb-1.5 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
               {expertHandle && (
                 <a 
                   href={`https://x.com/${expertHandle}`} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 font-semibold group"
+                  className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium group"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
                   @{expertHandle}
-                  <svg className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </a>
               )}
             </div>
-
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="font-medium">Avg 18h response</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                </svg>
-                <span className="font-medium">240+ answers</span>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Premium Answer Section */}
+        {/* Subtle Answer Section */}
         {hasAnswer ? (
-          <div className="bg-gradient-to-br from-white to-indigo-50 rounded-2xl shadow-xl border border-indigo-100 overflow-hidden mb-6">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 sm:px-6 py-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-5 sm:px-6 py-4">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-9 h-9 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-white font-bold text-base sm:text-lg">Your Expert Answer</h3>
-                    <p className="text-indigo-100 text-xs sm:text-sm">
+                    <h3 className="text-white font-bold text-base">Your Answer</h3>
+                    <p className="text-slate-300 text-xs sm:text-sm">
                       {getDeliveryTime() && `Delivered in ${getDeliveryTime()}`}
                       {data.answer.media_duration && ` • ${formatDuration(data.answer.media_duration)}`}
                     </p>
@@ -301,7 +271,7 @@ function AnswerReviewPage() {
                 </div>
                 <button 
                   onClick={handleShare}
-                  className="text-white/90 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all"
+                  className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all"
                   title="Share on X"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -312,8 +282,7 @@ function AnswerReviewPage() {
             </div>
 
             {data.answer.media_url && (
-              <div className="relative bg-black">
-                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/10 to-transparent z-10"></div>
+              <div className="bg-black">
                 <div className="w-full aspect-video">
                   {(() => {
                     const videoId = getStreamVideoId(data.answer.media_url);
@@ -343,17 +312,15 @@ function AnswerReviewPage() {
             )}
 
             {data.answer.text && (
-              <div className="p-5 sm:p-6 bg-white">
-                <div className="prose prose-sm sm:prose max-w-none">
-                  <p className="text-gray-800 leading-relaxed text-sm sm:text-base whitespace-pre-wrap m-0">
-                    {data.answer.text}
-                  </p>
-                </div>
+              <div className="p-5 sm:p-6">
+                <p className="text-gray-800 leading-relaxed text-sm sm:text-base whitespace-pre-wrap">
+                  {data.answer.text}
+                </p>
               </div>
             )}
 
-            <div className="px-5 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors font-medium">
+            <div className="px-5 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+              <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
@@ -361,7 +328,7 @@ function AnswerReviewPage() {
               </button>
               <button 
                 onClick={handleShare}
-                className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors font-medium"
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -371,45 +338,45 @@ function AnswerReviewPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-lg border border-amber-200 p-6 sm:p-8 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
             <div className="text-center">
-              <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Answer In Progress</h3>
-              <p className="text-sm sm:text-base text-gray-600 mb-3">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Answer In Progress</h3>
+              <p className="text-sm text-gray-600 mb-3">
                 {expertName} is working on your answer.
               </p>
               {data.sla_hours_snapshot && (
                 <p className="text-sm text-gray-500">
-                  Expected within <span className="font-bold text-indigo-600">{data.sla_hours_snapshot}h</span>
+                  Expected within <span className="font-semibold text-indigo-600">{data.sla_hours_snapshot}h</span>
                 </p>
               )}
             </div>
           </div>
         )}
 
-        {/* Enhanced Question Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+        {/* Question Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
           <button
             onClick={() => setShowQuestion(!showQuestion)}
             className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors group"
           >
             <div className="flex items-center gap-3">
               {data.media_assets?.[0] && (
-                <div className="w-14 h-14 rounded-xl bg-gray-900 overflow-hidden flex-shrink-0 hidden sm:flex items-center justify-center">
-                  <svg className="w-7 h-7 text-white/70" fill="currentColor" viewBox="0 0 20 20">
+                <div className="w-12 h-12 rounded-lg bg-gray-900 overflow-hidden flex-shrink-0 hidden sm:flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white/70" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                   </svg>
                 </div>
               )}
               
               <div className="text-left">
-                <span className="text-sm sm:text-base font-bold text-gray-900">Your Question</span>
+                <span className="text-sm font-semibold text-gray-900">Your Question</span>
                 {!showQuestion && data.title && (
-                  <p className="text-xs sm:text-sm text-gray-500 line-clamp-1 mt-0.5">{data.title}</p>
+                  <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{data.title}</p>
                 )}
               </div>
             </div>
@@ -421,7 +388,7 @@ function AnswerReviewPage() {
                 </span>
               )}
               <svg 
-                className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${showQuestion ? 'rotate-180' : ''} group-hover:text-indigo-600`}
+                className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${showQuestion ? 'rotate-180' : ''} group-hover:text-gray-600`}
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -435,7 +402,7 @@ function AnswerReviewPage() {
             <div className="p-5 border-t border-gray-200 space-y-4">
               {data.title && (
                 <div>
-                  <p className="text-sm sm:text-base font-bold text-gray-900">{data.title}</p>
+                  <p className="text-sm sm:text-base font-semibold text-gray-900">{data.title}</p>
                 </div>
               )}
               
@@ -502,18 +469,18 @@ function AnswerReviewPage() {
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Attachments</p>
                   {data.attachments.map((file, index) => (
-                    <a
+                    
                       key={index}
                       href={file.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-indigo-50 hover:border-indigo-200 border border-transparent transition-all group"
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
                     >
-                      <svg className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
                       <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
-                      <svg className="w-4 h-4 text-gray-400 group-hover:text-indigo-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </a>
@@ -524,16 +491,11 @@ function AnswerReviewPage() {
           </div>
         </div>
 
-        {/* Enhanced Feedback Section */}
+        {/* Feedback Section - Without star icon in header */}
         {hasAnswer && !hasSubmittedFeedback && (
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl shadow-lg border border-amber-200 p-5 sm:p-6 mb-6">
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-200 p-5 sm:p-6 mb-6">
             <div className="text-center mb-5">
-              <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">How was your answer?</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">How was your answer?</h3>
               <p className="text-sm text-gray-600">Your feedback helps {expertName} improve</p>
             </div>
             
@@ -545,12 +507,12 @@ function AnswerReviewPage() {
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(0)}
-                  className="focus:outline-none transition-all hover:scale-125 active:scale-95 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="focus:outline-none transition-all hover:scale-110 active:scale-95 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                   <svg
                     className={`w-9 h-9 sm:w-10 sm:h-10 transition-all ${
                       star <= (hoverRating || rating)
-                        ? 'text-amber-400 fill-current drop-shadow-lg'
+                        ? 'text-amber-400 fill-current drop-shadow-md'
                         : 'text-gray-300 hover:text-amber-200'
                     }`}
                     fill="none"
@@ -570,7 +532,7 @@ function AnswerReviewPage() {
 
             {rating > 0 && (
               <div className="bg-white rounded-xl p-4 sm:p-5 mb-4 animate-fadeIn">
-                <p className="text-sm font-bold text-gray-700 mb-3">
+                <p className="text-sm font-semibold text-gray-700 mb-3">
                   {rating === 5 && '⭐ Amazing! Mind sharing what made it great?'}
                   {rating === 4 && '😊 Great! What did you like most?'}
                   {rating === 3 && '👍 Good. How could it be better?'}
@@ -608,7 +570,7 @@ function AnswerReviewPage() {
             <button
               onClick={handleSubmitFeedback}
               disabled={rating === 0}
-              className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-base sm:text-lg font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 active:scale-[0.98] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-amber-500 disabled:hover:to-orange-500 disabled:active:scale-100 min-h-[44px]"
+              className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-base font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 active:scale-[0.98] transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-amber-500 disabled:hover:to-orange-500 disabled:active:scale-100 min-h-[44px]"
             >
               {rating === 0 ? 'Select a rating to continue' : 'Submit Feedback'}
             </button>
@@ -616,80 +578,73 @@ function AnswerReviewPage() {
         )}
 
         {hasSubmittedFeedback && (
-          <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 sm:p-6 text-center mb-6 animate-fadeIn">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center mb-6 animate-fadeIn">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-base sm:text-lg font-bold text-gray-900 mb-1">Thank you!</p>
+            <p className="text-base font-bold text-gray-900 mb-1">Thank you!</p>
             <p className="text-sm text-gray-600">Your feedback has been shared with {expertName}.</p>
           </div>
         )}
 
-        {/* Powerful Conversion CTA */}
-        <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-2xl shadow-2xl overflow-hidden mb-6">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-20 animate-pulse"></div>
-          
-          <div className="relative px-5 sm:px-8 py-8 sm:py-10 text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="flex -space-x-2">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-white/20 backdrop-blur border-2 border-white"></div>
+        {/* Minimalistic Modern CTA */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+          <div className="p-8 sm:p-10 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full mb-4">
+              <div className="flex -space-x-1.5">
+                {[1,2,3].map(i => (
+                  <div key={i} className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-500 border-2 border-white"></div>
                 ))}
               </div>
-              <span className="text-white/90 text-xs sm:text-sm font-semibold">1,240+ experts earning</span>
+              <span className="text-xs font-semibold text-indigo-700">Join 1,240+ experts</span>
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
-              Turn <span className="underline decoration-wavy decoration-white/50 decoration-2">your</span> expertise into income
+            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
+              Monetize your expertise
             </h3>
-            <p className="text-white/90 text-sm sm:text-base mb-2">
-              Just like {expertName}, start monetizing your knowledge
-            </p>
-            <p className="text-white/80 text-xs sm:text-sm mb-6 sm:mb-8">
-              • Set your price • Answer when convenient • Get paid instantly
+            <p className="text-base text-gray-600 mb-6 max-w-md mx-auto">
+              Set your price, answer on your schedule, and get paid for your knowledge
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
               <a 
                 href="/?ref=answer_page"
-                className="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:bg-indigo-50 active:scale-[0.98] transition-all shadow-xl group min-h-[44px]"
+                className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-6 sm:px-8 py-3.5 rounded-lg font-semibold text-base hover:bg-gray-800 active:scale-[0.98] transition-all min-h-[44px] group"
               >
-                Get Your QuickChat Link
-                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                Get Your Link
+                <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </a>
               
               <button 
                 onClick={handleShare}
-                className="inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur text-white border-2 border-white/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:bg-white/20 active:scale-[0.98] transition-all min-h-[44px]"
+                className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-6 sm:px-8 py-3.5 rounded-lg font-semibold text-base hover:bg-gray-200 active:scale-[0.98] transition-all min-h-[44px]"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
-                Share on X
+                Share
               </button>
             </div>
 
-            <div className="pt-6 border-t border-white/20">
-              <p className="text-white/80 text-xs sm:text-sm">
-                ✨ <span className="font-bold">No platform fee</span> for first 6 months • 
-                <span className="font-bold"> €342 avg.</span> first month earnings
-              </p>
-            </div>
+            <p className="text-sm text-gray-500">
+              <span className="font-semibold text-gray-700">No fees</span> for 6 months • 
+              <span className="font-semibold text-gray-700"> €342</span> avg. first month
+            </p>
           </div>
         </div>
 
         {/* Powered by QuickChat */}
-        <div className="text-center py-6">
-          <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors group">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-4">
+          <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors group">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span>Powered by <span className="font-bold">QuickChat</span></span>
-            <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span>Powered by <span className="font-semibold">QuickChat</span></span>
+            <svg className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </a>
