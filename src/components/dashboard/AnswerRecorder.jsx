@@ -327,14 +327,23 @@ function AnswerRecorder({ question, onReady, onCancel }) {
   // ⭐ UPDATED: No concatenation - just pass references
   const handleProceedToReview = async () => {
     const data = {
-      text,
-      recordingSegments: segmentUpload.getSuccessfulSegments(),
-      attachments: attachmentUpload.uploads
-        .filter(u => u.result)
+      text: text || '',
+      recordingSegments: segmentUpload.getSuccessfulSegments() || [],
+      attachments: (attachmentUpload.uploads || [])
+        .filter(u => u && u.result)
         .map(u => u.result),
       recordingMode: segments.length > 0 ? 'multi-segment' : null,
-      recordingDuration: totalDuration,
+      recordingDuration: totalDuration || 0,
     };
+    
+    console.log('📤 Answer data prepared:', {
+      hasText: !!data.text,
+      segmentCount: data.recordingSegments.length,
+      attachmentCount: data.attachments.length,
+    });
+    
+    onReady(data);
+  };
     
     console.log('Passing answer data to review:', {
       segmentCount: data.recordingSegments.length,

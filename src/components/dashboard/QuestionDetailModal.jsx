@@ -247,29 +247,47 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               </div>
             )}
 
-            {/* Attachments */}
-            {question.attachments && question.attachments.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-gray-900">Attachments</h4>
-                {question.attachments.map((file, index) => (
-                  <a
-                    key={index}
-                    href={file.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
-                  >
-                    <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                    </svg>
-                    <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
-                    <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                ))}
-              </div>
-            )}
+            {/* Attachments - SAFE PARSING */}
+            {(() => {
+              let attachments = [];
+              try {
+                if (typeof question.attachments === 'string') {
+                  attachments = JSON.parse(question.attachments);
+                } else if (Array.isArray(question.attachments)) {
+                  attachments = question.attachments;
+                }
+              } catch (e) {
+                console.error('Failed to parse attachments:', e);
+                attachments = [];
+              }
+              
+              if (!Array.isArray(attachments) || attachments.length === 0) {
+                return null;
+              }
+              
+              return (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900">Attachments</h4>
+                  {attachments.map((file, index) => (
+                    <a
+                      key={index}
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
+                    >
+                      <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                      <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* Answer Button */}
             {isPending && (
