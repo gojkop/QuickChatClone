@@ -23,22 +23,21 @@ function QuestionActionsDropdown({ question, onAction }) {
   }, []);
 
   useEffect(() => {
-    if (isOpen && buttonRef.current && dropdownRef.current) {
+    if (isOpen && buttonRef.current) {
       const buttonRect = buttonRef.current.getBoundingClientRect();
-      const dropdown = dropdownRef.current.querySelector('[class*="absolute"]');
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - buttonRect.bottom;
+      const spaceAbove = buttonRect.top;
       
-      if (dropdown) {
-        // Get actual dropdown height
-        const dropdownHeight = dropdown.offsetHeight || 300; // fallback to 300px
-        const spaceBelow = window.innerHeight - buttonRect.bottom;
-        const spaceAbove = buttonRect.top;
-        
-        // Add 20px buffer for spacing
-        if (spaceBelow < dropdownHeight + 20 && spaceAbove > spaceBelow) {
-          setOpenUpward(true);
-        } else {
-          setOpenUpward(false);
-        }
+      // More aggressive: open upward if we're in the bottom 40% of viewport
+      // OR if there's less than 350px space below
+      const isInBottomArea = buttonRect.bottom > viewportHeight * 0.6;
+      const hasInsufficientSpaceBelow = spaceBelow < 350;
+      
+      if ((isInBottomArea || hasInsufficientSpaceBelow) && spaceAbove > 200) {
+        setOpenUpward(true);
+      } else {
+        setOpenUpward(false);
       }
     }
   }, [isOpen]);
