@@ -14,49 +14,6 @@ import {
   formatTime 
 } from '@/utils/timeHelpers';
 
-const CALENDAR_SERVICES = [
-  {
-    id: 'google',
-    name: 'Google Calendar',
-    shortName: 'Google',
-    bgColor: 'bg-white',
-    textColor: 'text-gray-700',
-    borderColor: 'border-gray-300',
-    hoverBg: 'hover:bg-gray-50',
-    hoverBorder: 'hover:border-blue-400'
-  },
-  {
-    id: 'outlook',
-    name: 'Outlook',
-    shortName: 'Outlook',
-    bgColor: 'bg-white',
-    textColor: 'text-gray-700',
-    borderColor: 'border-gray-300',
-    hoverBg: 'hover:bg-gray-50',
-    hoverBorder: 'hover:border-sky-400'
-  },
-  {
-    id: 'office365',
-    name: 'Office 365',
-    shortName: 'Office 365',
-    bgColor: 'bg-white',
-    textColor: 'text-gray-700',
-    borderColor: 'border-gray-300',
-    hoverBg: 'hover:bg-gray-50',
-    hoverBorder: 'hover:border-orange-400'
-  },
-  {
-    id: 'apple',
-    name: 'Apple Calendar',
-    shortName: 'Apple',
-    bgColor: 'bg-white',
-    textColor: 'text-gray-700',
-    borderColor: 'border-gray-300',
-    hoverBg: 'hover:bg-gray-50',
-    hoverBorder: 'hover:border-gray-400'
-  }
-];
-
 function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [duration, setDuration] = useState(30);
@@ -289,14 +246,14 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
               </div>
             </div>
 
-            {/* Compact Time Slot Suggestions */}
+            {/* Simplified Time Slot Suggestions - Only 2 Options */}
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-2">
                 🎯 Pick a time
               </label>
               
-              <div className="grid grid-cols-2 gap-2">
-                {timeSlots.map((slot, index) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {timeSlots.slice(0, 2).map((slot, index) => (
                   <button
                     key={index}
                     onClick={() => handleSlotSelect(slot)}
@@ -306,7 +263,6 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
                         : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-sm'
                     }`}
                   >
-                    {/* Selection indicator */}
                     {selectedSlot?.date?.getTime() === slot.date.getTime() && (
                       <div className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
                         <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -335,7 +291,7 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
               </div>
             </div>
 
-            {/* Compact Custom Time Option */}
+            {/* Custom Time Option - Always Visible */}
             <div>
               <button
                 onClick={handleCustomTimeClick}
