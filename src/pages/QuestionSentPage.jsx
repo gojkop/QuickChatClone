@@ -11,10 +11,29 @@ function QuestionSentPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    setQuestionId(params.get('question_id'));
-    setReviewToken(params.get('review_token'));
-    setExpertHandle(params.get('expert'));
-    setExpertName(params.get('expertName') || 'the expert');
+    const qid = params.get('question_id');
+    const token = params.get('review_token');
+    const handle = params.get('expert');
+    const name = params.get('expertName') || 'the expert';
+    
+    console.log('🔍 QuestionSentPage - URL params:', {
+      question_id: qid,
+      review_token: token,
+      expert: handle,
+      expertName: name,
+      fullSearch: location.search
+    });
+    
+    setQuestionId(qid);
+    setReviewToken(token);
+    setExpertHandle(handle);
+    setExpertName(name);
+    
+    if (!token) {
+      console.warn('⚠️ No review_token found in URL params!');
+    } else {
+      console.log('✅ Review token found:', token);
+    }
   }, [location.search]);
 
   const reviewUrl = reviewToken ? `${window.location.origin}/review/${reviewToken}` : '';
@@ -94,7 +113,7 @@ function QuestionSentPage() {
                 </div>
               </div>
 
-              {reviewToken && (
+              {reviewToken ? (
                 <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
                   <p className="text-sm text-gray-700 mb-3 text-center">
                     You can see your question and answer (once it is available) at this location:
@@ -124,6 +143,15 @@ function QuestionSentPage() {
                   </div>
                   <p className="text-xs text-gray-500 mt-2 text-center">
                     Bookmark this link to check back for the answer
+                  </p>
+                </div>
+              ) : questionId && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center mb-6">
+                  <p className="text-sm text-gray-600 mb-2">
+                    Your question ID: <span className="font-semibold text-gray-800">{questionId}</span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    You'll receive an email with a link to view your answer
                   </p>
                 </div>
               )}
