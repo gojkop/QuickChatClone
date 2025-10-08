@@ -55,44 +55,64 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
   const [preferredService, setPreferredService] = useState('google');
   const [slaWarning, setSlaWarning] = useState(null);
 
+  // Calculate SLA deadline timestamp - MUST BE BEFORE ANY RETURNS
+  const slaDeadlineTimestamp = useMemo(() => {
+    if (!question?.sla_hours_snapshot) return null;
+    const createdAtSeconds = question.created_at > 4102444800 ? question.created_at / 1000 : question.created_at;
+    const slaSeconds = question.sla_hours_snapshot * 3600;
+    return (createdAtSeconds + slaSeconds) * 1000;
+  }, [question?.created_at, question?.sla_hours_snapshot]);
+
+  // Check if selected time is after SLA - MUST BE BEFORE ANY RETURNS
+  const checkSlaViolation = useCallback((scheduledDate) => {
+    if (!slaDeadlineTimestamp || !scheduledDate) return false;
+    return scheduledDate.getTime() > slaDeadlineTimestamp;
+  }, [slaDeadlineTimestamp]);
+
+  // Initialize component state
   useEffect(() => {
     if (isOpen && question) {
-      // Generate smart time suggestions
       const slots = generateTimeSlots(question);
       setTimeSlots(slots);
       
-      // Set estimated duration
       const estimated = estimateAnswerDuration(question);
       setDuration(estimated);
       
-      // Detect preferred calendar
       const detected = detectCalendarService();
       setPreferredService(detected);
       
-      // Reset state
       setSelectedSlot(slots[0] || null);
       setShowCustomTime(false);
       setSlaWarning(null);
     }
   }, [isOpen, question]);
 
+  // Check SLA violation for custom date/time
+  useEffect(() => {
+    if (showCustomTime && customDate && customTime) {
+      const scheduledDate = new Date(`${customDate}T${customTime}`);
+      
+      if (checkSlaViolation(scheduledDate)) {
+        const deadlineDate = new Date(slaDeadlineTimestamp);
+        setSlaWarning({
+          type: 'error',
+          message: `⚠️ This time is after your SLA deadline (${deadlineDate.toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            hour: 'numeric', 
+            minute: '2-digit' 
+          })}). Choose an earlier time to meet your commitment.`
+        });
+      } else {
+        setSlaWarning(null);
+      }
+    }
+  }, [customDate, customTime, showCustomTime, slaDeadlineTimestamp, checkSlaViolation]);
+
+  // Early return AFTER all hooks
   if (!isOpen || !question) return null;
 
   const urgency = getUrgencyLevel(question);
-
-  // Calculate SLA deadline timestamp (number, not Date object, to avoid reference issues)
-  const slaDeadlineTimestamp = useMemo(() => {
-    if (!question?.sla_hours_snapshot) return null;
-    const createdAtSeconds = question.created_at > 4102444800 ? question.created_at / 1000 : question.created_at;
-    const slaSeconds = question.sla_hours_snapshot * 3600;
-    return (createdAtSeconds + slaSeconds) * 1000; // Return timestamp in milliseconds
-  }, [question?.created_at, question?.sla_hours_snapshot]);
-
-  // Check if selected time is after SLA
-  const checkSlaViolation = useCallback((scheduledDate) => {
-    if (!slaDeadlineTimestamp || !scheduledDate) return false;
-    return scheduledDate.getTime() > slaDeadlineTimestamp;
-  }, [slaDeadlineTimestamp]);
 
   const handleSlotSelect = (slot) => {
     setSelectedSlot(slot);
@@ -127,28 +147,6 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
     setCustomDate(tomorrow.toISOString().split('T')[0]);
     setCustomTime('09:00');
   };
-
-  // Check SLA violation for custom date/time
-  useEffect(() => {
-    if (showCustomTime && customDate && customTime) {
-      const scheduledDate = new Date(`${customDate}T${customTime}`);
-      
-      if (checkSlaViolation(scheduledDate)) {
-        const deadlineDate = new Date(slaDeadlineTimestamp);
-        setSlaWarning({
-          type: 'error',
-          message: `⚠️ This time is after your SLA deadline (${deadlineDate.toLocaleString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            hour: 'numeric', 
-            minute: '2-digit' 
-          })}). Choose an earlier time to meet your commitment.`
-        });
-      } else {
-        setSlaWarning(null);
-      }
-    }
-  }, [customDate, customTime, showCustomTime, slaDeadlineTimestamp, checkSlaViolation]);
 
   const handleCalendarClick = (serviceId) => {
     let scheduledDate = null;
