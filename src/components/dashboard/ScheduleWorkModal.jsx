@@ -1,5 +1,5 @@
 // src/components/dashboard/ScheduleWorkModal.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   getGoogleCalendarUrl, 
   getOutlookCalendarUrl, 
@@ -80,21 +80,19 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
 
   const urgency = getUrgencyLevel(question);
 
-  // Calculate SLA deadline
-  const getSlaDeadline = () => {
+  // Calculate SLA deadline timestamp (number, not Date object, to avoid reference issues)
+  const slaDeadlineTimestamp = useMemo(() => {
     if (!question?.sla_hours_snapshot) return null;
     const createdAtSeconds = question.created_at > 4102444800 ? question.created_at / 1000 : question.created_at;
     const slaSeconds = question.sla_hours_snapshot * 3600;
-    return new Date((createdAtSeconds + slaSeconds) * 1000);
-  };
-
-  const slaDeadline = getSlaDeadline();
+    return (createdAtSeconds + slaSeconds) * 1000; // Return timestamp in milliseconds
+  }, [question?.created_at, question?.sla_hours_snapshot]);
 
   // Check if selected time is after SLA
-  const checkSlaViolation = (scheduledDate) => {
-    if (!slaDeadline || !scheduledDate) return false;
-    return scheduledDate > slaDeadline;
-  };
+  const checkSlaViolation = useCallback((scheduledDate) => {
+    if (!slaDeadlineTimestamp || !scheduledDate) return false;
+    return scheduledDate.getTime() > slaDeadlineTimestamp;
+  }, [slaDeadlineTimestamp]);
 
   const handleSlotSelect = (slot) => {
     setSelectedSlot(slot);
@@ -102,9 +100,10 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
     
     // Check SLA violation
     if (checkSlaViolation(slot.date)) {
+      const deadlineDate = new Date(slaDeadlineTimestamp);
       setSlaWarning({
         type: 'error',
-        message: `⚠️ This time is after your SLA deadline (${slaDeadline.toLocaleString('en-US', { 
+        message: `⚠️ This time is after your SLA deadline (${deadlineDate.toLocaleString('en-US', { 
           month: 'short', 
           day: 'numeric', 
           hour: 'numeric', 
@@ -129,14 +128,16 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
     setCustomTime('09:00');
   };
 
-  const handleCustomDateTimeChange = () => {
-    if (customDate && customTime) {
+  // Check SLA violation for custom date/time
+  useEffect(() => {
+    if (showCustomTime && customDate && customTime) {
       const scheduledDate = new Date(`${customDate}T${customTime}`);
       
       if (checkSlaViolation(scheduledDate)) {
+        const deadlineDate = new Date(slaDeadlineTimestamp);
         setSlaWarning({
           type: 'error',
-          message: `⚠️ This time is after your SLA deadline (${slaDeadline.toLocaleString('en-US', { 
+          message: `⚠️ This time is after your SLA deadline (${deadlineDate.toLocaleString('en-US', { 
             month: 'short', 
             day: 'numeric', 
             hour: 'numeric', 
@@ -147,13 +148,7 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
         setSlaWarning(null);
       }
     }
-  };
-
-  useEffect(() => {
-    if (showCustomTime) {
-      handleCustomDateTimeChange();
-    }
-  }, [customDate, customTime, showCustomTime]);
+  }, [customDate, customTime, showCustomTime, slaDeadlineTimestamp, checkSlaViolation]);
 
   const handleCalendarClick = (serviceId) => {
     let scheduledDate = null;
