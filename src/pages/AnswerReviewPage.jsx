@@ -120,20 +120,15 @@ function AnswerReviewPage() {
     return date.toLocaleDateString();
   };
 
-  // Extract Cloudflare Stream video ID and customer subdomain from URL
-  const getStreamVideoInfo = (url) => {
+  // Extract Cloudflare Stream video ID from URL
+  const getStreamVideoId = (url) => {
     if (!url) return null;
-    // Match: https://customer-{ID}.cloudflarestream.com/{VIDEO_ID}/manifest/video.m3u8
-    const match = url.match(/https:\/\/(customer-[a-zA-Z0-9]+)\.cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
-    if (match) {
-      return {
-        customerSubdomain: match[1],
-        videoId: match[2],
-        iframeUrl: `https://${match[1]}.cloudflarestream.com/${match[2]}/iframe`
-      };
-    }
-    return null;
+    const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
+    return match ? match[1] : null;
   };
+
+  // Hardcoded customer subdomain - replace with your actual Cloudflare account
+  const CLOUDFLARE_CUSTOMER_CODE = 'customer-31c014ec11101bfa323f8afe20a975a1';
 
   // Loading state
   if (isLoading) {
@@ -261,7 +256,7 @@ function AnswerReviewPage() {
               
               {data.media_assets
                 .sort((a, b) => a.segment_index - b.segment_index)
-                .map((segment) => {
+                .map((segment, arrayIndex) => {
                   const isVideo = segment.metadata?.mode === 'video' || 
                                   segment.metadata?.mode === 'screen' || 
                                   segment.metadata?.mode === 'screen-camera' ||
@@ -270,7 +265,7 @@ function AnswerReviewPage() {
                                   segment.url?.includes('.webm') || 
                                   !isVideo;
                   
-                  const streamInfo = isVideo ? getStreamVideoInfo(segment.url) : null;
+                  const videoId = isVideo ? getStreamVideoId(segment.url) : null;
                   
                   return (
                     <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
@@ -279,7 +274,7 @@ function AnswerReviewPage() {
                         <div className="p-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold text-gray-400">
-                              Segment {segment.segment_index + 1}
+                              Segment {arrayIndex + 1}
                             </span>
                             {segment.duration_sec > 0 && (
                               <span className="text-xs text-gray-500">
@@ -305,15 +300,15 @@ function AnswerReviewPage() {
                       )}
                       
                       {/* Player */}
-                      {isVideo && streamInfo ? (
+                      {isVideo && videoId ? (
                         // VIDEO: Cloudflare Stream iframe
                         <div className="w-full aspect-video bg-black">
                           <iframe
-                            src={streamInfo.iframeUrl}
+                            src={`https://${CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${videoId}/iframe`}
                             style={{ border: 'none', width: '100%', height: '100%' }}
                             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
                             allowFullScreen={true}
-                            title={`Video segment ${segment.segment_index + 1}`}
+                            title={`Video segment ${arrayIndex + 1}`}
                           />
                         </div>
                       ) : isAudio && segment.url ? (
@@ -335,11 +330,12 @@ function AnswerReviewPage() {
                         </div>
                       ) : (
                         // FALLBACK: Unavailable
-                        <div className="p-8 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+                        <div className="p-8 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 aspect-video">
                           <svg className="w-12 h-12 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                           </svg>
                           <p className="text-white text-sm">Media unavailable</p>
+                          <p className="text-gray-500 text-xs mt-1">Video ID: {videoId || 'unknown'}</p>
                           {segment.url && (
                             <a 
                               href={segment.url} 
@@ -416,12 +412,12 @@ function AnswerReviewPage() {
               <div className="bg-gray-900">
                 <div className="w-full aspect-video bg-black">
                   {(() => {
-                    const streamInfo = getStreamVideoInfo(data.answer.media_url);
-                    if (streamInfo) {
+                    const videoId = getStreamVideoId(data.answer.media_url);
+                    if (videoId) {
                       // Cloudflare Stream video
                       return (
                         <iframe
-                          src={streamInfo.iframeUrl}
+                          src={`https://${CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${videoId}/iframe`}
                           style={{ border: 'none', width: '100%', height: '100%' }}
                           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
                           allowFullScreen={true}
