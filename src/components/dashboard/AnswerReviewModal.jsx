@@ -72,6 +72,10 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
   const recordingDuration = answerData.recordingDuration || 0;
   const isDurationValid = recordingDuration > 0;
 
+  // Get review URL from submitted answer
+  const reviewUrl = submittedAnswer?.review_url;
+  const playbackTokenHash = submittedAnswer?.playback_token_hash;
+
   // Determine current upload stage for display
   const getUploadStageText = () => {
     if (!answerUpload.uploading) return null;
@@ -348,7 +352,8 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
         onClose={handleSuccessModalClose}
         answerData={answerData}
         question={question}
-        submittedAnswer={submittedAnswer}
+        reviewUrl={reviewUrl}
+        playbackTokenHash={playbackTokenHash}
       />
     </>
   );
