@@ -1,98 +1,72 @@
-import React, { useState, useEffect } from 'react';
-import AnswerRecorder from './AnswerRecorder';
+// src/components/dashboard/QuestionDetailModal.jsx
+import React, { useState } from 'react';
+import AnswerComposer from './AnswerComposer';
 import AnswerReviewModal from './AnswerReviewModal';
 
-const formatPrice = (cents, currency = 'USD') => {
-  const symbols = { USD: '$', EUR: '€', GBP: '£' };
-  const symbol = symbols[currency] || '$';
-  const amount = (cents || 0) / 100;
-  return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
-};
-
-// FIXED - Handles both millisecond and second timestamps
-const getTimeAgo = (timestamp) => {
-  const now = Date.now() / 1000;
-  
-  // Normalize timestamp: if it's in milliseconds (> year 2100 in seconds), convert it
-  const timestampSeconds = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
-  
-  const diff = now - timestampSeconds;
-  
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
-  return new Date(timestampSeconds * 1000).toLocaleDateString();
-};
-
-function QuestionDetailModal({ isOpen, onClose, question }) {
-  const [showAnswerRecorder, setShowAnswerRecorder] = useState(false);
-  const [showReviewModal, setShowReviewModal] = useState(false);
+function QuestionDetailModal({ isOpen, onClose, question, userId }) {
+  const [showAnswerComposer, setShowAnswerComposer] = useState(false);
   const [answerData, setAnswerData] = useState(null);
-  const [attachments, setAttachments] = useState([]);
-  const [recordingSegments, setRecordingSegments] = useState([]);
-
-  useEffect(() => {
-    if (!isOpen || !question) {
-      setShowAnswerRecorder(false);
-      setShowReviewModal(false);
-      setAnswerData(null);
-      setRecordingSegments([]);
-      setAttachments([]);
-    }
-  }, [isOpen, question]);
-
-  useEffect(() => {
-    if (question?.recording_segments) {
-      setRecordingSegments(question.recording_segments);
-    } else {
-      setRecordingSegments([]);
-    }
-
-    if (question?.attachments) {
-      try {
-        const files = typeof question.attachments === 'string' 
-          ? JSON.parse(question.attachments)
-          : question.attachments;
-        setAttachments(Array.isArray(files) ? files : []);
-      } catch (e) {
-        console.error('Error parsing attachments:', e);
-        setAttachments([]);
-      }
-    } else {
-      setAttachments([]);
-    }
-  }, [question]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   if (!isOpen || !question) return null;
 
-  const handleAnswerClick = () => {
-    setShowAnswerRecorder(true);
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const handleAnswerReady = (data) => {
+  const formatPrice = (cents) => {
+    return `$${(cents / 100).toFixed(2)}`;
+  };
+
+  const handleStartAnswer = () => {
+    setShowAnswerComposer(true);
+  };
+
+  const handleContinueToReview = (data) => {
+    console.log('Answer data from composer:', data);
     setAnswerData(data);
     setShowReviewModal(true);
   };
 
-  const handleSubmitAnswer = async (finalData) => {
-    console.log('Submitting answer:', finalData);
-    setTimeout(() => {
-      setShowReviewModal(false);
-      setShowAnswerRecorder(false);
-      onClose();
-    }, 100);
+  const handleEdit = () => {
+    setShowReviewModal(false);
+    // Keep composer open with existing data
   };
 
-  const isAnswered = question.status === 'answered';
-  const isPending = question.status === 'paid' && !question.answered_at;
+  const handleSubmitSuccess = (result) => {
+    console.log('Answer submitted successfully:', result);
+    // Close all modals
+    setShowReviewModal(false);
+    setShowAnswerComposer(false);
+    setAnswerData(null);
+    onClose();
+    // Optionally refresh questions list here
+  };
 
-  // Extract Cloudflare Stream video ID from URL
+  const isPending = question.status === 'paid' && !question.answered_at;
+  const isAnswered = question.status === 'answered' || !!question.answered_at;
+
   const getStreamVideoId = (url) => {
     if (!url) return null;
     const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
     return match ? match[1] : null;
   };
+
+  const getCustomerCode = (url) => {
+    if (!url) return null;
+    const match = url.match(/https:\/\/(customer-[a-zA-Z0-9]+)\.cloudflarestream\.com/);
+    return match ? match[1] : null;
+  };
+
+  const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
   return (
     <>
@@ -103,263 +77,196 @@ function QuestionDetailModal({ isOpen, onClose, question }) {
         />
 
         <div className="flex min-h-full items-center justify-center p-4">
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-              <div className="flex items-center gap-3">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+              <div className="flex-1">
                 <h2 className="text-xl font-bold text-gray-900">Question Details</h2>
-                {isPending && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
-                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
-                    Pending Response
-                  </span>
-                )}
-                {isAnswered && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                    Answered
-                  </span>
-                )}
+                <p className="text-sm text-gray-500 mt-1">
+                  {isPending && 'Pending your answer'}
+                  {isAnswered && 'Answered'}
+                </p>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition">
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition"
+              >
                 <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            {!showAnswerRecorder ? (
-              <div className="flex-1 overflow-y-auto">
-                <div className="p-6 space-y-6">
-                  
-                  <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-5">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm text-indigo-600 font-semibold mb-1">Asked by</p>
-                        <p className="text-xl font-bold text-indigo-900">{question.payer_name || 'Anonymous'}</p>
-                        <p className="text-sm text-indigo-700 mt-1">{question.payer_email}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-gray-600 mb-1">Payment</div>
-                        <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-indigo-200 shadow-sm">
-                          <span className="font-bold text-gray-900 text-lg">
-                            {formatPrice(question.price_cents, question.currency)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-2">{getTimeAgo(question.created_at)}</p>
-                      </div>
-                    </div>
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              
+              {/* Question Info */}
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">{question.title}</h3>
+                    {question.text && (
+                      <p className="text-gray-700 whitespace-pre-wrap">{question.text}</p>
+                    )}
                   </div>
-
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Question Title</h3>
-                    <p className="text-lg font-semibold text-gray-900">{question.title}</p>
-                  </div>
-
-                  {recordingSegments.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                        Recording ({recordingSegments.length} segment{recordingSegments.length > 1 ? 's' : ''})
-                      </h3>
-                      <div className="space-y-3">
-                        {recordingSegments.map((segment, index) => {
-                          // Parse metadata
-                          let metadata = { mode: 'audio' };
-                          let mode = 'audio';
-                          
-                          try {
-                            if (segment.metadata) {
-                              if (typeof segment.metadata === 'object') {
-                                metadata = segment.metadata;
-                              } else if (typeof segment.metadata === 'string') {
-                                metadata = JSON.parse(segment.metadata);
-                              }
-                              mode = metadata.mode || 'audio';
-                            }
-                          } catch (e) {
-                            console.error(`Segment ${index} metadata parse error:`, e);
-                          }
-
-                          const isVideo = mode === 'video' || mode === 'screen' || mode === 'screen-camera';
-                          const isAudio = mode === 'audio';
-                          
-                          const videoId = isVideo ? getStreamVideoId(segment.url) : null;
-                          
-                          return (
-                            <div key={segment.id || index} className="bg-gray-900 rounded-xl overflow-hidden">
-                              {/* Header */}
-                              <div className="p-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-semibold text-gray-400">
-                                    Segment {index + 1}
-                                  </span>
-                                  {segment.duration_sec > 0 && (
-                                    <span className="text-xs text-gray-500">
-                                      ({Math.round(segment.duration_sec)}s)
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {isVideo ? (
-                                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                    </svg>
-                                  ) : (
-                                    <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                                    </svg>
-                                  )}
-                                  <span className="text-xs font-medium text-gray-400">
-                                    {isVideo ? 'Video' : 'Audio'}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              {/* Player */}
-                              {isVideo && videoId ? (
-                                // VIDEO: Cloudflare Stream iframe
-                                <div className="w-full aspect-video bg-black">
-                                  <iframe
-                                    src={`https://customer-o9wvts8h9krvlboh.cloudflarestream.com/${videoId}/iframe`}
-                                    style={{ border: 'none', width: '100%', height: '100%' }}
-                                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                                    allowFullScreen={true}
-                                  />
-                                </div>
-                              ) : isAudio && segment.url ? (
-                                // AUDIO: Direct R2 URL with HTML5 audio player
-                                <div className="p-8 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-                                  <audio 
-                                    controls 
-                                    className="w-full max-w-md"
-                                    preload="metadata"
-                                    style={{
-                                      filter: 'invert(1) hue-rotate(180deg)',
-                                      height: '40px'
-                                    }}
-                                  >
-                                    <source src={segment.url} type="audio/webm" />
-                                    <source src={segment.url} type="audio/mp4" />
-                                    Your browser does not support audio playback.
-                                  </audio>
-                                </div>
-                              ) : (
-                                // FALLBACK: Unavailable
-                                <div className="p-8 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-                                  <svg className="w-12 h-12 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                  </svg>
-                                  <p className="text-white text-sm">Media unavailable</p>
-                                  {segment.url && (
-                                    <a 
-                                      href={segment.url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-xs text-indigo-400 hover:text-indigo-300 mt-2 underline"
-                                    >
-                                      Try direct link
-                                    </a>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {question.text && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Additional Context</h3>
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <p className="text-gray-700 whitespace-pre-wrap">{question.text}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {attachments.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Attachments</h3>
-                      <div className="space-y-2">
-                        {attachments.map((file, index) => (
-                          <a
-                            key={index}
-                            href={file.url || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-                          >
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                            <span className="text-sm font-medium text-gray-700 flex-1">{file.name}</span>
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {isPending && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div>
-                          <p className="font-semibold text-amber-900">Response Time Commitment</p>
-                          <p className="text-sm text-amber-700 mt-1">
-                            You've committed to respond within {question.sla_hours} hours
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="flex-1 overflow-y-auto p-6">
-                <AnswerRecorder 
-                  question={question}
-                  onReady={handleAnswerReady}
-                  onCancel={() => setShowAnswerRecorder(false)}
-                />
-              </div>
-            )}
 
-            {!showAnswerRecorder && !isAnswered && (
-              <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-wrap gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <button className="px-4 py-2 text-gray-600 hover:text-gray-800 font-semibold text-sm transition">
-                      Request More Info
-                    </button>
-                    <button className="px-4 py-2 text-red-600 hover:text-red-700 font-semibold text-sm transition">
-                      Refund & Decline
-                    </button>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-gray-600">Asked: {formatDate(question.created_at)}</span>
                   </div>
-                  <button
-                    onClick={handleAnswerClick}
-                    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300"
-                  >
-                    Answer Question
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-gray-600">Value: {formatPrice(question.price_cents)}</span>
+                  </div>
+                  {question.sla_hours_snapshot && (
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span className="text-gray-600">SLA: {question.sla_hours_snapshot}h</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
+
+              {/* Media Assets */}
+              {question.media_asset && question.media_asset.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900">Question Media</h4>
+                  {question.media_asset
+                    .sort((a, b) => a.segment_index - b.segment_index)
+                    .map((segment, index) => {
+                      const isVideo = segment.metadata?.mode === 'video' || 
+                                      segment.metadata?.mode === 'screen' || 
+                                      segment.metadata?.mode === 'screen-camera' ||
+                                      segment.url?.includes('cloudflarestream.com');
+                      const isAudio = segment.metadata?.mode === 'audio' || 
+                                      segment.url?.includes('.webm') || 
+                                      !isVideo;
+                      
+                      const videoId = isVideo ? getStreamVideoId(segment.url) : null;
+                      const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+                      const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+                      
+                      return (
+                        <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
+                          {question.media_asset.length > 1 && (
+                            <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
+                              <span className="text-xs font-semibold text-gray-300">
+                                Part {index + 1}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
+                              </span>
+                            </div>
+                          )}
+                          
+                          {isVideo && videoId && customerCode ? (
+                            <div className="w-full aspect-video bg-black">
+                              <iframe
+                                src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                                style={{ border: 'none', width: '100%', height: '100%' }}
+                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                allowFullScreen={true}
+                                title={`Video segment ${index + 1}`}
+                              />
+                            </div>
+                          ) : isAudio && segment.url ? (
+                            <div className="p-4 flex items-center justify-center">
+                              <audio controls className="w-full max-w-md" preload="metadata">
+                                <source src={segment.url} type="audio/webm" />
+                              </audio>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              {/* Attachments */}
+              {question.attachments && question.attachments.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900">Attachments</h4>
+                  {question.attachments.map((file, index) => (
+                    <a
+                      key={index}
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
+                    >
+                      <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                      <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {/* Answer Composer */}
+              {isPending && showAnswerComposer && (
+                <div className="border-t border-gray-200 pt-6">
+                  <AnswerComposer 
+                    question={question}
+                    onContinueToReview={handleContinueToReview}
+                  />
+                </div>
+              )}
+
+              {/* Answer Button */}
+              {isPending && !showAnswerComposer && (
+                <button
+                  onClick={handleStartAnswer}
+                  className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300"
+                >
+                  Answer This Question
+                </button>
+              )}
+
+              {/* Already Answered */}
+              {isAnswered && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-green-900">Already Answered</p>
+                      <p className="text-sm text-green-700">
+                        Answered on {formatDate(question.answered_at)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
+      {/* ✅ UPDATED: Pass userId to AnswerReviewModal */}
       <AnswerReviewModal
         isOpen={showReviewModal}
         onClose={() => setShowReviewModal(false)}
         answerData={answerData}
         question={question}
-        onSubmit={handleSubmitAnswer}
-        onEdit={() => setShowReviewModal(false)}
+        onEdit={handleEdit}
+        onSubmitSuccess={handleSubmitSuccess}
+        userId={userId}
       />
     </>
   );
