@@ -21,8 +21,6 @@ import QuestionSentPage from '@/pages/QuestionSentPage';
 import AnswerReviewPage from '@/pages/AnswerReviewPage';
 import TestAICoachPage from '@/pages/TestAICoachPage';
 
-
-
 // Import Common Components
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
@@ -39,12 +37,16 @@ const AppLayout = () => {
     '/question-sent'
   ].includes(location.pathname);
   
-  // Also hide on public profile pages (they have their own isolated design)
+  // Also hide on pages with their own isolated design
   const isPublicProfile = location.pathname.startsWith('/u/');
+  const isAnswerReview = location.pathname.startsWith('/r/'); // ✅ ADD THIS LINE
+  
+  // Combined condition for hiding navbar/footer
+  const shouldHideLayout = hideLayout || isPublicProfile || isAnswerReview; // ✅ UPDATE THIS LINE
 
   return (
     <div className="App bg-brand-light-gray min-h-screen flex flex-col">
-      {!hideLayout && !isPublicProfile && <Navbar />}
+      {!shouldHideLayout && <Navbar />}
       <main className="flex-grow">
         <Routes>
           {/* Public Routes */}
@@ -61,8 +63,6 @@ const AppLayout = () => {
           <Route path="/u/:handle" element={<PublicProfilePage />} />
           <Route path="/r/:token" element={<AnswerReviewPage />} />
           <Route path="/test-ai-coach" element={<TestAICoachPage />} />
-
-
           
           {/* Auth Routes */}
           <Route path="/signin" element={<SignInPage />} />
@@ -79,7 +79,7 @@ const AppLayout = () => {
           />
         </Routes>
       </main>
-      {!hideLayout && !isPublicProfile && <Footer />}
+      {!shouldHideLayout && <Footer />}
     </div>
   );
 }

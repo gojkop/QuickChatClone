@@ -25,11 +25,16 @@ function QuestionActionsDropdown({ question, onAction }) {
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const buttonRect = buttonRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - buttonRect.bottom;
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - buttonRect.bottom;
       const spaceAbove = buttonRect.top;
       
-      // Increased threshold to 250px for better detection
-      if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+      // More aggressive: open upward if we're in the bottom 40% of viewport
+      // OR if there's less than 350px space below
+      const isInBottomArea = buttonRect.bottom > viewportHeight * 0.6;
+      const hasInsufficientSpaceBelow = spaceBelow < 350;
+      
+      if ((isInBottomArea || hasInsufficientSpaceBelow) && spaceAbove > 200) {
         setOpenUpward(true);
       } else {
         setOpenUpward(false);
