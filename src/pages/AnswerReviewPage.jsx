@@ -303,17 +303,17 @@ function AnswerReviewPage() {
         {/* Answer Section */}
         {hasAnswer ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-            <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 sm:px-6 py-4">
+            <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-indigo-100 px-5 sm:px-6 py-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-white font-bold text-base">Your Answer</h3>
+                  <h3 className="text-gray-900 font-bold text-base">Your Answer</h3>
                   {data.answer?.media_duration && (
-                    <p className="text-indigo-100 text-xs sm:text-sm">
+                    <p className="text-gray-600 text-xs sm:text-sm">
                       {formatDuration(data.answer.media_duration)} video response
                     </p>
                   )}
@@ -421,37 +421,37 @@ function AnswerReviewPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
           <button
             onClick={() => setShowQuestion(!showQuestion)}
-            className="w-full bg-gradient-to-r from-gray-600 to-gray-700 px-5 sm:px-6 py-4 flex items-center justify-between hover:from-gray-700 hover:to-gray-800 transition-all duration-200 group"
+            className="w-full bg-gradient-to-r from-gray-50 to-slate-50 border-b border-gray-200 px-5 sm:px-6 py-4 flex items-center justify-between hover:from-gray-100 hover:to-slate-100 transition-all duration-200 group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
+              <div className="w-9 h-9 bg-gray-200 rounded-lg flex items-center justify-center group-hover:bg-gray-300 transition-colors">
                 {data.media_assets?.[0] ? (
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 )}
               </div>
               
               <div className="text-left">
-                <h3 className="text-white font-bold text-base">Your Question</h3>
+                <h3 className="text-gray-900 font-bold text-base">Your Question</h3>
                 {!showQuestion && data.title && (
-                  <p className="text-gray-200 text-xs sm:text-sm line-clamp-1 mt-0.5">{data.title}</p>
+                  <p className="text-gray-600 text-xs sm:text-sm line-clamp-1 mt-0.5">{data.title}</p>
                 )}
               </div>
             </div>
             
             <div className="flex items-center gap-2">
               {!showQuestion && data.media_assets?.length > 0 && (
-                <span className="text-xs text-gray-200 bg-white/10 px-2.5 py-1 rounded-full font-medium hidden sm:inline">
+                <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium hidden sm:inline">
                   {data.media_assets.length} {data.media_assets.length === 1 ? 'part' : 'parts'}
                 </span>
               )}
               <svg 
-                className={`w-5 h-5 text-gray-200 transition-transform duration-300 ${showQuestion ? 'rotate-180' : ''}`}
+                className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${showQuestion ? 'rotate-180' : ''} group-hover:text-gray-700`}
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -462,7 +462,7 @@ function AnswerReviewPage() {
           </button>
 
           <div className={`transition-all duration-300 ease-in-out ${showQuestion ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-            <div className="p-5 border-t border-gray-200 space-y-4">
+            <div className="p-5 space-y-4">
               {data.title && (
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-gray-900">{data.title}</p>
