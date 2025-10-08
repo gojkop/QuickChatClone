@@ -1,4 +1,4 @@
-// src/pages/AnswerReviewPage.jsx
+// src/pages/AnswerReviewPage.jsx - Improved Design
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -15,6 +15,8 @@ function AnswerReviewPage() {
   const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState(false);
   const [showQuestion, setShowQuestion] = useState(false);
   const [allowTestimonial, setAllowTestimonial] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showPrivacyReminder, setShowPrivacyReminder] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -133,13 +135,16 @@ function AnswerReviewPage() {
     return match ? match[1] : null;
   };
 
-  const handleShare = () => {
-    const shareText = `Just got an amazing answer from ${data.expert_profile?.user?.name || 'an expert'} via @QuickChat! 🎯`;
-    const shareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
-    window.open(shareUrl, '_blank', 'width=550,height=420');
-  };
-
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
+
+  const handleCopyProfileLink = () => {
+    if (data?.expert_profile?.handle) {
+      const url = `${window.location.origin}/u/${data.expert_profile.handle}`;
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -176,15 +181,15 @@ function AnswerReviewPage() {
 
   const hasAnswer = data.answer?.media_url;
   const expertName = data.expert_profile?.user?.name || 'Expert';
-  const expertHandle = data.expert_profile?.handle || '';
   const expertAvatar = data.expert_profile?.avatar_url;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-lg bg-white/95">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
+      {/* Unified Header - Navigation + Context */}
+      <header className="bg-white/95 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 py-4 max-w-4xl">
           <div className="flex items-center justify-between">
+            {/* Logo */}
             <a href="/" className="flex items-center gap-2 group">
               <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,32 +199,42 @@ function AnswerReviewPage() {
               <span className="font-bold text-gray-900 hidden sm:block">QuickChat</span>
             </a>
             
-            <span className="text-xs sm:text-sm text-gray-500 font-medium">
-              {hasAnswer ? `Delivered ${getTimeAgo(data.answer.created_at)}` : `Asked ${getTimeAgo(data.created_at)}`}
-            </span>
+            {/* Delivery Badge - Only shows when answered */}
+            {hasAnswer && getDeliveryTime() && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-xs font-semibold text-green-700">
+                  Delivered in {getDeliveryTime()}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl pb-24">
         
-        {/* Compact Expert Profile Card */}
+        {/* Expert Card - Redesigned without X handle */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
+            {/* Avatar with verified badge */}
             <div className="relative flex-shrink-0">
               {expertAvatar ? (
                 <img 
                   src={expertAvatar} 
                   alt={expertName}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-gray-100"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-indigo-100"
                 />
               ) : (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-gray-100">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-indigo-100">
                   <span className="text-2xl sm:text-3xl font-bold text-white">
                     {expertName.charAt(0)}
                   </span>
                 </div>
               )}
+              {/* Verified Badge */}
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
                 <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -227,60 +242,46 @@ function AnswerReviewPage() {
               </div>
             </div>
             
+            {/* Expert Info - No X handle */}
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate">{expertName}</h2>
-              <p className="text-sm text-gray-600 mb-1.5 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
-              {expertHandle && (
-                <a 
-                  href={`https://x.com/${expertHandle}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium group"
-                >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                  </svg>
-                  @{expertHandle}
-                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
-              )}
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
+                  Answer from
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate">
+                {expertName}
+              </h2>
+              <p className="text-sm text-gray-600 truncate">
+                {data.expert_profile?.professional_title || 'Expert'}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Subtle Answer Section */}
+        {/* Answer Section - No Share Button */}
         {hasAnswer ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            {/* Header - Removed share button */}
             <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-5 sm:px-6 py-4">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-base">Your Answer</h3>
-                    <p className="text-slate-300 text-xs sm:text-sm">
-                      {getDeliveryTime() && `Delivered in ${getDeliveryTime()}`}
-                      {data.answer.media_duration && ` • ${formatDuration(data.answer.media_duration)}`}
-                    </p>
-                  </div>
-                </div>
-                <button 
-                  onClick={handleShare}
-                  className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all"
-                  title="Share on X"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                </button>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-white font-bold text-base">Your Answer</h3>
+                  {data.answer.media_duration && (
+                    <p className="text-slate-300 text-xs sm:text-sm">
+                      {formatDuration(data.answer.media_duration)} video response
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
+            {/* Video Player */}
             {data.answer.media_url && (
               <div className="bg-black">
                 <div className="w-full aspect-video">
@@ -311,6 +312,7 @@ function AnswerReviewPage() {
               </div>
             )}
 
+            {/* Text Answer */}
             {data.answer.text && (
               <div className="p-5 sm:p-6">
                 <p className="text-gray-800 leading-relaxed text-sm sm:text-base whitespace-pre-wrap">
@@ -319,6 +321,35 @@ function AnswerReviewPage() {
               </div>
             )}
 
+            {/* Privacy Reminder - New Section */}
+            {showPrivacyReminder && (
+              <div className="mx-5 sm:mx-6 mb-5 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex gap-3">
+                  <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm text-amber-900 font-medium mb-1">
+                      Content Usage Notice
+                    </p>
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      This answer is for your personal/internal business use. Public sharing or redistribution requires expert permission. See our{' '}
+                      <a href="/terms" className="underline hover:text-amber-900 font-medium">Terms of Service</a>.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setShowPrivacyReminder(false)}
+                    className="text-amber-600 hover:text-amber-700 flex-shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Action Bar - Simplified */}
             <div className="px-5 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
               <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,15 +357,7 @@ function AnswerReviewPage() {
                 </svg>
                 Download
               </button>
-              <button 
-                onClick={handleShare}
-                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                Share
-              </button>
+              <span className="text-xs text-gray-500">For personal use only</span>
             </div>
           </div>
         ) : (
@@ -491,7 +514,7 @@ function AnswerReviewPage() {
           </div>
         </div>
 
-        {/* Feedback Section - Without star icon in header */}
+        {/* Feedback Section */}
         {hasAnswer && !hasSubmittedFeedback && (
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-200 p-5 sm:p-6 mb-6">
             <div className="text-center mb-5">
@@ -589,55 +612,69 @@ function AnswerReviewPage() {
           </div>
         )}
 
-        {/* Minimalistic Modern CTA */}
+        {/* Revised CTA Section - Only verified claims */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
           <div className="p-8 sm:p-10 text-center">
+            {/* Trust Indicators */}
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full mb-4">
               <div className="flex -space-x-1.5">
                 {[1,2,3].map(i => (
                   <div key={i} className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-500 border-2 border-white"></div>
                 ))}
               </div>
-              <span className="text-xs font-semibold text-indigo-700">Join 1,240+ experts</span>
+              <span className="text-xs font-semibold text-indigo-700">Join expert community</span>
             </div>
 
             <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
-              Monetize your expertise
+              Become an Expert
             </h3>
             <p className="text-base text-gray-600 mb-6 max-w-md mx-auto">
-              Set your price, answer on your schedule, and get paid for your knowledge
+              Set your price, answer on your schedule, and monetize your expertise
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
-              <a 
-                href="/?ref=answer_page"
-                className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-6 sm:px-8 py-3.5 rounded-lg font-semibold text-base hover:bg-gray-800 active:scale-[0.98] transition-all min-h-[44px] group"
-              >
-                Get Your Link
-                <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            {/* Verified Benefits - Only from pricing page */}
+            <div className="flex flex-col gap-2 mb-6 text-sm text-left max-w-sm mx-auto">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                 </svg>
-              </a>
-              
-              <button 
-                onClick={handleShare}
-                className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-6 sm:px-8 py-3.5 rounded-lg font-semibold text-base hover:bg-gray-200 active:scale-[0.98] transition-all min-h-[44px]"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                <span className="text-gray-700">Free to start • 10% platform fee</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                 </svg>
-                Share
-              </button>
+                <span className="text-gray-700">Set your own price & SLA</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                </svg>
+                <span className="text-gray-700">Secure Stripe payments</span>
+              </div>
             </div>
 
-            <p className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-700">No fees</span> for 6 months • 
-              <span className="font-semibold text-gray-700"> €342</span> avg. first month
+            {/* CTA Button */}
+            <a
+              href="/?ref=answer_page"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-8 py-3.5 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105 min-h-[44px]"
+            >
+              <span>Get Started Free</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+
+            {/* Pricing Link */}
+            <p className="text-xs text-gray-500 mt-4">
+              <a href="/pricing" className="hover:text-indigo-600 transition-colors underline">
+                View full pricing details
+              </a>
             </p>
           </div>
         </div>
 
-        {/* Powered by QuickChat */}
+        {/* Footer - Simplified */}
         <div className="text-center py-4">
           <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors group">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
