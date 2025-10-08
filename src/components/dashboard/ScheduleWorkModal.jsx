@@ -18,58 +18,42 @@ const CALENDAR_SERVICES = [
   {
     id: 'google',
     name: 'Google Calendar',
-    icon: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-        <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" fill="#4285F4"/>
-      </svg>
-    ),
-    bgColor: 'bg-blue-50',
-    textColor: 'text-blue-700',
-    borderColor: 'border-blue-200',
-    hoverBg: 'hover:bg-blue-100'
+    shortName: 'Google',
+    bgColor: 'bg-white',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+    hoverBg: 'hover:bg-gray-50',
+    hoverBorder: 'hover:border-blue-400'
   },
   {
     id: 'outlook',
     name: 'Outlook',
-    icon: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="5" width="18" height="14" rx="2" stroke="#0078D4" strokeWidth="2" fill="none"/>
-        <path d="M3 7l9 5 9-5" stroke="#0078D4" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    ),
-    bgColor: 'bg-sky-50',
-    textColor: 'text-sky-700',
-    borderColor: 'border-sky-200',
-    hoverBg: 'hover:bg-sky-100'
+    shortName: 'Outlook',
+    bgColor: 'bg-white',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+    hoverBg: 'hover:bg-gray-50',
+    hoverBorder: 'hover:border-sky-400'
   },
   {
     id: 'office365',
     name: 'Office 365',
-    icon: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-        <rect x="4" y="4" width="7" height="7" fill="#EB3C00"/>
-        <rect x="13" y="4" width="7" height="7" fill="#0078D4"/>
-        <rect x="4" y="13" width="7" height="7" fill="#00A4EF"/>
-        <rect x="13" y="13" width="7" height="7" fill="#FFB900"/>
-      </svg>
-    ),
-    bgColor: 'bg-orange-50',
-    textColor: 'text-orange-700',
-    borderColor: 'border-orange-200',
-    hoverBg: 'hover:bg-orange-100'
+    shortName: 'Office 365',
+    bgColor: 'bg-white',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+    hoverBg: 'hover:bg-gray-50',
+    hoverBorder: 'hover:border-orange-400'
   },
   {
     id: 'apple',
     name: 'Apple Calendar',
-    icon: (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-      </svg>
-    ),
-    bgColor: 'bg-gray-50',
+    shortName: 'Apple',
+    bgColor: 'bg-white',
     textColor: 'text-gray-700',
     borderColor: 'border-gray-300',
-    hoverBg: 'hover:bg-gray-100'
+    hoverBg: 'hover:bg-gray-50',
+    hoverBorder: 'hover:border-gray-400'
   }
 ];
 
