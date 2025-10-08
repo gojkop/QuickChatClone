@@ -207,30 +207,59 @@ function AnswerReviewPage() {
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl pb-24">
         
-        {/* ✅ EXPERT CARD WITH ACTION BUTTONS */}
+        {/* ✅ ELEGANT EXPERT CARD WITH SUBTLE ACTION BUTTONS */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="relative flex-shrink-0">
-              {expertAvatar ? (
-                <img 
-                  src={expertAvatar} 
-                  alt={expertName}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-indigo-100"
-                />
-              ) : (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-indigo-100">
-                  <span className="text-2xl sm:text-3xl font-bold text-white">
-                    {expertName.charAt(0)}
-                  </span>
+          <div className="flex items-start gap-4">
+            {/* Clickable Avatar */}
+            {expertHandle ? (
+              <a 
+                href={`/u/${expertHandle}`}
+                className="relative flex-shrink-0 group"
+                title="View expert profile"
+              >
+                {expertAvatar ? (
+                  <img 
+                    src={expertAvatar} 
+                    alt={expertName}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-indigo-100 group-hover:ring-indigo-300 transition-all cursor-pointer"
+                  />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-indigo-100 group-hover:ring-indigo-300 transition-all cursor-pointer">
+                    <span className="text-2xl sm:text-3xl font-bold text-white">
+                      {expertName.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
                 </div>
-              )}
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
-                <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+              </a>
+            ) : (
+              <div className="relative flex-shrink-0">
+                {expertAvatar ? (
+                  <img 
+                    src={expertAvatar} 
+                    alt={expertName}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-indigo-100"
+                  />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center ring-2 ring-indigo-100">
+                    <span className="text-2xl sm:text-3xl font-bold text-white">
+                      {expertName.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
               </div>
-            </div>
+            )}
             
+            {/* Expert Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
@@ -240,32 +269,35 @@ function AnswerReviewPage() {
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 truncate">{expertName}</h2>
               <p className="text-sm text-gray-600 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
             </div>
+            
+            {/* Subtle Action Buttons */}
+            {expertHandle && (
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                <a
+                  href={`/ask?expert=${expertHandle}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border border-indigo-200 hover:border-indigo-300 transition-all"
+                  title="Ask another question"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <span className="hidden sm:inline whitespace-nowrap">Ask Another</span>
+                  <span className="sm:hidden">Ask</span>
+                </a>
+                <a
+                  href={`/u/${expertHandle}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 border border-gray-200 hover:border-indigo-200 transition-all"
+                  title="View expert profile"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="hidden sm:inline whitespace-nowrap">View Profile</span>
+                  <span className="sm:hidden">Profile</span>
+                </a>
+              </div>
+            )}
           </div>
-          
-          {/* Action Buttons */}
-          {expertHandle && (
-            <div className="flex gap-2 pt-3 border-t border-gray-100">
-              <a
-                href={`/ask?expert=${expertHandle}`}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 transition-all duration-200 transform hover:scale-[1.02] shadow-sm"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                <span>Ask Another Question</span>
-              </a>
-              <a
-                href={`/u/${expertHandle}`}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white border-2 border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className="hidden sm:inline">View Profile</span>
-                <span className="sm:hidden">Profile</span>
-              </a>
-            </div>
-          )}
         </div>
 
         {/* Answer Section */}
