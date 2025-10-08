@@ -1,6 +1,7 @@
 // src/hooks/useAnswerUpload.js
 // Hook for uploading answer recordings and attachments
 import { useState, useCallback } from 'react';
+import apiClient from '@/api';
 
 export function useAnswerUpload() {
   const [uploadState, setUploadState] = useState({
@@ -202,31 +203,21 @@ export function useAnswerUpload() {
   const createMediaAsset = async (mediaResult) => {
     console.log('💾 Creating media_asset record...');
     
-    const response = await fetch('/api/media/create-asset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        asset_id: mediaResult.uid,              // Cloudflare UID
-        url: mediaResult.playbackUrl,           // Full URL
-        duration: mediaResult.duration,         // Seconds
-        type: mediaResult.mode,                 // 'video' or 'audio'
-        size: mediaResult.size,                 // Bytes
-        mime_type: mediaResult.mode === 'video' ? 'video/webm' : 'audio/webm',
-        storage: mediaResult.mode === 'video' ? 'stream' : 'r2',
-        owner_type: 'answer',                   // Always 'answer' for this flow
-        owner_id: 0,                            // Placeholder - will be updated by /answer endpoint
-      }),
+    const response = await apiClient.post('/media_asset', {
+      asset_id: mediaResult.uid,              // Cloudflare UID
+      url: mediaResult.playbackUrl,           // Full URL
+      duration: mediaResult.duration,         // Seconds
+      type: mediaResult.mode,                 // 'video' or 'audio'
+      size: mediaResult.size,                 // Bytes
+      mime_type: mediaResult.mode === 'video' ? 'video/webm' : 'audio/webm',
+      storage: mediaResult.mode === 'video' ? 'stream' : 'r2',
+      owner_type: 'answer',                   // Always 'answer' for this flow
+      owner_id: 0,                            // Placeholder - will be updated by /answer endpoint
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to create media asset record');
-    }
-
-    const result = await response.json();
-    console.log('✅ Media asset record created:', result.data.media_asset_id);
+    console.log('✅ Media asset record created:', response.data.media_asset_id);
     
-    return result.data;
+    return response.data;
   };
 
   /**
@@ -261,39 +252,22 @@ export function useAnswerUpload() {
         console.log('📤 Creating media_asset record from segments...');
         
         // Segments are already uploaded to Cloudflare
-        // Create a media_asset record in Xano
-        const response = await fetch('/api/media/create-asset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            segments: answerData.recordingSegments.map(seg => ({
-              uid: seg.uid,
-              playback_url: seg.playbackUrl,
-              duration: seg.duration,
-              mode: seg.mode,
-            })),
-            mode: answerData.recordingMode || 'multi-segment',
-            totalDuration: answerData.recordingDuration || 0,
-            owner_type: 'answer',
-            owner_id: 0, // Placeholder - will be updated by /answer endpoint
-          }),
+        // Create a media_asset record in Xano using apiClient
+        const response = await apiClient.post('/media_asset', {
+          segments: answerData.recordingSegments.map(seg => ({
+            uid: seg.uid,
+            playback_url: seg.playbackUrl,
+            duration: seg.duration,
+            mode: seg.mode,
+          })),
+          mode: answerData.recordingMode || 'multi-segment',
+          totalDuration: answerData.recordingDuration || 0,
+          owner_type: 'answer',
+          owner_id: 0, // Placeholder - will be updated by /answer endpoint
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorMessage;
-          try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || 'Failed to create media asset';
-          } catch (e) {
-            errorMessage = `Server error (${response.status}): ${errorText.substring(0, 100)}`;
-          }
-          throw new Error(errorMessage);
-        }
-
-        const result = await response.json();
-        mediaAssetId = result.data?.id || result.data?.media_asset_id;
-        mediaResult = result.data;
+        mediaAssetId = response.data?.id || response.data?.media_asset_id;
+        mediaResult = response.data;
         
         console.log('✅ Media asset created, ID:', mediaAssetId);
       }
@@ -367,34 +341,12 @@ export function useAnswerUpload() {
         payload.attachments = JSON.stringify(attachmentResults);
       }
 
-      console.log('Sending to /api/answer/create:', payload);
+      console.log('Sending to Xano /answer endpoint:', payload);
 
-      const response = await fetch('/api/answer/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      // Use apiClient to call Xano directly
+      const response = await apiClient.post('/answer', payload);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage;
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || 'Failed to create answer';
-        } catch (e) {
-          console.error('Non-JSON error response:', errorText);
-          errorMessage = `Server error (${response.status}). Check server logs for details.`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create answer');
-      }
-      
-      console.log('✅ Answer submitted successfully:', result);
+      console.log('✅ Answer submitted successfully:', response.data);
 
       setUploadState({
         uploading: false,
@@ -405,7 +357,7 @@ export function useAnswerUpload() {
         attachmentResults,
       });
 
-      return result.data;
+      return response.data;
 
     } catch (error) {
       console.error('❌ Answer submission failed:', error);
