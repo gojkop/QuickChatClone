@@ -5,7 +5,8 @@
  */
 export function getGoogleCalendarUrl(question, options = {}) {
   const { scheduledDate, duration = 30 } = options;
-  
+  const questionUrl = `${window.location.origin}/expert#question-${question.id}`;
+
   const startTime = scheduledDate || getDefaultStartTime();
   const endTime = new Date(startTime);
   endTime.setMinutes(endTime.getMinutes() + duration);
@@ -28,7 +29,8 @@ export function getGoogleCalendarUrl(question, options = {}) {
  */
 export function getOutlookCalendarUrl(question, options = {}) {
   const { scheduledDate, duration = 30 } = options;
-  
+  const questionUrl = `${window.location.origin}/expert#question-${question.id}`;
+
   const startTime = scheduledDate || getDefaultStartTime();
   const endTime = new Date(startTime);
   endTime.setMinutes(endTime.getMinutes() + duration);
@@ -53,7 +55,8 @@ export function getOutlookCalendarUrl(question, options = {}) {
  */
 export function getOffice365CalendarUrl(question, options = {}) {
   const { scheduledDate, duration = 30 } = options;
-  
+  const questionUrl = `${window.location.origin}/expert#question-${question.id}`;
+
   const startTime = scheduledDate || getDefaultStartTime();
   const endTime = new Date(startTime);
   endTime.setMinutes(endTime.getMinutes() + duration);
@@ -78,7 +81,8 @@ export function getOffice365CalendarUrl(question, options = {}) {
  */
 export function getAppleCalendarUrl(question, options = {}) {
   const { scheduledDate, duration = 30 } = options;
-  
+  const questionUrl = `${window.location.origin}/expert#question-${question.id}`;
+
   const startTime = scheduledDate || getDefaultStartTime();
   const endTime = new Date(startTime);
   endTime.setMinutes(endTime.getMinutes() + duration);

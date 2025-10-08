@@ -8,6 +8,7 @@ import SocialImpactStats from '@/components/dashboard/SocialImpactStats';
 import StatsSection from '@/components/dashboard/StatsSection';
 import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
 import QuestionTable from '@/components/dashboard/QuestionTable';
+import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
 
 function ExpertDashboardPage() {
   const location = useLocation();
@@ -27,6 +28,11 @@ function ExpertDashboardPage() {
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
   const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState('');
+  
+  // NEW: State for question detail modal
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [showQuestionDetailModal, setShowQuestionDetailModal] = useState(false);
+  
   const QUESTIONS_PER_PAGE = 10;
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
@@ -62,14 +68,32 @@ function ExpertDashboardPage() {
     fetchProfile();
   }, []);
 
+  // NEW: Handle hash navigation for settings AND questions
   useEffect(() => {
     const hash = location.hash;
+    
     if (hash === '#profile-settings') {
       setIsProfileModalOpen(true);
     } else if (hash === '#account-settings') {
       setIsAccountModalOpen(true);
+    } else if (hash.startsWith('#question-')) {
+      // Extract question ID from hash like #question-80
+      const questionId = parseInt(hash.replace('#question-', ''), 10);
+      
+      if (!isNaN(questionId) && allQuestions.length > 0) {
+        const question = allQuestions.find(q => q.id === questionId);
+        
+        if (question) {
+          setSelectedQuestion(question);
+          setShowQuestionDetailModal(true);
+        } else {
+          console.warn(`Question with ID ${questionId} not found`);
+          // Clear hash if question not found
+          navigate('/expert', { replace: true });
+        }
+      }
     }
-  }, [location]);
+  }, [location.hash, allQuestions, navigate]);
 
   // Fetch ALL questions once when profile loads
   useEffect(() => {
@@ -210,6 +234,24 @@ function ExpertDashboardPage() {
     if (location.hash === '#account-settings') {
       navigate('/expert', { replace: true });
     }
+  };
+
+  // NEW: Handle question detail modal close
+  const handleCloseQuestionDetail = () => {
+    setShowQuestionDetailModal(false);
+    setSelectedQuestion(null);
+    // Clear the hash
+    if (location.hash.startsWith('#question-')) {
+      navigate('/expert', { replace: true });
+    }
+  };
+
+  // NEW: Handle question click from table
+  const handleQuestionClick = (question) => {
+    setSelectedQuestion(question);
+    setShowQuestionDetailModal(true);
+    // Optionally update URL hash
+    navigate(`#question-${question.id}`, { replace: false });
   };
   
   const handleCopyProfileLink = () => {
@@ -379,7 +421,7 @@ function ExpertDashboardPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              {/* OPTION 1: Status Indicator with Separate Toggle - Most Intuitive */}
+              {/* Status Indicator with Separate Toggle */}
               <div className="relative">
                 <div className="flex items-center gap-2.5 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
                   {/* Status Display */}
@@ -519,6 +561,7 @@ function ExpertDashboardPage() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
+                onQuestionClick={handleQuestionClick}
               />
             )}
           </div>
@@ -543,6 +586,13 @@ function ExpertDashboardPage() {
             isOpen={isPreviewModalOpen}
             onClose={() => setIsPreviewModalOpen(false)}
             profile={profile}
+          />
+          
+          {/* NEW: Question Detail Modal at Dashboard Level */}
+          <QuestionDetailModal
+            isOpen={showQuestionDetailModal}
+            onClose={handleCloseQuestionDetail}
+            question={selectedQuestion}
           />
         </>
       )}
