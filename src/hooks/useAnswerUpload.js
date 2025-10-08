@@ -214,7 +214,7 @@ export function useAnswerUpload() {
         mime_type: mediaResult.mode === 'video' ? 'video/webm' : 'audio/webm',
         storage: mediaResult.mode === 'video' ? 'stream' : 'r2',
         owner_type: 'answer',                   // Always 'answer' for this flow
-        owner_id: null,                         // Will be updated after answer creation
+        // owner_id NOT sent - will be null in DB, updated by /answer endpoint
       }),
     });
 
@@ -230,7 +230,7 @@ export function useAnswerUpload() {
   };
 
   /**
-   * Submit complete answer - UPDATED to handle recordingSegments
+   * Submit complete answer
    * @param {Object} answerData - Complete answer data from AnswerRecorder
    * @param {number} questionId - The question ID being answered
    * @param {number} userId - The expert's user ID
@@ -275,7 +275,7 @@ export function useAnswerUpload() {
             mode: answerData.recordingMode || 'multi-segment',
             totalDuration: answerData.recordingDuration || 0,
             owner_type: 'answer',
-            // owner_id omitted - will be updated by /answer endpoint
+            // owner_id NOT sent - will be null, updated by /answer endpoint
           }),
         });
 
@@ -319,7 +319,7 @@ export function useAnswerUpload() {
 
       let attachmentResults = [];
       
-      // ✅ UPDATED: Handle both files array and attachments array
+      // Handle both files array and attachments array
       const filesToProcess = answerData.files || answerData.attachments || [];
       
       if (filesToProcess.length > 0) {

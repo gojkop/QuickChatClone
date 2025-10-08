@@ -28,17 +28,17 @@ export default async function handler(req, res) {
       
       // Common fields
       owner_type,    // 'answer' (will always be 'answer' for this flow)
-      owner_id,      // answer.id (may be null initially, updated later)
+      // owner_id is NOT sent - will be null in DB, updated by /answer endpoint
     } = req.body;
 
     // ✅ Handle multi-segment recording
     if (segments && Array.isArray(segments) && segments.length > 0) {
       console.log('Creating media_asset for multi-segment recording:', segments.length, 'segments');
       
-      // Build the payload WITHOUT owner_id (since it's causing the error)
+      // Build the payload WITHOUT owner_id (Xano allows null)
       const payload = {
         owner_type: owner_type || 'answer',
-        // owner_id is omitted entirely - will be null in DB
+        // owner_id is omitted - will be null in DB
         provider: 'cloudflare_stream', // Assuming video segments
         asset_id: segments[0].uid, // Use first segment's UID as reference
         duration_sec: Math.round(totalDuration || 0),
@@ -131,7 +131,7 @@ export default async function handler(req, res) {
       size: size || 0,
     };
 
-    // Build the payload WITHOUT owner_id (omit it entirely)
+    // Build the payload WITHOUT owner_id (Xano allows null)
     const payload = {
       owner_type: owner_type || 'answer',
       // owner_id is omitted - will be null in DB, updated later by /answer endpoint
