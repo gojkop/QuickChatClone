@@ -214,7 +214,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-semibold">
-                          {isPending ? formatSLA(question.sla_hours, question.created_at) : '—'}
+                          {isPending ? formatSLA(question.sla_hours_snapshot, question.created_at) : '—'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
@@ -265,7 +265,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                         </span>
                         {isPending && (
                           <span className="text-xs font-semibold text-gray-600">
-                            {formatSLA(question.sla_hours, question.created_at)}
+                            {formatSLA(question.sla_hours_snapshot, question.created_at)}
                           </span>
                         )}
                       </div>
