@@ -64,16 +64,16 @@ function AnswerReviewPage() {
           }
         };
         
-        // Check if feedback already exists
-        if (rawData.rating && rawData.rating > 0) {
+        // Check if feedback already exists (inside answer object)
+        if (rawData.answer && rawData.answer.length > 0 && rawData.answer[0].rating && rawData.answer[0].rating > 0) {
           setExistingFeedback({
-            rating: rawData.rating,
-            feedback_text: rawData.feedback_text || '',
-            allow_testimonial: rawData.allow_testimonial || false,
-            created_at: rawData.feedback_created_at || rawData.updated_at
+            rating: rawData.answer[0].rating,
+            feedback_text: rawData.answer[0].feedback_text || '',
+            allow_testimonial: rawData.answer[0].allow_testimonial || false,
+            created_at: rawData.answer[0].feedback_at || rawData.answer[0].created_at
           });
           setHasSubmittedFeedback(true);
-          console.log('✅ Existing feedback found:', rawData.rating);
+          console.log('✅ Existing feedback found:', rawData.answer[0].rating);
         }
         
         console.log('✅ Transformed data:', transformedData);
