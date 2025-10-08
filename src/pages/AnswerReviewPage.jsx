@@ -133,6 +133,10 @@ function AnswerReviewPage() {
     return match ? match[1] : null;
   };
 
+  // OVERRIDE: If your database has wrong customer codes, use your actual working one
+  // Set to null to use customer code from URLs
+  const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh'; // From working QuestionDetailModal
+
   // Loading state
   if (isLoading) {
     return (
@@ -269,15 +273,18 @@ function AnswerReviewPage() {
                                   !isVideo;
                   
                   const videoId = isVideo ? getStreamVideoId(segment.url) : null;
-                  const customerCode = isVideo ? getCustomerCode(segment.url) : null;
+                  const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+                  const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
                   
                   // Debug logging
                   if (isVideo) {
                     console.log('🎥 Video Segment', arrayIndex + 1, {
-                      url: segment.url,
-                      videoId,
-                      customerCode,
-                      iframeUrl: customerCode && videoId ? `https://${customerCode}.cloudflarestream.com/${videoId}/iframe` : 'N/A'
+                      originalUrl: segment.url,
+                      extractedVideoId: videoId,
+                      extractedCustomerCode: extractedCustomerCode,
+                      usingCustomerCode: customerCode,
+                      isOverride: !!CUSTOMER_CODE_OVERRIDE,
+                      generatedIframeUrl: customerCode && videoId ? `https://${customerCode}.cloudflarestream.com/${videoId}/iframe` : 'N/A'
                     });
                   }
                   
@@ -433,12 +440,15 @@ function AnswerReviewPage() {
                 <div className="w-full aspect-video bg-black">
                   {(() => {
                     const videoId = getStreamVideoId(data.answer.media_url);
-                    const customerCode = getCustomerCode(data.answer.media_url);
+                    const extractedCustomerCode = getCustomerCode(data.answer.media_url);
+                    const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
                     
                     console.log('🎬 Answer Video:', {
                       url: data.answer.media_url,
-                      videoId,
-                      customerCode,
+                      extractedVideoId: videoId,
+                      extractedCustomerCode: extractedCustomerCode,
+                      usingCustomerCode: customerCode,
+                      isOverride: !!CUSTOMER_CODE_OVERRIDE,
                       iframeUrl: customerCode && videoId ? `https://${customerCode}.cloudflarestream.com/${videoId}/iframe` : 'N/A'
                     });
                     
