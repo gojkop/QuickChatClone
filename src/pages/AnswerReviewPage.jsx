@@ -17,6 +17,7 @@ function AnswerReviewPage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        console.log('🔍 Fetching data for token:', token);
         const response = await fetch(`${XANO_BASE_URL}/review/${token}`);
         
         if (!response.ok) {
@@ -26,10 +27,53 @@ function AnswerReviewPage() {
           throw new Error('Failed to load answer.');
         }
 
-        const result = await response.json();
-        setData(result);
+        const rawData = await response.json();
+        console.log('📦 Raw API response:', rawData);
+        
+        // Transform data to handle arrays and parse JSON strings
+        const transformedData = {
+          // Basic question info (at root level)
+          id: rawData.id,
+          title: rawData.title,
+          text: rawData.text,
+          created_at: rawData.created_at,
+          price_cents: rawData.price_cents,
+          currency: rawData.currency,
+          status: rawData.status,
+          sla_hours_snapshot: rawData.sla_hours_snapshot,
+          
+          // Parse attachments from JSON string
+          attachments: rawData.attachments ? JSON.parse(rawData.attachments) : [],
+          
+          // Media assets array (multiple segments)
+          media_assets: rawData.media_asset || [],
+          
+          // Get first answer from array (or null if empty)
+          answer: rawData.answer && rawData.answer.length > 0 ? {
+            id: rawData.answer[0].id,
+            created_at: rawData.answer[0].created_at,
+            sent_at: rawData.answer[0].sent_at,
+            text: rawData.answer[0].text_response,
+            // Answer media comes from direct fields
+            media_url: rawData.answer[0].media_url,
+            media_duration: rawData.answer[0].media_duration,
+            media_type: rawData.answer[0].media_type,
+          } : null,
+          
+          // Expert profile
+          expert_profile: {
+            ...rawData.expert_profile,
+            user: {
+              name: rawData.user || rawData.expert_profile?.professional_title || 'Expert'
+            }
+          }
+        };
+        
+        console.log('✅ Transformed data:', transformedData);
+        setData(transformedData);
+        
       } catch (err) {
-        console.error('Error fetching review data:', err);
+        console.error('❌ Error fetching review data:', err);
         setError(err.message);
       } finally {
         setIsLoading(false);
@@ -105,7 +149,7 @@ function AnswerReviewPage() {
     );
   }
 
-  const hasAnswer = data.answer?.media_asset?.url;
+  const hasAnswer = data.answer?.media_url;
   const expertName = data.expert_profile?.user?.name || 'Expert';
   const expertHandle = data.expert_profile?.handle || '';
   const expertAvatar = data.expert_profile?.avatar_url;
@@ -191,19 +235,48 @@ function AnswerReviewPage() {
             </div>
           )}
 
-          {/* Question Video/Media */}
-          {data.media_asset?.url && (
-            <div className="mb-4">
-              <div className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video">
-                <video 
-                  className="w-full h-full"
-                  controls
-                  playsInline
-                >
-                  <source src={data.media_asset.url} type="video/mp4" />
-                  Your browser does not support video.
-                </video>
-              </div>
+          {/* Question Media - Multiple Segments */}
+          {data.media_assets && data.media_assets.length > 0 && (
+            <div className="mb-4 space-y-4">
+              {data.media_assets.length > 1 && (
+                <p className="text-sm font-semibold text-gray-600">
+                  Question Recording ({data.media_assets.length} segment{data.media_assets.length > 1 ? 's' : ''})
+                </p>
+              )}
+              
+              {data.media_assets
+                .sort((a, b) => a.segment_index - b.segment_index)
+                .map((segment) => (
+                  <div key={segment.id} className="relative">
+                    {data.media_assets.length > 1 && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                          Part {segment.segment_index + 1}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {segment.metadata?.mode === 'video' ? '🎥 Video' : '🎤 Audio'} 
+                          • {segment.duration_sec}s
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="bg-gray-900 rounded-xl overflow-hidden aspect-video">
+                      {segment.metadata?.mode === 'video' || segment.url.includes('cloudflarestream.com') ? (
+                        <video className="w-full h-full" controls playsInline>
+                          <source src={segment.url} type="application/x-mpegURL" />
+                          Your browser does not support video.
+                        </video>
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <audio className="w-full max-w-md" controls>
+                            <source src={segment.url} type="audio/webm" />
+                            Your browser does not support audio.
+                          </audio>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
             </div>
           )}
 
@@ -212,12 +285,28 @@ function AnswerReviewPage() {
             <div className="space-y-2">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Your Attachments:</p>
               {data.attachments.map((file, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg text-sm">
+                <a
+                  key={index}
+                  href={file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100 transition"
+                >
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
-                  <span className="flex-1 text-gray-700">{file}</span>
-                </div>
+                  <div className="flex-1">
+                    <p className="text-gray-700 font-medium">{file.name}</p>
+                    {file.size && (
+                      <p className="text-xs text-gray-500">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    )}
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
               ))}
             </div>
           )}
@@ -235,9 +324,9 @@ function AnswerReviewPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">Your Answer</h3>
-                  {data.answer.media_asset?.duration_sec && (
+                  {data.answer.media_duration && (
                     <p className="text-sm text-gray-600">
-                      Video Response • {formatDuration(data.answer.media_asset.duration_sec)}
+                      Video Response • {formatDuration(data.answer.media_duration)}
                     </p>
                   )}
                 </div>
@@ -245,18 +334,20 @@ function AnswerReviewPage() {
             </div>
 
             {/* Answer Video Player */}
-            <div className="bg-gray-900">
-              <div className="relative aspect-video">
-                <video 
-                  className="w-full h-full"
-                  controls
-                  playsInline
-                >
-                  <source src={data.answer.media_asset.url} type="video/mp4" />
-                  Your browser does not support video.
-                </video>
+            {data.answer.media_url && (
+              <div className="bg-gray-900">
+                <div className="relative aspect-video">
+                  <video 
+                    className="w-full h-full"
+                    controls
+                    playsInline
+                  >
+                    <source src={data.answer.media_url} type="application/x-mpegURL" />
+                    Your browser does not support video.
+                  </video>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Written Response (if exists) */}
             {data.answer.text && (
