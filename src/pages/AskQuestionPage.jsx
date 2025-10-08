@@ -17,7 +17,6 @@ function AskQuestionPage() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [questionData, setQuestionData] = useState(null);
 
-  // ... existing useEffect for fetching expert ...
   useEffect(() => {
     const fetchExpertProfile = async () => {
       const params = new URLSearchParams(location.search);
@@ -113,7 +112,6 @@ function AskQuestionPage() {
         recordingSegments: questionData.recordingSegments || [],
         attachments: questionData.attachments || [],
         sla_hours_snapshot: expert.sla_hours
- 
       };
 
       console.log('Submitting question with payload:', {
@@ -158,7 +156,19 @@ function AskQuestionPage() {
         window.location.href = result.checkoutUrl;
       } else {
         const expertName = expert.name || expert.user?.name || expert.handle;
-        navigate(`/question-sent?question_id=${result.data.questionId}&expert=${expert.handle}&expertName=${encodeURIComponent(expertName)}&dev_mode=true`);
+        const questionId = result.data.questionId;
+        const reviewToken = result.data.reviewToken; // Get review token from backend
+        
+        // Build the query string with review_token
+        const params = new URLSearchParams({
+          question_id: questionId,
+          expert: expert.handle,
+          expertName: expertName,
+          ...(reviewToken && { review_token: reviewToken }), // Include review_token if available
+          dev_mode: 'true'
+        });
+        
+        navigate(`/question-sent?${params.toString()}`);
       }
 
     } catch (error) {
@@ -173,7 +183,6 @@ function AskQuestionPage() {
     }
   };
 
-  // ... existing loading/error states ...
   if (isLoading) {
     return (
       <main className="container mx-auto px-4 py-20 pt-32 sm:pt-40">
@@ -190,7 +199,6 @@ function AskQuestionPage() {
   }
 
   if (error) {
-    // ... existing error UI ...
     return (
       <main className="container mx-auto px-4 py-20 pt-32 sm:pt-40">
         <div className="max-w-2xl mx-auto">
