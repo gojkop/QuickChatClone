@@ -112,8 +112,7 @@ function AskQuestionPage() {
         payerLastName: askerInfo.lastName || null,
         recordingSegments: questionData.recordingSegments || [],
         attachments: questionData.attachments || [],
-        slaHours: expert.sla_hours,
-        sla_hours: expert.sla_hours 
+        sla_hours_snapshot: expert.sla_hours
  
       };
 
