@@ -120,15 +120,18 @@ function AnswerReviewPage() {
     return date.toLocaleDateString();
   };
 
-  // Extract Cloudflare Stream video ID from URL
+  // Extract Cloudflare Stream video ID and customer code from URL
   const getStreamVideoId = (url) => {
     if (!url) return null;
     const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
     return match ? match[1] : null;
   };
 
-  // Hardcoded customer subdomain - replace with your actual Cloudflare account
-  const CLOUDFLARE_CUSTOMER_CODE = 'customer-31c014ec11101bfa323f8afe20a975a1';
+  const getCustomerCode = (url) => {
+    if (!url) return null;
+    const match = url.match(/https:\/\/(customer-[a-zA-Z0-9]+)\.cloudflarestream\.com/);
+    return match ? match[1] : null;
+  };
 
   // Loading state
   if (isLoading) {
@@ -266,6 +269,17 @@ function AnswerReviewPage() {
                                   !isVideo;
                   
                   const videoId = isVideo ? getStreamVideoId(segment.url) : null;
+                  const customerCode = isVideo ? getCustomerCode(segment.url) : null;
+                  
+                  // Debug logging
+                  if (isVideo) {
+                    console.log('🎥 Video Segment', arrayIndex + 1, {
+                      url: segment.url,
+                      videoId,
+                      customerCode,
+                      iframeUrl: customerCode && videoId ? `https://${customerCode}.cloudflarestream.com/${videoId}/iframe` : 'N/A'
+                    });
+                  }
                   
                   return (
                     <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
@@ -300,11 +314,11 @@ function AnswerReviewPage() {
                       )}
                       
                       {/* Player */}
-                      {isVideo && videoId ? (
+                      {isVideo && videoId && customerCode ? (
                         // VIDEO: Cloudflare Stream iframe
                         <div className="w-full aspect-video bg-black">
                           <iframe
-                            src={`https://${CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${videoId}/iframe`}
+                            src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
                             style={{ border: 'none', width: '100%', height: '100%' }}
                             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
                             allowFullScreen={true}
@@ -334,8 +348,14 @@ function AnswerReviewPage() {
                           <svg className="w-12 h-12 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                           </svg>
-                          <p className="text-white text-sm">Media unavailable</p>
-                          <p className="text-gray-500 text-xs mt-1">Video ID: {videoId || 'unknown'}</p>
+                          <p className="text-white text-sm mb-2">Video unavailable</p>
+                          <div className="text-xs text-gray-400 space-y-1 text-left bg-gray-800 p-3 rounded">
+                            <p>Video ID: {videoId || '❌ Not found'}</p>
+                            <p>Customer: {customerCode || '❌ Not found'}</p>
+                            {videoId && customerCode && (
+                              <p className="text-red-400">Generated iframe URL returned 404</p>
+                            )}
+                          </div>
                           {segment.url && (
                             <a 
                               href={segment.url} 
@@ -413,11 +433,20 @@ function AnswerReviewPage() {
                 <div className="w-full aspect-video bg-black">
                   {(() => {
                     const videoId = getStreamVideoId(data.answer.media_url);
-                    if (videoId) {
+                    const customerCode = getCustomerCode(data.answer.media_url);
+                    
+                    console.log('🎬 Answer Video:', {
+                      url: data.answer.media_url,
+                      videoId,
+                      customerCode,
+                      iframeUrl: customerCode && videoId ? `https://${customerCode}.cloudflarestream.com/${videoId}/iframe` : 'N/A'
+                    });
+                    
+                    if (videoId && customerCode) {
                       // Cloudflare Stream video
                       return (
                         <iframe
-                          src={`https://${CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${videoId}/iframe`}
+                          src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
                           style={{ border: 'none', width: '100%', height: '100%' }}
                           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
                           allowFullScreen={true}
