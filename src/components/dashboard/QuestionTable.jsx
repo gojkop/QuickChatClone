@@ -68,7 +68,14 @@ const formatPrice = (cents, currency = 'USD') => {
 const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages, onPageChange, onQuestionClick }) => {
   const handleAction = (action, question) => {
     console.log('Action:', action, 'Question:', question);
-    // Mock implementation
+    
+    // UPDATED: Handle view action by navigating to hash URL
+    if (action === 'view') {
+      window.location.hash = `#question-${question.id}`;
+      return;
+    }
+    
+    // Mock implementation for other actions
     switch (action) {
       case 'priority':
         alert('Question marked as priority');
@@ -87,6 +94,11 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
         break;
       case 'block':
         alert('Asker blocked');
+        break;
+      case 'delete':
+        if (confirm('Are you sure you want to delete this question?')) {
+          alert('Question deleted (not implemented yet)');
+        }
         break;
       default:
         break;

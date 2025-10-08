@@ -23,16 +23,22 @@ function QuestionActionsDropdown({ question, onAction }) {
   }, []);
 
   useEffect(() => {
-    if (isOpen && buttonRef.current) {
+    if (isOpen && buttonRef.current && dropdownRef.current) {
       const buttonRect = buttonRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - buttonRect.bottom;
-      const spaceAbove = buttonRect.top;
+      const dropdown = dropdownRef.current.querySelector('[class*="absolute"]');
       
-      // Increased threshold to 250px for better detection
-      if (spaceBelow < 250 && spaceAbove > spaceBelow) {
-        setOpenUpward(true);
-      } else {
-        setOpenUpward(false);
+      if (dropdown) {
+        // Get actual dropdown height
+        const dropdownHeight = dropdown.offsetHeight || 300; // fallback to 300px
+        const spaceBelow = window.innerHeight - buttonRect.bottom;
+        const spaceAbove = buttonRect.top;
+        
+        // Add 20px buffer for spacing
+        if (spaceBelow < dropdownHeight + 20 && spaceAbove > spaceBelow) {
+          setOpenUpward(true);
+        } else {
+          setOpenUpward(false);
+        }
       }
     }
   }, [isOpen]);
