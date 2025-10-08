@@ -469,7 +469,7 @@ function AnswerReviewPage() {
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Attachments</p>
                   {data.attachments.map((file, index) => (
-                    
+                    <a
                       key={index}
                       href={file.url}
                       target="_blank"
