@@ -344,15 +344,6 @@ function AnswerRecorder({ question, onReady, onCancel }) {
     
     onReady(data);
   };
-    
-    console.log('Passing answer data to review:', {
-      segmentCount: data.recordingSegments.length,
-      attachmentCount: data.attachments.length,
-      totalDuration: data.recordingDuration,
-    });
-    
-    onReady(data);
-  };
 
   const getSegmentLabel = (mode) => {
     const labels = { video: 'Video', audio: 'Audio', screen: 'Screen', 'screen-camera': 'Screen + Cam' };
