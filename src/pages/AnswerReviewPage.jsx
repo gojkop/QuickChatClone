@@ -1,6 +1,7 @@
-// src/pages/AnswerReviewPage.jsx - Improved Design (WORKING VERSION)
+// src/pages/AnswerReviewPage.jsx - Updated Header & CTA
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import logo from '@/assets/images/logo.svg'; // ✅ ADD THIS IMPORT
 
 const XANO_BASE_URL = import.meta.env.VITE_XANO_BASE_URL || 'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L';
 
@@ -175,17 +176,16 @@ function AnswerReviewPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
-      {/* Unified Header */}
+      {/* ✅ UPDATED HEADER WITH LOGO */}
       <header className="bg-white/95 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 py-4 max-w-4xl">
           <div className="flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <span className="font-bold text-gray-900 hidden sm:block">QuickChat</span>
+            <a href="/" className="flex items-center group">
+              <img 
+                src={logo} 
+                alt="QuickChat" 
+                className="h-8 w-auto transition-transform duration-200 group-hover:scale-105" 
+              />
             </a>
             
             {hasAnswer && getDeliveryTime() && (
@@ -588,61 +588,55 @@ function AnswerReviewPage() {
           </div>
         )}
 
-        {/* CTA Section */}
+        {/* ✅ COMPACT CTA SECTION */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-          <div className="p-8 sm:p-10 text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full mb-4">
-              <div className="flex -space-x-1.5">
+          <div className="p-6 text-center">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-indigo-50 rounded-full mb-3">
+              <div className="flex -space-x-1">
                 {[1,2,3].map(i => (
-                  <div key={i} className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-500 border-2 border-white"></div>
+                  <div key={i} className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-500 border-2 border-white"></div>
                 ))}
               </div>
               <span className="text-xs font-semibold text-indigo-700">Join expert community</span>
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
               Become an Expert
             </h3>
-            <p className="text-base text-gray-600 mb-6 max-w-md mx-auto">
-              Set your price, answer on your schedule, and monetize your expertise
+            <p className="text-sm text-gray-600 mb-4 max-w-md mx-auto">
+              Monetize your expertise — set your price and answer on your schedule
             </p>
 
-            <div className="flex flex-col gap-2 mb-6 text-sm text-left max-w-sm mx-auto">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-5 text-xs">
+              <div className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                 </svg>
-                <span className="text-gray-700">Free to start • 10% platform fee</span>
+                <span className="text-gray-700">Free to start</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                 </svg>
-                <span className="text-gray-700">Set your own price & SLA</span>
+                <span className="text-gray-700">Set your own price</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                 </svg>
-                <span className="text-gray-700">Secure Stripe payments</span>
+                <span className="text-gray-700">Secure payouts</span>
               </div>
             </div>
 
             <a
               href="/?ref=answer_page"
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-8 py-3.5 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105 min-h-[44px]"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-6 py-2.5 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
               <span>Get Started Free</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </a>
-
-            <p className="text-xs text-gray-500 mt-4">
-              <a href="/pricing" className="hover:text-indigo-600 transition-colors underline">
-                View full pricing details
-              </a>
-            </p>
           </div>
         </div>
 
