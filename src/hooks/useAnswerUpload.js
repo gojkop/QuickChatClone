@@ -230,13 +230,14 @@ export function useAnswerUpload() {
   };
 
   /**
-   * Submit complete answer
+   * Submit complete answer - UPDATED to handle recordingSegments
    * @param {Object} answerData - Complete answer data from AnswerRecorder
    * @param {number} questionId - The question ID being answered
    * @param {number} userId - The expert's user ID
    */
   const submitAnswer = useCallback(async (answerData, questionId, userId) => {
     console.log('🚀 Starting answer submission for question:', questionId);
+    console.log('Answer data received:', answerData);
     
     if (!userId) {
       throw new Error('userId is required for answer submission');
@@ -254,26 +255,92 @@ export function useAnswerUpload() {
     try {
       let mediaAssetId = null;
       let mediaResult = null;
-      let attachmentResults = [];
 
-      // Step 1: Upload media if exists
-      if (answerData.mediaBlob && answerData.recordingMode) {
-        console.log('📤 Uploading answer media...');
+      // ✅ UPDATED: Handle recordingSegments (progressive upload)
+      if (answerData.recordingSegments && answerData.recordingSegments.length > 0) {
+        console.log('📤 Processing recording segments...');
+        
+        // Segments are already uploaded progressively
+        // Just need to create a media_asset record that references them
+        const response = await fetch('/api/media/create-asset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            segments: answerData.recordingSegments.map(seg => ({
+              uid: seg.uid,
+              playback_url: seg.playbackUrl,
+              duration: seg.duration,
+              mode: seg.mode,
+            })),
+            mode: answerData.recordingMode || 'multi-segment',
+            totalDuration: answerData.recordingDuration || 0,
+            owner_type: 'answer',
+            owner_id: null, // Will be updated after answer creation
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorMessage;
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || 'Failed to finalize recording';
+          } catch (e) {
+            errorMessage = `Server error (${response.status}): ${errorText.substring(0, 100)}`;
+          }
+          throw new Error(errorMessage);
+        }
+
+        const result = await response.json();
+        mediaAssetId = result.data?.id;
+        mediaResult = result.data;
+        
+        console.log('✅ Recording finalized, media_asset_id:', mediaAssetId);
+      }
+      // ✅ LEGACY: Handle single mediaBlob (if still used anywhere)
+      else if (answerData.mediaBlob && answerData.recordingMode) {
+        console.log('📤 Uploading single media blob...');
+        
         mediaResult = await uploadMedia(
           answerData.mediaBlob,
           answerData.recordingMode,
           answerData.recordingDuration || 0
         );
 
-        // Create media_asset record in database
         const mediaAsset = await createMediaAsset(mediaResult);
         mediaAssetId = mediaAsset.media_asset_id;
       }
 
-      // Step 2: Upload attachments if exist
-      if (answerData.files && answerData.files.length > 0) {
-        console.log('📎 Uploading answer attachments...');
-        attachmentResults = await uploadAttachments(answerData.files);
+      // Step 2: Process attachments
+      setUploadState(prev => ({
+        ...prev,
+        stage: 'attachments',
+      }));
+
+      let attachmentResults = [];
+      
+      // ✅ UPDATED: Handle both files array and attachments array
+      const filesToProcess = answerData.files || answerData.attachments || [];
+      
+      if (filesToProcess.length > 0) {
+        console.log('📎 Processing attachments...');
+        
+        // Check if already uploaded (from progressive upload)
+        const firstItem = filesToProcess[0];
+        if (firstItem.uid && firstItem.url) {
+          // Already uploaded - just use the metadata
+          attachmentResults = filesToProcess.map(att => ({
+            uid: att.uid,
+            url: att.url,
+            filename: att.filename || att.name,
+            size: att.size,
+            type: att.type,
+          }));
+          console.log('✅ Using pre-uploaded attachments:', attachmentResults.length);
+        } else {
+          // Not uploaded yet - upload now
+          attachmentResults = await uploadAttachments(filesToProcess);
+        }
       }
 
       // Step 3: Create answer record
@@ -300,6 +367,8 @@ export function useAnswerUpload() {
         payload.attachments = JSON.stringify(attachmentResults);
       }
 
+      console.log('Sending to /api/answer/create:', payload);
+
       const response = await fetch('/api/answer/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -307,11 +376,23 @@ export function useAnswerUpload() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create answer');
+        const errorText = await response.text();
+        let errorMessage;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || 'Failed to create answer';
+        } catch (e) {
+          console.error('Non-JSON error response:', errorText);
+          errorMessage = `Server error (${response.status}). Check server logs for details.`;
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create answer');
+      }
       
       console.log('✅ Answer submitted successfully:', result);
 

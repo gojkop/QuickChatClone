@@ -140,12 +140,3 @@ async function updateQuestionStatus(questionId, status) {
   // Update question record in Xano
   // Mark as 'answered' so it doesn't show in pending questions
 }
-
-// ✅ FIXED: Removed duplicate config export
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
-  },
-};
