@@ -118,14 +118,6 @@ export default async function handler(req, res) {
   }
 }
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
-  },
-};
-
 /**
  * Send notification email to question asker
  * TODO: Implement email service integration
@@ -149,6 +141,7 @@ async function updateQuestionStatus(questionId, status) {
   // Mark as 'answered' so it doesn't show in pending questions
 }
 
+// ✅ FIXED: Removed duplicate config export
 export const config = {
   api: {
     bodyParser: {
