@@ -46,22 +46,16 @@ function AnswerReviewPage() {
           sla_hours_snapshot: rawData.sla_hours_snapshot,
           attachments: rawData.attachments ? JSON.parse(rawData.attachments) : [],
           media_assets: rawData.media_asset || [],
-          // Answer is an object, not an array
+          // Answer is an object, not an array - store ALL media assets
           answer: rawData.answer ? {
             id: rawData.answer.id,
             created_at: rawData.answer.created_at,
             sent_at: rawData.answer.sent_at,
             text: rawData.answer.text_response,
-            // Get media from media_asset_answer array
-            media_url: rawData.media_asset_answer && rawData.media_asset_answer.length > 0 
-              ? rawData.media_asset_answer[0].url 
-              : null,
-            media_duration: rawData.media_asset_answer && rawData.media_asset_answer.length > 0 
-              ? rawData.media_asset_answer[0].duration_sec 
-              : null,
-            media_type: rawData.media_asset_answer && rawData.media_asset_answer.length > 0 
-              ? (rawData.media_asset_answer[0].metadata?.mode || 'video')
-              : null,
+            // Store ALL media assets from the answer, not just the first one
+            media_assets: rawData.media_asset_answer || [],
+            // Parse attachments if they exist
+            attachments: rawData.answer.attachments ? JSON.parse(rawData.answer.attachments) : []
           } : null,
           expert_profile: {
             ...rawData.expert_profile,
@@ -85,15 +79,13 @@ function AnswerReviewPage() {
         }
         
         console.log('✅ Transformed data:', transformedData);
-        console.log('🎥 Answer media details:', {
+        console.log('🎥 Answer details:', {
           hasAnswer: !!transformedData.answer,
           answerObject: transformedData.answer,
-          media_url: transformedData.answer?.media_url,
-          media_duration: transformedData.answer?.media_duration,
-          media_type: transformedData.answer?.media_type,
-          text: transformedData.answer?.text,
-          rawAnswerObject: rawData.answer,
-          rawMediaAssetAnswer: rawData.media_asset_answer
+          mediaAssets: transformedData.answer?.media_assets,
+          mediaCount: transformedData.answer?.media_assets?.length || 0,
+          attachments: transformedData.answer?.attachments,
+          text: transformedData.answer?.text
         });
         console.log('🔗 Expert handle:', transformedData.expert_profile?.handle);
         setData(transformedData);
@@ -223,7 +215,7 @@ function AnswerReviewPage() {
     );
   }
 
-  const hasAnswer = data.answer?.media_url || data.answer?.text;
+  const hasAnswer = data.answer && (data.answer.media_assets?.length > 0 || data.answer.text);
   const expertName = data.expert_profile?.user?.name || 'Expert';
   const expertAvatar = data.expert_profile?.avatar_url;
   const expertHandle = data.expert_profile?.handle;
@@ -363,52 +355,101 @@ function AnswerReviewPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-gray-900 font-bold text-base">Your Answer</h3>
-                  {data.answer?.media_duration && (
+                  {data.answer?.media_assets?.length > 0 && (
                     <p className="text-gray-600 text-xs sm:text-sm">
-                      {formatDuration(data.answer.media_duration)} video response
+                      {data.answer.media_assets.length} {data.answer.media_assets.length === 1 ? 'media file' : 'media files'}
                     </p>
                   )}
                 </div>
               </div>
             </div>
 
-            {data.answer?.media_url && (
-              <div className="bg-black">
-                <div className="w-full aspect-video">
-                  {(() => {
-                    const videoId = getStreamVideoId(data.answer.media_url);
-                    const extractedCustomerCode = getCustomerCode(data.answer.media_url);
-                    const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-                    
-                    if (videoId && customerCode) {
-                      return (
-                        <iframe
-                          src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                          style={{ border: 'none', width: '100%', height: '100%' }}
-                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                          allowFullScreen={true}
-                          title="Answer video"
-                        />
-                      );
-                    } else {
-                      return (
-                        <video className="w-full h-full" controls playsInline>
-                          <source src={data.answer.media_url} type="video/mp4" />
-                        </video>
-                      );
-                    }
-                  })()}
+            <div className="p-5 space-y-4">
+              {/* Text Response */}
+              {data.answer?.text && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap">{data.answer.text}</p>
                 </div>
-              </div>
-            )}
+              )}
 
-            {data.answer?.text && (
-              <div className="p-5 sm:p-6">
-                <p className="text-gray-800 leading-relaxed text-sm sm:text-base whitespace-pre-wrap">
-                  {data.answer.text}
-                </p>
-              </div>
-            )}
+              {/* Media Assets */}
+              {data.answer?.media_assets && data.answer.media_assets.length > 0 && (
+                <div className="space-y-3">
+                  {data.answer.media_assets
+                    .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
+                    .map((segment, arrayIndex) => {
+                      const isVideo = segment.metadata?.mode === 'video' || 
+                                      segment.metadata?.mode === 'screen' || 
+                                      segment.metadata?.mode === 'screen-camera' ||
+                                      segment.url?.includes('cloudflarestream.com');
+                      const isAudio = segment.metadata?.mode === 'audio' || 
+                                      segment.url?.includes('.webm') || 
+                                      !isVideo;
+                      
+                      const videoId = isVideo ? getStreamVideoId(segment.url) : null;
+                      const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+                      const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+                      
+                      return (
+                        <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
+                          {data.answer.media_assets.length > 1 && (
+                            <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
+                              <span className="text-xs font-semibold text-gray-300">
+                                Part {arrayIndex + 1}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
+                              </span>
+                            </div>
+                          )}
+                          
+                          {isVideo && videoId && customerCode ? (
+                            <div className="w-full aspect-video bg-black">
+                              <iframe
+                                src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                                style={{ border: 'none', width: '100%', height: '100%' }}
+                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                allowFullScreen={true}
+                                title={`Answer video ${arrayIndex + 1}`}
+                              />
+                            </div>
+                          ) : isAudio && segment.url ? (
+                            <div className="p-4 flex items-center justify-center">
+                              <audio controls className="w-full max-w-md" preload="metadata">
+                                <source src={segment.url} type="audio/webm" />
+                              </audio>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              {/* Attachments */}
+              {data.answer?.attachments && data.answer.attachments.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Attachments</p>
+                  {data.answer.attachments.map((file, index) => (
+                    <a
+                      key={index}
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
+                    >
+                      <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                      <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {showPrivacyReminder && (
               <div className="mx-5 sm:mx-6 mb-5 p-4 bg-amber-50 border border-amber-200 rounded-lg">
