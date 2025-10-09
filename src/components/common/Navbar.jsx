@@ -49,7 +49,7 @@ function Navbar() {
             const questionsResponse = await apiClient.get('/me/questions');
             const questions = questionsResponse.data || [];
             // Count questions that haven't been answered yet
-            pendingCount = questions.filter(q => !q.answered_at).length;
+            pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
           } catch (err) {
             console.error('Failed to fetch questions count:', err);
           }
