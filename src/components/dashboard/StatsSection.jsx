@@ -151,7 +151,7 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-base font-bold text-gray-900">Performance</h3>
+      <h3 className="text-2xl font-bold text-gray-900">Performance</h3>
       
       {/* Mobile: Horizontal scroll */}
       <div 
