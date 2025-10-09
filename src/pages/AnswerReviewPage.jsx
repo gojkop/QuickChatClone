@@ -44,18 +44,64 @@ function AnswerReviewPage() {
           currency: rawData.currency,
           status: rawData.status,
           sla_hours_snapshot: rawData.sla_hours_snapshot,
-          attachments: rawData.attachments ? JSON.parse(rawData.attachments) : [],
+          attachments: (() => {
+            try {
+              if (rawData.attachments && rawData.attachments.trim()) {
+                return JSON.parse(rawData.attachments);
+              }
+            } catch (e) {
+              console.warn('Failed to parse question attachments:', e);
+            }
+            return [];
+          })(),
           media_assets: rawData.media_asset || [],
-          // Answer is an object, not an array - store ALL media assets
+          // Answer is an object, not an array - extract segments from metadata
           answer: rawData.answer ? {
             id: rawData.answer.id,
             created_at: rawData.answer.created_at,
             sent_at: rawData.answer.sent_at,
             text: rawData.answer.text_response,
-            // Store ALL media assets from the answer, not just the first one
-            media_assets: rawData.media_asset_answer || [],
-            // Parse attachments if they exist
-            attachments: rawData.answer.attachments ? JSON.parse(rawData.answer.attachments) : []
+            // Extract segments from metadata.segments if they exist
+            media_assets: (() => {
+              if (!rawData.media_asset_answer || rawData.media_asset_answer.length === 0) {
+                return [];
+              }
+              
+              const mainAsset = rawData.media_asset_answer[0];
+              
+              // Check if this is a multi-segment recording
+              if (mainAsset.metadata?.type === 'multi-segment' && mainAsset.metadata?.segments) {
+                return mainAsset.metadata.segments.map(segment => ({
+                  id: segment.uid,
+                  url: segment.playback_url,
+                  duration_sec: segment.duration,
+                  segment_index: segment.segment_index,
+                  metadata: {
+                    mode: segment.mode
+                  }
+                }));
+              }
+              
+              // Otherwise return the main asset as a single item
+              return [{
+                id: mainAsset.id,
+                url: mainAsset.url,
+                duration_sec: mainAsset.duration_sec,
+                segment_index: 0,
+                metadata: mainAsset.metadata
+              }];
+            })(),
+            // Parse attachments if they exist (could be on answer object or empty)
+            attachments: (() => {
+              try {
+                if (rawData.answer.attachments && rawData.answer.attachments.trim()) {
+                  return JSON.parse(rawData.answer.attachments);
+                }
+              } catch (e) {
+                console.warn('Failed to parse answer attachments:', e);
+              }
+              return [];
+            })()
           } : null,
           expert_profile: {
             ...rawData.expert_profile,
@@ -81,11 +127,13 @@ function AnswerReviewPage() {
         console.log('✅ Transformed data:', transformedData);
         console.log('🎥 Answer details:', {
           hasAnswer: !!transformedData.answer,
-          answerObject: transformedData.answer,
+          answerExists: !!rawData.answer,
           mediaAssets: transformedData.answer?.media_assets,
           mediaCount: transformedData.answer?.media_assets?.length || 0,
           attachments: transformedData.answer?.attachments,
-          text: transformedData.answer?.text
+          attachmentCount: transformedData.answer?.attachments?.length || 0,
+          text: transformedData.answer?.text,
+          rawMediaAssetAnswer: rawData.media_asset_answer?.[0]?.metadata?.segments
         });
         console.log('🔗 Expert handle:', transformedData.expert_profile?.handle);
         setData(transformedData);
@@ -215,7 +263,10 @@ function AnswerReviewPage() {
     );
   }
 
-  const hasAnswer = data.answer && (data.answer.media_assets?.length > 0 || data.answer.text);
+  const hasAnswer = data?.answer && (
+    (data.answer.media_assets && data.answer.media_assets.length > 0) || 
+    (data.answer.text && data.answer.text.trim().length > 0)
+  );
   const expertName = data.expert_profile?.user?.name || 'Expert';
   const expertAvatar = data.expert_profile?.avatar_url;
   const expertHandle = data.expert_profile?.handle;
