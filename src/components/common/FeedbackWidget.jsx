@@ -45,7 +45,7 @@ function FeedbackWidget() {
         setFeedback('');
         setEmail('');
         setRating(0);
-      }, 3500); // ✅ Increased timeout to 3.5s to enjoy the thank you
+      }, 3500);
 
     } catch (error) {
       console.error('Feedback submission failed:', error);
@@ -102,15 +102,15 @@ function FeedbackWidget() {
 
           <div className="p-5">
             {submitted ? (
-              // ✅ IMPROVED SUCCESS STATE WITH PHOTO
+              // ✅ IMPROVED SUCCESS STATE WITH FULL PHOTO
               <div className="text-center py-6">
-                {/* Photo */}
+                {/* Photo - Now shows complete image */}
                 <div className="mb-4 flex justify-center">
-                  <div className="relative">
+                  <div className="relative inline-block">
                     <img 
                       src="/big.png" 
                       alt="Team" 
-                      className="w-24 h-24 rounded-full object-cover border-4 border-green-100 shadow-lg"
+                      className="max-w-[200px] max-h-[160px] w-auto h-auto rounded-lg object-contain border-4 border-green-100 shadow-lg"
                       onError={(e) => {
                         // Fallback if image doesn't load
                         e.target.style.display = 'none';
@@ -118,14 +118,14 @@ function FeedbackWidget() {
                       }}
                     />
                     {/* Fallback icon if image fails */}
-                    <div className="w-24 h-24 rounded-full bg-green-100 border-4 border-green-200 hidden items-center justify-center shadow-lg">
+                    <div className="w-24 h-24 rounded-lg bg-green-100 border-4 border-green-200 hidden items-center justify-center shadow-lg">
                       <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                     
                     {/* Success badge */}
-                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-4 border-white shadow-md">
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-4 border-white shadow-md">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                       </svg>
