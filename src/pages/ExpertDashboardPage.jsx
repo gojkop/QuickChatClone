@@ -113,9 +113,10 @@ function ExpertDashboardPage() {
       try {
         setIsLoadingQuestions(true);
         
+        // ✅ UPDATED: Map "answered" tab to "closed" status
         const statusMap = {
           'pending': 'paid',
-          'answered': 'answered',
+          'answered': 'closed',  // Changed from 'answered' to 'closed'
           'all': ''
         };
         const status = statusMap[activeTab];
@@ -563,12 +564,34 @@ function ExpertDashboardPage() {
             profile={profile}
           />
           
-          {/* ✅ UPDATED: Pass userId to QuestionDetailModal */}
           <QuestionDetailModal
             isOpen={showQuestionDetailModal}
             onClose={handleCloseQuestionDetail}
             question={selectedQuestion}
             userId={profile?.user?.id || profile?.id}
+            onAnswerSubmitted={(questionId) => {
+              // Refresh questions list after answer is submitted
+              const fetchQuestions = async () => {
+                try {
+                  const statusMap = {
+                    'pending': 'paid',
+                    'answered': 'closed',
+                    'all': ''
+                  };
+                  const status = statusMap[activeTab];
+                  const params = status ? `?status=${status}` : '';
+                  const response = await apiClient.get(`/me/questions${params}`);
+                  setQuestions(response.data || []);
+                  
+                  // Also refresh all questions for the pending count
+                  const allResponse = await apiClient.get('/me/questions');
+                  setAllQuestions(allResponse.data || []);
+                } catch (err) {
+                  console.error("Failed to refresh questions:", err);
+                }
+              };
+              fetchQuestions();
+            }}
           />
         </>
       )}
