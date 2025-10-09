@@ -81,8 +81,8 @@ function QuestionActionsDropdown({ question, onAction }) {
           <div 
             className="fixed rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5"
             style={{
-              top: openUpward ? 'auto' : `${buttonRef.current.getBoundingClientRect().bottom + window.scrollY + 8}px`,
-              bottom: openUpward ? `${window.innerHeight - buttonRef.current.getBoundingClientRect().top + window.scrollY + 8}px` : 'auto',
+              top: openUpward ? 'auto' : `${buttonRef.current.getBoundingClientRect().bottom + 8}px`,
+              bottom: openUpward ? `${window.innerHeight - buttonRef.current.getBoundingClientRect().top + 8}px` : 'auto',
               right: `${window.innerWidth - buttonRef.current.getBoundingClientRect().right}px`,
               width: '224px',
               zIndex: 9999,
