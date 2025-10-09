@@ -10,6 +10,103 @@ import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
 import QuestionTable from '@/components/dashboard/QuestionTable';
 import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
 
+// ✅ NEW: Compact Sort Dropdown Component
+function SortDropdown({ sortBy, onSortChange, questionCount }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef(null);
+  const buttonRef = React.useRef(null);
+
+  const sortOptions = [
+    { value: 'time_left', label: 'Time Left (Urgent First)', icon: '⏰' },
+    { value: 'price_high', label: 'Price (High to Low)', icon: '💰' },
+    { value: 'price_low', label: 'Price (Low to High)', icon: '💵' },
+    { value: 'date_new', label: 'Date (Newest First)', icon: '📅' },
+    { value: 'date_old', label: 'Date (Oldest First)', icon: '📆' },
+  ];
+
+  const currentSort = sortOptions.find(opt => opt.value === sortBy) || sortOptions[0];
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
+
+  const handleSelect = (value) => {
+    onSortChange(value);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="text-sm text-gray-600">
+        {questionCount} question{questionCount !== 1 ? 's' : ''}
+      </div>
+      
+      <div className="relative" ref={dropdownRef}>
+        <button
+          ref={buttonRef}
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+          type="button"
+        >
+          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+          </svg>
+          <span className="hidden sm:inline">Sort by:</span>
+          <span className="font-semibold">{currentSort.icon}</span>
+          <svg 
+            className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <div 
+            className="absolute right-0 mt-2 w-64 rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50"
+          >
+            <div className="py-1">
+              {sortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleSelect(option.value)}
+                  className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition ${
+                    sortBy === option.value
+                      ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                  type="button"
+                >
+                  <span className="text-lg">{option.icon}</span>
+                  <span className="flex-1">{option.label}</span>
+                  {sortBy === option.value && (
+                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ExpertDashboardPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -583,29 +680,8 @@ function ExpertDashboardPage() {
                 </div>
               </div>
 
-              {/* ✅ NEW: Sort dropdown */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  {questions.length} question{questions.length !== 1 ? 's' : ''}
-                </div>
-                <div className="flex items-center gap-2">
-                  <label htmlFor="sort" className="text-sm font-medium text-gray-600">
-                    Sort by:
-                  </label>
-                  <select
-                    id="sort"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                  >
-                    <option value="time_left">Time Left (Urgent First)</option>
-                    <option value="price_high">Price (High to Low)</option>
-                    <option value="price_low">Price (Low to High)</option>
-                    <option value="date_new">Date (Newest First)</option>
-                    <option value="date_old">Date (Oldest First)</option>
-                  </select>
-                </div>
-              </div>
+              {/* ✅ NEW: Compact Sort dropdown with button */}
+              <SortDropdown sortBy={sortBy} onSortChange={setSortBy} questionCount={questions.length} />
             </div>
 
             {isLoadingQuestions ? (
