@@ -2,11 +2,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ScheduleWorkModal from './ScheduleWorkModal';
 import { Toast, useToast } from '@/components/common/Toast';
+import apiClient from '@/api';
 
 function QuestionActionsDropdown({ question, onAction }) {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [isHiding, setIsHiding] = useState(false);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const { toast, showToast, hideToast } = useToast();
@@ -54,6 +56,43 @@ function QuestionActionsDropdown({ question, onAction }) {
     showToast(`📅 Added to ${data.service} Calendar!`, 'success');
   };
 
+  const handleHideToggle = async (e) => {
+    e.stopPropagation();
+    setIsOpen(false);
+    
+    if (isHiding) return;
+    
+    const newHiddenStatus = !question.hidden;
+    
+    try {
+      setIsHiding(true);
+      
+      await apiClient.post('/question/hidden', {
+        hidden: newHiddenStatus,
+        question_id: question.id
+      });
+      
+      showToast(
+        newHiddenStatus ? '✓ Question hidden' : '✓ Question unhidden', 
+        'success'
+      );
+      
+      // Notify parent component to refresh questions
+      if (onAction) {
+        onAction('refresh', question);
+      }
+      
+    } catch (err) {
+      console.error('Failed to toggle hidden status:', err);
+      showToast(
+        '✗ Failed to update question status',
+        'error'
+      );
+    } finally {
+      setIsHiding(false);
+    }
+  };
+
   const handleAction = (e, action) => {
     e.stopPropagation();
     onAction(action, question);
@@ -61,6 +100,7 @@ function QuestionActionsDropdown({ question, onAction }) {
   };
 
   const isPending = question.status === 'paid' && !question.answered_at;
+  const isHidden = question.hidden === true;
 
   return (
     <>
@@ -129,17 +169,28 @@ function QuestionActionsDropdown({ question, onAction }) {
                 </button>
               )}
 
-              {isPending && <div className="border-t border-gray-200 my-1"></div>}
+              <div className="border-t border-gray-200 my-1"></div>
 
               <button
-                onClick={(e) => handleAction(e, 'hide')}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left"
+                onClick={handleHideToggle}
+                disabled={isHiding}
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left disabled:opacity-50"
                 type="button"
               >
-                <svg className="w-4 h-4 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                </svg>
-                <span className="pointer-events-none">Hide Question</span>
+                {isHiding ? (
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isHidden ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    )}
+                  </svg>
+                )}
+                <span className="pointer-events-none">
+                  {isHidden ? 'Unhide Question' : 'Hide Question'}
+                </span>
               </button>
             </div>
           </div>

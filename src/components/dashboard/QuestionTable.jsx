@@ -58,43 +58,7 @@ const formatPrice = (cents, currency = 'USD') => {
   return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
 };
 
-const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages, onPageChange, onQuestionClick }) => {
-  const handleAction = (action, question) => {
-    console.log('Action:', action, 'Question:', question);
-    
-    if (action === 'view') {
-      window.location.hash = `#question-${question.id}`;
-      return;
-    }
-    
-    switch (action) {
-      case 'priority':
-        alert('Question marked as priority');
-        break;
-      case 'request-info':
-        alert('Request for more information sent');
-        break;
-      case 'extend-sla':
-        alert('SLA extension request sent');
-        break;
-      case 'view-profile':
-        alert('Viewing asker profile');
-        break;
-      case 'refund':
-        alert('Refund process initiated');
-        break;
-      case 'block':
-        alert('Asker blocked');
-        break;
-      case 'hide':
-        if (confirm('Are you sure you want to hide this question?')) {
-          alert('Question hidden (not implemented yet)');
-        }
-        break;
-      default:
-        break;
-    }
-  };
+const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages, onPageChange, onQuestionClick, onAction }) => {
 
   if (questions.length === 0) {
     return (
@@ -141,6 +105,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
             <tbody className="divide-y divide-gray-200">
             {questions.map((question) => {
                 const isPending = question.status === 'paid' && !question.answered_at;
+                const isHidden = question.hidden === true;
                 
                 let statusDisplay;
                 if (question.answered_at || question.status === 'answered' || question.status === 'closed') {
@@ -154,16 +119,23 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                 return (
                   <tr 
                     key={question.id} 
-                    className="hover:bg-gray-50 transition cursor-pointer"
+                    className={`hover:bg-gray-50 transition cursor-pointer ${isHidden ? 'opacity-50' : ''}`}
                     onClick={() => onQuestionClick?.(question)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusDisplay.color}`}>
-                        {isPending && (
-                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusDisplay.color}`}>
+                          {isPending && (
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
+                          )}
+                          {statusDisplay.label}
+                        </span>
+                        {isHidden && (
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                          </svg>
                         )}
-                        {statusDisplay.label}
-                      </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-start gap-2">
@@ -213,7 +185,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                       <div className="flex items-center justify-end gap-2">
                         <QuestionActionsDropdown 
                           question={question} 
-                          onAction={handleAction}
+                          onAction={onAction}
                         />
                       </div>
                     </td>
@@ -228,6 +200,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
         <div className="lg:hidden divide-y divide-gray-200">
           {questions.map((question) => {
             const isPending = question.status === 'paid' && !question.answered_at;
+            const isHidden = question.hidden === true;
             
             let statusDisplay;
             if (question.answered_at || question.status === 'answered' || question.status === 'closed') {
@@ -241,7 +214,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
             return (
               <div 
                 key={question.id} 
-                className="p-4 hover:bg-gray-50 transition cursor-pointer"
+                className={`p-4 hover:bg-gray-50 transition cursor-pointer ${isHidden ? 'opacity-50' : ''}`}
                 onClick={() => onQuestionClick?.(question)}
               >
                 {/* Header Row */}
@@ -258,6 +231,11 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                         <span className="text-xs font-semibold text-gray-600">
                           {formatSLA(question.sla_hours_snapshot, question.created_at)}
                         </span>
+                      )}
+                      {isHidden && (
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
                       )}
                     </div>
                     <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1">
@@ -285,7 +263,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                   >
                     <QuestionActionsDropdown 
                       question={question} 
-                      onAction={handleAction}
+                      onAction={onAction}
                     />
                   </div>
                 </div>

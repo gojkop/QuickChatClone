@@ -10,7 +10,46 @@ import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
 import QuestionTable from '@/components/dashboard/QuestionTable';
 import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
 
-// ✅ NEW: Compact Sort Dropdown Component
+// ✅ NEW: Hidden Questions Toggle Component
+function HiddenToggle({ showHidden, onToggle, hiddenCount }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm border ${
+        showHidden
+          ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+      }`}
+      type="button"
+      title={showHidden ? 'Hide hidden questions' : 'Show hidden questions'}
+    >
+      <svg 
+        className={`w-3.5 h-3.5 ${showHidden ? 'text-indigo-600' : 'text-gray-500'}`} 
+        fill="none" 
+        stroke="currentColor" 
+        viewBox="0 0 24 24"
+      >
+        {showHidden ? (
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        ) : (
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+        )}
+      </svg>
+      <span className="hidden sm:inline">
+        {showHidden ? 'Hide' : 'Show'} Hidden
+      </span>
+      {hiddenCount > 0 && (
+        <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-xs font-bold ${
+          showHidden ? 'bg-indigo-200 text-indigo-800' : 'bg-gray-200 text-gray-700'
+        }`}>
+          {hiddenCount}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// Compact Sort Dropdown Component
 function SortDropdown({ sortBy, onSortChange, questionCount }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef(null);
@@ -47,62 +86,56 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm text-gray-600">
-        {questionCount || 0} question{(questionCount || 0) !== 1 ? 's' : ''}
-      </div>
-      
-      <div className="relative" ref={dropdownRef}>
-        <button
-          ref={buttonRef}
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
-          type="button"
+    <div className="relative" ref={dropdownRef}>
+      <button
+        ref={buttonRef}
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+        type="button"
+      >
+        <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+        </svg>
+        <span className="hidden sm:inline">Sort by:</span>
+        <span className="text-sm">{currentSort.icon}</span>
+        <svg 
+          className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
         >
-          <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-          </svg>
-          <span className="hidden sm:inline">Sort by:</span>
-          <span className="text-sm">{currentSort.icon}</span>
-          <svg 
-            className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
-        {isOpen && (
-          <div 
-            className="absolute right-0 mt-1.5 w-52 rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50"
-          >
-            <div className="py-1">
-              {sortOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => handleSelect(option.value)}
-                  className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition ${
-                    sortBy === option.value
-                      ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                  type="button"
-                >
-                  <span className="text-sm">{option.icon}</span>
-                  <span className="flex-1">{option.label}</span>
-                  {sortBy === option.value && (
-                    <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
+      {isOpen && (
+        <div 
+          className="absolute right-0 mt-1.5 w-52 rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50"
+        >
+          <div className="py-1">
+            {sortOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => handleSelect(option.value)}
+                className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition ${
+                  sortBy === option.value
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+                type="button"
+              >
+                <span className="text-sm">{option.icon}</span>
+                <span className="flex-1">{option.label}</span>
+                {sortBy === option.value && (
+                  <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -111,8 +144,8 @@ function ExpertDashboardPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
-  const [questions, setQuestions] = useState([]); // ✅ Initialize with empty array
-  const [allQuestions, setAllQuestions] = useState([]); // ✅ Initialize with empty array
+  const [questions, setQuestions] = useState([]);
+  const [allQuestions, setAllQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [error, setError] = useState('');
@@ -125,7 +158,8 @@ function ExpertDashboardPage() {
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
   const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState('');
-  const [sortBy, setSortBy] = useState('time_left'); // ✅ NEW: Sorting state
+  const [sortBy, setSortBy] = useState('time_left');
+  const [showHidden, setShowHidden] = useState(false); // ✅ NEW: State for showing/hiding hidden questions
   
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [showQuestionDetailModal, setShowQuestionDetailModal] = useState(false);
@@ -134,10 +168,10 @@ function ExpertDashboardPage() {
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
 
-  // ✅ NEW: Helper function to calculate remaining time in seconds for sorting
+  // Helper function to calculate remaining time in seconds for sorting
   const getRemainingTime = (question) => {
     if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
-      return Infinity; // Questions without SLA go to the end
+      return Infinity;
     }
 
     const now = Date.now() / 1000;
@@ -152,9 +186,8 @@ function ExpertDashboardPage() {
     return remaining;
   };
 
-  // ✅ NEW: Sort questions based on selected sort option
+  // Sort questions based on selected sort option
   const sortQuestions = (questionsToSort, sortOption) => {
-    // ✅ FIX: Add safety check for undefined or null
     if (!questionsToSort || !Array.isArray(questionsToSort)) {
       return [];
     }
@@ -163,16 +196,13 @@ function ExpertDashboardPage() {
     
     switch (sortOption) {
       case 'time_left':
-        // Sort by remaining time (urgent first)
         return sorted.sort((a, b) => {
           const isPendingA = a.status === 'paid' && !a.answered_at;
           const isPendingB = b.status === 'paid' && !b.answered_at;
           
-          // Only sort pending questions by time left
           if (isPendingA && isPendingB) {
             return getRemainingTime(a) - getRemainingTime(b);
           }
-          // Keep non-pending questions in their original order
           return 0;
         });
       
@@ -190,6 +220,42 @@ function ExpertDashboardPage() {
       
       default:
         return sorted;
+    }
+  };
+
+  // ✅ NEW: Refresh questions function
+  const refreshQuestions = async () => {
+    if (!profile) return;
+
+    try {
+      setIsLoadingQuestions(true);
+      
+      const statusMap = {
+        'pending': 'paid',
+        'answered': 'closed',
+        'all': ''
+      };
+      const status = statusMap[activeTab];
+      const params = status ? `?status=${status}` : '';
+      const response = await apiClient.get(`/me/questions${params}`);
+      
+      const fetchedQuestions = response.data || [];
+      const sortedQuestions = sortQuestions(fetchedQuestions, sortBy);
+      
+      setQuestions(sortedQuestions || []);
+      setCurrentPage(1);
+      
+      // Also refresh all questions
+      const allResponse = await apiClient.get('/me/questions');
+      setAllQuestions(allResponse.data || []);
+    } catch (err) {
+      console.error("Failed to fetch questions:", err);
+      if (err.response?.status !== 404) {
+        console.error("Error fetching questions:", err.message);
+      }
+      setQuestions([]);
+    } finally {
+      setIsLoadingQuestions(false);
     }
   };
 
@@ -257,7 +323,7 @@ function ExpertDashboardPage() {
         setAllQuestions(response.data || []);
       } catch (err) {
         console.error("Failed to fetch all questions:", err);
-        setAllQuestions([]); // Set empty array on error
+        setAllQuestions([]);
       }
     };
 
@@ -265,40 +331,8 @@ function ExpertDashboardPage() {
   }, [profile]);
 
   useEffect(() => {
-    const fetchQuestions = async () => {
-      if (!profile) return;
-
-      try {
-        setIsLoadingQuestions(true);
-        
-        const statusMap = {
-          'pending': 'paid',
-          'answered': 'closed',
-          'all': ''
-        };
-        const status = statusMap[activeTab];
-        const params = status ? `?status=${status}` : '';
-        const response = await apiClient.get(`/me/questions${params}`);
-        
-        // ✅ NEW: Apply sorting with safety check
-        const fetchedQuestions = response.data || [];
-        const sortedQuestions = sortQuestions(fetchedQuestions, sortBy);
-        
-        setQuestions(sortedQuestions || []); // Extra safety
-        setCurrentPage(1);
-      } catch (err) {
-        console.error("Failed to fetch questions:", err);
-        if (err.response?.status !== 404) {
-          console.error("Error fetching questions:", err.message);
-        }
-        setQuestions([]); // Set empty array on error
-      } finally {
-        setIsLoadingQuestions(false);
-      }
-    };
-
-    fetchQuestions();
-  }, [profile, activeTab, sortBy]); // ✅ Added sortBy dependency
+    refreshQuestions();
+  }, [profile, activeTab, sortBy]);
 
   const handleToggleAvailability = async () => {
     if (isTogglingAvailability) return;
@@ -406,17 +440,48 @@ function ExpertDashboardPage() {
     }
   };
 
-  // ✅ Safety: Ensure questions and allQuestions are always arrays
+  // ✅ NEW: Handle action from dropdown (including refresh)
+  const handleQuestionAction = (action, question) => {
+    if (action === 'refresh') {
+      // Refresh questions when hide/unhide is triggered
+      refreshQuestions();
+      return;
+    }
+    
+    // Handle other actions
+    console.log('Action:', action, 'Question:', question);
+    
+    if (action === 'view') {
+      window.location.hash = `#question-${question.id}`;
+      return;
+    }
+    
+    switch (action) {
+      case 'refund':
+        alert('Refund process initiated');
+        break;
+      default:
+        break;
+    }
+  };
+
+  // ✅ NEW: Filter questions based on hidden toggle
   const safeQuestions = Array.isArray(questions) ? questions : [];
   const safeAllQuestions = Array.isArray(allQuestions) ? allQuestions : [];
+
+  const filteredQuestions = showHidden 
+    ? safeQuestions 
+    : safeQuestions.filter(q => !q.hidden);
+
+  const hiddenCount = safeQuestions.filter(q => q.hidden === true).length;
 
   const pendingCount = safeAllQuestions.filter(q => q.status === 'paid' && !q.answered_at).length;
   const answeredCount = safeAllQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length;
 
-  const totalPages = Math.ceil(safeQuestions.length / QUESTIONS_PER_PAGE);
+  const totalPages = Math.ceil(filteredQuestions.length / QUESTIONS_PER_PAGE);
   const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
   const endIndex = startIndex + QUESTIONS_PER_PAGE;
-  const paginatedQuestions = safeQuestions.slice(startIndex, endIndex);
+  const paginatedQuestions = filteredQuestions.slice(startIndex, endIndex);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -649,7 +714,6 @@ function ExpertDashboardPage() {
           </div>
 
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-            {/* ✅ NEW: Updated header with tabs and sort dropdown */}
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h2 className="text-2xl font-bold text-gray-900">Questions</h2>
@@ -691,8 +755,25 @@ function ExpertDashboardPage() {
                 </div>
               </div>
 
-              {/* ✅ NEW: Compact Sort dropdown with button */}
-              <SortDropdown sortBy={sortBy} onSortChange={setSortBy} questionCount={safeQuestions.length} />
+              {/* ✅ NEW: Row with question count, sort dropdown, and hidden toggle */}
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  {filteredQuestions.length || 0} question{(filteredQuestions.length || 0) !== 1 ? 's' : ''}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <HiddenToggle 
+                    showHidden={showHidden} 
+                    onToggle={() => setShowHidden(!showHidden)}
+                    hiddenCount={hiddenCount}
+                  />
+                  <SortDropdown 
+                    sortBy={sortBy} 
+                    onSortChange={setSortBy} 
+                    questionCount={filteredQuestions.length} 
+                  />
+                </div>
+              </div>
             </div>
 
             {isLoadingQuestions ? (
@@ -707,6 +788,7 @@ function ExpertDashboardPage() {
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
                 onQuestionClick={handleQuestionClick}
+                onAction={handleQuestionAction}
               />
             )}
           </div>
@@ -739,28 +821,7 @@ function ExpertDashboardPage() {
             question={selectedQuestion}
             userId={profile?.user?.id || profile?.id}
             onAnswerSubmitted={(questionId) => {
-              const fetchQuestions = async () => {
-                try {
-                  const statusMap = {
-                    'pending': 'paid',
-                    'answered': 'closed',
-                    'all': ''
-                  };
-                  const status = statusMap[activeTab];
-                  const params = status ? `?status=${status}` : '';
-                  const response = await apiClient.get(`/me/questions${params}`);
-                  
-                  const fetchedQuestions = response.data || [];
-                  const sortedQuestions = sortQuestions(fetchedQuestions, sortBy);
-                  setQuestions(sortedQuestions);
-                  
-                  const allResponse = await apiClient.get('/me/questions');
-                  setAllQuestions(allResponse.data || []);
-                } catch (err) {
-                  console.error("Failed to refresh questions:", err);
-                }
-              };
-              fetchQuestions();
+              refreshQuestions();
             }}
           />
         </>
