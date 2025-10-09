@@ -1,5 +1,6 @@
 // src/components/dashboard/QuestionDetailModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '@/api';
 import AnswerRecorder from './AnswerRecorder';
 import AnswerReviewModal from './AnswerReviewModal';
 
@@ -7,6 +8,92 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   const [showAnswerRecorder, setShowAnswerRecorder] = useState(false);
   const [answerData, setAnswerData] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showAnswerSection, setShowAnswerSection] = useState(false);
+  const [answerDetails, setAnswerDetails] = useState(null);
+  const [isLoadingAnswer, setIsLoadingAnswer] = useState(false);
+
+  const isPending = question?.status === 'paid' && !question?.answered_at;
+  const isAnswered = question?.status === 'answered' || question?.status === 'closed' || !!question?.answered_at;
+
+  // Fetch answer details when modal opens for answered questions
+  useEffect(() => {
+    if (isOpen && isAnswered && question?.id) {
+      fetchAnswerDetails();
+    } else {
+      setAnswerDetails(null);
+    }
+  }, [isOpen, isAnswered, question?.id]);
+
+  const fetchAnswerDetails = async () => {
+    try {
+      setIsLoadingAnswer(true);
+      // Use the same endpoint structure as AnswerReviewPage
+      const response = await apiClient.get(`/questions/${question.id}/answer`);
+      
+      const rawData = response.data;
+      console.log('📦 Answer details:', rawData);
+      
+      // Transform answer data similar to AnswerReviewPage
+      const transformedAnswer = {
+        id: rawData.id,
+        created_at: rawData.created_at,
+        sent_at: rawData.sent_at,
+        text: rawData.text_response || '',
+        rating: rawData.rating || 0,
+        feedback_text: rawData.feedback_text || '',
+        allow_testimonial: rawData.allow_testimonial || false,
+        feedback_at: rawData.feedback_at,
+        // Extract media segments
+        media_assets: (() => {
+          if (!rawData.media_asset_answer || rawData.media_asset_answer.length === 0) {
+            return [];
+          }
+          
+          const mainAsset = rawData.media_asset_answer[0];
+          
+          // Check if this is a multi-segment recording
+          if (mainAsset.metadata?.type === 'multi-segment' && mainAsset.metadata?.segments) {
+            return mainAsset.metadata.segments.map(segment => ({
+              id: segment.uid,
+              url: segment.playback_url,
+              duration_sec: segment.duration,
+              segment_index: segment.segment_index,
+              metadata: {
+                mode: segment.mode
+              }
+            }));
+          }
+          
+          // Otherwise return the main asset as a single item
+          return [{
+            id: mainAsset.id,
+            url: mainAsset.url,
+            duration_sec: mainAsset.duration_sec,
+            segment_index: 0,
+            metadata: mainAsset.metadata
+          }];
+        })(),
+        // Parse attachments
+        attachments: (() => {
+          try {
+            if (rawData.attachments && rawData.attachments.trim()) {
+              return JSON.parse(rawData.attachments);
+            }
+          } catch (e) {
+            console.warn('Failed to parse answer attachments:', e);
+          }
+          return [];
+        })()
+      };
+      
+      setAnswerDetails(transformedAnswer);
+    } catch (err) {
+      console.error('❌ Error fetching answer details:', err);
+      setAnswerDetails(null);
+    } finally {
+      setIsLoadingAnswer(false);
+    }
+  };
 
   if (!isOpen || !question) return null;
 
@@ -26,6 +113,16 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
     return `$${(cents / 100).toFixed(2)}`;
   };
 
+  const getDeliveryTime = () => {
+    if (!answerDetails?.created_at || !question?.created_at) return '';
+    const asked = new Date(question.created_at);
+    const answered = new Date(answerDetails.created_at);
+    const diffHours = Math.floor((answered - asked) / (1000 * 60 * 60));
+    if (diffHours < 1) return 'under 1h';
+    if (diffHours < 24) return `${diffHours}h`;
+    return `${Math.floor(diffHours / 24)}d`;
+  };
+
   const handleStartAnswer = () => {
     setShowAnswerRecorder(true);
   };
@@ -42,28 +139,21 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
 
   const handleEdit = () => {
     setShowReviewModal(false);
-    // Recorder stays open with existing data
   };
 
   const handleSubmitSuccess = (result) => {
     console.log('✅ Answer submitted successfully:', result);
     
-    // Close all modals
     setShowReviewModal(false);
     setShowAnswerRecorder(false);
     setAnswerData(null);
     
-    // Notify parent to refresh questions list
     if (onAnswerSubmitted) {
       onAnswerSubmitted(question.id);
     }
     
-    // Close the detail modal
     onClose();
   };
-
-  const isPending = question.status === 'paid' && !question.answered_at;
-  const isAnswered = question.status === 'answered' || !!question.answered_at;
 
   const getStreamVideoId = (url) => {
     if (!url) return null;
@@ -79,7 +169,6 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
 
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
-  // ✅ FIX: Use recording_segments instead of media_asset
   const mediaSegments = question.recording_segments || question.media_asset || [];
 
   return (
@@ -100,7 +189,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 <h2 className="text-xl font-bold text-gray-900">Question Details</h2>
                 <p className="text-sm text-gray-500 mt-1">
                   {isPending && 'Pending your answer'}
-                  {isAnswered && 'Answered'}
+                  {isAnswered && `Answered ${formatDate(question.answered_at)}`}
                 </p>
               </div>
               <button
@@ -115,6 +204,83 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
 
             {/* Content */}
             <div className="p-6 space-y-6">
+              
+              {/* CSAT Score - Show at top for answered questions */}
+              {isAnswered && answerDetails?.rating > 0 && (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold text-gray-900 mb-2">Customer Feedback</h4>
+                      <div className="flex items-center gap-2 mb-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <svg
+                            key={star}
+                            className={`w-5 h-5 ${
+                              star <= answerDetails.rating
+                                ? 'text-amber-400 fill-current'
+                                : 'text-gray-300'
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="1"
+                              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                            />
+                          </svg>
+                        ))}
+                        <span className="text-sm font-semibold text-gray-900 ml-1">
+                          {answerDetails.rating}.0 / 5.0
+                        </span>
+                      </div>
+                      {answerDetails.feedback_text && (
+                        <div className="bg-white rounded-lg p-3 mt-3">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                            "{answerDetails.feedback_text}"
+                          </p>
+                          {answerDetails.allow_testimonial && (
+                            <div className="mt-2 pt-2 border-t border-gray-200">
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Allowed as testimonial</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {answerDetails.feedback_at && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Received {formatDate(answerDetails.feedback_at)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Delivery Time Badge */}
+              {isAnswered && getDeliveryTime() && (
+                <div className="flex items-center gap-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-xs font-semibold text-green-700">
+                      Delivered in {getDeliveryTime()}
+                    </span>
+                  </div>
+                </div>
+              )}
               
               {/* Question Info */}
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
@@ -151,7 +317,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 </div>
               </div>
 
-              {/* Media Assets */}
+              {/* Question Media Assets */}
               {mediaSegments.length > 0 && (
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900">Question Media</h4>
@@ -206,7 +372,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 </div>
               )}
 
-              {/* Attachments */}
+              {/* Question Attachments */}
               {(() => {
                 let attachments = [];
                 try {
@@ -226,7 +392,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 
                 return (
                   <div className="space-y-2">
-                    <h4 className="font-semibold text-gray-900">Attachments</h4>
+                    <h4 className="font-semibold text-gray-900">Question Attachments</h4>
                     {attachments.map((file, index) => (
                       <a
                         key={index}
@@ -248,6 +414,137 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 );
               })()}
 
+              {/* Your Answer Section - Collapsible */}
+              {isAnswered && answerDetails && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <button
+                    onClick={() => setShowAnswerSection(!showAnswerSection)}
+                    className="w-full bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-indigo-100 px-5 py-4 flex items-center justify-between hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <h4 className="text-gray-900 font-bold text-base">Your Answer</h4>
+                        {!showAnswerSection && answerDetails.media_assets?.length > 0 && (
+                          <p className="text-gray-600 text-xs sm:text-sm">
+                            {answerDetails.media_assets.length} {answerDetails.media_assets.length === 1 ? 'media file' : 'media files'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <svg 
+                      className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${showAnswerSection ? 'rotate-180' : ''} group-hover:text-gray-700`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  <div className={`transition-all duration-300 ease-in-out ${showAnswerSection ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                    <div className="p-5 space-y-4">
+                      {/* Text Response */}
+                      {answerDetails.text && (
+                        <div className="bg-gray-50 rounded-xl p-4">
+                          <p className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap">{answerDetails.text}</p>
+                        </div>
+                      )}
+
+                      {/* Answer Media Assets */}
+                      {answerDetails.media_assets && answerDetails.media_assets.length > 0 && (
+                        <div className="space-y-3">
+                          {answerDetails.media_assets
+                            .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
+                            .map((segment, arrayIndex) => {
+                              const isVideo = segment.metadata?.mode === 'video' || 
+                                              segment.metadata?.mode === 'screen' || 
+                                              segment.metadata?.mode === 'screen-camera' ||
+                                              segment.url?.includes('cloudflarestream.com');
+                              const isAudio = segment.metadata?.mode === 'audio' || 
+                                              segment.url?.includes('.webm') || 
+                                              !isVideo;
+                              
+                              const videoId = isVideo ? getStreamVideoId(segment.url) : null;
+                              const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+                              const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+                              
+                              return (
+                                <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
+                                  {answerDetails.media_assets.length > 1 && (
+                                    <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
+                                      <span className="text-xs font-semibold text-gray-300">
+                                        Part {arrayIndex + 1}
+                                      </span>
+                                      <span className="text-xs text-gray-400">
+                                        {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {isVideo && videoId && customerCode ? (
+                                    <div className="w-full aspect-video bg-black">
+                                      <iframe
+                                        src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                                        style={{ border: 'none', width: '100%', height: '100%' }}
+                                        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                        allowFullScreen={true}
+                                        title={`Answer video ${arrayIndex + 1}`}
+                                      />
+                                    </div>
+                                  ) : isAudio && segment.url ? (
+                                    <div className="p-4 flex items-center justify-center">
+                                      <audio controls className="w-full max-w-md" preload="metadata">
+                                        <source src={segment.url} type="audio/webm" />
+                                      </audio>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
+
+                      {/* Answer Attachments */}
+                      {answerDetails.attachments && answerDetails.attachments.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Answer Attachments</p>
+                          {answerDetails.attachments.map((file, index) => (
+                            <a
+                              key={index}
+                              href={file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
+                            >
+                              <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                              </svg>
+                              <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
+                              <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading state for answer */}
+              {isAnswered && isLoadingAnswer && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+                  <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-sm text-gray-600">Loading answer details...</p>
+                </div>
+              )}
+
               {/* Answer Button */}
               {isPending && (
                 <button
@@ -258,8 +555,8 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 </button>
               )}
 
-              {/* Already Answered */}
-              {isAnswered && (
+              {/* Already Answered (no details available) */}
+              {isAnswered && !answerDetails && !isLoadingAnswer && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -281,7 +578,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
         </div>
       </div>
 
-      {/* ✅ NEW: Answer Recorder Modal */}
+      {/* Answer Recorder Modal */}
       {showAnswerRecorder && (
         <div className="fixed inset-0 z-[60] overflow-y-auto">
           <div
@@ -292,7 +589,6 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
               
-              {/* Header */}
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Answer Question</h2>
@@ -308,7 +604,6 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 </button>
               </div>
 
-              {/* Answer Recorder */}
               <div className="p-6">
                 <AnswerRecorder
                   question={question}

@@ -489,30 +489,30 @@ function ExpertDashboardPage() {
   };
 
   // Calculate actual average response time from answered questions
-  const calculateAvgResponseTime = () => {
-    const answeredQuestions = safeAllQuestions.filter(q => 
-      (q.status === 'answered' || q.status === 'closed' || q.answered_at) && 
-      q.created_at && 
-      q.answered_at
-    );
-    
-    if (answeredQuestions.length === 0) return 0;
-    
-    const totalResponseTime = answeredQuestions.reduce((sum, q) => {
-      const created = new Date(q.created_at).getTime();
-      const answered = new Date(q.answered_at).getTime();
-      const diffHours = (answered - created) / (1000 * 60 * 60);
-      return sum + diffHours;
-    }, 0);
-    
-    return Math.round((totalResponseTime / answeredQuestions.length) * 10) / 10;
-  };
+  // const calculateAvgResponseTime = () => {
+  //   const answeredQuestions = safeAllQuestions.filter(q => 
+  //     (q.status === 'answered' || q.status === 'closed' || q.answered_at) && 
+  //     q.created_at && 
+  //     q.answered_at
+  //   );
+  //   
+  //   if (answeredQuestions.length === 0) return 0;
+  //   
+  //   const totalResponseTime = answeredQuestions.reduce((sum, q) => {
+  //     const created = new Date(q.created_at).getTime();
+  //     const answered = new Date(q.answered_at).getTime();
+  //     const diffHours = (answered - created) / (1000 * 60 * 60);
+  //     return sum + diffHours;
+  //   }, 0);
+  //   
+  //   return Math.round((totalResponseTime / answeredQuestions.length) * 10) / 10;
+  // };
 
   const stats = {
     thisMonthEarnings: 280000, // Mock data - will implement later
     allTimeEarnings: 1560000, // Mock data - will implement later
     totalAnswered: 127, // Mock data - will implement later
-    avgResponseTime: calculateAvgResponseTime(),
+    avgResponseTime: 8.5, // Mock data - will implement later
     targetResponseTime: profile?.sla_hours || 24,
     avgRating: 4.8, // Mock data - will implement later
     monthlyGrowth: 12 // Mock data - will implement later
@@ -775,23 +775,17 @@ function ExpertDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  {filteredQuestions.length || 0} question{(filteredQuestions.length || 0) !== 1 ? 's' : ''}
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <HiddenToggle 
-                    showHidden={showHidden} 
-                    onToggle={() => setShowHidden(!showHidden)}
-                    hiddenCount={hiddenCount}
-                  />
-                  <SortDropdown 
-                    sortBy={sortBy} 
-                    onSortChange={setSortBy} 
-                    questionCount={filteredQuestions.length} 
-                  />
-                </div>
+              <div className="flex items-center justify-end gap-2">
+                <HiddenToggle 
+                  showHidden={showHidden} 
+                  onToggle={() => setShowHidden(!showHidden)}
+                  hiddenCount={hiddenCount}
+                />
+                <SortDropdown 
+                  sortBy={sortBy} 
+                  onSortChange={setSortBy} 
+                  questionCount={filteredQuestions.length} 
+                />
               </div>
             </div>
 
