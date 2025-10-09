@@ -45,6 +45,7 @@ function QuestionActionsDropdown({ question, onAction }) {
   };
 
   const handleScheduleClick = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     setShowScheduleModal(true);
     setIsOpen(false);
@@ -54,7 +55,9 @@ function QuestionActionsDropdown({ question, onAction }) {
     showToast(`📅 Added to ${data.service} Calendar!`, 'success');
   };
 
-  const handleAction = (action) => {
+  const handleAction = (e, action) => {
+    e.preventDefault();
+    e.stopPropagation();
     onAction(action, question);
     setIsOpen(false);
   };
@@ -67,10 +70,11 @@ function QuestionActionsDropdown({ question, onAction }) {
         <button
           ref={buttonRef}
           onClick={handleToggle}
-          onTouchEnd={handleToggle}
-          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition touch-manipulation"
+          onTouchStart={handleToggle}
+          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition touch-manipulation active:bg-gray-200"
           title="More actions"
           type="button"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -80,6 +84,8 @@ function QuestionActionsDropdown({ question, onAction }) {
         {isOpen && (
           <div 
             className="fixed rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             style={{
               top: openUpward ? 'auto' : `${buttonRef.current.getBoundingClientRect().bottom + window.scrollY + 8}px`,
               bottom: openUpward ? `${window.innerHeight - buttonRef.current.getBoundingClientRect().top + window.scrollY + 8}px` : 'auto',
@@ -90,9 +96,11 @@ function QuestionActionsDropdown({ question, onAction }) {
           >
             <div className="py-1">
               <button
-                onClick={() => handleAction('view')}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left touch-manipulation"
+                onClick={(e) => handleAction(e, 'view')}
+                onTouchStart={(e) => handleAction(e, 'view')}
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left touch-manipulation active:bg-gray-100"
                 type="button"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -105,8 +113,10 @@ function QuestionActionsDropdown({ question, onAction }) {
 
               <button
                 onClick={handleScheduleClick}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left touch-manipulation"
+                onTouchStart={handleScheduleClick}
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left touch-manipulation active:bg-gray-100"
                 type="button"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -118,9 +128,11 @@ function QuestionActionsDropdown({ question, onAction }) {
 
               {isPending && (
                 <button
-                  onClick={() => handleAction('refund')}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left touch-manipulation"
+                  onClick={(e) => handleAction(e, 'refund')}
+                  onTouchStart={(e) => handleAction(e, 'refund')}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left touch-manipulation active:bg-gray-100"
                   type="button"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -132,9 +144,11 @@ function QuestionActionsDropdown({ question, onAction }) {
               {isPending && <div className="border-t border-gray-200 my-1"></div>}
 
               <button
-                onClick={() => handleAction('hide')}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left touch-manipulation"
+                onClick={(e) => handleAction(e, 'hide')}
+                onTouchStart={(e) => handleAction(e, 'hide')}
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left touch-manipulation active:bg-gray-100"
                 type="button"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
