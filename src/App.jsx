@@ -21,6 +21,8 @@ import QuestionSentPage from '@/pages/QuestionSentPage';
 import AnswerReviewPage from '@/pages/AnswerReviewPage';
 import TestAICoachPage from '@/pages/TestAICoachPage';
 import FeedbackWidget from '@/components/common/FeedbackWidget';
+import FeedbackDashboardPage from '@/pages/FeedbackDashboardPage'; 
+
 
 
 // Import Common Components
@@ -65,6 +67,8 @@ const AppLayout = () => {
           <Route path="/u/:handle" element={<PublicProfilePage />} />
           <Route path="/r/:token" element={<AnswerReviewPage />} />
           <Route path="/test-ai-coach" element={<TestAICoachPage />} />
+          <Route path="/feedback-dashboard" element={<FeedbackDashboardPage />} /> {/* ✅ ADD THIS */}
+
           
           {/* Auth Routes */}
           <Route path="/signin" element={<SignInPage />} />
