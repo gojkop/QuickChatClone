@@ -111,8 +111,8 @@ function ExpertDashboardPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [allQuestions, setAllQuestions] = useState([]);
+  const [questions, setQuestions] = useState([]); // ✅ Initialize with empty array
+  const [allQuestions, setAllQuestions] = useState([]); // ✅ Initialize with empty array
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [error, setError] = useState('');
@@ -234,8 +234,8 @@ function ExpertDashboardPage() {
     } else if (hash.startsWith('#question-')) {
       const questionId = parseInt(hash.replace('#question-', ''), 10);
       
-      if (!isNaN(questionId) && (allQuestions || []).length > 0) {
-        const question = (allQuestions || []).find(q => q.id === questionId);
+      if (!isNaN(questionId) && Array.isArray(allQuestions) && allQuestions.length > 0) {
+        const question = allQuestions.find(q => q.id === questionId);
         
         if (question) {
           setSelectedQuestion(question);
@@ -257,6 +257,7 @@ function ExpertDashboardPage() {
         setAllQuestions(response.data || []);
       } catch (err) {
         console.error("Failed to fetch all questions:", err);
+        setAllQuestions([]); // Set empty array on error
       }
     };
 
@@ -279,17 +280,18 @@ function ExpertDashboardPage() {
         const params = status ? `?status=${status}` : '';
         const response = await apiClient.get(`/me/questions${params}`);
         
-        // ✅ NEW: Apply sorting
+        // ✅ NEW: Apply sorting with safety check
         const fetchedQuestions = response.data || [];
         const sortedQuestions = sortQuestions(fetchedQuestions, sortBy);
         
-        setQuestions(sortedQuestions);
+        setQuestions(sortedQuestions || []); // Extra safety
         setCurrentPage(1);
       } catch (err) {
         console.error("Failed to fetch questions:", err);
         if (err.response?.status !== 404) {
           console.error("Error fetching questions:", err.message);
         }
+        setQuestions([]); // Set empty array on error
       } finally {
         setIsLoadingQuestions(false);
       }
@@ -404,13 +406,17 @@ function ExpertDashboardPage() {
     }
   };
 
-  const pendingCount = (allQuestions || []).filter(q => q.status === 'paid' && !q.answered_at).length;
-  const answeredCount = (allQuestions || []).filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length;
+  // ✅ Safety: Ensure questions and allQuestions are always arrays
+  const safeQuestions = Array.isArray(questions) ? questions : [];
+  const safeAllQuestions = Array.isArray(allQuestions) ? allQuestions : [];
 
-  const totalPages = Math.ceil((questions?.length || 0) / QUESTIONS_PER_PAGE);
+  const pendingCount = safeAllQuestions.filter(q => q.status === 'paid' && !q.answered_at).length;
+  const answeredCount = safeAllQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length;
+
+  const totalPages = Math.ceil(safeQuestions.length / QUESTIONS_PER_PAGE);
   const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
   const endIndex = startIndex + QUESTIONS_PER_PAGE;
-  const paginatedQuestions = (questions || []).slice(startIndex, endIndex);
+  const paginatedQuestions = safeQuestions.slice(startIndex, endIndex);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -686,7 +692,7 @@ function ExpertDashboardPage() {
               </div>
 
               {/* ✅ NEW: Compact Sort dropdown with button */}
-              <SortDropdown sortBy={sortBy} onSortChange={setSortBy} questionCount={questions?.length || 0} />
+              <SortDropdown sortBy={sortBy} onSortChange={setSortBy} questionCount={safeQuestions.length} />
             </div>
 
             {isLoadingQuestions ? (
