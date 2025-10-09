@@ -5,7 +5,6 @@ import QuestionActionsDropdown from './QuestionActionsDropdown';
 const hasAttachments = (question) => {
   if (!question.attachments) return false;
   try {
-    // ✅ Check for empty string before parsing
     const parsed = typeof question.attachments === 'string' && question.attachments.trim()
       ? JSON.parse(question.attachments) 
       : question.attachments;
@@ -18,10 +17,7 @@ const hasAttachments = (question) => {
 // Helper to format time ago - FIXED
 const getTimeAgo = (timestamp) => {
   const now = Date.now() / 1000;
-  
-  // Normalize timestamp: if it's in milliseconds (> year 2100 in seconds), convert it
   const timestampSeconds = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
-  
   const diff = now - timestampSeconds;
   
   if (diff < 60) return 'just now';
@@ -33,16 +29,12 @@ const getTimeAgo = (timestamp) => {
 
 // Helper to format SLA remaining time - FIXED with null handling
 const formatSLA = (slaHours, createdAt) => {
-  // Handle null or undefined slaHours
   if (!slaHours || slaHours <= 0) {
     return <span className="text-gray-400">—</span>;
   }
 
   const now = Date.now() / 1000;
-  
-  // Normalize createdAt: if it's in milliseconds (> year 2100 in seconds), convert it
   const createdAtSeconds = createdAt > 4102444800 ? createdAt / 1000 : createdAt;
-  
   const elapsed = now - createdAtSeconds;
   const slaSeconds = slaHours * 3600;
   const remaining = slaSeconds - elapsed;
@@ -70,13 +62,11 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
   const handleAction = (action, question) => {
     console.log('Action:', action, 'Question:', question);
     
-    // UPDATED: Handle view action by navigating to hash URL
     if (action === 'view') {
       window.location.hash = `#question-${question.id}`;
       return;
     }
     
-    // Mock implementation for other actions
     switch (action) {
       case 'priority':
         alert('Question marked as priority');
@@ -152,7 +142,6 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
             {questions.map((question) => {
                 const isPending = question.status === 'paid' && !question.answered_at;
                 
-                // Better status mapping
                 let statusDisplay;
                 if (question.answered_at || question.status === 'answered' || question.status === 'closed') {
                   statusDisplay = { label: 'Answered', color: 'bg-green-100 text-green-700' };
@@ -240,7 +229,6 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
           {questions.map((question) => {
             const isPending = question.status === 'paid' && !question.answered_at;
             
-            // Better status mapping
             let statusDisplay;
             if (question.answered_at || question.status === 'answered' || question.status === 'closed') {
               statusDisplay = { label: 'Answered', color: 'bg-green-100 text-green-700' };
@@ -289,7 +277,12 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                       )}
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  {/* ✅ FIX: Prevent click propagation and add touch event handler */}
+                  <div 
+                    className="text-right flex-shrink-0" 
+                    onClick={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                  >
                     <QuestionActionsDropdown 
                       question={question} 
                       onAction={handleAction}
@@ -304,7 +297,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                   <div className="text-xs text-gray-500 truncate">{question.payer_email}</div>
                 </div>
 
-                {/* Price */}
+                {/* Price and Action Button */}
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-xs text-gray-500">Payment</div>
@@ -312,6 +305,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                       {formatPrice(question.price_cents, question.currency)}
                     </div>
                   </div>
+                  {/* ✅ FIX: Conditional button text based on question status */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -319,7 +313,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                     }}
                     className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition"
                   >
-                    View & Answer
+                    {isPending ? 'View & Answer' : 'View'}
                   </button>
                 </div>
               </div>
@@ -331,15 +325,12 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-          {/* Page Info */}
           <div className="text-sm text-gray-600">
             Page <span className="font-semibold text-gray-900">{currentPage}</span> of{' '}
             <span className="font-semibold text-gray-900">{totalPages}</span>
           </div>
 
-          {/* Pagination Controls */}
           <div className="flex items-center gap-2">
-            {/* Previous Button */}
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
@@ -351,26 +342,19 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
               </svg>
             </button>
 
-            {/* Page Numbers */}
             <div className="flex items-center gap-1">
               {[...Array(totalPages)].map((_, index) => {
                 const pageNum = index + 1;
-                
-                // Show first page, last page, current page, and pages around current
                 const showPage = 
                   pageNum === 1 || 
                   pageNum === totalPages || 
                   (pageNum >= currentPage - 1 && pageNum <= currentPage + 1);
-
-                // Show ellipsis
                 const showEllipsisBefore = pageNum === currentPage - 2 && currentPage > 3;
                 const showEllipsisAfter = pageNum === currentPage + 2 && currentPage < totalPages - 2;
 
                 if (showEllipsisBefore || showEllipsisAfter) {
                   return (
-                    <span key={pageNum} className="px-2 text-gray-400">
-                      ...
-                    </span>
+                    <span key={pageNum} className="px-2 text-gray-400">...</span>
                   );
                 }
 
@@ -392,7 +376,6 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
               })}
             </div>
 
-            {/* Next Button */}
             <button
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}

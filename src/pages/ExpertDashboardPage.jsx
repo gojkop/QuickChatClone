@@ -28,6 +28,7 @@ function ExpertDashboardPage() {
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
   const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState('');
+  const [sortBy, setSortBy] = useState('time_left'); // ✅ NEW: Sorting state
   
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [showQuestionDetailModal, setShowQuestionDetailModal] = useState(false);
@@ -35,6 +36,60 @@ function ExpertDashboardPage() {
   const QUESTIONS_PER_PAGE = 10;
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
+
+  // ✅ NEW: Helper function to calculate remaining time in seconds for sorting
+  const getRemainingTime = (question) => {
+    if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
+      return Infinity; // Questions without SLA go to the end
+    }
+
+    const now = Date.now() / 1000;
+    const createdAtSeconds = question.created_at > 4102444800 
+      ? question.created_at / 1000 
+      : question.created_at;
+    
+    const elapsed = now - createdAtSeconds;
+    const slaSeconds = question.sla_hours_snapshot * 3600;
+    const remaining = slaSeconds - elapsed;
+    
+    return remaining;
+  };
+
+  // ✅ NEW: Sort questions based on selected sort option
+  const sortQuestions = (questionsToSort, sortOption) => {
+    const sorted = [...questionsToSort];
+    
+    switch (sortOption) {
+      case 'time_left':
+        // Sort by remaining time (urgent first)
+        return sorted.sort((a, b) => {
+          const isPendingA = a.status === 'paid' && !a.answered_at;
+          const isPendingB = b.status === 'paid' && !b.answered_at;
+          
+          // Only sort pending questions by time left
+          if (isPendingA && isPendingB) {
+            return getRemainingTime(a) - getRemainingTime(b);
+          }
+          // Keep non-pending questions in their original order
+          return 0;
+        });
+      
+      case 'price_high':
+        return sorted.sort((a, b) => (b.price_cents || 0) - (a.price_cents || 0));
+      
+      case 'price_low':
+        return sorted.sort((a, b) => (a.price_cents || 0) - (b.price_cents || 0));
+      
+      case 'date_new':
+        return sorted.sort((a, b) => b.created_at - a.created_at);
+      
+      case 'date_old':
+        return sorted.sort((a, b) => a.created_at - b.created_at);
+      
+      default:
+        return sorted;
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -113,16 +168,20 @@ function ExpertDashboardPage() {
       try {
         setIsLoadingQuestions(true);
         
-        // ✅ UPDATED: Map "answered" tab to "closed" status
         const statusMap = {
           'pending': 'paid',
-          'answered': 'closed',  // Changed from 'answered' to 'closed'
+          'answered': 'closed',
           'all': ''
         };
         const status = statusMap[activeTab];
         const params = status ? `?status=${status}` : '';
         const response = await apiClient.get(`/me/questions${params}`);
-        setQuestions(response.data || []);
+        
+        // ✅ NEW: Apply sorting
+        const fetchedQuestions = response.data || [];
+        const sortedQuestions = sortQuestions(fetchedQuestions, sortBy);
+        
+        setQuestions(sortedQuestions);
         setCurrentPage(1);
       } catch (err) {
         console.error("Failed to fetch questions:", err);
@@ -135,7 +194,7 @@ function ExpertDashboardPage() {
     };
 
     fetchQuestions();
-  }, [profile, activeTab]);
+  }, [profile, activeTab, sortBy]); // ✅ Added sortBy dependency
 
   const handleToggleAvailability = async () => {
     if (isTogglingAvailability) return;
@@ -145,13 +204,9 @@ function ExpertDashboardPage() {
     try {
       setIsTogglingAvailability(true);
       
-      console.log('Toggling availability to:', newStatus);
-      
       const response = await apiClient.post('/expert/profile/availability', {
         accepting_questions: newStatus
       });
-      
-      console.log('Availability update response:', response);
       
       setProfile({
         ...profile,
@@ -171,7 +226,6 @@ function ExpertDashboardPage() {
       
     } catch (err) {
       console.error("Failed to update availability:", err);
-      console.error("Error details:", err.response?.data || err.message);
       
       setProfile({
         ...profile,
@@ -487,43 +541,70 @@ function ExpertDashboardPage() {
           </div>
 
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-2xl font-bold text-gray-900">Questions</h2>
-              
-              <div className="inline-flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
-                <button
-                  onClick={() => setActiveTab('pending')}
-                  className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-                    activeTab === 'pending'
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  type="button"
-                >
-                  Pending {pendingCount > 0 && `(${pendingCount})`}
-                </button>
-                <button
-                  onClick={() => setActiveTab('answered')}
-                  className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-                    activeTab === 'answered'
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  type="button"
-                >
-                  Answered {answeredCount > 0 && `(${answeredCount})`}
-                </button>
-                <button
-                  onClick={() => setActiveTab('all')}
-                  className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-                    activeTab === 'all'
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  type="button"
-                >
-                  All
-                </button>
+            {/* ✅ NEW: Updated header with tabs and sort dropdown */}
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <h2 className="text-2xl font-bold text-gray-900">Questions</h2>
+                
+                <div className="inline-flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+                  <button
+                    onClick={() => setActiveTab('pending')}
+                    className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+                      activeTab === 'pending'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    type="button"
+                  >
+                    Pending {pendingCount > 0 && `(${pendingCount})`}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('answered')}
+                    className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+                      activeTab === 'answered'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    type="button"
+                  >
+                    Answered {answeredCount > 0 && `(${answeredCount})`}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('all')}
+                    className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+                      activeTab === 'all'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    type="button"
+                  >
+                    All
+                  </button>
+                </div>
+              </div>
+
+              {/* ✅ NEW: Sort dropdown */}
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  {questions.length} question{questions.length !== 1 ? 's' : ''}
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="sort" className="text-sm font-medium text-gray-600">
+                    Sort by:
+                  </label>
+                  <select
+                    id="sort"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  >
+                    <option value="time_left">Time Left (Urgent First)</option>
+                    <option value="price_high">Price (High to Low)</option>
+                    <option value="price_low">Price (Low to High)</option>
+                    <option value="date_new">Date (Newest First)</option>
+                    <option value="date_old">Date (Oldest First)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -571,7 +652,6 @@ function ExpertDashboardPage() {
             question={selectedQuestion}
             userId={profile?.user?.id || profile?.id}
             onAnswerSubmitted={(questionId) => {
-              // Refresh questions list after answer is submitted
               const fetchQuestions = async () => {
                 try {
                   const statusMap = {
@@ -582,9 +662,11 @@ function ExpertDashboardPage() {
                   const status = statusMap[activeTab];
                   const params = status ? `?status=${status}` : '';
                   const response = await apiClient.get(`/me/questions${params}`);
-                  setQuestions(response.data || []);
                   
-                  // Also refresh all questions for the pending count
+                  const fetchedQuestions = response.data || [];
+                  const sortedQuestions = sortQuestions(fetchedQuestions, sortBy);
+                  setQuestions(sortedQuestions);
+                  
                   const allResponse = await apiClient.get('/me/questions');
                   setAllQuestions(allResponse.data || []);
                 } catch (err) {
