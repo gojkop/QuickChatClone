@@ -20,6 +20,8 @@ import AskQuestionPage from '@/pages/AskQuestionPage';
 import QuestionSentPage from '@/pages/QuestionSentPage';
 import AnswerReviewPage from '@/pages/AnswerReviewPage';
 import TestAICoachPage from '@/pages/TestAICoachPage';
+import FeedbackWidget from '@/components/common/FeedbackWidget';
+
 
 // Import Common Components
 import Navbar from '@/components/common/Navbar';

@@ -27,33 +27,36 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   const fetchAnswerDetails = async () => {
     try {
       setIsLoadingAnswer(true);
-      // Use the same endpoint structure as AnswerReviewPage
-      const response = await apiClient.get(`/questions/${question.id}/answer`);
+      // API endpoint: GET /answer with question_id parameter
+      const response = await apiClient.get('/answer', {
+        params: { question_id: question.id }
+      });
       
       const rawData = response.data;
       console.log('📦 Answer details:', rawData);
       
-      // Transform answer data similar to AnswerReviewPage
+      const answerData = rawData.answer;
+      const mediaAsset = rawData.media_asset;
+      
+      // Transform answer data to match expected structure
       const transformedAnswer = {
-        id: rawData.id,
-        created_at: rawData.created_at,
-        sent_at: rawData.sent_at,
-        text: rawData.text_response || '',
-        rating: rawData.rating || 0,
-        feedback_text: rawData.feedback_text || '',
-        allow_testimonial: rawData.allow_testimonial || false,
-        feedback_at: rawData.feedback_at,
-        // Extract media segments
+        id: answerData.id,
+        created_at: answerData.created_at,
+        sent_at: answerData.sent_at,
+        text: answerData.text_response || '',
+        rating: answerData.rating || 0,
+        feedback_text: answerData.feedback_text || '',
+        allow_testimonial: answerData.allow_testimonial || false,
+        feedback_at: answerData.feedback_at,
+        // Handle media assets from the media_asset object
         media_assets: (() => {
-          if (!rawData.media_asset_answer || rawData.media_asset_answer.length === 0) {
+          if (!mediaAsset) {
             return [];
           }
           
-          const mainAsset = rawData.media_asset_answer[0];
-          
           // Check if this is a multi-segment recording
-          if (mainAsset.metadata?.type === 'multi-segment' && mainAsset.metadata?.segments) {
-            return mainAsset.metadata.segments.map(segment => ({
+          if (mediaAsset.metadata?.type === 'multi-segment' && mediaAsset.metadata?.segments) {
+            return mediaAsset.metadata.segments.map(segment => ({
               id: segment.uid,
               url: segment.playback_url,
               duration_sec: segment.duration,
@@ -66,18 +69,20 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
           
           // Otherwise return the main asset as a single item
           return [{
-            id: mainAsset.id,
-            url: mainAsset.url,
-            duration_sec: mainAsset.duration_sec,
+            id: mediaAsset.id,
+            url: mediaAsset.url,
+            duration_sec: mediaAsset.duration_sec,
             segment_index: 0,
-            metadata: mainAsset.metadata
+            metadata: mediaAsset.metadata
           }];
         })(),
-        // Parse attachments
+        // Parse attachments if they exist
         attachments: (() => {
           try {
-            if (rawData.attachments && rawData.attachments.trim()) {
-              return JSON.parse(rawData.attachments);
+            if (answerData.attachments && typeof answerData.attachments === 'string' && answerData.attachments.trim()) {
+              return JSON.parse(answerData.attachments);
+            } else if (Array.isArray(answerData.attachments)) {
+              return answerData.attachments;
             }
           } catch (e) {
             console.warn('Failed to parse answer attachments:', e);
