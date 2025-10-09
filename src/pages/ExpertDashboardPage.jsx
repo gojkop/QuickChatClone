@@ -49,7 +49,7 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
   return (
     <div className="flex items-center justify-between">
       <div className="text-sm text-gray-600">
-        {questionCount} question{questionCount !== 1 ? 's' : ''}
+        {questionCount || 0} question{(questionCount || 0) !== 1 ? 's' : ''}
       </div>
       
       <div className="relative" ref={dropdownRef}>
@@ -154,6 +154,11 @@ function ExpertDashboardPage() {
 
   // ✅ NEW: Sort questions based on selected sort option
   const sortQuestions = (questionsToSort, sortOption) => {
+    // ✅ FIX: Add safety check for undefined or null
+    if (!questionsToSort || !Array.isArray(questionsToSort)) {
+      return [];
+    }
+    
     const sorted = [...questionsToSort];
     
     switch (sortOption) {
@@ -229,8 +234,8 @@ function ExpertDashboardPage() {
     } else if (hash.startsWith('#question-')) {
       const questionId = parseInt(hash.replace('#question-', ''), 10);
       
-      if (!isNaN(questionId) && allQuestions.length > 0) {
-        const question = allQuestions.find(q => q.id === questionId);
+      if (!isNaN(questionId) && (allQuestions || []).length > 0) {
+        const question = (allQuestions || []).find(q => q.id === questionId);
         
         if (question) {
           setSelectedQuestion(question);
@@ -399,13 +404,13 @@ function ExpertDashboardPage() {
     }
   };
 
-  const pendingCount = allQuestions.filter(q => q.status === 'paid' && !q.answered_at).length;
-  const answeredCount = allQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length;
+  const pendingCount = (allQuestions || []).filter(q => q.status === 'paid' && !q.answered_at).length;
+  const answeredCount = (allQuestions || []).filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length;
 
-  const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
+  const totalPages = Math.ceil((questions?.length || 0) / QUESTIONS_PER_PAGE);
   const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
   const endIndex = startIndex + QUESTIONS_PER_PAGE;
-  const paginatedQuestions = questions.slice(startIndex, endIndex);
+  const paginatedQuestions = (questions || []).slice(startIndex, endIndex);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -681,7 +686,7 @@ function ExpertDashboardPage() {
               </div>
 
               {/* ✅ NEW: Compact Sort dropdown with button */}
-              <SortDropdown sortBy={sortBy} onSortChange={setSortBy} questionCount={questions.length} />
+              <SortDropdown sortBy={sortBy} onSortChange={setSortBy} questionCount={questions?.length || 0} />
             </div>
 
             {isLoadingQuestions ? (
