@@ -210,7 +210,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               {(() => {
                 let attachments = [];
                 try {
-                  if (typeof question.attachments === 'string') {
+                  if (typeof question.attachments === 'string' && question.attachments.trim()) {
                     attachments = JSON.parse(question.attachments);
                   } else if (Array.isArray(question.attachments)) {
                     attachments = question.attachments;

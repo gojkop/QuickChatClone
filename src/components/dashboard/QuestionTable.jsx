@@ -1,11 +1,12 @@
 import React from 'react';
 import QuestionActionsDropdown from './QuestionActionsDropdown';
 
-// Helper to check if attachments exist safely
+// ✅ FIXED: Helper to check if attachments exist safely
 const hasAttachments = (question) => {
   if (!question.attachments) return false;
   try {
-    const parsed = typeof question.attachments === 'string' 
+    // ✅ Check for empty string before parsing
+    const parsed = typeof question.attachments === 'string' && question.attachments.trim()
       ? JSON.parse(question.attachments) 
       : question.attachments;
     return Array.isArray(parsed) && parsed.length > 0;
@@ -153,7 +154,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                 
                 // Better status mapping
                 let statusDisplay;
-                if (question.answered_at || question.status === 'answered') {
+                if (question.answered_at || question.status === 'answered' || question.status === 'closed') {
                   statusDisplay = { label: 'Answered', color: 'bg-green-100 text-green-700' };
                 } else if (question.status === 'paid') {
                   statusDisplay = { label: 'Pending', color: 'bg-amber-100 text-amber-700' };
@@ -241,7 +242,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
             
             // Better status mapping
             let statusDisplay;
-            if (question.answered_at || question.status === 'answered') {
+            if (question.answered_at || question.status === 'answered' || question.status === 'closed') {
               statusDisplay = { label: 'Answered', color: 'bg-green-100 text-green-700' };
             } else if (question.status === 'paid') {
               statusDisplay = { label: 'Pending', color: 'bg-amber-100 text-amber-700' };
@@ -276,7 +277,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                     </h3>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <span>{getTimeAgo(question.created_at)}</span>
-                      {question.media_asset_id && (
+                      {(question.recording_segments?.length > 0 || question.media_asset_id) && (
                         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
