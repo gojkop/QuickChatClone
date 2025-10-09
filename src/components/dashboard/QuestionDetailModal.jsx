@@ -79,6 +79,9 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
 
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
+  // ✅ FIX: Use recording_segments instead of media_asset
+  const mediaSegments = question.recording_segments || question.media_asset || [];
+
   // If recorder is open, show it full-screen
   if (showAnswerRecorder) {
     return (
@@ -192,11 +195,11 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               </div>
             </div>
 
-            {/* Media Assets */}
-            {question.media_asset && question.media_asset.length > 0 && (
+            {/* Media Assets - ✅ FIXED */}
+            {mediaSegments.length > 0 && (
               <div className="space-y-3">
                 <h4 className="font-semibold text-gray-900">Question Media</h4>
-                {question.media_asset
+                {mediaSegments
                   .sort((a, b) => a.segment_index - b.segment_index)
                   .map((segment, index) => {
                     const isVideo = segment.metadata?.mode === 'video' || 
@@ -213,7 +216,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                     
                     return (
                       <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
-                        {question.media_asset.length > 1 && (
+                        {mediaSegments.length > 1 && (
                           <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
                             <span className="text-xs font-semibold text-gray-300">
                               Part {index + 1}
