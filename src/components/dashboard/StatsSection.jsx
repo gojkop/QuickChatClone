@@ -1,762 +1,142 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import apiClient from '@/api';
-import SettingsModal from '@/components/dashboard/SettingsModal';
-import AccountModal from '@/components/dashboard/AccountModal';
-import ProfilePreviewModal from '@/components/dashboard/ProfilePreviewModal';
-import SocialImpactStats from '@/components/dashboard/SocialImpactStats';
-import StatsSection from '@/components/dashboard/StatsSection';
-import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
-import QuestionTable from '@/components/dashboard/QuestionTable';
-import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
+import React from 'react';
 
-// ✅ NEW: Compact Sort Dropdown Component
-function SortDropdown({ sortBy, onSortChange, questionCount }) {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const dropdownRef = React.useRef(null);
-  const buttonRef = React.useRef(null);
+const formatCurrency = (cents, currency = 'USD') => {
+  const symbols = { USD: '$', EUR: '€', GBP: '£' };
+  const symbol = symbols[currency] || '$';
+  const amount = (cents || 0) / 100;
+  return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+};
 
-  const sortOptions = [
-    { value: 'time_left', label: 'Time Left (Urgent First)', icon: '⏰' },
-    { value: 'price_high', label: 'Price (High to Low)', icon: '💰' },
-    { value: 'price_low', label: 'Price (Low to High)', icon: '💵' },
-    { value: 'date_new', label: 'Date (Newest First)', icon: '📅' },
-    { value: 'date_old', label: 'Date (Oldest First)', icon: '📆' },
-  ];
-
-  const currentSort = sortOptions.find(opt => opt.value === sortBy) || sortOptions[0];
-
-  React.useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, []);
-
-  const handleSelect = (value) => {
-    onSortChange(value);
-    setIsOpen(false);
-  };
-
+const StatCard = ({ label, value, subtitle, trend, icon, stars }) => {
   return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm text-gray-600">
-        {questionCount || 0} question{(questionCount || 0) !== 1 ? 's' : ''}
-      </div>
-      
-      <div className="relative" ref={dropdownRef}>
-        <button
-          ref={buttonRef}
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
-          type="button"
-        >
-          <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-          </svg>
-          <span className="hidden sm:inline">Sort by:</span>
-          <span className="text-sm">{currentSort.icon}</span>
-          <svg 
-            className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {isOpen && (
-          <div 
-            className="absolute right-0 mt-1.5 w-52 rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50"
-          >
-            <div className="py-1">
-              {sortOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => handleSelect(option.value)}
-                  className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition ${
-                    sortBy === option.value
-                      ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                  type="button"
-                >
-                  <span className="text-sm">{option.icon}</span>
-                  <span className="flex-1">{option.label}</span>
-                  {sortBy === option.value && (
-                    <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition flex-shrink-0 w-[160px] sm:w-auto">
+      <div className="flex items-start justify-between mb-2">
+        <span className="text-xs font-medium text-gray-600">{label}</span>
+        {icon && (
+          <div className="w-6 h-6 bg-indigo-50 rounded flex items-center justify-center flex-shrink-0">
+            {icon}
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function ExpertDashboardPage() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
-  const [questions, setQuestions] = useState([]); // ✅ Initialize with empty array
-  const [allQuestions, setAllQuestions] = useState([]); // ✅ Initialize with empty array
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
-  const [error, setError] = useState('');
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
-  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState('pending');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
-  const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false);
-  const [availabilityMessage, setAvailabilityMessage] = useState('');
-  const [sortBy, setSortBy] = useState('time_left'); // ✅ NEW: Sorting state
-  
-  const [selectedQuestion, setSelectedQuestion] = useState(null);
-  const [showQuestionDetailModal, setShowQuestionDetailModal] = useState(false);
-  
-  const QUESTIONS_PER_PAGE = 10;
-
-  const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
-
-  // ✅ NEW: Helper function to calculate remaining time in seconds for sorting
-  const getRemainingTime = (question) => {
-    if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
-      return Infinity; // Questions without SLA go to the end
-    }
-
-    const now = Date.now() / 1000;
-    const createdAtSeconds = question.created_at > 4102444800 
-      ? question.created_at / 1000 
-      : question.created_at;
-    
-    const elapsed = now - createdAtSeconds;
-    const slaSeconds = question.sla_hours_snapshot * 3600;
-    const remaining = slaSeconds - elapsed;
-    
-    return remaining;
-  };
-
-  // ✅ NEW: Sort questions based on selected sort option
-  const sortQuestions = (questionsToSort, sortOption) => {
-    // ✅ FIX: Add safety check for undefined or null
-    if (!questionsToSort || !Array.isArray(questionsToSort)) {
-      return [];
-    }
-    
-    const sorted = [...questionsToSort];
-    
-    switch (sortOption) {
-      case 'time_left':
-        // Sort by remaining time (urgent first)
-        return sorted.sort((a, b) => {
-          const isPendingA = a.status === 'paid' && !a.answered_at;
-          const isPendingB = b.status === 'paid' && !b.answered_at;
-          
-          // Only sort pending questions by time left
-          if (isPendingA && isPendingB) {
-            return getRemainingTime(a) - getRemainingTime(b);
-          }
-          // Keep non-pending questions in their original order
-          return 0;
-        });
       
-      case 'price_high':
-        return sorted.sort((a, b) => (b.price_cents || 0) - (a.price_cents || 0));
-      
-      case 'price_low':
-        return sorted.sort((a, b) => (a.price_cents || 0) - (b.price_cents || 0));
-      
-      case 'date_new':
-        return sorted.sort((a, b) => b.created_at - a.created_at);
-      
-      case 'date_old':
-        return sorted.sort((a, b) => a.created_at - b.created_at);
-      
-      default:
-        return sorted;
-    }
-  };
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await apiClient.get('/me/profile');
-        
-        const expertProfile = response.data.expert_profile || {};
-        
-        const processedProfile = {
-          ...expertProfile,
-          user: response.data.user,
-          priceUsd: dollarsFromCents(expertProfile.price_cents),
-          slaHours: expertProfile.sla_hours,
-          isPublic: expertProfile.public,
-          avatar_url: expertProfile.avatar_url || null,
-          charity_percentage: expertProfile.charity_percentage || 0,
-          selected_charity: expertProfile.selected_charity || null,
-          total_donated: expertProfile.total_donated || 0,
-          accepting_questions: expertProfile.accepting_questions ?? true
-        };
-        
-        setProfile(processedProfile);
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
-        setError("Could not load your profile. Please try refreshing the page.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
-
-  useEffect(() => {
-    const hash = location.hash;
-    
-    if (hash === '#profile-settings') {
-      setIsProfileModalOpen(true);
-    } else if (hash === '#account-settings') {
-      setIsAccountModalOpen(true);
-    } else if (hash.startsWith('#question-')) {
-      const questionId = parseInt(hash.replace('#question-', ''), 10);
-      
-      if (!isNaN(questionId) && Array.isArray(allQuestions) && allQuestions.length > 0) {
-        const question = allQuestions.find(q => q.id === questionId);
-        
-        if (question) {
-          setSelectedQuestion(question);
-          setShowQuestionDetailModal(true);
-        } else {
-          console.warn(`Question with ID ${questionId} not found`);
-          navigate('/expert', { replace: true });
-        }
-      }
-    }
-  }, [location.hash, allQuestions, navigate]);
-
-  useEffect(() => {
-    const fetchAllQuestions = async () => {
-      if (!profile) return;
-      
-      try {
-        const response = await apiClient.get('/me/questions');
-        setAllQuestions(response.data || []);
-      } catch (err) {
-        console.error("Failed to fetch all questions:", err);
-        setAllQuestions([]); // Set empty array on error
-      }
-    };
-
-    fetchAllQuestions();
-  }, [profile]);
-
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      if (!profile) return;
-
-      try {
-        setIsLoadingQuestions(true);
-        
-        const statusMap = {
-          'pending': 'paid',
-          'answered': 'closed',
-          'all': ''
-        };
-        const status = statusMap[activeTab];
-        const params = status ? `?status=${status}` : '';
-        const response = await apiClient.get(`/me/questions${params}`);
-        
-        // ✅ NEW: Apply sorting with safety check
-        const fetchedQuestions = response.data || [];
-        const sortedQuestions = sortQuestions(fetchedQuestions, sortBy);
-        
-        setQuestions(sortedQuestions || []); // Extra safety
-        setCurrentPage(1);
-      } catch (err) {
-        console.error("Failed to fetch questions:", err);
-        if (err.response?.status !== 404) {
-          console.error("Error fetching questions:", err.message);
-        }
-        setQuestions([]); // Set empty array on error
-      } finally {
-        setIsLoadingQuestions(false);
-      }
-    };
-
-    fetchQuestions();
-  }, [profile, activeTab, sortBy]); // ✅ Added sortBy dependency
-
-  const handleToggleAvailability = async () => {
-    if (isTogglingAvailability) return;
-    
-    const newStatus = !profile.accepting_questions;
-    
-    try {
-      setIsTogglingAvailability(true);
-      
-      const response = await apiClient.post('/expert/profile/availability', {
-        accepting_questions: newStatus
-      });
-      
-      setProfile({
-        ...profile,
-        accepting_questions: newStatus
-      });
-
-      if (newStatus) {
-        setAvailabilityMessage('✓ You are now available to receive questions');
-      } else {
-        setAvailabilityMessage('✓ You are now away - not accepting new questions');
-      }
-      setShowAvailabilityMessage(true);
-      
-      setTimeout(() => {
-        setShowAvailabilityMessage(false);
-      }, 3000);
-      
-    } catch (err) {
-      console.error("Failed to update availability:", err);
-      
-      setProfile({
-        ...profile,
-        accepting_questions: newStatus
-      });
-      
-      if (newStatus) {
-        setAvailabilityMessage('✓ You are now available to receive questions');
-      } else {
-        setAvailabilityMessage('✓ You are now away - not accepting new questions');
-      }
-      setShowAvailabilityMessage(true);
-      
-      setTimeout(() => {
-        setShowAvailabilityMessage(false);
-      }, 3000);
-      
-      console.warn('Note: Availability API endpoint may not be implemented yet. UI updated optimistically.');
-      
-    } finally {
-      setIsTogglingAvailability(false);
-    }
-  };
-
-  const handleSaveSettings = (updatedProfile) => {
-    const processedProfile = {
-      ...profile,
-      ...updatedProfile,
-      priceUsd: dollarsFromCents(updatedProfile.price_cents || updatedProfile.priceUsd * 100),
-      slaHours: updatedProfile.sla_hours || updatedProfile.slaHours,
-      isPublic: updatedProfile.public !== undefined ? updatedProfile.public : updatedProfile.isPublic,
-    };
-    setProfile(processedProfile);
-  };
-
-  const handleSaveAccount = (updatedAccount) => {
-    console.log('Account updated:', updatedAccount);
-  };
-
-  const handleCloseProfileModal = () => {
-    setIsProfileModalOpen(false);
-    if (location.hash === '#profile-settings') {
-      navigate('/expert', { replace: true });
-    }
-  };
-
-  const handleCloseAccountModal = () => {
-    setIsAccountModalOpen(false);
-    if (location.hash === '#account-settings') {
-      navigate('/expert', { replace: true });
-    }
-  };
-
-  const handleCloseQuestionDetail = () => {
-    setShowQuestionDetailModal(false);
-    setSelectedQuestion(null);
-    if (location.hash.startsWith('#question-')) {
-      navigate('/expert', { replace: true });
-    }
-  };
-
-  const handleQuestionClick = (question) => {
-    setSelectedQuestion(question);
-    setShowQuestionDetailModal(true);
-    navigate(`#question-${question.id}`, { replace: false });
-  };
-  
-  const handleCopyProfileLink = () => {
-    if (profile?.handle) {
-      const url = `${window.location.origin}/u/${profile.handle}`;
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  // ✅ Safety: Ensure questions and allQuestions are always arrays
-  const safeQuestions = Array.isArray(questions) ? questions : [];
-  const safeAllQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-
-  const pendingCount = safeAllQuestions.filter(q => q.status === 'paid' && !q.answered_at).length;
-  const answeredCount = safeAllQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length;
-
-  const totalPages = Math.ceil(safeQuestions.length / QUESTIONS_PER_PAGE);
-  const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
-  const endIndex = startIndex + QUESTIONS_PER_PAGE;
-  const paginatedQuestions = safeQuestions.slice(startIndex, endIndex);
-
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
-        </div>
+      <div className="mb-1">
+        <div className="text-xl sm:text-2xl font-black text-gray-900">{value}</div>
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Oops!</h2>
-          <p className="text-gray-600">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <style>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-      `}</style>
-      <main className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
-        <div className="mb-4 lg:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <button
-                onClick={() => navigate('#profile-settings')}
-                className="flex-shrink-0 group relative"
-                title="Edit your profile"
-              >
-                {profile?.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt="Avatar" 
-                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-4 ring-indigo-100 group-hover:ring-indigo-300 transition-all cursor-pointer"
-                  />
-                ) : (
-                  <div className="group-hover:opacity-80 transition-opacity cursor-pointer">
-                    <DefaultAvatar size={48} />
-                  </div>
-                )}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                  <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </div>
-              </button>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 truncate">
-                    Welcome, {profile?.user?.name || 'Expert'}
-                  </h1>
-                  {profile?.handle && profile.isPublic && (
-                    <div className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg">
-                      <a href={`/u/${profile.handle}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 hover:opacity-80 transition"
-                        title="View public profile"
-                      >
-                        <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                        <span className="text-xs font-semibold text-indigo-600 max-w-[100px] truncate">
-                          /u/{profile.handle}
-                        </span>
-                      </a>
-                      <div className="w-px h-4 bg-indigo-200 mx-1"></div>
-                      <button
-                        onClick={handleCopyProfileLink}
-                        className="p-1 hover:bg-indigo-100 rounded transition"
-                        title="Copy link"
-                        type="button"
-                      >
-                        {copied ? (
-                          <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs sm:text-sm text-gray-500 truncate">
-                    {profile?.user?.email || '...'}
-                  </p>
-                  {profile?.handle && profile.isPublic && (
-                    <button
-                      onClick={handleCopyProfileLink}
-                      className="md:hidden inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded text-xs font-semibold text-indigo-600"
-                      type="button"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                      </svg>
-                      {copied ? 'Copied' : 'Link'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className="relative">
-                <div className="flex items-center gap-2.5 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      profile?.accepting_questions ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-                    }`} />
-                    <span className={`text-sm font-medium whitespace-nowrap ${
-                      profile?.accepting_questions ? 'text-green-700' : 'text-gray-600'
-                    }`}>
-                      {profile?.accepting_questions ? 'Available' : 'Away'}
-                    </span>
-                  </div>
-                  
-                  <div className="w-px h-4 bg-gray-300" />
-                  
-                  <button
-                    onClick={handleToggleAvailability}
-                    disabled={isTogglingAvailability}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 ${
-                      profile?.accepting_questions 
-                        ? 'bg-green-500' 
-                        : 'bg-gray-300'
-                    } ${isTogglingAvailability ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                    type="button"
-                    title={profile?.accepting_questions ? 'Turn off availability' : 'Turn on availability'}
-                  >
-                    <span
-                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${
-                        profile?.accepting_questions ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
-                </div>
-                
-                {showAvailabilityMessage && (
-                  <div className="absolute top-full left-0 mt-2 z-50 animate-fade-in">
-                    <div className={`px-4 py-2.5 rounded-lg shadow-lg border whitespace-nowrap text-sm font-medium ${
-                      availabilityMessage.includes('✗')
-                        ? 'bg-red-50 border-red-200 text-red-700'
-                        : 'bg-green-50 border-green-200 text-green-700'
-                    }`}>
-                      {availabilityMessage}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <button
-                onClick={() => navigate('#profile-settings')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
-                type="button"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="hidden sm:inline">Profile</span>
-              </button>
-              <button
-                onClick={() => navigate('#account-settings')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm"
-                type="button"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className="hidden sm:inline">Account</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-          <div className="space-y-4 lg:space-y-6">
-            <StatsSection questions={safeAllQuestions} profile={profile} />
-            <SocialImpactStats 
-              totalDonated={profile?.total_donated || 0}
-              charityPercentage={profile?.charity_percentage || 0}
-              selectedCharity={profile?.selected_charity}
-              onOpenSettings={() => navigate('#profile-settings')}
-            />
-          </div>
-
-          <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-            {/* ✅ NEW: Updated header with tabs and sort dropdown */}
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <h2 className="text-2xl font-bold text-gray-900">Questions</h2>
-                
-                <div className="inline-flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
-                  <button
-                    onClick={() => setActiveTab('pending')}
-                    className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-                      activeTab === 'pending'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                    type="button"
-                  >
-                    Pending {pendingCount > 0 && `(${pendingCount})`}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('answered')}
-                    className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-                      activeTab === 'answered'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                    type="button"
-                  >
-                    Answered {answeredCount > 0 && `(${answeredCount})`}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('all')}
-                    className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-                      activeTab === 'all'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                    type="button"
-                  >
-                    All
-                  </button>
-                </div>
-              </div>
-
-              {/* ✅ NEW: Compact Sort dropdown with button */}
-              <SortDropdown sortBy={sortBy} onSortChange={setSortBy} questionCount={safeQuestions.length} />
-            </div>
-
-            {isLoadingQuestions ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading questions...</p>
-              </div>
+      
+      {subtitle && (
+        <div className="text-xs text-gray-500">{subtitle}</div>
+      )}
+      
+      {trend && (
+        <div className={`inline-flex items-center gap-1 text-xs font-semibold mt-1 ${
+          trend.isPositive ? 'text-green-600' : 'text-red-600'
+        }`}>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {trend.isPositive ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             ) : (
-              <QuestionTable 
-                questions={paginatedQuestions}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                onQuestionClick={handleQuestionClick}
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
             )}
-          </div>
+          </svg>
+          {trend.value}
         </div>
-      </main>
-
-      {profile && (
-        <>
-          <SettingsModal 
-            isOpen={isProfileModalOpen} 
-            onClose={handleCloseProfileModal} 
-            profile={profile}
-            onSave={handleSaveSettings}
-          />
-          <AccountModal 
-            isOpen={isAccountModalOpen} 
-            onClose={handleCloseAccountModal} 
-            profile={profile}
-            onSave={handleSaveAccount}
-          />
-          <ProfilePreviewModal
-            isOpen={isPreviewModalOpen}
-            onClose={() => setIsPreviewModalOpen(false)}
-            profile={profile}
-          />
-          
-          <QuestionDetailModal
-            isOpen={showQuestionDetailModal}
-            onClose={handleCloseQuestionDetail}
-            question={selectedQuestion}
-            userId={profile?.user?.id || profile?.id}
-            onAnswerSubmitted={(questionId) => {
-              const fetchQuestions = async () => {
-                try {
-                  const statusMap = {
-                    'pending': 'paid',
-                    'answered': 'closed',
-                    'all': ''
-                  };
-                  const status = statusMap[activeTab];
-                  const params = status ? `?status=${status}` : '';
-                  const response = await apiClient.get(`/me/questions${params}`);
-                  
-                  const fetchedQuestions = response.data || [];
-                  const sortedQuestions = sortQuestions(fetchedQuestions, sortBy);
-                  setQuestions(sortedQuestions);
-                  
-                  const allResponse = await apiClient.get('/me/questions');
-                  setAllQuestions(allResponse.data || []);
-                } catch (err) {
-                  console.error("Failed to refresh questions:", err);
-                }
-              };
-              fetchQuestions();
-            }}
-          />
-        </>
+      )}
+      
+      {stars && (
+        <div className="flex items-center gap-0.5 mt-1">
+          {[...Array(5)].map((_, i) => (
+            <svg
+              key={i}
+              className={`w-3 h-3 sm:w-4 sm:h-4 ${i < Math.floor(stars) ? 'text-yellow-400' : 'text-gray-300'}`}
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+          ))}
+        </div>
       )}
     </div>
   );
-}
+};
 
-export default ExpertDashboardPage;
+const StatsSection = ({ stats }) => {
+  const thisMonthEarnings = stats?.thisMonthEarnings || 280000;
+  const allTimeEarnings = stats?.allTimeEarnings || 1560000;
+  const totalAnswered = stats?.totalAnswered || 127;
+  const avgResponseTime = stats?.avgResponseTime || 8.5;
+  const targetResponseTime = stats?.targetResponseTime || 24;
+  const avgRating = stats?.avgRating || 4.8;
+  const monthlyGrowth = stats?.monthlyGrowth || 12;
+
+  const statsData = [
+    {
+      label: "This Month",
+      value: formatCurrency(thisMonthEarnings),
+      trend: {
+        value: `+${monthlyGrowth}%`,
+        isPositive: monthlyGrowth > 0
+      },
+      icon: (
+        <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
+    },
+    {
+      label: "All Time",
+      value: formatCurrency(allTimeEarnings),
+      subtitle: `${totalAnswered} answered`,
+      icon: (
+        <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
+      )
+    },
+    {
+      label: "Avg Response",
+      value: `${avgResponseTime}h`,
+      subtitle: `Target: ${targetResponseTime}h`,
+      icon: (
+        <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
+    },
+    {
+      label: "Avg Rating",
+      value: avgRating.toFixed(1),
+      stars: avgRating,
+      icon: (
+        <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+        </svg>
+      )
+    }
+  ];
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-base font-bold text-gray-900">Performance</h3>
+      
+      {/* Mobile: Horizontal scroll */}
+      <div 
+        className="lg:hidden flex gap-3 overflow-x-auto pb-2 -mx-4 px-4"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {statsData.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
+      </div>
+
+      {/* Desktop: 2x2 grid */}
+      <div className="hidden lg:grid grid-cols-2 gap-3">
+        {statsData.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default StatsSection;
