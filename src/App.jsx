@@ -82,6 +82,10 @@ const AppLayout = () => {
         </Routes>
       </main>
       {!shouldHideLayout && <Footer />}
+      {(import.meta.env.MODE === 'development' || 
+  import.meta.env.VITE_SHOW_FEEDBACK === 'true') && (
+  <FeedbackWidget />
+)}
     </div>
   );
 }
