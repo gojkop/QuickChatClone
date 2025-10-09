@@ -21,7 +21,7 @@ function FeedbackWidget() {
     setIsSubmitting(true);
 
     try {
-      // Replace with your actual Xano endpoint
+      // ✅ Updated to match Xano schema
       const response = await fetch('https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/feedback', {
         method: 'POST',
         headers: {
@@ -29,11 +29,11 @@ function FeedbackWidget() {
         },
         body: JSON.stringify({
           page: location.pathname,
-          feedback: feedback.trim(),
+          message: feedback.trim(),  // ✅ Changed from 'feedback' to 'message'
           email: email.trim() || null,
           rating: rating || null,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
+          submitted_at: Date.now(),  // ✅ Changed from 'timestamp'
+          user_agent: navigator.userAgent,  // ✅ Changed from 'userAgent' to 'user_agent'
         }),
       });
 

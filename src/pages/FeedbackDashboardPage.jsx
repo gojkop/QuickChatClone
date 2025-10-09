@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
 function FeedbackDashboardPage() {
-  // ✅ ADD THESE PASSWORD PROTECTION STATES AT THE TOP
+  // Password protection
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  // Use environment variable or hardcode for testing
   const ADMIN_PASSWORD = import.meta.env.VITE_FEEDBACK_PASSWORD || 'quickchat2025';
   
   const [feedback, setFeedback] = useState([]);
@@ -22,15 +20,13 @@ function FeedbackDashboardPage() {
   const [sortField, setSortField] = useState('created_at');
   const [sortDirection, setSortDirection] = useState('desc');
 
-  // Fetch feedback
+  // Fetch feedback only when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchFeedback();
     }
   }, [isAuthenticated]);
 
-  // ... rest of your existing functions (fetchFeedback, filteredData, etc.)
-  
   const fetchFeedback = async () => {
     setIsLoading(true);
     setError(null);
@@ -52,7 +48,7 @@ function FeedbackDashboardPage() {
     }
   };
 
-  // Filter and sort data
+  // Filter and sort data - ✅ Updated to use 'message' instead of 'feedback'
   const filteredData = useMemo(() => {
     let result = [...feedback];
     
@@ -76,7 +72,7 @@ function FeedbackDashboardPage() {
     
     if (searchFilter) {
       result = result.filter(item => 
-        item.feedback?.toLowerCase().includes(searchFilter.toLowerCase())
+        item.message?.toLowerCase().includes(searchFilter.toLowerCase())  // ✅ Changed from 'feedback' to 'message'
       );
     }
     
@@ -87,7 +83,7 @@ function FeedbackDashboardPage() {
       if (aVal == null) return 1;
       if (bVal == null) return -1;
       
-      if (sortField === 'created_at' || sortField === 'timestamp') {
+      if (sortField === 'created_at' || sortField === 'submitted_at') {
         aVal = new Date(aVal).getTime();
         bVal = new Date(bVal).getTime();
       }
@@ -120,16 +116,17 @@ function FeedbackDashboardPage() {
     }
   };
 
+  // ✅ Updated CSV export to use 'message' and 'user_agent'
   const handleExport = () => {
     const csv = [
-      ['Date', 'Page', 'Rating', 'Feedback', 'Email', 'User Agent'],
+      ['Date', 'Page', 'Rating', 'Message', 'Email', 'User Agent'],
       ...filteredData.map(item => [
-        new Date(item.created_at || item.timestamp).toLocaleString(),
+        new Date(item.created_at).toLocaleString(),
         item.page || '',
         item.rating || '',
-        `"${(item.feedback || '').replace(/"/g, '""')}"`,
+        `"${(item.message || '').replace(/"/g, '""')}"`,  // ✅ Changed from 'feedback' to 'message'
         item.email || '',
-        item.userAgent || ''
+        item.user_agent || ''  // ✅ Changed from 'userAgent' to 'user_agent'
       ])
     ].map(row => row.join(',')).join('\n');
     
@@ -198,7 +195,7 @@ function FeedbackDashboardPage() {
     );
   };
 
-  // ✅ ADD PASSWORD PROTECTION SCREEN HERE (BEFORE OTHER RENDERS)
+  // Password protection screen
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -217,7 +214,7 @@ function FeedbackDashboardPage() {
             e.preventDefault();
             if (password === ADMIN_PASSWORD) {
               setIsAuthenticated(true);
-              setPassword(''); // Clear password from memory
+              setPassword('');
             } else {
               alert('❌ Incorrect password. Please try again.');
               setPassword('');
@@ -256,8 +253,6 @@ function FeedbackDashboardPage() {
     );
   }
 
-  // ✅ REST OF YOUR EXISTING RENDER CODE (loading, error, main dashboard)
-  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -294,7 +289,7 @@ function FeedbackDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header with Logout Button */}
+        {/* Header with Logout */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-black text-gray-900 mb-2">
@@ -313,11 +308,40 @@ function FeedbackDashboardPage() {
           </button>
         </div>
 
-        {/* Rest of your dashboard code stays the same... */}
-        {/* (Stats Cards, Actions, Table, etc.) */}
-      </div>
-    </div>
-  );
-}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="text-sm font-semibold text-gray-500 mb-1">Total Feedback</div>
+            <div className="text-3xl font-black text-gray-900">{stats.total}</div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="text-sm font-semibold text-gray-500 mb-1">Avg Rating</div>
+            <div className="text-3xl font-black text-yellow-500">{stats.avgRating}★</div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="text-sm font-semibold text-gray-500 mb-1">With Rating</div>
+            <div className="text-3xl font-black text-gray-900">{stats.withRating}</div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="text-sm font-semibold text-gray-500 mb-1">With Email</div>
+            <div className="text-3xl font-black text-gray-900">{stats.withEmail}</div>
+          </div>
+        </div>
 
-export default FeedbackDashboardPage;
+        {/* Actions */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={fetchFeedback}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+              <button
+                onClick={handleExport}
+                disabled={filteredData.length === 0}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white font-semibo
