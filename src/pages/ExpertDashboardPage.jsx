@@ -756,23 +756,17 @@ function ExpertDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  {filteredQuestions.length || 0} question{(filteredQuestions.length || 0) !== 1 ? 's' : ''}
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <HiddenToggle 
-                    showHidden={showHidden} 
-                    onToggle={() => setShowHidden(!showHidden)}
-                    hiddenCount={hiddenCount}
-                  />
-                  <SortDropdown 
-                    sortBy={sortBy} 
-                    onSortChange={setSortBy} 
-                    questionCount={filteredQuestions.length} 
-                  />
-                </div>
+              <div className="flex items-center justify-end gap-2">
+                <HiddenToggle 
+                  showHidden={showHidden} 
+                  onToggle={() => setShowHidden(!showHidden)}
+                  hiddenCount={hiddenCount}
+                />
+                <SortDropdown 
+                  sortBy={sortBy} 
+                  onSortChange={setSortBy} 
+                  questionCount={filteredQuestions.length} 
+                />
               </div>
             </div>
 
