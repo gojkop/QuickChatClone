@@ -35,6 +35,11 @@ function AnswerReviewPage() {
         const rawData = await response.json();
         console.log('📦 Raw API response:', rawData);
         
+        // Check if rawData has the required fields
+        if (!rawData || !rawData.id) {
+          throw new Error('Invalid response data.');
+        }
+        
         const transformedData = {
           id: rawData.id,
           title: rawData.title,
@@ -56,11 +61,12 @@ function AnswerReviewPage() {
           })(),
           media_assets: rawData.media_asset || [],
           // Answer is an object, not an array - extract segments from metadata
-          answer: rawData.answer ? {
+          // IMPORTANT: answer might be null/undefined when no answer exists yet
+          answer: (rawData.answer && typeof rawData.answer === 'object' && rawData.answer.id) ? {
             id: rawData.answer.id,
             created_at: rawData.answer.created_at,
             sent_at: rawData.answer.sent_at,
-            text: rawData.answer.text_response,
+            text: rawData.answer.text_response || '',
             // Extract segments from metadata.segments if they exist
             media_assets: (() => {
               if (!rawData.media_asset_answer || rawData.media_asset_answer.length === 0) {
@@ -113,7 +119,7 @@ function AnswerReviewPage() {
         };
         
         // Check if feedback already exists (answer is an object, not an array)
-        if (rawData.answer && rawData.answer.rating && rawData.answer.rating > 0) {
+        if (transformedData.answer && rawData.answer && rawData.answer.rating && rawData.answer.rating > 0) {
           setExistingFeedback({
             rating: rawData.answer.rating,
             feedback_text: rawData.answer.feedback_text || '',
@@ -127,7 +133,7 @@ function AnswerReviewPage() {
         console.log('✅ Transformed data:', transformedData);
         console.log('🎥 Answer details:', {
           hasAnswer: !!transformedData.answer,
-          answerExists: !!rawData.answer,
+          answerExists: !!(rawData.answer && rawData.answer.id),
           mediaAssets: transformedData.answer?.media_assets,
           mediaCount: transformedData.answer?.media_assets?.length || 0,
           attachments: transformedData.answer?.attachments,
@@ -183,6 +189,48 @@ function AnswerReviewPage() {
     } catch (err) {
       console.error('Error submitting feedback:', err);
       alert('Failed to submit feedback. Please try again.');
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    if (!data?.answer) return;
+    
+    const downloads = [];
+    
+    // Add all media assets
+    if (data.answer.media_assets && data.answer.media_assets.length > 0) {
+      data.answer.media_assets.forEach((asset, index) => {
+        if (asset.url) {
+          const fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'media'}.${asset.url.includes('.webm') ? 'webm' : 'mp4'}`;
+          downloads.push({ url: asset.url, name: fileName });
+        }
+      });
+    }
+    
+    // Add all attachments
+    if (data.answer.attachments && data.answer.attachments.length > 0) {
+      data.answer.attachments.forEach((file) => {
+        downloads.push({ url: file.url, name: file.name });
+      });
+    }
+    
+    if (downloads.length === 0) {
+      alert('No files to download');
+      return;
+    }
+    
+    // Download each file with a small delay to avoid browser blocking
+    for (let i = 0; i < downloads.length; i++) {
+      const item = downloads[i];
+      setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = item.url;
+        link.download = item.name;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }, i * 300); // 300ms delay between downloads
     }
   };
 
@@ -530,11 +578,19 @@ function AnswerReviewPage() {
             )}
 
             <div className="px-5 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
+              <button 
+                onClick={handleDownloadAll}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium hover:bg-gray-100 px-3 py-2 rounded-lg"
+              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Download
+                Download All
+                {data.answer?.media_assets?.length > 0 || data.answer?.attachments?.length > 0 ? (
+                  <span className="ml-1 text-xs bg-gray-200 px-2 py-0.5 rounded-full">
+                    {(data.answer.media_assets?.length || 0) + (data.answer.attachments?.length || 0)}
+                  </span>
+                ) : null}
               </button>
               <span className="text-xs text-gray-500">For personal use only</span>
             </div>
