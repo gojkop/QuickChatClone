@@ -344,4 +344,154 @@ function FeedbackDashboardPage() {
               <button
                 onClick={handleExport}
                 disabled={filteredData.length === 0}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white font-semibo
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export CSV
+              </button>
+              <button
+                onClick={clearFilters}
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear Filters
+              </button>
+            </div>
+            <div className="text-sm text-gray-600">
+              Showing <span className="font-bold text-gray-900">{filteredData.length}</span> of {feedback.length} entries
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left">
+                    <button
+                      onClick={() => handleSort('created_at')}
+                      className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider hover:text-indigo-600 transition"
+                    >
+                      Date
+                      <SortIcon field="created_at" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <button
+                      onClick={() => handleSort('page')}
+                      className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider hover:text-indigo-600 transition"
+                    >
+                      Page
+                      <SortIcon field="page" />
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="Filter page..."
+                      value={pageFilter}
+                      onChange={(e) => setPageFilter(e.target.value)}
+                      className="mt-2 w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <button
+                      onClick={() => handleSort('rating')}
+                      className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider hover:text-indigo-600 transition"
+                    >
+                      Rating
+                      <SortIcon field="rating" />
+                    </button>
+                    <select
+                      value={ratingFilter}
+                      onChange={(e) => setRatingFilter(e.target.value)}
+                      className="mt-2 w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none"
+                    >
+                      <option value="">All</option>
+                      <option value="5">5 stars</option>
+                      <option value="4">4 stars</option>
+                      <option value="3">3 stars</option>
+                      <option value="2">2 stars</option>
+                      <option value="1">1 star</option>
+                    </select>
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <div className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Message {/* ✅ Changed from 'Feedback' to 'Message' */}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search message..."
+                      value={searchFilter}
+                      onChange={(e) => setSearchFilter(e.target.value)}
+                      className="mt-2 w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <div className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Email
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Filter email..."
+                      value={emailFilter}
+                      onChange={(e) => setEmailFilter(e.target.value)}
+                      className="mt-2 w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none"
+                    />
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-4 py-12 text-center text-gray-500">
+                      <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                      <p className="font-semibold text-gray-900 mb-1">No feedback found</p>
+                      <p className="text-sm">Try adjusting your filters or check back later</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredData.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(item.created_at)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 font-mono text-xs">
+                          {item.page || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <StarRating rating={item.rating} />
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700 max-w-md">
+                        <div className="line-clamp-3">{item.message || 'N/A'}</div> {/* ✅ Changed from 'feedback' to 'message' */}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {item.email ? (
+                          <a href={`mailto:${item.email}`} className="text-indigo-600 hover:text-indigo-700 hover:underline">
+                            {item.email}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 italic">Anonymous</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default FeedbackDashboardPage;
