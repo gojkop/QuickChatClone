@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 const formatCurrency = (cents, currency = 'USD') => {
   const symbols = { USD: '$', EUR: '€', GBP: '£' };
@@ -60,22 +60,88 @@ const StatCard = ({ label, value, subtitle, trend, icon, stars }) => {
   );
 };
 
-const StatsSection = ({ stats }) => {
-  const thisMonthEarnings = stats?.thisMonthEarnings || 280000;
-  const allTimeEarnings = stats?.allTimeEarnings || 1560000;
-  const totalAnswered = stats?.totalAnswered || 127;
-  const avgResponseTime = stats?.avgResponseTime || 8.5;
-  const targetResponseTime = stats?.targetResponseTime || 24;
-  const avgRating = stats?.avgRating || 4.8;
-  const monthlyGrowth = stats?.monthlyGrowth || 12;
+const StatsSection = ({ allQuestions = [] }) => {
+  // Memoize stats calculation - only recalculate when questions change
+  const stats = useMemo(() => {
+    // Ensure we have an array to work with
+    const questions = Array.isArray(allQuestions) ? allQuestions : [];
+    
+    // Get current date info
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    
+    // Filter answered questions
+    const answeredQuestions = questions.filter(q => q.answered_at && q.answered_at > 0);
+    
+    // Calculate this month's earnings
+    const thisMonthEarnings = answeredQuestions
+      .filter(q => {
+        const answeredDate = new Date(q.answered_at > 4102444800 ? q.answered_at : q.answered_at * 1000);
+        return answeredDate.getMonth() === currentMonth && answeredDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, q) => sum + (q.price_cents || 0), 0);
+    
+    // Calculate last month's earnings for growth calculation
+    const lastMonthEarnings = answeredQuestions
+      .filter(q => {
+        const answeredDate = new Date(q.answered_at > 4102444800 ? q.answered_at : q.answered_at * 1000);
+        return answeredDate.getMonth() === lastMonth && answeredDate.getFullYear() === lastMonthYear;
+      })
+      .reduce((sum, q) => sum + (q.price_cents || 0), 0);
+    
+    // Calculate monthly growth percentage
+    const monthlyGrowth = lastMonthEarnings > 0 
+      ? Math.round(((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings) * 100)
+      : thisMonthEarnings > 0 ? 100 : 0;
+    
+    // Calculate all-time earnings
+    const allTimeEarnings = answeredQuestions.reduce((sum, q) => sum + (q.price_cents || 0), 0);
+    
+    // Total answered count
+    const totalAnswered = answeredQuestions.length;
+    
+    // Calculate average response time in hours
+    let avgResponseTime = 0;
+    if (answeredQuestions.length > 0) {
+      const totalResponseTime = answeredQuestions.reduce((sum, q) => {
+        const createdAt = q.created_at > 4102444800 ? q.created_at : q.created_at * 1000;
+        const answeredAt = q.answered_at > 4102444800 ? q.answered_at : q.answered_at * 1000;
+        const responseTimeHours = (answeredAt - createdAt) / (1000 * 60 * 60); // Convert ms to hours
+        return sum + responseTimeHours;
+      }, 0);
+      avgResponseTime = totalResponseTime / answeredQuestions.length;
+    }
+    
+    // Get target response time from most recent question's SLA (or default to 24)
+    const targetResponseTime = questions.length > 0 && questions[0]?.sla_hours_snapshot 
+      ? questions[0].sla_hours_snapshot 
+      : 24;
+    
+    // Calculate average rating (placeholder - would need rating data from questions)
+    // For now, we'll use a default or calculate from question data if available
+    const avgRating = 4.8; // Default until we have real rating data
+    
+    return {
+      thisMonthEarnings,
+      allTimeEarnings,
+      totalAnswered,
+      avgResponseTime,
+      targetResponseTime,
+      avgRating,
+      monthlyGrowth
+    };
+  }, [allQuestions]);
 
   const statsData = [
     {
       label: "This Month",
-      value: formatCurrency(thisMonthEarnings),
+      value: formatCurrency(stats.thisMonthEarnings),
       trend: {
-        value: `+${monthlyGrowth}%`,
-        isPositive: monthlyGrowth > 0
+        value: `${stats.monthlyGrowth > 0 ? '+' : ''}${stats.monthlyGrowth}%`,
+        isPositive: stats.monthlyGrowth >= 0
       },
       icon: (
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,8 +151,8 @@ const StatsSection = ({ stats }) => {
     },
     {
       label: "All Time",
-      value: formatCurrency(allTimeEarnings),
-      subtitle: `${totalAnswered} answered`,
+      value: formatCurrency(stats.allTimeEarnings),
+      subtitle: `${stats.totalAnswered} answered`,
       icon: (
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
@@ -95,8 +161,8 @@ const StatsSection = ({ stats }) => {
     },
     {
       label: "Avg Response",
-      value: `${avgResponseTime}h`,
-      subtitle: `Target: ${targetResponseTime}h`,
+      value: stats.totalAnswered > 0 ? `${stats.avgResponseTime.toFixed(1)}h` : '—',
+      subtitle: `Target: ${stats.targetResponseTime}h`,
       icon: (
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -105,8 +171,8 @@ const StatsSection = ({ stats }) => {
     },
     {
       label: "Avg Rating",
-      value: avgRating.toFixed(1),
-      stars: avgRating,
+      value: stats.avgRating.toFixed(1),
+      stars: stats.avgRating,
       icon: (
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />

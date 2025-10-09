@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '@/api';
 import SettingsModal from '@/components/dashboard/SettingsModal';
@@ -10,7 +10,7 @@ import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
 import QuestionTable from '@/components/dashboard/QuestionTable';
 import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
 
-// ✅ NEW: Hidden Questions Toggle Component
+// ✅ Hidden Questions Toggle Component
 function HiddenToggle({ showHidden, onToggle, hiddenCount }) {
   return (
     <button
@@ -159,7 +159,7 @@ function ExpertDashboardPage() {
   const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState('');
   const [sortBy, setSortBy] = useState('time_left');
-  const [showHidden, setShowHidden] = useState(false); // ✅ NEW: State for showing/hiding hidden questions
+  const [showHidden, setShowHidden] = useState(false);
   
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [showQuestionDetailModal, setShowQuestionDetailModal] = useState(false);
@@ -186,15 +186,15 @@ function ExpertDashboardPage() {
     return remaining;
   };
 
-  // Sort questions based on selected sort option
-  const sortQuestions = (questionsToSort, sortOption) => {
-    if (!questionsToSort || !Array.isArray(questionsToSort)) {
+  // ✅ OPTIMIZED: Client-side sorting with useMemo - NO API CALLS when sort changes
+  const sortedQuestions = useMemo(() => {
+    if (!questions || !Array.isArray(questions)) {
       return [];
     }
     
-    const sorted = [...questionsToSort];
+    const sorted = [...questions];
     
-    switch (sortOption) {
+    switch (sortBy) {
       case 'time_left':
         return sorted.sort((a, b) => {
           const isPendingA = a.status === 'paid' && !a.answered_at;
@@ -221,9 +221,39 @@ function ExpertDashboardPage() {
       default:
         return sorted;
     }
-  };
+  }, [questions, sortBy]);
 
-  // ✅ NEW: Refresh questions function
+  // ✅ OPTIMIZED: Filter questions with useMemo
+  const filteredQuestions = useMemo(() => {
+    return showHidden 
+      ? sortedQuestions 
+      : sortedQuestions.filter(q => !q.hidden);
+  }, [sortedQuestions, showHidden]);
+
+  // ✅ OPTIMIZED: Calculate counts with useMemo
+  const { pendingCount, answeredCount, hiddenCount } = useMemo(() => {
+    const safeAllQuestions = Array.isArray(allQuestions) ? allQuestions : [];
+    const safeQuestions = Array.isArray(questions) ? questions : [];
+    
+    return {
+      pendingCount: safeAllQuestions.filter(q => q.status === 'paid' && !q.answered_at).length,
+      answeredCount: safeAllQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length,
+      hiddenCount: safeQuestions.filter(q => q.hidden === true).length
+    };
+  }, [allQuestions, questions]);
+
+  // ✅ OPTIMIZED: Paginated questions with useMemo
+  const paginatedQuestions = useMemo(() => {
+    const totalPages = Math.ceil(filteredQuestions.length / QUESTIONS_PER_PAGE);
+    const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
+    const endIndex = startIndex + QUESTIONS_PER_PAGE;
+    return {
+      questions: filteredQuestions.slice(startIndex, endIndex),
+      totalPages
+    };
+  }, [filteredQuestions, currentPage]);
+
+  // ✅ Refresh questions function
   const refreshQuestions = async () => {
     if (!profile) return;
 
@@ -240,9 +270,7 @@ function ExpertDashboardPage() {
       const response = await apiClient.get(`/me/questions${params}`);
       
       const fetchedQuestions = response.data || [];
-      const sortedQuestions = sortQuestions(fetchedQuestions, sortBy);
-      
-      setQuestions(sortedQuestions || []);
+      setQuestions(fetchedQuestions);
       setCurrentPage(1);
       
       // Also refresh all questions
@@ -330,9 +358,10 @@ function ExpertDashboardPage() {
     fetchAllQuestions();
   }, [profile]);
 
+  // ✅ OPTIMIZED: Removed sortBy from dependencies - only fetch when tab changes
   useEffect(() => {
     refreshQuestions();
-  }, [profile, activeTab, sortBy]);
+  }, [profile, activeTab]); // sortBy removed!
 
   const handleToggleAvailability = async () => {
     if (isTogglingAvailability) return;
@@ -440,7 +469,7 @@ function ExpertDashboardPage() {
     }
   };
 
-  // ✅ NEW: Handle action from dropdown (including refresh)
+  // ✅ Handle action from dropdown (including refresh)
   const handleQuestionAction = (action, question) => {
     if (action === 'refresh') {
       // Refresh questions when hide/unhide is triggered
@@ -465,37 +494,9 @@ function ExpertDashboardPage() {
     }
   };
 
-  // ✅ NEW: Filter questions based on hidden toggle
-  const safeQuestions = Array.isArray(questions) ? questions : [];
-  const safeAllQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-
-  const filteredQuestions = showHidden 
-    ? safeQuestions 
-    : safeQuestions.filter(q => !q.hidden);
-
-  const hiddenCount = safeQuestions.filter(q => q.hidden === true).length;
-
-  const pendingCount = safeAllQuestions.filter(q => q.status === 'paid' && !q.answered_at).length;
-  const answeredCount = safeAllQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length;
-
-  const totalPages = Math.ceil(filteredQuestions.length / QUESTIONS_PER_PAGE);
-  const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
-  const endIndex = startIndex + QUESTIONS_PER_PAGE;
-  const paginatedQuestions = filteredQuestions.slice(startIndex, endIndex);
-
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const stats = {
-    thisMonthEarnings: 280000,
-    allTimeEarnings: 1560000,
-    totalAnswered: 127,
-    avgResponseTime: 8.5,
-    targetResponseTime: 24,
-    avgRating: 4.8,
-    monthlyGrowth: 12
   };
 
   if (isLoading) {
@@ -704,7 +705,7 @@ function ExpertDashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <div className="space-y-4 lg:space-y-6">
-            <StatsSection stats={stats} />
+            <StatsSection allQuestions={allQuestions} />
             <SocialImpactStats 
               totalDonated={profile?.total_donated || 0}
               charityPercentage={profile?.charity_percentage || 0}
@@ -755,7 +756,6 @@ function ExpertDashboardPage() {
                 </div>
               </div>
 
-              {/* ✅ NEW: Row with question count, sort dropdown, and hidden toggle */}
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
                   {filteredQuestions.length || 0} question{(filteredQuestions.length || 0) !== 1 ? 's' : ''}
@@ -783,9 +783,9 @@ function ExpertDashboardPage() {
               </div>
             ) : (
               <QuestionTable 
-                questions={paginatedQuestions}
+                questions={paginatedQuestions.questions}
                 currentPage={currentPage}
-                totalPages={totalPages}
+                totalPages={paginatedQuestions.totalPages}
                 onPageChange={handlePageChange}
                 onQuestionClick={handleQuestionClick}
                 onAction={handleQuestionAction}
