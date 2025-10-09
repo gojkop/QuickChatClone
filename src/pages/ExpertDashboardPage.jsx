@@ -249,6 +249,7 @@ function ExpertDashboardPage() {
   };
 
   const pendingCount = allQuestions.filter(q => q.status === 'paid' && !q.answered_at).length;
+  const answeredCount = allQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length;
 
   const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
   const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
@@ -510,7 +511,7 @@ function ExpertDashboardPage() {
                   }`}
                   type="button"
                 >
-                  Answered
+                  Answered {answeredCount > 0 && `(${answeredCount})`}
                 </button>
                 <button
                   onClick={() => setActiveTab('all')}

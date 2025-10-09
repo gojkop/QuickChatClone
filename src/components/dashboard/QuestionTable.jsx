@@ -141,7 +141,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                   Price
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  SLA
+                  Time Left
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
                   Actions
