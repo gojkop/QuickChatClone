@@ -46,11 +46,12 @@ function AnswerReviewPage() {
           sla_hours_snapshot: rawData.sla_hours_snapshot,
           attachments: rawData.attachments ? JSON.parse(rawData.attachments) : [],
           media_assets: rawData.media_asset || [],
-          answer: rawData.answer && rawData.answer.length > 0 ? {
-            id: rawData.answer[0].id,
-            created_at: rawData.answer[0].created_at,
-            sent_at: rawData.answer[0].sent_at,
-            text: rawData.answer[0].text_response,
+          // Answer is an object, not an array
+          answer: rawData.answer ? {
+            id: rawData.answer.id,
+            created_at: rawData.answer.created_at,
+            sent_at: rawData.answer.sent_at,
+            text: rawData.answer.text_response,
             // Get media from media_asset_answer array
             media_url: rawData.media_asset_answer && rawData.media_asset_answer.length > 0 
               ? rawData.media_asset_answer[0].url 
@@ -71,25 +72,28 @@ function AnswerReviewPage() {
           }
         };
         
-        // Check if feedback already exists (inside answer object)
-        if (rawData.answer && rawData.answer.length > 0 && rawData.answer[0].rating && rawData.answer[0].rating > 0) {
+        // Check if feedback already exists (answer is an object, not an array)
+        if (rawData.answer && rawData.answer.rating && rawData.answer.rating > 0) {
           setExistingFeedback({
-            rating: rawData.answer[0].rating,
-            feedback_text: rawData.answer[0].feedback_text || '',
-            allow_testimonial: rawData.answer[0].allow_testimonial || false,
-            created_at: rawData.answer[0].feedback_at || rawData.answer[0].created_at
+            rating: rawData.answer.rating,
+            feedback_text: rawData.answer.feedback_text || '',
+            allow_testimonial: rawData.answer.allow_testimonial || false,
+            created_at: rawData.answer.feedback_at || rawData.answer.created_at
           });
           setHasSubmittedFeedback(true);
-          console.log('✅ Existing feedback found:', rawData.answer[0].rating);
+          console.log('✅ Existing feedback found:', rawData.answer.rating);
         }
         
         console.log('✅ Transformed data:', transformedData);
         console.log('🎥 Answer media details:', {
           hasAnswer: !!transformedData.answer,
+          answerObject: transformedData.answer,
           media_url: transformedData.answer?.media_url,
           media_duration: transformedData.answer?.media_duration,
           media_type: transformedData.answer?.media_type,
-          text: transformedData.answer?.text
+          text: transformedData.answer?.text,
+          rawAnswerObject: rawData.answer,
+          rawMediaAssetAnswer: rawData.media_asset_answer
         });
         console.log('🔗 Expert handle:', transformedData.expert_profile?.handle);
         setData(transformedData);
