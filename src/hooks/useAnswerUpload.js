@@ -347,21 +347,16 @@ export function useAnswerUpload() {
 
       console.log('💾 Creating answer record...');
 
+      // ✅ FIXED: Always include all fields explicitly
       const payload = {
         question_id: questionId,
         user_id: userId,
-        text_response: answerData.text || '',
+        text_response: answerData.text?.trim() || null,
+        media_asset_id: mediaAssetId || null,
+        attachments: attachmentResults.length > 0 
+          ? JSON.stringify(attachmentResults) 
+          : null,
       };
-
-      // Add media_asset_id (database ID) if we have media
-      if (mediaAssetId) {
-        payload.media_asset_id = mediaAssetId;
-      }
-
-      // Add attachments as JSON string if uploaded
-      if (attachmentResults.length > 0) {
-        payload.attachments = JSON.stringify(attachmentResults);
-      }
 
       console.log('Sending to Xano /answer endpoint:', payload);
 
@@ -384,10 +379,16 @@ export function useAnswerUpload() {
     } catch (error) {
       console.error('❌ Answer submission failed:', error);
       
+      // ✅ ENHANCED: Log more details about the error
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+      
       setUploadState(prev => ({
         ...prev,
         uploading: false,
-        error: error.message,
+        error: error.response?.data?.message || error.message,
       }));
       
       throw error;
