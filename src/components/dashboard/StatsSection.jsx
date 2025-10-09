@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 
 const formatCurrency = (cents, currency = 'USD') => {
   const symbols = { USD: '$', EUR: '€', GBP: '£' };
@@ -61,43 +61,44 @@ const StatCard = ({ label, value, subtitle, trend, icon, stars }) => {
 };
 
 const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
-  // ✅ Memoize ONLY average response time calculation - everything else is mock data
-  const avgResponseTime = useMemo(() => {
-    // Ensure we have an array to work with
-    const questions = Array.isArray(allQuestions) ? allQuestions : [];
-    
-    // Filter answered questions that have both timestamps
-    const answeredQuestions = questions.filter(q => 
-      q.answered_at && 
-      q.answered_at > 0 && 
-      q.created_at && 
-      q.created_at > 0
-    );
-    
-    // If no answered questions, return 0
-    if (answeredQuestions.length === 0) return 0;
-    
-    // Calculate total response time in hours
-    const totalResponseTime = answeredQuestions.reduce((sum, q) => {
-      // Handle both millisecond and second timestamps
-      const createdAt = q.created_at > 4102444800 ? q.created_at : q.created_at * 1000;
-      const answeredAt = q.answered_at > 4102444800 ? q.answered_at : q.answered_at * 1000;
-      
-      // Calculate hours
-      const responseTimeHours = (answeredAt - createdAt) / (1000 * 60 * 60);
-      
-      return sum + responseTimeHours;
-    }, 0);
-    
-    // Return average rounded to 1 decimal place
-    return totalResponseTime / answeredQuestions.length;
-  }, [allQuestions]); // Only recalculates when allQuestions changes
+  // ✅ FUTURE: Average response time calculation (currently disabled - using mock data)
+  // const avgResponseTime = useMemo(() => {
+  //   // Ensure we have an array to work with
+  //   const questions = Array.isArray(allQuestions) ? allQuestions : [];
+  //   
+  //   // Filter answered questions that have both timestamps
+  //   const answeredQuestions = questions.filter(q => 
+  //     q.answered_at && 
+  //     q.answered_at > 0 && 
+  //     q.created_at && 
+  //     q.created_at > 0
+  //   );
+  //   
+  //   // If no answered questions, return 0
+  //   if (answeredQuestions.length === 0) return 0;
+  //   
+  //   // Calculate total response time in hours
+  //   const totalResponseTime = answeredQuestions.reduce((sum, q) => {
+  //     // Handle both millisecond and second timestamps
+  //     const createdAt = q.created_at > 4102444800 ? q.created_at : q.created_at * 1000;
+  //     const answeredAt = q.answered_at > 4102444800 ? q.answered_at : q.answered_at * 1000;
+  //     
+  //     // Calculate hours
+  //     const responseTimeHours = (answeredAt - createdAt) / (1000 * 60 * 60);
+  //     
+  //     return sum + responseTimeHours;
+  //   }, 0);
+  //   
+  //   // Return average rounded to 1 decimal place
+  //   return totalResponseTime / answeredQuestions.length;
+  // }, [allQuestions]); // Only recalculates when allQuestions changes
 
-  // 📊 Mock data for all other stats (will be implemented later)
+  // 📊 Mock data for all stats (will be implemented later)
   const mockStats = {
     thisMonthEarnings: 280000,
     allTimeEarnings: 1560000,
     totalAnswered: 127,
+    avgResponseTime: 8.5,
     avgRating: 4.8,
     monthlyGrowth: 12
   };
@@ -128,7 +129,7 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
     },
     {
       label: "Avg Response",
-      value: avgResponseTime > 0 ? `${avgResponseTime.toFixed(1)}h` : '—',
+      value: mockStats.avgResponseTime > 0 ? `${mockStats.avgResponseTime.toFixed(1)}h` : '—',
       subtitle: `Target: ${targetResponseTime}h`,
       icon: (
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
