@@ -6,6 +6,7 @@ import { Toast, useToast } from '@/components/common/Toast';
 function QuestionActionsDropdown({ question, onAction }) {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const { toast, showToast, hideToast } = useToast();
@@ -21,7 +22,6 @@ function QuestionActionsDropdown({ question, onAction }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ✅ FIXED: Better upward detection
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const buttonRect = buttonRef.current.getBoundingClientRect();
@@ -66,20 +66,16 @@ function QuestionActionsDropdown({ question, onAction }) {
 
         {isOpen && (
           <div 
-            className={`fixed rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 ${
-              openUpward ? 'mb-2' : 'mt-2'
-            }`}
+            className="fixed rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5"
             style={{
-              // ✅ FIXED: Use fixed positioning with calculated position
               top: openUpward ? 'auto' : `${buttonRef.current.getBoundingClientRect().bottom + window.scrollY + 8}px`,
               bottom: openUpward ? `${window.innerHeight - buttonRef.current.getBoundingClientRect().top + window.scrollY + 8}px` : 'auto',
               right: `${window.innerWidth - buttonRef.current.getBoundingClientRect().right}px`,
-              width: '224px', // w-56
+              width: '224px',
               zIndex: 9999,
             }}
           >
             <div className="py-1">
-              {/* View Question - Top Priority Action */}
               <button
                 onClick={() => handleAction('view')}
                 className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left"
@@ -93,7 +89,6 @@ function QuestionActionsDropdown({ question, onAction }) {
 
               <div className="border-t border-gray-200 my-1"></div>
 
-              {/* Schedule Work Time */}
               <button
                 onClick={handleScheduleClick}
                 className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left"
@@ -106,7 +101,6 @@ function QuestionActionsDropdown({ question, onAction }) {
 
               {isPending && <div className="border-t border-gray-200 my-1"></div>}
 
-              {/* Refund & Decline */}
               {isPending && (
                 <button
                   onClick={() => handleAction('refund')}
@@ -121,7 +115,6 @@ function QuestionActionsDropdown({ question, onAction }) {
 
               {isPending && <div className="border-t border-gray-200 my-1"></div>}
 
-              {/* ✅ UPDATED: Changed from Delete to Hide */}
               <button
                 onClick={() => handleAction('hide')}
                 className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left"
@@ -136,7 +129,6 @@ function QuestionActionsDropdown({ question, onAction }) {
         )}
       </div>
 
-      {/* Schedule Modal */}
       <ScheduleWorkModal
         isOpen={showScheduleModal}
         onClose={() => setShowScheduleModal(false)}
@@ -144,7 +136,6 @@ function QuestionActionsDropdown({ question, onAction }) {
         onScheduled={handleScheduled}
       />
 
-      {/* Toast */}
       {toast && (
         <Toast
           message={toast.message}
