@@ -1,633 +1,208 @@
-// src/components/dashboard/QuestionDetailModal.jsx
-import React, { useState, useEffect } from 'react';
-import apiClient from '@/api';
-import AnswerRecorder from './AnswerRecorder';
-import AnswerReviewModal from './AnswerReviewModal';
+import React, { useMemo } from 'react';
 
-function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmitted }) {
-  const [showAnswerRecorder, setShowAnswerRecorder] = useState(false);
-  const [answerData, setAnswerData] = useState(null);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [showAnswerSection, setShowAnswerSection] = useState(false);
-  const [answerDetails, setAnswerDetails] = useState(null);
-  const [isLoadingAnswer, setIsLoadingAnswer] = useState(false);
+const formatCurrency = (cents, currency = 'USD') => {
+  const symbols = { USD: '$', EUR: '€', GBP: '£' };
+  const symbol = symbols[currency] || '$';
+  const amount = (cents || 0) / 100;
+  return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+};
 
-  const isPending = question?.status === 'paid' && !question?.answered_at;
-  const isAnswered = question?.status === 'answered' || question?.status === 'closed' || !!question?.answered_at;
-
-  // Fetch answer details when modal opens for answered questions
-  useEffect(() => {
-    if (isOpen && isAnswered && question?.id) {
-      fetchAnswerDetails();
-    } else {
-      setAnswerDetails(null);
-    }
-  }, [isOpen, isAnswered, question?.id]);
-
-  const fetchAnswerDetails = async () => {
-    try {
-      setIsLoadingAnswer(true);
-      // Use the same endpoint structure as AnswerReviewPage
-      const response = await apiClient.get(`/questions/${question.id}/answer`);
-      
-      const rawData = response.data;
-      console.log('📦 Answer details:', rawData);
-      
-      // Transform answer data similar to AnswerReviewPage
-      const transformedAnswer = {
-        id: rawData.id,
-        created_at: rawData.created_at,
-        sent_at: rawData.sent_at,
-        text: rawData.text_response || '',
-        rating: rawData.rating || 0,
-        feedback_text: rawData.feedback_text || '',
-        allow_testimonial: rawData.allow_testimonial || false,
-        feedback_at: rawData.feedback_at,
-        // Extract media segments
-        media_assets: (() => {
-          if (!rawData.media_asset_answer || rawData.media_asset_answer.length === 0) {
-            return [];
-          }
-          
-          const mainAsset = rawData.media_asset_answer[0];
-          
-          // Check if this is a multi-segment recording
-          if (mainAsset.metadata?.type === 'multi-segment' && mainAsset.metadata?.segments) {
-            return mainAsset.metadata.segments.map(segment => ({
-              id: segment.uid,
-              url: segment.playback_url,
-              duration_sec: segment.duration,
-              segment_index: segment.segment_index,
-              metadata: {
-                mode: segment.mode
-              }
-            }));
-          }
-          
-          // Otherwise return the main asset as a single item
-          return [{
-            id: mainAsset.id,
-            url: mainAsset.url,
-            duration_sec: mainAsset.duration_sec,
-            segment_index: 0,
-            metadata: mainAsset.metadata
-          }];
-        })(),
-        // Parse attachments
-        attachments: (() => {
-          try {
-            if (rawData.attachments && rawData.attachments.trim()) {
-              return JSON.parse(rawData.attachments);
-            }
-          } catch (e) {
-            console.warn('Failed to parse answer attachments:', e);
-          }
-          return [];
-        })()
-      };
-      
-      setAnswerDetails(transformedAnswer);
-    } catch (err) {
-      console.error('❌ Error fetching answer details:', err);
-      setAnswerDetails(null);
-    } finally {
-      setIsLoadingAnswer(false);
-    }
-  };
-
-  if (!isOpen || !question) return null;
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatPrice = (cents) => {
-    return `$${(cents / 100).toFixed(2)}`;
-  };
-
-  const getDeliveryTime = () => {
-    if (!answerDetails?.created_at || !question?.created_at) return '';
-    const asked = new Date(question.created_at);
-    const answered = new Date(answerDetails.created_at);
-    const diffHours = Math.floor((answered - asked) / (1000 * 60 * 60));
-    if (diffHours < 1) return 'under 1h';
-    if (diffHours < 24) return `${diffHours}h`;
-    return `${Math.floor(diffHours / 24)}d`;
-  };
-
-  const handleStartAnswer = () => {
-    setShowAnswerRecorder(true);
-  };
-
-  const handleRecorderReady = (data) => {
-    console.log('✅ Answer data from recorder:', data);
-    setAnswerData(data);
-    setShowReviewModal(true);
-  };
-
-  const handleRecorderCancel = () => {
-    setShowAnswerRecorder(false);
-  };
-
-  const handleEdit = () => {
-    setShowReviewModal(false);
-  };
-
-  const handleSubmitSuccess = (result) => {
-    console.log('✅ Answer submitted successfully:', result);
-    
-    setShowReviewModal(false);
-    setShowAnswerRecorder(false);
-    setAnswerData(null);
-    
-    if (onAnswerSubmitted) {
-      onAnswerSubmitted(question.id);
-    }
-    
-    onClose();
-  };
-
-  const getStreamVideoId = (url) => {
-    if (!url) return null;
-    const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
-    return match ? match[1] : null;
-  };
-
-  const getCustomerCode = (url) => {
-    if (!url) return null;
-    const match = url.match(/https:\/\/(customer-[a-zA-Z0-9]+)\.cloudflarestream\.com/);
-    return match ? match[1] : null;
-  };
-
-  const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
-
-  const mediaSegments = question.recording_segments || question.media_asset || [];
-
+const StatCard = ({ label, value, subtitle, trend, icon, stars }) => {
   return (
-    <>
-      {/* Question Detail Modal */}
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div
-          className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
-          onClick={onClose}
-        />
-
-        <div className="flex min-h-full items-center justify-center p-4">
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-gray-900">Question Details</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  {isPending && 'Pending your answer'}
-                  {isAnswered && `Answered ${formatDate(question.answered_at)}`}
-                </p>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
-              >
-                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-6">
-              
-              {/* CSAT Score - Show at top for answered questions */}
-              {isAnswered && answerDetails?.rating > 0 && (
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-gray-900 mb-2">Customer Feedback</h4>
-                      <div className="flex items-center gap-2 mb-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <svg
-                            key={star}
-                            className={`w-5 h-5 ${
-                              star <= answerDetails.rating
-                                ? 'text-amber-400 fill-current'
-                                : 'text-gray-300'
-                            }`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="1"
-                              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                            />
-                          </svg>
-                        ))}
-                        <span className="text-sm font-semibold text-gray-900 ml-1">
-                          {answerDetails.rating}.0 / 5.0
-                        </span>
-                      </div>
-                      {answerDetails.feedback_text && (
-                        <div className="bg-white rounded-lg p-3 mt-3">
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                            "{answerDetails.feedback_text}"
-                          </p>
-                          {answerDetails.allow_testimonial && (
-                            <div className="mt-2 pt-2 border-t border-gray-200">
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Allowed as testimonial</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {answerDetails.feedback_at && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          Received {formatDate(answerDetails.feedback_at)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Delivery Time Badge */}
-              {isAnswered && getDeliveryTime() && (
-                <div className="flex items-center gap-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-xs font-semibold text-green-700">
-                      Delivered in {getDeliveryTime()}
-                    </span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Question Info */}
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{question.title}</h3>
-                    {question.text && (
-                      <p className="text-gray-700 whitespace-pre-wrap">{question.text}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-gray-600">Asked: {formatDate(question.created_at)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-gray-600">Value: {formatPrice(question.price_cents)}</span>
-                  </div>
-                  {question.sla_hours_snapshot && (
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      <span className="text-gray-600">SLA: {question.sla_hours_snapshot}h</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Question Media Assets */}
-              {mediaSegments.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-gray-900">Question Media</h4>
-                  {mediaSegments
-                    .sort((a, b) => a.segment_index - b.segment_index)
-                    .map((segment, index) => {
-                      const isVideo = segment.metadata?.mode === 'video' || 
-                                      segment.metadata?.mode === 'screen' || 
-                                      segment.metadata?.mode === 'screen-camera' ||
-                                      segment.url?.includes('cloudflarestream.com');
-                      const isAudio = segment.metadata?.mode === 'audio' || 
-                                      segment.url?.includes('.webm') || 
-                                      !isVideo;
-                      
-                      const videoId = isVideo ? getStreamVideoId(segment.url) : null;
-                      const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
-                      const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-                      
-                      return (
-                        <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
-                          {mediaSegments.length > 1 && (
-                            <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
-                              <span className="text-xs font-semibold text-gray-300">
-                                Part {index + 1}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
-                              </span>
-                            </div>
-                          )}
-                          
-                          {isVideo && videoId && customerCode ? (
-                            <div className="w-full aspect-video bg-black">
-                              <iframe
-                                src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                                style={{ border: 'none', width: '100%', height: '100%' }}
-                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                                allowFullScreen={true}
-                                title={`Video segment ${index + 1}`}
-                              />
-                            </div>
-                          ) : isAudio && segment.url ? (
-                            <div className="p-4 flex items-center justify-center">
-                              <audio controls className="w-full max-w-md" preload="metadata">
-                                <source src={segment.url} type="audio/webm" />
-                              </audio>
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-
-              {/* Question Attachments */}
-              {(() => {
-                let attachments = [];
-                try {
-                  if (typeof question.attachments === 'string' && question.attachments.trim()) {
-                    attachments = JSON.parse(question.attachments);
-                  } else if (Array.isArray(question.attachments)) {
-                    attachments = question.attachments;
-                  }
-                } catch (e) {
-                  console.error('Failed to parse attachments:', e);
-                  attachments = [];
-                }
-                
-                if (!Array.isArray(attachments) || attachments.length === 0) {
-                  return null;
-                }
-                
-                return (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-gray-900">Question Attachments</h4>
-                    {attachments.map((file, index) => (
-                      <a
-                        key={index}
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
-                      >
-                        <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                        </svg>
-                        <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
-                        <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
-                    ))}
-                  </div>
-                );
-              })()}
-
-              {/* Your Answer Section - Collapsible */}
-              {isAnswered && answerDetails && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                  <button
-                    onClick={() => setShowAnswerSection(!showAnswerSection)}
-                    className="w-full bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-indigo-100 px-5 py-4 flex items-center justify-between hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div className="text-left">
-                        <h4 className="text-gray-900 font-bold text-base">Your Answer</h4>
-                        {!showAnswerSection && answerDetails.media_assets?.length > 0 && (
-                          <p className="text-gray-600 text-xs sm:text-sm">
-                            {answerDetails.media_assets.length} {answerDetails.media_assets.length === 1 ? 'media file' : 'media files'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <svg 
-                      className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${showAnswerSection ? 'rotate-180' : ''} group-hover:text-gray-700`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  <div className={`transition-all duration-300 ease-in-out ${showAnswerSection ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-                    <div className="p-5 space-y-4">
-                      {/* Text Response */}
-                      {answerDetails.text && (
-                        <div className="bg-gray-50 rounded-xl p-4">
-                          <p className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap">{answerDetails.text}</p>
-                        </div>
-                      )}
-
-                      {/* Answer Media Assets */}
-                      {answerDetails.media_assets && answerDetails.media_assets.length > 0 && (
-                        <div className="space-y-3">
-                          {answerDetails.media_assets
-                            .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
-                            .map((segment, arrayIndex) => {
-                              const isVideo = segment.metadata?.mode === 'video' || 
-                                              segment.metadata?.mode === 'screen' || 
-                                              segment.metadata?.mode === 'screen-camera' ||
-                                              segment.url?.includes('cloudflarestream.com');
-                              const isAudio = segment.metadata?.mode === 'audio' || 
-                                              segment.url?.includes('.webm') || 
-                                              !isVideo;
-                              
-                              const videoId = isVideo ? getStreamVideoId(segment.url) : null;
-                              const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
-                              const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-                              
-                              return (
-                                <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
-                                  {answerDetails.media_assets.length > 1 && (
-                                    <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
-                                      <span className="text-xs font-semibold text-gray-300">
-                                        Part {arrayIndex + 1}
-                                      </span>
-                                      <span className="text-xs text-gray-400">
-                                        {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
-                                      </span>
-                                    </div>
-                                  )}
-                                  
-                                  {isVideo && videoId && customerCode ? (
-                                    <div className="w-full aspect-video bg-black">
-                                      <iframe
-                                        src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                                        style={{ border: 'none', width: '100%', height: '100%' }}
-                                        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                                        allowFullScreen={true}
-                                        title={`Answer video ${arrayIndex + 1}`}
-                                      />
-                                    </div>
-                                  ) : isAudio && segment.url ? (
-                                    <div className="p-4 flex items-center justify-center">
-                                      <audio controls className="w-full max-w-md" preload="metadata">
-                                        <source src={segment.url} type="audio/webm" />
-                                      </audio>
-                                    </div>
-                                  ) : null}
-                                </div>
-                              );
-                            })}
-                        </div>
-                      )}
-
-                      {/* Answer Attachments */}
-                      {answerDetails.attachments && answerDetails.attachments.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Answer Attachments</p>
-                          {answerDetails.attachments.map((file, index) => (
-                            <a
-                              key={index}
-                              href={file.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
-                            >
-                              <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                              </svg>
-                              <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
-                              <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                              </svg>
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Loading state for answer */}
-              {isAnswered && isLoadingAnswer && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
-                  <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
-                  <p className="text-sm text-gray-600">Loading answer details...</p>
-                </div>
-              )}
-
-              {/* Answer Button */}
-              {isPending && (
-                <button
-                  onClick={handleStartAnswer}
-                  className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300"
-                >
-                  Answer This Question
-                </button>
-              )}
-
-              {/* Already Answered (no details available) */}
-              {isAnswered && !answerDetails && !isLoadingAnswer && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-green-900">Already Answered</p>
-                      <p className="text-sm text-green-700">
-                        Answered on {formatDate(question.answered_at)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition flex-shrink-0 w-[160px] sm:w-auto">
+      <div className="flex items-start justify-between mb-2">
+        <span className="text-xs font-medium text-gray-600">{label}</span>
+        {icon && (
+          <div className="w-6 h-6 bg-indigo-50 rounded flex items-center justify-center flex-shrink-0">
+            {icon}
           </div>
-        </div>
+        )}
       </div>
-
-      {/* Answer Recorder Modal */}
-      {showAnswerRecorder && (
-        <div className="fixed inset-0 z-[60] overflow-y-auto">
-          <div
-            className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
-            onClick={handleRecorderCancel}
-          />
-
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-              
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Answer Question</h2>
-                  <p className="text-sm text-gray-600 mt-1">Record your answer with video, audio, or screen recording</p>
-                </div>
-                <button
-                  onClick={handleRecorderCancel}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition"
-                >
-                  <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="p-6">
-                <AnswerRecorder
-                  question={question}
-                  onReady={handleRecorderReady}
-                  onCancel={handleRecorderCancel}
-                />
-              </div>
-            </div>
-          </div>
+      
+      <div className="mb-1">
+        <div className="text-xl sm:text-2xl font-black text-gray-900">{value}</div>
+      </div>
+      
+      {subtitle && (
+        <div className="text-xs text-gray-500">{subtitle}</div>
+      )}
+      
+      {trend && (
+        <div className={`inline-flex items-center gap-1 text-xs font-semibold mt-1 ${
+          trend.isPositive ? 'text-green-600' : 'text-red-600'
+        }`}>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {trend.isPositive ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+            )}
+          </svg>
+          {trend.value}
         </div>
       )}
-
-      {/* Answer Review Modal */}
-      <AnswerReviewModal
-        isOpen={showReviewModal}
-        onClose={() => setShowReviewModal(false)}
-        answerData={answerData}
-        question={question}
-        onEdit={handleEdit}
-        onSubmitSuccess={handleSubmitSuccess}
-        userId={userId}
-      />
-    </>
+      
+      {stars && (
+        <div className="flex items-center gap-0.5 mt-1">
+          {[...Array(5)].map((_, i) => (
+            <svg
+              key={i}
+              className={`w-3 h-3 sm:w-4 sm:h-4 ${i < Math.floor(stars) ? 'text-yellow-400' : 'text-gray-300'}`}
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+          ))}
+        </div>
+      )}
+    </div>
   );
-}
+};
 
-export default QuestionDetailModal;
+const StatsSection = ({ allQuestions = [] }) => {
+  // Memoize stats calculation - only recalculate when questions change
+  const stats = useMemo(() => {
+    // Ensure we have an array to work with
+    const questions = Array.isArray(allQuestions) ? allQuestions : [];
+    
+    // Get current date info
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    
+    // Filter answered questions
+    const answeredQuestions = questions.filter(q => q.answered_at && q.answered_at > 0);
+    
+    // Calculate this month's earnings
+    const thisMonthEarnings = answeredQuestions
+      .filter(q => {
+        const answeredDate = new Date(q.answered_at > 4102444800 ? q.answered_at : q.answered_at * 1000);
+        return answeredDate.getMonth() === currentMonth && answeredDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, q) => sum + (q.price_cents || 0), 0);
+    
+    // Calculate last month's earnings for growth calculation
+    const lastMonthEarnings = answeredQuestions
+      .filter(q => {
+        const answeredDate = new Date(q.answered_at > 4102444800 ? q.answered_at : q.answered_at * 1000);
+        return answeredDate.getMonth() === lastMonth && answeredDate.getFullYear() === lastMonthYear;
+      })
+      .reduce((sum, q) => sum + (q.price_cents || 0), 0);
+    
+    // Calculate monthly growth percentage
+    const monthlyGrowth = lastMonthEarnings > 0 
+      ? Math.round(((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings) * 100)
+      : thisMonthEarnings > 0 ? 100 : 0;
+    
+    // Calculate all-time earnings
+    const allTimeEarnings = answeredQuestions.reduce((sum, q) => sum + (q.price_cents || 0), 0);
+    
+    // Total answered count
+    const totalAnswered = answeredQuestions.length;
+    
+    // Calculate average response time in hours
+    let avgResponseTime = 0;
+    if (answeredQuestions.length > 0) {
+      const totalResponseTime = answeredQuestions.reduce((sum, q) => {
+        const createdAt = q.created_at > 4102444800 ? q.created_at : q.created_at * 1000;
+        const answeredAt = q.answered_at > 4102444800 ? q.answered_at : q.answered_at * 1000;
+        const responseTimeHours = (answeredAt - createdAt) / (1000 * 60 * 60); // Convert ms to hours
+        return sum + responseTimeHours;
+      }, 0);
+      avgResponseTime = totalResponseTime / answeredQuestions.length;
+    }
+    
+    // Get target response time from most recent question's SLA (or default to 24)
+    const targetResponseTime = questions.length > 0 && questions[0]?.sla_hours_snapshot 
+      ? questions[0].sla_hours_snapshot 
+      : 24;
+    
+    // Calculate average rating (placeholder - would need rating data from questions)
+    // For now, we'll use a default or calculate from question data if available
+    const avgRating = 4.8; // Default until we have real rating data
+    
+    return {
+      thisMonthEarnings,
+      allTimeEarnings,
+      totalAnswered,
+      avgResponseTime,
+      targetResponseTime,
+      avgRating,
+      monthlyGrowth
+    };
+  }, [allQuestions]);
+
+  const statsData = [
+    {
+      label: "This Month",
+      value: formatCurrency(stats.thisMonthEarnings),
+      trend: {
+        value: `${stats.monthlyGrowth > 0 ? '+' : ''}${stats.monthlyGrowth}%`,
+        isPositive: stats.monthlyGrowth >= 0
+      },
+      icon: (
+        <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
+    },
+    {
+      label: "All Time",
+      value: formatCurrency(stats.allTimeEarnings),
+      subtitle: `${stats.totalAnswered} answered`,
+      icon: (
+        <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
+      )
+    },
+    {
+      label: "Avg Response",
+      value: stats.totalAnswered > 0 ? `${stats.avgResponseTime.toFixed(1)}h` : '—',
+      subtitle: `Target: ${stats.targetResponseTime}h`,
+      icon: (
+        <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
+    },
+    {
+      label: "Avg Rating",
+      value: stats.avgRating.toFixed(1),
+      stars: stats.avgRating,
+      icon: (
+        <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+        </svg>
+      )
+    }
+  ];
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-base font-bold text-gray-900">Performance</h3>
+      
+      {/* Mobile: Horizontal scroll */}
+      <div 
+        className="lg:hidden flex gap-3 overflow-x-auto pb-2 -mx-4 px-4"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {statsData.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
+      </div>
+
+      {/* Desktop: 2x2 grid */}
+      <div className="hidden lg:grid grid-cols-2 gap-3">
+        {statsData.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default StatsSection;
