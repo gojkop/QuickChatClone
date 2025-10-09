@@ -1,10 +1,13 @@
 // client/src/components/common/Navbar.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import apiClient from '@/api';
 import SideMenu from './SideMenu';
 import logo from '@/assets/images/logo.svg';
+
+// ✅ Cache configuration
+const CACHE_DURATION = 30000; // 30 seconds in milliseconds
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,6 +17,12 @@ function Navbar() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // ✅ Caching refs
+  const cacheRef = useRef({
+    pendingCount: null,
+    timestamp: null
+  });
 
   // Handle scroll behavior
   useEffect(() => {
@@ -25,12 +34,55 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // ✅ Helper function to check if cache is valid
+  const isCacheValid = () => {
+    if (!cacheRef.current.timestamp) return false;
+    const timeSinceCache = Date.now() - cacheRef.current.timestamp;
+    return timeSinceCache < CACHE_DURATION;
+  };
+
+  // ✅ Optimized function to fetch pending questions count
+  const fetchPendingCount = async () => {
+    // Check cache first
+    if (isCacheValid()) {
+      console.log('📦 Using cached pending count:', cacheRef.current.pendingCount);
+      return cacheRef.current.pendingCount;
+    }
+
+    try {
+      // ✅ OPTIMIZATION: Use query parameters to filter on backend
+      // This returns only pending questions instead of all questions
+      const response = await apiClient.get('/me/questions?status=paid');
+      const questions = response.data || [];
+      
+      // Filter for questions that haven't been answered yet
+      const pendingCount = questions.filter(q => !q.answered_at).length;
+      
+      // Update cache
+      cacheRef.current = {
+        pendingCount,
+        timestamp: Date.now()
+      };
+      
+      console.log('🔄 Fetched and cached pending count:', pendingCount);
+      return pendingCount;
+    } catch (err) {
+      console.error('Failed to fetch pending questions count:', err);
+      return 0;
+    }
+  };
+
   // Fetch user profile when authenticated
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!isAuthenticated) {
         setUserProfile(null);
         setIsLoadingProfile(false);
+        // Clear cache when user logs out
+        cacheRef.current = {
+          pendingCount: null,
+          timestamp: null
+        };
         return;
       }
 
@@ -43,22 +95,14 @@ function Navbar() {
         
         const avatarUrl = expertData.avatar_url || null;
         
-        // Fetch pending questions count
-        let pendingCount = 0;
-          try {
-            const questionsResponse = await apiClient.get('/me/questions');
-            const questions = questionsResponse.data || [];
-            // Count questions that haven't been answered yet
-            pendingCount = questions.filter(q => q.status === 'paid' && !q.answered_at).length;
-          } catch (err) {
-            console.error('Failed to fetch questions count:', err);
-          }
+        // ✅ Fetch pending count with caching
+        const pendingCount = await fetchPendingCount();
         
         setUserProfile({
           name: userData.name || 'Expert',
           email: userData.email,
           avatar_url: avatarUrl,
-          handle: expertData.handle || null,  // ← ADD THIS LINE
+          handle: expertData.handle || null,
           pendingQuestions: pendingCount,
         });
       } catch (err) {
@@ -79,6 +123,14 @@ function Navbar() {
 
     fetchUserProfile();
   }, [isAuthenticated]);
+
+  // ✅ Optional: Invalidate cache when component unmounts or user navigates away
+  useEffect(() => {
+    return () => {
+      // Optional: Clear cache on unmount if desired
+      // cacheRef.current = { pendingCount: null, timestamp: null };
+    };
+  }, []);
   
   const UserAvatar = ({ size = 28, avatarUrl }) => {
     const [imageError, setImageError] = useState(false);
