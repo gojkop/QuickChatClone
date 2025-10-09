@@ -1,5 +1,5 @@
 // src/components/dashboard/AnswerReviewModal.jsx
-// FIXED - Safe handling of attachments and files arrays
+// FIXED - Removed duplicate button, better validation
 import React, { useState } from 'react';
 import { useAnswerUpload } from '@/hooks/useAnswerUpload';
 import AnswerSubmittedModal from './AnswerSubmittedModal';
@@ -22,6 +22,12 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
     // Validate userId
     if (!userId) {
       alert('Error: User ID is required. Please make sure you are logged in.');
+      return;
+    }
+
+    // ✅ NEW: Validate that we have either text or recording
+    if (!hasText && !hasRecording) {
+      alert('Please add either a written response or a recording before submitting.');
       return;
     }
 
@@ -79,6 +85,9 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
   
   const recordingDuration = answerData.recordingDuration || 0;
   const isDurationValid = recordingDuration > 0;
+
+  // ✅ NEW: Check if answer is valid for submission
+  const isValidAnswer = hasText || hasRecording;
 
   // Get review URL from submitted answer
   const reviewUrl = submittedAnswer?.review_url;
@@ -191,6 +200,23 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
                 <p className="font-semibold text-gray-900">{question.title}</p>
               </div>
 
+              {/* ✅ NEW: Validation Warning */}
+              {!isValidAnswer && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex gap-3">
+                    <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <p className="font-semibold text-amber-900">Answer Required</p>
+                      <p className="text-sm text-amber-700 mt-1">
+                        Please add at least a written response or a recording before submitting.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Answer Summary */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Answer Summary</h3>
@@ -299,17 +325,7 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
                 </div>
               </div>
 
-              {/* Edit Button */}
-              <button
-                onClick={onEdit}
-                disabled={answerUpload.uploading}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                <span>Go Back & Edit</span>
-              </button>
+              {/* ✅ REMOVED: Duplicate "Go Back & Edit" button that was here */}
 
               {/* Important Notice */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -342,8 +358,9 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={answerUpload.uploading || (!hasRecording && !hasText)}
+                  disabled={answerUpload.uploading || !isValidAnswer}
                   className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={!isValidAnswer ? 'Add a written response or recording to submit' : ''}
                 >
                   {answerUpload.uploading ? 'Submitting...' : 'Submit Answer'}
                 </button>
