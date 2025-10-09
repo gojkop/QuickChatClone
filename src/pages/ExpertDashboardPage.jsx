@@ -56,16 +56,16 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
         <button
           ref={buttonRef}
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
           type="button"
         >
-          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
           </svg>
           <span className="hidden sm:inline">Sort by:</span>
-          <span className="font-semibold">{currentSort.icon}</span>
+          <span className="text-sm">{currentSort.icon}</span>
           <svg 
-            className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+            className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -76,24 +76,24 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
 
         {isOpen && (
           <div 
-            className="absolute right-0 mt-2 w-64 rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50"
+            className="absolute right-0 mt-1.5 w-52 rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50"
           >
             <div className="py-1">
               {sortOptions.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => handleSelect(option.value)}
-                  className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition ${
+                  className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition ${
                     sortBy === option.value
                       ? 'bg-indigo-50 text-indigo-700 font-semibold'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                   type="button"
                 >
-                  <span className="text-lg">{option.icon}</span>
+                  <span className="text-sm">{option.icon}</span>
                   <span className="flex-1">{option.label}</span>
                   {sortBy === option.value && (
-                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
