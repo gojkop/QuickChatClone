@@ -51,9 +51,16 @@ function AnswerReviewPage() {
             created_at: rawData.answer[0].created_at,
             sent_at: rawData.answer[0].sent_at,
             text: rawData.answer[0].text_response,
-            media_url: rawData.answer[0].media_url,
-            media_duration: rawData.answer[0].media_duration,
-            media_type: rawData.answer[0].media_type,
+            // Get media from media_asset_answer array
+            media_url: rawData.media_asset_answer && rawData.media_asset_answer.length > 0 
+              ? rawData.media_asset_answer[0].url 
+              : null,
+            media_duration: rawData.media_asset_answer && rawData.media_asset_answer.length > 0 
+              ? rawData.media_asset_answer[0].duration_sec 
+              : null,
+            media_type: rawData.media_asset_answer && rawData.media_asset_answer.length > 0 
+              ? (rawData.media_asset_answer[0].metadata?.mode || 'video')
+              : null,
           } : null,
           expert_profile: {
             ...rawData.expert_profile,
@@ -77,6 +84,13 @@ function AnswerReviewPage() {
         }
         
         console.log('✅ Transformed data:', transformedData);
+        console.log('🎥 Answer media details:', {
+          hasAnswer: !!transformedData.answer,
+          media_url: transformedData.answer?.media_url,
+          media_duration: transformedData.answer?.media_duration,
+          media_type: transformedData.answer?.media_type,
+          text: transformedData.answer?.text
+        });
         console.log('🔗 Expert handle:', transformedData.expert_profile?.handle);
         setData(transformedData);
         
