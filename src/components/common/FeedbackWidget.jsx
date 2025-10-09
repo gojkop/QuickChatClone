@@ -21,7 +21,6 @@ function FeedbackWidget() {
     setIsSubmitting(true);
 
     try {
-      // ✅ Updated to match Xano schema
       const response = await fetch('https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/feedback', {
         method: 'POST',
         headers: {
@@ -29,11 +28,11 @@ function FeedbackWidget() {
         },
         body: JSON.stringify({
           page: location.pathname,
-          message: feedback.trim(),  // ✅ Changed from 'feedback' to 'message'
+          message: feedback.trim(),
           email: email.trim() || null,
           rating: rating || null,
-          submitted_at: Date.now(),  // ✅ Changed from 'timestamp'
-          user_agent: navigator.userAgent,  // ✅ Changed from 'userAgent' to 'user_agent'
+          submitted_at: Date.now(),
+          user_agent: navigator.userAgent,
         }),
       });
 
@@ -46,7 +45,7 @@ function FeedbackWidget() {
         setFeedback('');
         setEmail('');
         setRating(0);
-      }, 2000);
+      }, 3500); // ✅ Increased timeout to 3.5s to enjoy the thank you
 
     } catch (error) {
       console.error('Feedback submission failed:', error);
@@ -103,14 +102,56 @@ function FeedbackWidget() {
 
           <div className="p-5">
             {submitted ? (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
+              // ✅ IMPROVED SUCCESS STATE WITH PHOTO
+              <div className="text-center py-6">
+                {/* Photo */}
+                <div className="mb-4 flex justify-center">
+                  <div className="relative">
+                    <img 
+                      src="/big.png" 
+                      alt="Team" 
+                      className="w-24 h-24 rounded-full object-cover border-4 border-green-100 shadow-lg"
+                      onError={(e) => {
+                        // Fallback if image doesn't load
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                    {/* Fallback icon if image fails */}
+                    <div className="w-24 h-24 rounded-full bg-green-100 border-4 border-green-200 hidden items-center justify-center shadow-lg">
+                      <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    
+                    {/* Success badge */}
+                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-4 border-white shadow-md">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-                <h4 className="text-lg font-bold text-gray-900 mb-2">Thanks!</h4>
-                <p className="text-sm text-gray-600">Your feedback helps us improve.</p>
+                
+                {/* Thank you message */}
+                <h4 className="text-xl font-black text-gray-900 mb-2">
+                  Thank You! 🙏
+                </h4>
+                <p className="text-sm text-gray-700 leading-relaxed mb-1">
+                  <span className="font-bold text-indigo-600">Bogdan & Gojko</span> appreciate your feedback!
+                </p>
+                <p className="text-xs text-gray-500">
+                  Your input helps us build something amazing together.
+                </p>
+                
+                {/* Optional: Decorative element */}
+                <div className="mt-4 flex justify-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-yellow-400 animate-bounce" style={{ animationDelay: `${i * 0.1}s` }}>
+                      ⭐
+                    </span>
+                  ))}
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
