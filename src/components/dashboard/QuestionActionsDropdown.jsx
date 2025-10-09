@@ -6,7 +6,6 @@ import { Toast, useToast } from '@/components/common/Toast';
 function QuestionActionsDropdown({ question, onAction }) {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const { toast, showToast, hideToast } = useToast();
@@ -22,23 +21,15 @@ function QuestionActionsDropdown({ question, onAction }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // ✅ FIXED: Better upward detection
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const buttonRect = buttonRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - buttonRect.bottom;
-      const spaceAbove = buttonRect.top;
       
-      // More aggressive: open upward if we're in the bottom 40% of viewport
-      // OR if there's less than 350px space below
-      const isInBottomArea = buttonRect.bottom > viewportHeight * 0.6;
-      const hasInsufficientSpaceBelow = spaceBelow < 350;
-      
-      if ((isInBottomArea || hasInsufficientSpaceBelow) && spaceAbove > 200) {
-        setOpenUpward(true);
-      } else {
-        setOpenUpward(false);
-      }
+      // Open upward if less than 300px space below
+      setOpenUpward(spaceBelow < 300);
     }
   }, [isOpen]);
 
@@ -75,12 +66,20 @@ function QuestionActionsDropdown({ question, onAction }) {
 
         {isOpen && (
           <div 
-            className={`absolute right-0 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 ${
-              openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+            className={`fixed rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 ${
+              openUpward ? 'mb-2' : 'mt-2'
             }`}
+            style={{
+              // ✅ FIXED: Use fixed positioning with calculated position
+              top: openUpward ? 'auto' : `${buttonRef.current.getBoundingClientRect().bottom + window.scrollY + 8}px`,
+              bottom: openUpward ? `${window.innerHeight - buttonRef.current.getBoundingClientRect().top + window.scrollY + 8}px` : 'auto',
+              right: `${window.innerWidth - buttonRef.current.getBoundingClientRect().right}px`,
+              width: '224px', // w-56
+              zIndex: 9999,
+            }}
           >
             <div className="py-1">
-              {/* NEW: View Question - Top Priority Action */}
+              {/* View Question - Top Priority Action */}
               <button
                 onClick={() => handleAction('view')}
                 className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left"
@@ -94,7 +93,7 @@ function QuestionActionsDropdown({ question, onAction }) {
 
               <div className="border-t border-gray-200 my-1"></div>
 
-              {/* UPDATED: Schedule Work Time - Consistent Simple Style */}
+              {/* Schedule Work Time */}
               <button
                 onClick={handleScheduleClick}
                 className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left"
@@ -107,7 +106,7 @@ function QuestionActionsDropdown({ question, onAction }) {
 
               {isPending && <div className="border-t border-gray-200 my-1"></div>}
 
-              {/* Existing actions */}
+              {/* Refund & Decline */}
               {isPending && (
                 <button
                   onClick={() => handleAction('refund')}
@@ -122,14 +121,15 @@ function QuestionActionsDropdown({ question, onAction }) {
 
               {isPending && <div className="border-t border-gray-200 my-1"></div>}
 
+              {/* ✅ UPDATED: Changed from Delete to Hide */}
               <button
-                onClick={() => handleAction('delete')}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 text-left"
+                onClick={() => handleAction('hide')}
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                 </svg>
-                <span>Delete Question</span>
+                <span>Hide Question</span>
               </button>
             </div>
           </div>

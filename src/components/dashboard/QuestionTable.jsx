@@ -96,9 +96,9 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
       case 'block':
         alert('Asker blocked');
         break;
-      case 'delete':
-        if (confirm('Are you sure you want to delete this question?')) {
-          alert('Question deleted (not implemented yet)');
+      case 'hide':
+        if (confirm('Are you sure you want to hide this question?')) {
+          alert('Question hidden (not implemented yet)');
         }
         break;
       default:
