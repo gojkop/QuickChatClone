@@ -1,6 +1,4 @@
 // api/upload/stream.js
-// Upload video/audio to Cloudflare Stream
-
 const formidable = require('formidable');
 const fs = require('fs').promises;
 const FormData = require('form-data');
@@ -12,7 +10,7 @@ module.exports = async (req, res) => {
   }
 
   const form = formidable({ 
-    maxFileSize: 200 * 1024 * 1024, // 200MB for video
+    maxFileSize: 200 * 1024 * 1024,
     keepExtensions: true 
   });
 
@@ -28,7 +26,6 @@ module.exports = async (req, res) => {
     }
 
     try {
-      // Create form data for Cloudflare Stream
       const formData = new FormData();
       const fileStream = await fs.readFile(file.filepath);
       
@@ -48,6 +45,16 @@ module.exports = async (req, res) => {
 
       formData.append('meta', JSON.stringify(metadata));
 
+      // ✅ ADD THIS: Set allowed origins for CORS
+      formData.append('allowedOrigins', JSON.stringify([
+        'https://mindpick.me',
+        'http://localhost:3000',
+        'http://localhost:5173'
+      ]));
+
+      // ✅ ADD THIS: Disable signed URLs requirement
+      formData.append('requireSignedURLs', 'false');
+
       // Upload to Cloudflare Stream
       const response = await axios.post(
         `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/stream`,
@@ -62,7 +69,6 @@ module.exports = async (req, res) => {
         }
       );
 
-      // Clean up temp file
       await fs.unlink(file.filepath);
 
       if (!response.data.success) {
