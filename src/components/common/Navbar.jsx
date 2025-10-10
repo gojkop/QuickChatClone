@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import apiClient from '@/api';
 import SideMenu from './SideMenu';
-import logo from '@/assets/images/logo.svg';
+import logo from '@/assets/images/logo-mindpick.svg';
 
 // ✅ Cache configuration
 const CACHE_DURATION = 30000; // 30 seconds in milliseconds
@@ -227,11 +227,11 @@ function Navbar() {
               </button>
               
               <Link to="/" className="flex items-center">
-                <img 
-                  src={logo} 
-                  alt="QuickChat" 
-                  className="h-9 w-auto transition-transform duration-200 hover:scale-105" 
-                />
+            <img
+              src={logo}
+              alt="mindPick"
+              className="h-9 w-auto transition-transform duration-200 hover:scale-105"
+            />
               </Link>
             </div>
 

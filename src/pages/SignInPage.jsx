@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
 import { authService } from "../api";
-import logo from "@/assets/images/logo.svg";
+import logo from "@/assets/images/logo-mindpick.svg";
 
 export default function SignInPage() {
   const navigate = useNavigate();
@@ -100,7 +100,7 @@ export default function SignInPage() {
       <header className="absolute top-0 left-0 right-0 px-4 py-6 md:px-8 z-10">
         <div className="container mx-auto max-w-6xl">
           <Link to="/">
-            <img src={logo} alt="QuickChat" className="h-8 md:h-10 w-auto" />
+            <img src={logo} alt="mindPick" className="h-8 md:h-10 w-auto" />
           </Link>
         </div>
       </header>
@@ -111,7 +111,7 @@ export default function SignInPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
-              Sign in to QuickChat
+              Sign in to mindPick
             </h1>
             <p className="text-gray-600">
               Access your expert dashboard

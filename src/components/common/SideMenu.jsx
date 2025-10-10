@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import logo from '@/assets/images/logo.svg';
+import logo from '@/assets/images/logo-mindpick.svg';
 
 function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
   const { isAuthenticated, logout } = useAuth();
@@ -86,7 +86,7 @@ function SideMenu({ isOpen, onClose, userInfo, isLoadingProfile }) {
         
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <Link to="/" onClick={onClose} className="flex items-center">
-            <img src={logo} alt="QuickChat" className="h-8 w-auto" />
+            <img src={logo} alt="mindPick" className="h-8 w-auto" />
           </Link>
           <button
             onClick={onClose}

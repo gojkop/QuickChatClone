@@ -1,7 +1,7 @@
 // src/pages/AnswerReviewPage.jsx - Complete with Feedback Submission & Display
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import logo from '@/assets/images/logo.svg';
+import logo from '@/assets/images/logo-mindpick.svg';
 
 const XANO_BASE_URL = import.meta.env.VITE_XANO_BASE_URL || 'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L';
 
@@ -326,10 +326,10 @@ function AnswerReviewPage() {
         <div className="container mx-auto px-4 sm:px-6 py-4 max-w-4xl">
           <div className="flex items-center justify-between">
             <a href="/" className="flex items-center group">
-              <img 
-                src={logo} 
-                alt="QuickChat" 
-                className="h-8 w-auto transition-transform duration-200 group-hover:scale-105" 
+              <img
+                src={logo}
+                alt="mindPick"
+                className="h-8 w-auto transition-transform duration-200 group-hover:scale-105"
               />
             </a>
             
@@ -960,7 +960,7 @@ function AnswerReviewPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span>Powered by <span className="font-semibold">QuickChat</span></span>
+            <span>Powered by <span className="font-semibold">mindPick</span></span>
             <svg className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
