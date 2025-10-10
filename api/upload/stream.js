@@ -34,7 +34,6 @@ module.exports = async (req, res) => {
         contentType: file.mimetype,
       });
 
-      // Add metadata
       const metadata = {
         name: fields.title || 'QuickChat Recording',
       };
@@ -45,17 +44,16 @@ module.exports = async (req, res) => {
 
       formData.append('meta', JSON.stringify(metadata));
 
-      // ✅ ADD THIS: Set allowed origins for CORS
+      // ✅ Add allowed origins - NO PROTOCOL!
       formData.append('allowedOrigins', JSON.stringify([
-        'https://mindpick.me',
-        'http://localhost:3000',
-        'http://localhost:5173'
+        'mindpick.me',
+        'localhost:3000',
+        'localhost:5173',
+        '*.vercel.app'
       ]));
 
-      // ✅ ADD THIS: Disable signed URLs requirement
       formData.append('requireSignedURLs', 'false');
 
-      // Upload to Cloudflare Stream
       const response = await axios.post(
         `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/stream`,
         formData,
