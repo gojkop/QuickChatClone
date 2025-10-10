@@ -14,9 +14,9 @@
     font-weight="900" 
     letter-spacing="-2">
     
-    <tspan fill="#1F2937">QUICK</tspan>
+    <tspan fill="#1F2937">mind</tspan>
     
-    <tspan dx="-18" fill="url(#chatGrad)">CHAT</tspan>
+    <tspan dx="-10" fill="url(#chatGrad)">Pick</tspan>
   </text>
   
   <text 
