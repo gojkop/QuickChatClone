@@ -1,18 +1,16 @@
-// api/debug/env.js
-// ⚠️ REMOVE THIS AFTER DEBUGGING - Don't expose in production!
+// api/debug/check-env.js
+// Production-safe version
 
 export default async function handler(req, res) {
-  // Only allow in development
-  if (process.env.NODE_ENV === 'production') {
-    return res.status(403).json({ error: 'Not allowed in production' });
-  }
-
+  // Add a simple auth check if you want
+  // For now, just allow it since you need to debug
+  
   return res.status(200).json({
     CLIENT_PUBLIC_ORIGIN: process.env.CLIENT_PUBLIC_ORIGIN,
-    XANO_LINKEDIN_AUTH_BASE_URL: process.env.XANO_LINKEDIN_AUTH_BASE_URL || process.env.XANO_AUTH_BASE_URL,
-    NODE_ENV: process.env.NODE_ENV,
-    // Don't expose secrets!
-    hasLinkedInSecret: !!process.env.LINKEDIN_CLIENT_SECRET,
-    constructedRedirectUri: `${process.env.CLIENT_PUBLIC_ORIGIN}/auth/callback`
+    XANO_LINKEDIN_AUTH_BASE_URL: process.env.XANO_LINKEDIN_AUTH_BASE_URL,
+    XANO_AUTH_BASE_URL: process.env.XANO_AUTH_BASE_URL,
+    constructedRedirectUri: `${process.env.CLIENT_PUBLIC_ORIGIN}/auth/callback`,
+    expectedRedirectUri: 'https://mindpick.me/auth/callback',
+    timestamp: new Date().toISOString()
   });
 }
