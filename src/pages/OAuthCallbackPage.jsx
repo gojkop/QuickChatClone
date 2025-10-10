@@ -32,27 +32,17 @@ export default function OAuthCallbackPage() {
       try {
         console.log('📡 Calling OAuth continue endpoint...');
 
-        // Try LinkedIn OAuth first (primary option), then Google as fallback
+        // Using Google OAuth (LinkedIn is disabled due to errors with LinkedIn's OAuth page)
         let oauthResponse;
-        let providerUsed = 'unknown';
+        let providerUsed = 'Google';
 
-        // Try LinkedIn OAuth first
         try {
-          console.log('📡 Trying LinkedIn OAuth continue...');
-          oauthResponse = await AuthAPI.continueLinkedInOAuth({ code, state });
-          providerUsed = 'LinkedIn';
-          console.log('✅ LinkedIn OAuth response received');
-        } catch (linkedinError) {
-          console.log('❌ LinkedIn OAuth failed, trying Google...', linkedinError.message);
-          try {
-            console.log('📡 Trying Google OAuth continue...');
-            oauthResponse = await AuthAPI.continueGoogleOAuth({ code, state });
-            providerUsed = 'Google';
-            console.log('✅ Google OAuth response received');
-          } catch (googleError) {
-            console.error('❌ Both LinkedIn and Google OAuth failed');
-            throw new Error(`OAuth continue failed for all providers: LinkedIn: ${linkedinError.message}, Google: ${googleError.message}`);
-          }
+          console.log('📡 Trying Google OAuth continue...');
+          oauthResponse = await AuthAPI.continueGoogleOAuth({ code, state });
+          console.log('✅ Google OAuth response received');
+        } catch (e) {
+          console.error('❌ Google OAuth failed');
+          throw e;
         }
 
         console.log(`${providerUsed} OAuth response received:`, {
