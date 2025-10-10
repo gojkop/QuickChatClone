@@ -62,13 +62,13 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="relative bg-surface rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-            <h2 className="text-2xl font-bold text-gray-900">Review Your Invitation</h2>
+          <div className="sticky top-0 bg-surface border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+            <h2 className="text-2xl font-bold text-ink">Review Your Invitation</h2>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              className="p-2 text-subtext hover:text-ink hover:bg-canvas rounded-lg transition"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -79,21 +79,21 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
           {/* Content */}
           <div className="p-6 space-y-6">
             {/* Expert & Price Info Card */}
-            <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-5">
+            <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm text-indigo-600 font-semibold mb-1">Inviting to mindPick</p>
-                  <p className="text-2xl font-bold text-indigo-900">{expertHandle}</p>
+                  <p className="text-sm text-primary font-semibold mb-1">Inviting to mindPick</p>
+                  <p className="text-2xl font-bold text-ink">{expertHandle}</p>
                 </div>
 
                 {priceProposal && (
                   <div className="text-right">
-                    <div className="text-xs text-gray-600 mb-1">Price proposal</div>
-                    <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-indigo-200 shadow-sm">
+                    <div className="text-xs text-subtext mb-1">Price proposal</div>
+                    <div className="inline-flex items-center gap-2 bg-surface/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-primary/20 shadow-sm">
                       {priceProposal.type === 'expert-decides' ? (
-                        <span className="font-bold text-gray-900">Expert decides</span>
+                        <span className="font-bold text-ink">Expert decides</span>
                       ) : (
-                        <span className="font-bold text-gray-900">€{priceProposal.amount}</span>
+                        <span className="font-bold text-ink">€{priceProposal.amount}</span>
                       )}
                     </div>
                   </div>
@@ -103,38 +103,38 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
 
             {/* Question Summary Block */}
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-3">Your Question Summary</label>
-              <div className="space-y-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <label className="block text-sm font-semibold text-ink mb-3">Your Question Summary</label>
+              <div className="space-y-3 bg-canvas border border-gray-200 rounded-lg p-4">
 
                 {/* Title */}
                 <div className="flex items-start">
-                  <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">Title</span>
-                  <p className="text-gray-900 text-sm font-medium">{questionData.title}</p>
+                  <span className="w-28 text-xs font-semibold text-subtext uppercase flex-shrink-0">Title</span>
+                  <p className="text-ink text-sm font-medium">{questionData.title}</p>
                 </div>
 
                 {/* Recording Segments - Show all segments */}
                 {hasRecording && (
                   <div className="flex items-start">
-                    <span className="w-28 text-xs font-semibold text-gray-500 uppercase flex-shrink-0">
+                    <span className="w-28 text-xs font-semibold text-subtext uppercase flex-shrink-0">
                       Recording
                     </span>
                     <div className="flex-1">
                       <div className="space-y-2">
                         {recordingSegments.map((segment, index) => (
-                          <div key={segment.uid || index} className="flex items-center gap-2 p-2 bg-white rounded border border-gray-200">
+                          <div key={segment.uid || index} className="flex items-center gap-2 p-2 bg-surface rounded border border-gray-200">
                             {/* Segment number */}
-                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
                               {index + 1}
                             </div>
                             
                             {/* Segment info */}
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-semibold text-gray-900">
+                              <div className="text-xs font-semibold text-ink">
                                 {segment.mode === 'video' ? '📹 Video' : 
                                  segment.mode === 'audio' ? '🎤 Audio' : 
                                  segment.mode === 'screen' ? '💻 Screen' : 'Recording'} Segment
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-subtext">
                                 {formatTime(segment.duration || 0)} • {formatBytes(segment.size || 0)}
                               </div>
                             </div>
@@ -151,11 +151,11 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                       </div>
 
                       {/* Total duration summary */}
-                      <div className="mt-2 flex items-center gap-2 text-xs text-gray-600 bg-indigo-50 px-3 py-2 rounded">
-                        <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="mt-2 flex items-center gap-2 text-xs text-subtext bg-primary/10 px-3 py-2 rounded">
+                        <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="font-semibold text-indigo-900">
+                        <span className="font-semibold text-ink">
                           Total: {recordingSegments.length} segment{recordingSegments.length > 1 ? 's' : ''} • {formatTime(totalDuration)}
                         </span>
                       </div>
@@ -172,7 +172,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                        <span>Added</span>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-500">Not Added</span>
+                    <span className="text-sm text-subtext">Not Added</span>
                   )}
                 </div>
 
@@ -183,20 +183,20 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                     <div className="flex-1">
                       <div className="space-y-2">
                         {attachments.map((file, index) => (
-                          <div key={file.url || index} className="flex items-center gap-2 p-2 bg-white rounded border border-gray-200">
+                          <div key={file.url || index} className="flex items-center gap-2 p-2 bg-surface rounded border border-gray-200">
                             {/* File icon */}
                             <div className="flex-shrink-0">
-                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-5 h-5 text-subtext" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                             </div>
 
                             {/* File info */}
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-semibold text-gray-900 truncate">
+                              <div className="text-xs font-semibold text-ink truncate">
                                 {file.name}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-subtext">
                                 {formatBytes(file.size || 0)}
                               </div>
                             </div>
@@ -246,7 +246,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
             {/* Edit Button */}
             <button
               onClick={onEdit}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+              className="btn btn-secondary w-full flex items-center justify-center gap-2 py-3 px-4"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -256,7 +256,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
 
             {/* Delivery Preview Section */}
             <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">How They'll Receive the Invitation</h3>
+              <h3 className="text-lg font-bold text-ink mb-4">How They'll Receive the Invitation</h3>
               <DeliveryPreview
                 expertInfo={expertInfo}
                 priceProposal={priceProposal}
@@ -265,10 +265,10 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
 
             {/* Contact Information Section */}
             <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Your Contact Information</h3>
+              <h3 className="text-lg font-bold text-ink mb-4">Your Contact Information</h3>
               {/* Email (Always required for asker notifications) */}
               <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-semibold text-subtext mb-2">
                   Your Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -276,17 +276,17 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary focus:outline-none"
                   placeholder="your.email@example.com"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">We'll notify you when they respond.</p>
+                <p className="text-xs text-subtext mt-1">We'll notify you when they respond.</p>
               </div>
 
               {/* Name Fields (Optional) */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                  <label htmlFor="firstName" className="block text-sm font-semibold text-subtext mb-2">First Name</label>
                   <input
                     type="text"
                     id="firstName"
@@ -296,7 +296,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
                   />
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                  <label htmlFor="lastName" className="block text-sm font-semibold text-subtext mb-2">Last Name</label>
                   <input
                     type="text"
                     id="lastName"
@@ -310,11 +310,11 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 rounded-b-2xl">
+          <div className="sticky bottom-0 bg-surface border-t border-gray-200 px-6 py-4 rounded-b-2xl">
             <button
               onClick={handleSend}
               disabled={isSubmitting || !email}
-              className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg text-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary w-full flex items-center justify-center gap-2 px-8 py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span>{isSubmitting ? 'Sending...' : 'Send Invitation'}</span>
             </button>
