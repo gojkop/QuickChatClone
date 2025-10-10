@@ -21,12 +21,13 @@ export default function SignInPage() {
     setLoading(true);
     try {
       sessionStorage.setItem("qc_auth_in_progress", "1");
+      localStorage.setItem('oauth_provider', 'google');
       const { authUrl } = await AuthAPI.initGoogleOAuth();
       if (!authUrl) throw new Error("No authUrl returned from init endpoint.");
       window.location.assign(authUrl);
     } catch (e) {
       console.error("Google init failed", e);
-      
+
       // More specific error messages
       if (e.response?.status === 500) {
         setError("Server error. Please check if Google OAuth is configured correctly in your backend environment variables.");
@@ -37,7 +38,7 @@ export default function SignInPage() {
       } else {
         setError("Unable to connect to Google. Please try again or contact support.");
       }
-      
+
       setLoading(false);
       sessionStorage.removeItem("qc_auth_in_progress");
     }
@@ -48,6 +49,7 @@ export default function SignInPage() {
     setLoading(true);
     try {
       sessionStorage.setItem("qc_auth_in_progress", "1");
+      localStorage.setItem('oauth_provider', 'linkedin');
       const { authUrl } = await AuthAPI.initLinkedInOAuth();
       if (!authUrl) throw new Error("No authUrl returned from LinkedIn init endpoint.");
       window.location.assign(authUrl);

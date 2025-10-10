@@ -50,52 +50,25 @@ export default function OAuthCallbackPage() {
         // ⭐ DETECT WHICH PROVIDER TO USE
         const provider = localStorage.getItem('oauth_provider') || 'linkedin';
         localStorage.removeItem('oauth_provider'); // Clean up
-        
+
         console.log(`🔍 Detected provider: ${provider}`);
 
         let oauthResponse;
         let providerUsed = '';
 
-        // ⭐ CALL THE CORRECT ENDPOINT BASED ON PROVIDER
+        // ⭐ CALL THE CORRECT ENDPOINT BASED ON PROVIDER (NO FALLBACK)
         if (provider === 'linkedin') {
-          try {
-            console.log('📡 Trying LinkedIn OAuth continue...');
-            oauthResponse = await AuthAPI.continueLinkedInOAuth({ code, state });
-            providerUsed = 'LinkedIn';
-            console.log('✅ LinkedIn OAuth response received');
-          } catch (linkedInError) {
-            console.error('❌ LinkedIn OAuth failed:', linkedInError);
-            // If LinkedIn fails, try Google as fallback
-            console.log('⚠️ Falling back to Google OAuth...');
-            try {
-              oauthResponse = await AuthAPI.continueGoogleOAuth({ code, state });
-              providerUsed = 'Google';
-              console.log('✅ Google OAuth response received (fallback)');
-            } catch (googleError) {
-              console.error('❌ Google OAuth also failed:', googleError);
-              throw linkedInError; // Throw original error
-            }
-          }
+          console.log('📡 Calling LinkedIn OAuth continue...');
+          oauthResponse = await AuthAPI.continueLinkedInOAuth({ code, state });
+          providerUsed = 'LinkedIn';
+          console.log('✅ LinkedIn OAuth response received');
+        } else if (provider === 'google') {
+          console.log('📡 Calling Google OAuth continue...');
+          oauthResponse = await AuthAPI.continueGoogleOAuth({ code, state });
+          providerUsed = 'Google';
+          console.log('✅ Google OAuth response received');
         } else {
-          // provider === 'google'
-          try {
-            console.log('📡 Trying Google OAuth continue...');
-            oauthResponse = await AuthAPI.continueGoogleOAuth({ code, state });
-            providerUsed = 'Google';
-            console.log('✅ Google OAuth response received');
-          } catch (googleError) {
-            console.error('❌ Google OAuth failed:', googleError);
-            // Try LinkedIn as fallback
-            console.log('⚠️ Falling back to LinkedIn OAuth...');
-            try {
-              oauthResponse = await AuthAPI.continueLinkedInOAuth({ code, state });
-              providerUsed = 'LinkedIn';
-              console.log('✅ LinkedIn OAuth response received (fallback)');
-            } catch (linkedInError) {
-              console.error('❌ LinkedIn OAuth also failed:', linkedInError);
-              throw googleError; // Throw original error
-            }
-          }
+          throw new Error(`Unknown OAuth provider: ${provider}`);
         }
 
         console.log(`${providerUsed} OAuth response received:`, {
