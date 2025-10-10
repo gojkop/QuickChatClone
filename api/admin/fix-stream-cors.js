@@ -8,21 +8,16 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  // Get pagination parameters
   const limit = parseInt(req.query.limit) || 10;
   const page = parseInt(req.query.page) || 1;
 
   const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
   const CLOUDFLARE_STREAM_API_TOKEN = process.env.CLOUDFLARE_STREAM_API_TOKEN;
 
-  const allowedOrigins = [
-    'https://mindpick.me',
-    'http://localhost:3000',
-    'http://localhost:5173'
-  ];
+  // ✅ Correct format for Cloudflare Stream
+  const allowedOrigins = ['https://mindpick.me', 'http://localhost:3000', 'http://localhost:5173'];
 
   try {
-    // Get all videos
     const listResponse = await axios.get(
       `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`,
       {
@@ -37,8 +32,6 @@ export default async function handler(req, res) {
     }
 
     const allVideos = listResponse.data.result;
-    
-    // Process only a batch
     const startIdx = (page - 1) * limit;
     const endIdx = startIdx + limit;
     const videosToProcess = allVideos.slice(startIdx, endIdx);
@@ -47,11 +40,12 @@ export default async function handler(req, res) {
 
     for (const video of videosToProcess) {
       try {
-        await axios.post(
+        // ✅ Use PATCH method and correct payload format
+        const updateResponse = await axios.patch(
           `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${video.uid}`,
           {
-            allowedOrigins: allowedOrigins,
-            requireSignedURLs: false
+            allowedOrigins: allowedOrigins,  // Array of strings
+            requireSignedURLs: false          // Boolean
           },
           {
             headers: {
@@ -61,9 +55,21 @@ export default async function handler(req, res) {
           }
         );
 
-        results.push({ uid: video.uid, success: true });
+        if (updateResponse.data.success) {
+          results.push({ uid: video.uid, success: true });
+        } else {
+          results.push({ 
+            uid: video.uid, 
+            success: false, 
+            error: updateResponse.data.errors 
+          });
+        }
       } catch (error) {
-        results.push({ uid: video.uid, success: false, error: error.message });
+        results.push({ 
+          uid: video.uid, 
+          success: false, 
+          error: error.response?.data?.errors || error.message 
+        });
       }
     }
 
