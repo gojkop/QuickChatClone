@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   try {
     // Destructure directly from process.env - this works in Vercel
     const CLIENT_PUBLIC_ORIGIN = process.env.CLIENT_PUBLIC_ORIGIN;
-    const XANO_AUTH_BASE_URL = process.env.XANO_AUTH_BASE_URL;
+    const XANO_GOOGLE_AUTH_BASE_URL = process.env.XANO_GOOGLE_AUTH_BASE_URL || process.env.XANO_AUTH_BASE_URL;
 
     // Check if environment variables are set
     if (!CLIENT_PUBLIC_ORIGIN) {
@@ -13,19 +13,19 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: "Server configuration error: CLIENT_PUBLIC_ORIGIN missing" });
     }
 
-    if (!XANO_AUTH_BASE_URL) {
-      console.error('XANO_AUTH_BASE_URL not set');
-      return res.status(500).json({ message: "Server configuration error: XANO_AUTH_BASE_URL missing" });
+    if (!XANO_GOOGLE_AUTH_BASE_URL) {
+      console.error('XANO_GOOGLE_AUTH_BASE_URL not set');
+      return res.status(500).json({ message: "Server configuration error: XANO_GOOGLE_AUTH_BASE_URL missing" });
     }
     
     // Use redirect_uri from query params or construct from CLIENT_PUBLIC_ORIGIN
     const redirect_uri = req.query.redirect_uri || `${CLIENT_PUBLIC_ORIGIN}/auth/callback`;
 
     console.log('OAuth init - redirect_uri:', redirect_uri);
-    console.log('XANO_AUTH_BASE_URL:', XANO_AUTH_BASE_URL);
+    console.log('XANO_GOOGLE_AUTH_BASE_URL:', XANO_GOOGLE_AUTH_BASE_URL);
 
     // Call Xano's init endpoint
-    const r = await axios.get(`${XANO_AUTH_BASE_URL}/oauth/google/init`, {
+    const r = await axios.get(`${XANO_GOOGLE_AUTH_BASE_URL}/oauth/google/init`, {
       params: { redirect_uri }, 
       validateStatus: () => true
     });

@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   try {
     // Destructure from environment variables
     const CLIENT_PUBLIC_ORIGIN = process.env.CLIENT_PUBLIC_ORIGIN;
-    const XANO_AUTH_BASE_URL = process.env.XANO_AUTH_BASE_URL;
+    const XANO_LINKEDIN_AUTH_BASE_URL = process.env.XANO_LINKEDIN_AUTH_BASE_URL || process.env.XANO_AUTH_BASE_URL;
 
     // Check if environment variables are set
     if (!CLIENT_PUBLIC_ORIGIN) {
@@ -13,19 +13,19 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: "Server configuration error: CLIENT_PUBLIC_ORIGIN missing" });
     }
 
-    if (!XANO_AUTH_BASE_URL) {
-      console.error('XANO_AUTH_BASE_URL not set');
-      return res.status(500).json({ message: "Server configuration error: XANO_AUTH_BASE_URL missing" });
+    if (!XANO_LINKEDIN_AUTH_BASE_URL) {
+      console.error('XANO_LINKEDIN_AUTH_BASE_URL not set');
+      return res.status(500).json({ message: "Server configuration error: XANO_LINKEDIN_AUTH_BASE_URL missing" });
     }
 
     // Use redirect_uri from query params or construct from CLIENT_PUBLIC_ORIGIN
     const redirect_uri = req.query.redirect_uri || `${CLIENT_PUBLIC_ORIGIN}/auth/callback`;
 
     console.log('LinkedIn OAuth init - redirect_uri:', redirect_uri);
-    console.log('XANO_AUTH_BASE_URL:', XANO_AUTH_BASE_URL);
+    console.log('XANO_LINKEDIN_AUTH_BASE_URL:', XANO_LINKEDIN_AUTH_BASE_URL);
 
     // Call Xano's LinkedIn OAuth init endpoint
-    const r = await axios.get(`${XANO_AUTH_BASE_URL}/oauth/linkedin/init`, {
+    const r = await axios.get(`${XANO_LINKEDIN_AUTH_BASE_URL}/oauth/linkedin/init`, {
       params: { redirect_uri },
       validateStatus: () => true
     });

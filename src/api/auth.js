@@ -1,4 +1,4 @@
-// client/src/api/auth.js
+//src/api/auth.js
 import axios from "axios";
 
 const api = axios.create({

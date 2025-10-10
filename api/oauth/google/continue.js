@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
     // Destructure directly from process.env
     const CLIENT_PUBLIC_ORIGIN = process.env.CLIENT_PUBLIC_ORIGIN;
-    const XANO_AUTH_BASE_URL = process.env.XANO_AUTH_BASE_URL;
+    const XANO_GOOGLE_AUTH_BASE_URL = process.env.XANO_GOOGLE_AUTH_BASE_URL || process.env.XANO_AUTH_BASE_URL;
     const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN;
 
     // Check if environment variables are set
@@ -19,8 +19,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: "Server configuration error" });
     }
 
-    if (!XANO_AUTH_BASE_URL) {
-      console.error('XANO_AUTH_BASE_URL not set');
+    if (!XANO_GOOGLE_AUTH_BASE_URL) {
+      console.error('XANO_GOOGLE_AUTH_BASE_URL not set');
       return res.status(500).json({ message: "Server configuration error" });
     }
     
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     console.log('OAuth continue - redirect_uri:', redirect_uri);
 
     // Exchange code for token at Xano
-    const r = await axios.get(`${XANO_AUTH_BASE_URL}/oauth/google/continue`, {
+    const r = await axios.get(`${XANO_GOOGLE_AUTH_BASE_URL}/oauth/google/continue`, {
       params: { code },
       validateStatus: () => true
     });
