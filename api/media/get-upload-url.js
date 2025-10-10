@@ -1,9 +1,4 @@
-// ============================================================================
-// FILE 1: api/media/get-upload-url.js
-// ============================================================================
-// CREATE THIS NEW FILE
-// Purpose: Generates TUS upload URLs from Cloudflare Stream
-
+// api/media/get-upload-url.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -20,12 +15,6 @@ export default async function handler(req, res) {
       throw new Error('Cloudflare credentials not configured');
     }
 
-    console.log('Requesting Direct Creator Upload URL...', {
-      accountId: CLOUDFLARE_ACCOUNT_ID.substring(0, 8) + '...',
-      maxDuration: maxDurationSeconds
-    });
-
-    // Request a Direct Creator Upload URL from Cloudflare
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/direct_upload`,
       {
@@ -37,12 +26,13 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           maxDurationSeconds,
           requireSignedURLs: false,
-          // ⭐ YOUR DOMAINS - NO PROTOCOL! Cloudflare rejects http:// or https://
+          // ✅ NO PROTOCOL - just domain names!
           allowedOrigins: [
+            'mindpick.me',           // ✅ Add this
             'localhost:3000',
-            'localhost:3001', 
-            'quickchat-deploy.vercel.app',
-            '*.vercel.app', // All Vercel deployments (including previews)
+            'localhost:3001',
+            'localhost:5173',        // ✅ Add if you use Vite
+            '*.vercel.app',
           ],
         }),
       }
@@ -56,24 +46,18 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     
-    console.log('✅ Upload URL generated successfully:', {
-      uid: data.result.uid,
-      uploadURL: data.result.uploadURL.substring(0, 50) + '...',
-    });
-
     return res.status(200).json({
       success: true,
       data: {
-        uploadURL: data.result.uploadURL, // TUS endpoint URL
-        uid: data.result.uid, // Video UID for later reference
+        uploadURL: data.result.uploadURL,
+        uid: data.result.uid,
       },
     });
 
   } catch (error) {
-    console.error('❌ Get upload URL error:', error);
+    console.error('Get upload URL error:', error);
     return res.status(500).json({ 
       error: error.message || 'Failed to get upload URL',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }

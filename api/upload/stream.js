@@ -1,6 +1,4 @@
 // api/upload/stream.js
-// Upload video/audio to Cloudflare Stream
-
 const formidable = require('formidable');
 const fs = require('fs').promises;
 const FormData = require('form-data');
@@ -12,7 +10,7 @@ module.exports = async (req, res) => {
   }
 
   const form = formidable({ 
-    maxFileSize: 200 * 1024 * 1024, // 200MB for video
+    maxFileSize: 200 * 1024 * 1024,
     keepExtensions: true 
   });
 
@@ -28,7 +26,6 @@ module.exports = async (req, res) => {
     }
 
     try {
-      // Create form data for Cloudflare Stream
       const formData = new FormData();
       const fileStream = await fs.readFile(file.filepath);
       
@@ -37,7 +34,6 @@ module.exports = async (req, res) => {
         contentType: file.mimetype,
       });
 
-      // Add metadata
       const metadata = {
         name: fields.title || 'QuickChat Recording',
       };
@@ -48,7 +44,16 @@ module.exports = async (req, res) => {
 
       formData.append('meta', JSON.stringify(metadata));
 
-      // Upload to Cloudflare Stream
+      // ✅ Add allowed origins - NO PROTOCOL!
+      formData.append('allowedOrigins', JSON.stringify([
+        'mindpick.me',
+        'localhost:3000',
+        'localhost:5173',
+        '*.vercel.app'
+      ]));
+
+      formData.append('requireSignedURLs', 'false');
+
       const response = await axios.post(
         `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/stream`,
         formData,
@@ -62,7 +67,6 @@ module.exports = async (req, res) => {
         }
       );
 
-      // Clean up temp file
       await fs.unlink(file.filepath);
 
       if (!response.data.success) {
