@@ -1,6 +1,6 @@
 # QuickChat Admin System Architecture
 
-## Executive Summary
+## Executive Summary - TEST
 
 A modern, secure admin system for managing a C2C async consulting marketplace with payment processing, SLA monitoring, and content moderation.
 
