@@ -159,7 +159,7 @@ function TermsPage() {
                       <li><strong>Third Violation:</strong> Permanent account ban and potential legal action.</li>
                       <li><strong>Egregious Commercial Violations:</strong> Immediate account termination and legal action without prior warning.</li>
                     </ul>
-                    <p className="mt-3"><strong>Expert Reporting:</strong> Experts who discover unauthorized use of their content may report violations to support@quick.chat with evidence (screenshots, links). We will investigate and take appropriate action.</p>
+                    <p className="mt-3"><strong>Expert Reporting:</strong> Experts who discover unauthorized use of their content may report violations to support@mindpick.me with evidence (screenshots, links). We will investigate and take appropriate action.</p>
                 </SubSection>
 
                 <SubSection title="5.7. Data Retention and Access">
@@ -278,7 +278,7 @@ function TermsPage() {
                   <p>Any legal suit, action, or proceeding arising out of or related to these Terms or the Service shall be instituted exclusively in the courts of Amsterdam, The Netherlands. You consent to the personal jurisdiction of such courts and waive any objection to venue in such courts.</p>
                 </SubSection>
                 <SubSection title="9.3. Informal Resolution">
-                  <p>Before filing any formal claim, you agree to first contact us at legal@quick.chat to attempt to resolve the dispute informally. We commit to working with you in good faith to resolve disputes.</p>
+                  <p>Before filing any formal claim, you agree to first contact us at legal@mindpick.me to attempt to resolve the dispute informally. We commit to working with you in good faith to resolve disputes.</p>
                 </SubSection>
             </Section>
 
@@ -333,7 +333,7 @@ function TermsPage() {
             <Section title="13. Contact Us">
                  <p>If you have any questions about these Terms, please contact us at:</p>
                  <div className="bg-gray-100 p-4 rounded-lg mt-2">
-                   <p><strong>Email:</strong> <a href="mailto:legal@quick.chat" className="text-indigo-600 hover:underline">legal@quick.chat</a></p>
+                   <p><strong>Email:</strong> <a href="mailto:legal@mindpick.me" className="text-indigo-600 hover:underline">legal@mindpick.me</a></p>
                    <p className="mt-2"><strong>Legal Entity:</strong> mindPick B.V.</p>
                    <p><strong>Jurisdiction:</strong> Amsterdam, The Netherlands</p>
                  </div>

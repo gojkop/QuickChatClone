@@ -256,7 +256,7 @@ function PrivacyPage() {
             <Section title="12. Contact Us">
                 <p>If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact our Data Protection Officer at:</p>
                 <div className="bg-gray-100 p-4 rounded-lg mt-2">
-                  <p className="font-semibold">Email: <a href="mailto:privacy@quick.chat" className="text-indigo-600 hover:underline">privacy@quick.chat</a></p>
+                  <p className="font-semibold">Email: <a href="mailto:privacy@mindpick.me" className="text-indigo-600 hover:underline">privacy@mindpick.me</a></p>
                   <p className="mt-2 text-sm text-gray-600">For GDPR-related inquiries, please reference "GDPR Request" in your subject line for priority handling.</p>
                 </div>
             </Section>
