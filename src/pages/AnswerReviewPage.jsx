@@ -870,8 +870,8 @@ function AnswerReviewPage() {
                   rows="4"
                   maxLength="500"
                   className="w-full px-4 py-3 text-sm sm:text-base border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-300 focus:border-amber-400 focus:outline-none transition-all resize-none"
-                  placeholder={rating >= 4 
-                    ? "This testimonial might appear on QuickChat (optional)" 
+                  placeholder={rating >= 4
+                    ? "This testimonial might appear on mindPick (optional)"
                     : "Help us understand how to improve..."
                   }
                 />

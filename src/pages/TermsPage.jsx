@@ -25,12 +25,12 @@ function TermsPage() {
           <p className="mt-2 text-gray-500">Last Updated: October 5, 2025</p>
 
           <article className="mt-8 text-gray-700 leading-relaxed space-y-4">
-            <p>Please read these Terms of Service ("Terms") carefully before using the QuickChat website and service (the "Service") operated by QuickChat B.V. ("us", "we", or "our").</p>
+            <p>Please read these Terms of Service ("Terms") carefully before using the mindPick website and service (the "Service") operated by QuickChat B.V. ("us", "we", or "our").</p>
             <p>Your access to and use of the Service is conditioned upon your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who wish to access or use the Service. By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part of the terms, you do not have permission to access the Service.</p>
 
             <Section title="1. Definitions">
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Service:</strong> The QuickChat platform, website, and all related services that facilitate asynchronous expert Q&A.</li>
+                <li><strong>Service:</strong> The mindPick platform, website, and all related services that facilitate asynchronous expert Q&A.</li>
                 <li><strong>User:</strong> Any individual who accesses or uses the Service, including Experts and Askers.</li>
                 <li><strong>Expert:</strong> A User who offers their expertise by answering questions for a Fee.</li>
                 <li><strong>Asker:</strong> A User who submits a question to an Expert and authorizes payment of the Fee.</li>

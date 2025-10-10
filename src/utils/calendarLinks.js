@@ -15,10 +15,10 @@ export function getGoogleCalendarUrl(question, options = {}) {
   
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: `💬 QuickChat: ${question.title}`,
+    text: `💬 mindPick: ${question.title}`,
     dates: `${formatGoogleDate(startTime)}/${formatGoogleDate(endTime)}`,
     details: buildEventDescription(question, answerUrl),
-    location: 'QuickChat'
+    location: 'mindPick'
   });
   
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
@@ -40,11 +40,11 @@ export function getOutlookCalendarUrl(question, options = {}) {
   const params = new URLSearchParams({
     path: '/calendar/action/compose',
     rru: 'addevent',
-    subject: `💬 QuickChat: ${question.title}`,
+    subject: `💬 mindPick: ${question.title}`,
     startdt: startTime.toISOString(),
     enddt: endTime.toISOString(),
     body: buildEventDescription(question, answerUrl),
-    location: 'QuickChat'
+    location: 'mindPick'
   });
   
   return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
@@ -66,11 +66,11 @@ export function getOffice365CalendarUrl(question, options = {}) {
   const params = new URLSearchParams({
     path: '/calendar/action/compose',
     rru: 'addevent',
-    subject: `💬 QuickChat: ${question.title}`,
+    subject: `💬 mindPick: ${question.title}`,
     startdt: startTime.toISOString(),
     enddt: endTime.toISOString(),
     body: buildEventDescription(question, answerUrl),
-    location: 'QuickChat'
+    location: 'mindPick'
   });
   
   return `https://outlook.office.com/calendar/0/deeplink/compose?${params.toString()}`;
@@ -96,13 +96,13 @@ export function getAppleCalendarUrl(question, options = {}) {
   
   const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//QuickChat//EN
+PRODID:-//mindPick//EN
 BEGIN:VEVENT
 DTSTART:${formatICSDate(startTime)}
 DTEND:${formatICSDate(endTime)}
-SUMMARY:💬 QuickChat: ${question.title}
+SUMMARY:💬 mindPick: ${question.title}
 DESCRIPTION:${buildEventDescription(question, answerUrl).replace(/\n/g, '\\n')}
-LOCATION:QuickChat
+LOCATION:mindPick
 BEGIN:VALARM
 TRIGGER:-PT15M
 ACTION:DISPLAY

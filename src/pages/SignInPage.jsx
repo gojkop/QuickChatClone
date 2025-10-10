@@ -181,7 +181,7 @@ export default function SignInPage() {
           {/* Footer Links */}
           <div className="text-center mt-6 space-y-2">
             <p className="text-sm text-gray-600">
-              New to QuickChat?{' '}
+              New to mindPick?{' '}
               <a href="/become-expert" className="font-semibold text-indigo-600 hover:text-indigo-700">
                 Become an expert
               </a>
