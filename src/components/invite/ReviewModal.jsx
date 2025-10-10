@@ -82,7 +82,7 @@ function ReviewModal({ isOpen, questionData, expertHandle, expertInfo, priceProp
             <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm text-indigo-600 font-semibold mb-1">Inviting to QuickChat</p>
+                  <p className="text-sm text-indigo-600 font-semibold mb-1">Inviting to mindPick</p>
                   <p className="text-2xl font-bold text-indigo-900">{expertHandle}</p>
                 </div>
 

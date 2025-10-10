@@ -147,7 +147,7 @@ function SocialImpactPage() {
             </span>
           </h1>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
-            QuickChat empowers experts to dedicate a portion of their earnings to causes they care about.
+            mindPick empowers experts to dedicate a portion of their earnings to causes they care about.
           </p>
         </div>
       </section>
@@ -231,7 +231,7 @@ function SocialImpactPage() {
               Ready to Make an Impact?
             </h2>
             <p className="text-lg text-gray-600 mb-8">
-              Join QuickChat and turn your expertise into a force for good
+              Join mindPick and turn your expertise into a force for good
             </p>
             <Link 
               to={isAuthenticated ? "/expert" : "/signin"} 

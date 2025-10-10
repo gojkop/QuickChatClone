@@ -39,7 +39,7 @@ function SocialImpactCTA() {
           </h2>
           
           <p className="mt-6 text-xl text-gray-700 leading-relaxed">
-            QuickChat empowers experts to dedicate a portion of their earnings to causes they care about. Transform your expertise into a force for good.
+            mindPick empowers experts to dedicate a portion of their earnings to causes they care about. Transform your expertise into a force for good.
           </p>
           
           <Link 

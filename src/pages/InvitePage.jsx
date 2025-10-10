@@ -128,8 +128,8 @@ function InvitePage() {
             </h1>
             <p className="text-gray-600">
               {step === 1 
-                ? 'Connect with anyone and get expert answers — we\'ll invite them to QuickChat'
-                : 'They\'ll get your question and an invitation to answer on QuickChat'
+                ? 'Connect with anyone and get expert answers — we\'ll invite them to mindPick'
+                : 'They\'ll get your question and an invitation to answer on mindPick'
               }
             </p>
           </div>

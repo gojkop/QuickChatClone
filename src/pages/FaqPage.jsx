@@ -29,7 +29,7 @@ function FaqPage() {
           <h2 className="text-2xl font-bold text-indigo-600 mb-6">For Askers</h2>
           <div className="space-y-4">
             <AccordionItem question="Is my payment secure?">
-              Yes. All payments are handled by Stripe, a global leader in online payments. QuickChat never sees or stores your credit card information.
+              Yes. All payments are handled by Stripe, a global leader in online payments. mindPick never sees or stores your credit card information.
             </AccordionItem>
             <AccordionItem question="When will I get my answer?">
               Each expert sets their own Service Level Agreement (SLA), which is clearly displayed on their public page (e.g., 24 hours, 48 hours). You are guaranteed to receive a response within that window.

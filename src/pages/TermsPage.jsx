@@ -25,7 +25,7 @@ function TermsPage() {
           <p className="mt-2 text-gray-500">Last Updated: October 5, 2025</p>
 
           <article className="mt-8 text-gray-700 leading-relaxed space-y-4">
-            <p>Please read these Terms of Service ("Terms") carefully before using the mindPick website and service (the "Service") operated by QuickChat B.V. ("us", "we", or "our").</p>
+            <p>Please read these Terms of Service ("Terms") carefully before using the mindPick website and service (the "Service") operated by mindPick B.V. ("us", "we", or "our").</p>
             <p>Your access to and use of the Service is conditioned upon your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who wish to access or use the Service. By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part of the terms, you do not have permission to access the Service.</p>
 
             <Section title="1. Definitions">
@@ -41,7 +41,7 @@ function TermsPage() {
             </Section>
 
             <Section title="2. The Service: A Platform for Connection">
-              <p><strong>Core Function:</strong> QuickChat provides a platform to facilitate transactions between Experts and Askers. We are not a party to the direct interaction between Users and we do not hire, employ, or endorse any Expert. Each Expert operates as an independent service provider.</p>
+              <p><strong>Core Function:</strong> mindPick provides a platform to facilitate transactions between Experts and Askers. We are not a party to the direct interaction between Users and we do not hire, employ, or endorse any Expert. Each Expert operates as an independent service provider.</p>
               <p>The Service allows Experts to create a public profile and set a Fee and SLA for answering questions. Askers can submit questions to Experts, who then provide answers asynchronously via audio, video, or text.</p>
             </Section>
 
@@ -58,7 +58,7 @@ function TermsPage() {
 
             <Section title="4. Payments, Fees, and Refunds">
                 <SubSection title="4.1. Payment Processing">
-                    <p>All payments are processed securely through our third-party payment processor, Stripe. QuickChat does not store your credit card or bank account information. By using the Service, you agree to be bound by Stripe's Services Agreement and Privacy Policy.</p>
+                    <p>All payments are processed securely through our third-party payment processor, Stripe. mindPick does not store your credit card or bank account information. By using the Service, you agree to be bound by Stripe's Services Agreement and Privacy Policy.</p>
                 </SubSection>
                 <SubSection title="4.2. Authorization & Capture">
                     <p>When an Asker submits a question, the full Fee is <strong>authorized</strong> on their payment method (a temporary "hold" is placed). The Fee is only <strong>captured</strong> (charged) if and when the Expert provides an answer within their stated SLA. This authorization typically expires after 7 days if not captured.</p>
@@ -72,12 +72,12 @@ function TermsPage() {
                     <p><strong>Disputed Transactions:</strong> In the event of a payment dispute or chargeback, all relevant data is retained for up to 180 days to facilitate resolution, overriding standard deletion timelines.</p>
                 </SubSection>
                 <SubSection title="4.5. Platform Fees">
-                    <p>QuickChat charges Experts a service fee (a "take rate") on each successfully completed transaction. This fee is automatically deducted from the payout to the Expert:</p>
+                    <p>mindPick charges Experts a service fee (a "take rate") on each successfully completed transaction. This fee is automatically deducted from the payout to the Expert:</p>
                     <ul className="list-disc pl-6 space-y-1">
                       <li><strong>Starter Plan:</strong> 10% of the transaction amount</li>
                       <li><strong>Pro Plan:</strong> 7% of the transaction amount (requires €15/month or €144/year subscription)</li>
                     </ul>
-                    <p className="pt-2">Additionally, standard payment processing fees charged by Stripe apply to all transactions and are separate from QuickChat's platform fees.</p>
+                    <p className="pt-2">Additionally, standard payment processing fees charged by Stripe apply to all transactions and are separate from mindPick's platform fees.</p>
                 </SubSection>
                 <SubSection title="4.6. Payouts to Experts">
                     <p>Expert earnings (minus platform fees) are transferred via Stripe Connect according to your payout schedule. You are responsible for all taxes on your earnings. We provide transaction records but do not provide tax advice.</p>
@@ -118,7 +118,7 @@ function TermsPage() {
                     </div>
 
                     <p className="mt-3 text-sm bg-gray-50 p-3 rounded">
-                      <strong>Attribution Requirement:</strong> When sharing excerpts or referencing the answer in any public or professional context, you must provide attribution: "Based on consultation with [Expert Name] via QuickChat, [Date]" or similar clear attribution.
+                      <strong>Attribution Requirement:</strong> When sharing excerpts or referencing the answer in any public or professional context, you must provide attribution: "Based on consultation with [Expert Name] via mindPick, [Date]" or similar clear attribution.
                     </p>
                 </SubSection>
 
@@ -133,22 +133,22 @@ function TermsPage() {
                 <SubSection title="5.4. Expert Content Control Rights">
                     <p>As an Expert, you retain full control over your answer content:</p>
                     <ul className="list-disc pl-6 space-y-2">
-                      <li><strong>Reuse Rights:</strong> You may reuse, repurpose, or license your answers independently of QuickChat (e.g., for blog posts, courses, or other content).</li>
+                      <li><strong>Reuse Rights:</strong> You may reuse, repurpose, or license your answers independently of mindPick (e.g., for blog posts, courses, or other content).</li>
                       <li><strong>Deletion Rights:</strong> You may delete your answers at any time through your account settings. Affected Askers receive 30 days' notice and download access before deletion.</li>
                       <li><strong>Modification Rights:</strong> You may edit or update answers (creates a new version; Askers are notified).</li>
                       <li><strong>Enforcement Rights:</strong> You may report unauthorized use or redistribution of your content (see Section 5.6).</li>
                     </ul>
                 </SubSection>
 
-                <SubSection title="5.5. License to QuickChat">
-                    <p>By submitting Content (questions or answers), you grant QuickChat a worldwide, non-exclusive, royalty-free license to use, store, reproduce, modify, and transmit your Content solely for the purposes of:</p>
+                <SubSection title="5.5. License to mindPick">
+                    <p>By submitting Content (questions or answers), you grant mindPick a worldwide, non-exclusive, royalty-free license to use, store, reproduce, modify, and transmit your Content solely for the purposes of:</p>
                     <ul className="list-disc pl-6 space-y-1">
                       <li>Operating and providing the Service</li>
                       <li>Processing for features (transcription, search, summaries)</li>
                       <li>Creating anonymized analytics</li>
                       <li>Moderating for Terms compliance</li>
                     </ul>
-                    <p className="mt-2">QuickChat does NOT claim ownership of your Content and will not sell, license to third parties, or use your private Content to train public AI models.</p>
+                    <p className="mt-2">mindPick does NOT claim ownership of your Content and will not sell, license to third parties, or use your private Content to train public AI models.</p>
                 </SubSection>
 
                 <SubSection title="5.6. Enforcement of License Restrictions">
@@ -211,11 +211,11 @@ function TermsPage() {
             <Section title="7. Critical Disclaimers & Limitation of Liability">
                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
                    <p className="font-bold text-gray-900 text-lg">⚠️ CRITICAL NOTICE</p>
-                   <p className="mt-2"><strong>QuickChat is a platform for informational exchanges only.</strong> The interactions on QuickChat do not constitute a formal professional-client relationship. You should always consult with a qualified, licensed professional for your specific needs.</p>
+                   <p className="mt-2"><strong>mindPick is a platform for informational exchanges only.</strong> The interactions on mindPick do not constitute a formal professional-client relationship. You should always consult with a qualified, licensed professional for your specific needs.</p>
                  </div>
                  
                 <SubSection title="7.1. No Professional Advice or Relationship">
-                    <p>The content provided by Experts through the Service is <strong>not</strong> a substitute for formal, professional advice, diagnosis, or treatment. QuickChat does not verify, endorse, or guarantee the qualifications, credentials, or advice of any Expert.</p>
+                    <p>The content provided by Experts through the Service is <strong>not</strong> a substitute for formal, professional advice, diagnosis, or treatment. mindPick does not verify, endorse, or guarantee the qualifications, credentials, or advice of any Expert.</p>
                     <p className="font-semibold mt-3">Specific Categories:</p>
                     <ul className="list-disc pl-6 space-y-2 mt-2">
                         <li><strong>Medical/Healthcare Information:</strong> Content from healthcare professionals is for educational purposes only and is NOT medical advice, diagnosis, or treatment. No doctor-patient relationship is formed. Always consult a licensed physician for medical concerns, especially emergencies.</li>
@@ -258,7 +258,7 @@ function TermsPage() {
             </Section>
 
             <Section title="8. Indemnification">
-                <p>You agree to defend, indemnify, and hold harmless QuickChat B.V., its affiliates, and their respective officers, directors, employees, contractors, agents, licensors, and suppliers from and against any and all claims, damages, obligations, losses, liabilities, costs, debt, and expenses (including but not limited to attorney's fees) arising from:</p>
+                <p>You agree to defend, indemnify, and hold harmless mindPick B.V., its affiliates, and their respective officers, directors, employees, contractors, agents, licensors, and suppliers from and against any and all claims, damages, obligations, losses, liabilities, costs, debt, and expenses (including but not limited to attorney's fees) arising from:</p>
                 <ul className="list-disc pl-6 space-y-2 mt-2">
                   <li>Your use of and access to the Service</li>
                   <li>Your violation of these Terms, including license restrictions</li>
@@ -314,7 +314,7 @@ function TermsPage() {
 
             <Section title="12. General Provisions">
                 <SubSection title="12.1. Entire Agreement">
-                  <p>These Terms, together with our Privacy Policy and any other policies posted on the Service, constitute the entire agreement between you and QuickChat regarding the Service.</p>
+                  <p>These Terms, together with our Privacy Policy and any other policies posted on the Service, constitute the entire agreement between you and mindPick regarding the Service.</p>
                 </SubSection>
                 <SubSection title="12.2. Severability">
                   <p>If any provision of these Terms is held to be invalid or unenforceable, such provision shall be struck and the remaining provisions shall remain in full force and effect.</p>
@@ -334,7 +334,7 @@ function TermsPage() {
                  <p>If you have any questions about these Terms, please contact us at:</p>
                  <div className="bg-gray-100 p-4 rounded-lg mt-2">
                    <p><strong>Email:</strong> <a href="mailto:legal@quick.chat" className="text-indigo-600 hover:underline">legal@quick.chat</a></p>
-                   <p className="mt-2"><strong>Legal Entity:</strong> QuickChat B.V.</p>
+                   <p className="mt-2"><strong>Legal Entity:</strong> mindPick B.V.</p>
                    <p><strong>Jurisdiction:</strong> Amsterdam, The Netherlands</p>
                  </div>
             </Section>

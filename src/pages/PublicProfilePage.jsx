@@ -352,19 +352,19 @@ function PublicProfilePage() {
             
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Expert Not Found</h2>
             <p className="text-gray-600 mb-2">
-              <span className="font-semibold text-gray-900">@{handle}</span> is not on QuickChat yet.
+              <span className="font-semibold text-gray-900">@{handle}</span> is not on mindPick yet.
             </p>
             <p className="text-gray-600 mb-6">
               But you can invite them to join!
             </p>
             
-            <a href={'https://quickchat-deploy.vercel.app/invite?expert=' + encodeURIComponent(handle)}
+            <a href={'/invite?expert=' + encodeURIComponent(handle)}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
               </svg>
-              <span>Invite {handle} to QuickChat</span>
+              <span>Invite {handle} to mindPick</span>
             </a>
             
             <div className="mt-8 pt-6 border-t border-gray-200">
@@ -785,7 +785,7 @@ function PublicProfilePage() {
           <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors group">
             <span>Powered by</span>
             <span className="font-bold bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent">
-              QuickChat
+              mindPick
             </span>
           </a>
         </div>

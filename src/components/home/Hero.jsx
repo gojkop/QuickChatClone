@@ -41,7 +41,7 @@ function Hero() {
           </h1>
           
           <p className="mt-8 max-w-2xl mx-auto text-xl text-gray-600 leading-relaxed">
-            Stop giving away your expertise. QuickChat lets you instantly monetize "quick questions" with a personal link. 
+            Stop giving away your expertise. mindPick lets you instantly monetize "quick questions" with a personal link. 
             <span className="block mt-2 font-semibold text-gray-800">No scheduling, no awkwardness, just value for value.</span>
           </p>
           

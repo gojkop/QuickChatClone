@@ -29,7 +29,7 @@ const AskAnyoneBanner = () => (
                 Have a Question for Someone?
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Know someone with the perfect expertise? Ask them directly — we'll invite them to answer on QuickChat.
+                Know someone with the perfect expertise? Ask them directly — we'll invite them to answer on mindPick.
               </p>
             </div>
 

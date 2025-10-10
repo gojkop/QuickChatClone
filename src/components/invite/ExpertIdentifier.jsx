@@ -37,7 +37,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
       return;
     }
 
-    // QuickChat handle detection - ONLY if starts with @
+    // mindPick handle detection - ONLY if starts with @
     if (value.startsWith('@')) {
       const handleValue = value.substring(1);
       
@@ -56,7 +56,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
     setHasCheckedHandle(false);
   }, [identifier]);
 
-  const checkQuickChatHandle = async (handle) => {
+  const checkmindPickHandle = async (handle) => {
     setIsChecking(true);
     setErrorMessage('');
     setExpertProfile(null);
@@ -117,7 +117,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
       // If it's a handle type and we haven't checked yet, check now
       if (detectedType === 'handle' && !hasCheckedHandle && !isChecking) {
         const handleValue = identifier.trim().substring(1); // Remove @
-        checkQuickChatHandle(handleValue);
+        checkmindPickHandle(handleValue);
       } else if (!expertProfile) {
         // If not a handle or already checked, continue to next step
         handleContinue();
@@ -131,7 +131,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
       return;
     }
 
-    // If expert exists on QuickChat, don't continue - user should use button to visit profile
+    // If expert exists on mindPick, don't continue - user should use button to visit profile
     if (expertProfile) {
       return;
     }
@@ -207,9 +207,9 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
       case 'email': return 'Email detected';
       case 'linkedin': return 'LinkedIn profile';
       case 'handle': 
-        if (expertProfile) return 'Expert found on QuickChat!';
+        if (expertProfile) return 'Expert found on mindPick!';
         if (hasCheckedHandle) return 'Handle checked';
-        return 'QuickChat handle - Press Enter to check';
+        return 'mindPick handle - Press Enter to check';
       case 'name': return 'Name';
       default: return null;
     }
@@ -262,13 +262,13 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
             </svg>
             <div className="flex-1">
               <p className="text-sm text-blue-700 font-medium">
-                Press <kbd className="px-2 py-0.5 bg-white border border-blue-300 rounded text-xs font-mono">Enter</kbd> to check if this expert is on QuickChat
+                Press <kbd className="px-2 py-0.5 bg-white border border-blue-300 rounded text-xs font-mono">Enter</kbd> to check if this expert is on mindPick
               </p>
             </div>
           </div>
         )}
 
-        {/* Expert Found on QuickChat */}
+        {/* Expert Found on mindPick */}
         {expertProfile && (
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-5 shadow-sm">
             <div className="flex items-start gap-4 mb-4">
@@ -297,7 +297,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
                   <p className="text-sm text-gray-700 font-medium">{expertProfile.title}</p>
                 )}
                 <p className="text-sm text-green-800 font-semibold mt-2">
-                  @{expertProfile.handle} is already on QuickChat!
+                  @{expertProfile.handle} is already on mindPick!
                 </p>
               </div>
             </div>
@@ -340,7 +340,7 @@ function ExpertIdentifier({ onContinue, initialValue = '' }) {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span>@johndoe (QuickChat handle)</span>
+                <span>@johndoe (mindPick handle)</span>
               </button>
               <button 
                 onClick={() => setIdentifier('sarah@example.com')}

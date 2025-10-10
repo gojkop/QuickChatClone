@@ -34,7 +34,7 @@ function PrivacyPage() {
 
           <article className="mt-8 text-gray-700 leading-relaxed">
             <Section title="1. Introduction">
-              <p>Welcome to QuickChat ("we," "us," "our"). This Privacy Policy governs your use of our website, platform, and services (collectively, the "Service") and explains how we collect, use, disclose, and safeguard your information.</p>
+              <p>Welcome to mindPick ("we," "us," "our"). This Privacy Policy governs your use of our website, platform, and services (collectively, the "Service") and explains how we collect, use, disclose, and safeguard your information.</p>
               <p>By using our Service, you agree to the collection and use of information in accordance with this policy. This policy applies to all users of the Service, including "Experts" who provide answers and "Askers" who submit questions.</p>
             </Section>
 
@@ -72,7 +72,7 @@ function PrivacyPage() {
             
             <Section title="4. Legal Basis for Processing (GDPR)">
                  <ul className="list-disc pl-6 space-y-2">
-                    <li><strong>Performance of a Contract:</strong> The majority of our data processing is necessary for the performance of our contract with you (our Terms of Service) to provide the QuickChat service.</li>
+                    <li><strong>Performance of a Contract:</strong> The majority of our data processing is necessary for the performance of our contract with you (our Terms of Service) to provide the mindPick service.</li>
                     <li><strong>Legitimate Interests:</strong> We may process your information for our legitimate interests, such as for security purposes, fraud prevention, and service improvement, provided that such processing shall not outweigh your rights and freedoms.</li>
                     <li><strong>Consent:</strong> We will obtain your explicit, opt-in consent before processing your data for marketing purposes.</li>
                     <li><strong>Legal Obligation:</strong> We may process your data where it is necessary for compliance with a legal obligation to which we are subject.</li>

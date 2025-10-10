@@ -36,7 +36,7 @@ const TestimonialCard = ({ quote, avatar, name, title, useCase, cardColor, borde
 function Testimonials() {
   const testimonials = [
     {
-      quote: "QuickChat is a game-changer. I've turned my overflowing DMs into a meaningful revenue stream without adding a single meeting to my calendar.",
+      quote: "mindPick is a game-changer. I've turned my overflowing DMs into a meaningful revenue stream without adding a single meeting to my calendar.",
       avatar: "https://i.pravatar.cc/56?u=sara_test",
       name: "Sara W.",
       title: "SaaS Consultant",
@@ -83,7 +83,7 @@ function Testimonials() {
               </span>
             </h2>
             <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
-              AI gives facts. You provide judgment. QuickChat is for expertise that requires context, experience, and a human touch.
+              AI gives facts. You provide judgment. mindPick is for expertise that requires context, experience, and a human touch.
             </p>
           </div>
           

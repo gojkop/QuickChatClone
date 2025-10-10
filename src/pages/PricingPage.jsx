@@ -128,7 +128,7 @@ function PricingPage() {
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckIcon />
-                      <span>Remove "Powered by QuickChat"</span>
+                      <span>Remove "Powered by mindPick"</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckIcon />

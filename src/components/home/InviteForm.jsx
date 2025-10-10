@@ -18,7 +18,7 @@ function InviteForm() {
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold tracking-tight">Have a question for a specific expert?</h2>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
-          If the expert you want to ask isn't on QuickChat yet, you can send them a personal invitation along with your question. We'll handle the rest.
+          If the expert you want to ask isn't on mindPick yet, you can send them a personal invitation along with your question. We'll handle the rest.
         </p>
         <form onSubmit={handleSubmit} className="mt-8 max-w-lg mx-auto flex flex-col sm:flex-row gap-4">
           <input

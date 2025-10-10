@@ -17,7 +17,7 @@ function DeliveryPreview({ expertInfo, priceProposal }) {
 
 ${priceText}
 
-I've sent the question through QuickChat, a platform where experts can monetize their knowledge by answering questions asynchronously. 
+I've sent the question through mindPick, a platform where experts can monetize their knowledge by answering questions asynchronously. 
 
 Join and see my question here: ${link}
 
@@ -61,7 +61,7 @@ Thanks for considering!`;
       case 'email':
         return {
           title: 'Email Delivery',
-          description: 'We\'ll send your question via email with an invitation to answer on QuickChat',
+          description: 'We\'ll send your question via email with an invitation to answer on mindPick',
           action: 'automatic'
         };
       case 'linkedin':

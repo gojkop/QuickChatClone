@@ -23,9 +23,9 @@ function InviteSentPage() {
             </svg>
           ),
           title: 'Question Sent!',
-          description: `We've sent your question to ${expertName} along with an invitation to answer on QuickChat.`,
+          description: `We've sent your question to ${expertName} along with an invitation to answer on mindPick.`,
           nextSteps: [
-            'They\'ll receive your question and an invitation to join QuickChat',
+            'They\'ll receive your question and an invitation to join mindPick',
             'Once they sign up and view your question, we\'ll notify you',
             'You\'ll receive their answer via email when they respond'
           ]
@@ -41,7 +41,7 @@ function InviteSentPage() {
           description: `You have a message ready for ${expertName} on LinkedIn.`,
           nextSteps: [
             'Send them the message you copied on LinkedIn',
-            'They\'ll use the link to see your question and join QuickChat',
+            'They\'ll use the link to see your question and join mindPick',
             'You\'ll be notified when they view and respond to your question'
           ]
         };
@@ -56,7 +56,7 @@ function InviteSentPage() {
           description: `Send the message to ${expertName} however you prefer.`,
           nextSteps: [
             'Share the message you copied via DM, text message, email, or any platform',
-            'They\'ll join QuickChat using your unique invitation link',
+            'They\'ll join mindPick using your unique invitation link',
             'We\'ll email you when they view your question and send their answer'
           ]
         };
@@ -71,7 +71,7 @@ function InviteSentPage() {
           description: `Send the message to ${expertName} however you prefer.`,
           nextSteps: [
             'Share the message you copied via DM, text message, or any platform',
-            'They\'ll join QuickChat using your unique invitation link',
+            'They\'ll join mindPick using your unique invitation link',
             'We\'ll email you when they view your question and send their answer'
           ]
         };
@@ -86,7 +86,7 @@ function InviteSentPage() {
           description: `Share your question with ${expertName}.`,
           nextSteps: [
             'Send them the message however you prefer',
-            'They\'ll join QuickChat to see your question',
+            'They\'ll join mindPick to see your question',
             'You\'ll be notified when they answer'
           ]
         };
