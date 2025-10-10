@@ -1,47 +1,51 @@
-//src/api/auth.js
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "/api",
-  withCredentials: false // we store token in app storage, not cookies
-});
+// Add these methods to your AuthAPI (src/api/auth.js)
 
 export const AuthAPI = {
-  async initGoogleOAuth() {
-    const redirect_uri = `${window.location.origin}/auth/callback`;
-    const r = await api.get("/oauth/google/init", { params: { redirect_uri } });
-    // Expected: { authUrl }
-    return r.data;
-  },
+  // ... your existing methods ...
 
-  async continueGoogleOAuth({ code, state }) {
-    // IMPORTANT: Xano's continue endpoint doesn't need redirect_uri
-    // Only send code (and state if Xano expects it)
-    const r = await api.get("/oauth/google/continue", {
-      params: { code }
-      // Removed: redirect_uri - causes Xano "ERROR_CODE_ACCESS_DENIED"
-      // Removed: state - only include if Xano specifically requires it
-    });
-    // Expected: { token, user, ... }
-    return r.data;
-  },
-
+  // LinkedIn OAuth
   async initLinkedInOAuth() {
-    const redirect_uri = `${window.location.origin}/auth/callback`;
-    const r = await api.get("/oauth/linkedin/init", { params: { redirect_uri } });
-    // Expected: { authUrl }
-    return r.data;
+    const response = await fetch('/api/oauth/linkedin/init');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'LinkedIn OAuth init failed');
+    }
+    return response.json();
   },
 
   async continueLinkedInOAuth({ code, state }) {
-    // IMPORTANT: Xano's continue endpoint doesn't need redirect_uri
-    // Only send code (and state if Xano expects it)
-    const r = await api.get("/oauth/linkedin/continue", {
-      params: { code }
-      // Removed: redirect_uri - causes Xano "ERROR_CODE_ACCESS_DENIED"
-      // Removed: state - only include if Xano specifically requires it
-    });
-    // Expected: { token, user, ... }
-    return r.data;
-  }
+    const params = new URLSearchParams();
+    if (code) params.append('code', code);
+    if (state) params.append('state', state);
+    
+    const response = await fetch(`/api/oauth/linkedin/continue?${params}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'LinkedIn OAuth continue failed');
+    }
+    return response.json();
+  },
+
+  // Google OAuth (if not already present)
+  async initGoogleOAuth() {
+    const response = await fetch('/api/oauth/google/init');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Google OAuth init failed');
+    }
+    return response.json();
+  },
+
+  async continueGoogleOAuth({ code, state }) {
+    const params = new URLSearchParams();
+    if (code) params.append('code', code);
+    if (state) params.append('state', state);
+    
+    const response = await fetch(`/api/oauth/google/continue?${params}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Google OAuth continue failed');
+    }
+    return response.json();
+  },
 };

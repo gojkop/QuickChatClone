@@ -3,11 +3,11 @@ import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
 import apiClient from "../api";
-import { useAuth } from "@/context/AuthContext";  // ✅ Import useAuth
+import { useAuth } from "@/context/AuthContext";
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();  // ✅ Get login function from context
+  const { login } = useAuth();
   const ranRef = useRef(false);
 
   useEffect(() => {
@@ -19,8 +19,23 @@ export default function OAuthCallbackPage() {
       const q = new URLSearchParams(location.search);
       const code = q.get("code");
       const state = q.get("state");
+      const error = q.get("error");
+      const errorDescription = q.get("error_description");
       
-      console.log('OAuth params:', { code: code?.substring(0, 20) + '...', state });
+      console.log('OAuth params:', { 
+        code: code?.substring(0, 20) + '...', 
+        state,
+        error,
+        errorDescription 
+      });
+
+      // Check for OAuth error from provider
+      if (error) {
+        console.error('❌ OAuth provider returned error:', error, errorDescription);
+        sessionStorage.removeItem("qc_auth_in_progress");
+        navigate(`/signin?error=${error}`, { replace: true });
+        return;
+      }
 
       if (!code) {
         console.error('❌ No OAuth code found');
@@ -32,17 +47,55 @@ export default function OAuthCallbackPage() {
       try {
         console.log('📡 Calling OAuth continue endpoint...');
 
-        // Using Google OAuth (LinkedIn is disabled due to errors with LinkedIn's OAuth page)
-        let oauthResponse;
-        let providerUsed = 'Google';
+        // ⭐ DETECT WHICH PROVIDER TO USE
+        const provider = localStorage.getItem('oauth_provider') || 'linkedin';
+        localStorage.removeItem('oauth_provider'); // Clean up
+        
+        console.log(`🔍 Detected provider: ${provider}`);
 
-        try {
-          console.log('📡 Trying Google OAuth continue...');
-          oauthResponse = await AuthAPI.continueGoogleOAuth({ code, state });
-          console.log('✅ Google OAuth response received');
-        } catch (e) {
-          console.error('❌ Google OAuth failed');
-          throw e;
+        let oauthResponse;
+        let providerUsed = '';
+
+        // ⭐ CALL THE CORRECT ENDPOINT BASED ON PROVIDER
+        if (provider === 'linkedin') {
+          try {
+            console.log('📡 Trying LinkedIn OAuth continue...');
+            oauthResponse = await AuthAPI.continueLinkedInOAuth({ code, state });
+            providerUsed = 'LinkedIn';
+            console.log('✅ LinkedIn OAuth response received');
+          } catch (linkedInError) {
+            console.error('❌ LinkedIn OAuth failed:', linkedInError);
+            // If LinkedIn fails, try Google as fallback
+            console.log('⚠️ Falling back to Google OAuth...');
+            try {
+              oauthResponse = await AuthAPI.continueGoogleOAuth({ code, state });
+              providerUsed = 'Google';
+              console.log('✅ Google OAuth response received (fallback)');
+            } catch (googleError) {
+              console.error('❌ Google OAuth also failed:', googleError);
+              throw linkedInError; // Throw original error
+            }
+          }
+        } else {
+          // provider === 'google'
+          try {
+            console.log('📡 Trying Google OAuth continue...');
+            oauthResponse = await AuthAPI.continueGoogleOAuth({ code, state });
+            providerUsed = 'Google';
+            console.log('✅ Google OAuth response received');
+          } catch (googleError) {
+            console.error('❌ Google OAuth failed:', googleError);
+            // Try LinkedIn as fallback
+            console.log('⚠️ Falling back to LinkedIn OAuth...');
+            try {
+              oauthResponse = await AuthAPI.continueLinkedInOAuth({ code, state });
+              providerUsed = 'LinkedIn';
+              console.log('✅ LinkedIn OAuth response received (fallback)');
+            } catch (linkedInError) {
+              console.error('❌ LinkedIn OAuth also failed:', linkedInError);
+              throw googleError; // Throw original error
+            }
+          }
         }
 
         console.log(`${providerUsed} OAuth response received:`, {
@@ -52,7 +105,7 @@ export default function OAuthCallbackPage() {
         
         // ✅ Use login() to update both localStorage AND context
         if (oauthResponse.token) {
-          login(oauthResponse.token);  // ✅ This updates the context!
+          login(oauthResponse.token);
           console.log('💾 Token saved and context updated');
         }
 
@@ -81,7 +134,7 @@ export default function OAuthCallbackPage() {
       sessionStorage.removeItem("qc_auth_in_progress");
       navigate("/expert", { replace: true });
     })();
-  }, [navigate, login]);  // ✅ Add login to dependencies
+  }, [navigate, login]);
 
   return <div style={{ padding: 24 }}>Finalizing sign-in…</div>;
 }
