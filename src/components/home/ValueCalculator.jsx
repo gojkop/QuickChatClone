@@ -21,19 +21,19 @@ function ValueCalculator() {
   };
 
   return (
-    <section className="py-20 md:py-24 bg-gradient-to-b from-white to-gray-50">
+    <section className="py-20 md:py-24 bg-gradient-to-b from-surface to-canvas">
       <div className="container mx-auto px-6">
         <div className="max-w-3xl mx-auto text-center">
           {/* Header */}
-          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-gray-900 mb-3">
+          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-ink mb-3">
             Your Potential Earnings
           </h2>
-          <p className="text-gray-600 mb-10">
+          <p className="text-subtext mb-10">
             Quick calculation based on your availability and pricing
           </p>
 
           {/* Compact Calculator Card */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-lg p-6 md:p-8">
+          <div className="bg-surface rounded-xl border border-gray-200 shadow-elev-3 p-6 md:p-8">
             {/* Inputs Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
               {/* Questions Input */}
@@ -48,10 +48,10 @@ function ValueCalculator() {
                   step="1"
                   value={questionsPerWeek}
                   onChange={(e) => setQuestionsPerWeek(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <div className="mt-2 text-center">
-                  <span className="inline-block px-4 py-1 rounded-full bg-indigo-50 text-indigo-700 font-bold text-lg">
+                  <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary font-bold text-lg">
                     {questionsPerWeek}
                   </span>
                 </div>
@@ -69,10 +69,10 @@ function ValueCalculator() {
                   step="25"
                   value={pricePerQuestion}
                   onChange={(e) => setPricePerQuestion(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-violet-600"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent"
                 />
                 <div className="mt-2 text-center">
-                  <span className="inline-block px-4 py-1 rounded-full bg-violet-50 text-violet-700 font-bold text-lg">
+                  <span className="inline-block px-4 py-1 rounded-full bg-accent/10 text-accent font-bold text-lg">
                     €{pricePerQuestion}
                   </span>
                 </div>
@@ -80,14 +80,14 @@ function ValueCalculator() {
             </div>
 
             {/* Result Display */}
-            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-lg p-6 mb-6">
-              <div className="text-sm font-semibold text-gray-600 mb-2">
+            <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg p-6 mb-6">
+              <div className="text-sm font-semibold text-subtext mb-2">
                 Your potential yearly revenue
               </div>
-              <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+              <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 {formatCurrency(yearlyRevenue)}
               </div>
-              <div className="text-xs text-gray-500 mt-2">
+              <div className="text-xs text-subtext mt-2">
                 No meetings scheduled • Just async answers
               </div>
             </div>
@@ -95,7 +95,7 @@ function ValueCalculator() {
             {/* CTA */}
             <Link
               to="/signin"
-              className="inline-flex items-center gap-2 bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105"
+              className="btn btn-primary px-6 py-3"
             >
               <span>Get Your Link</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
