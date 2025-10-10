@@ -2,12 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+}
+
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #F9FAFB; /* Brand Light Gray */
-  color: #1F2937; /* text-gray-800 */
+  color: #111827; /* ink */
 }
 
 /* ========================================
@@ -22,7 +26,7 @@ body {
 }
 
 .animated-gradient-text {
-    background: linear-gradient(90deg, #6366F1, #A855F7, #6366F1);
+    background: linear-gradient(90deg, #4F46E5, #7C3AED, #4F46E5);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -151,7 +155,7 @@ html {
 
 /* Ensure smooth transitions globally */
 * {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-timing-function: var(--ease-standard);
 }
 
 /* Hardware acceleration for animated elements */
@@ -254,5 +258,20 @@ html {
 @supports not (backdrop-filter: blur(12px)) {
   .navbar-fallback {
     background: rgba(255, 255, 255, 0.95) !important;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center font-bold rounded-lg transition duration-base ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400;
+  }
+  .btn-primary {
+    @apply bg-primary text-white shadow-elev-2 hover:shadow-elev-3 hover:bg-indigo-700;
+  }
+  .btn-secondary {
+    @apply bg-surface text-ink/80 border border-gray-200 hover:bg-canvas;
+  }
+  .btn-destructive {
+    @apply bg-danger text-white hover:bg-red-600 focus-visible:ring-red-400;
   }
 }

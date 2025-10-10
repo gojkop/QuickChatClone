@@ -149,7 +149,7 @@ function Navbar() {
 
     return (
       <div 
-        className="rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center flex-shrink-0"
+        className="rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0"
         style={{ width: size, height: size }}
       >
         <svg 
@@ -207,10 +207,10 @@ function Navbar() {
         }`}
       >
         <nav 
-          className={`container mx-auto transition-all duration-300 ${
+          className={`container mx-auto transition duration-base ease-[var(--ease-standard)] ${
             isScrolled
-              ? 'bg-white/95 backdrop-blur-lg shadow-md rounded-none border-b border-gray-200/50'
-              : 'bg-white/80 backdrop-blur-lg shadow-sm rounded-xl border border-white/60'
+              ? 'bg-surface/95 backdrop-blur-lg shadow-md rounded-none border-b border-gray-200/50'
+              : 'bg-surface/80 backdrop-blur-lg shadow-sm rounded-xl border border-surface/60'
           }`}
         >
           <div className="flex items-center justify-between px-3 sm:px-4 py-2">
@@ -218,7 +218,7 @@ function Navbar() {
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => setIsMenuOpen(true)}
-                className="p-1.5 rounded-lg text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
+                className="p-1.5 rounded-lg text-subtext hover:text-primary hover:bg-canvas transition duration-base ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
                 aria-label="Open menu"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -240,7 +240,7 @@ function Navbar() {
               {/* Ask Anyone Button */}
               <Link
                 to="/invite"
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold text-sm hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                className="btn btn-primary gap-1.5 px-3 sm:px-4 py-1.5 text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -259,10 +259,10 @@ function Navbar() {
                       onClick={() => navigate('/expert')}
                       onMouseEnter={() => setShowTooltip(true)}
                       onMouseLeave={() => setShowTooltip(false)}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-indigo-50 transition-all duration-200 group"
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-canvas transition duration-base ease-[var(--ease-standard)] group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
                       aria-label={`Go to dashboard${userProfile.pendingQuestions > 0 ? ` - ${userProfile.pendingQuestions} pending questions` : ''}`}
                     >
-                      <span className="hidden sm:block text-sm font-medium text-gray-700 group-hover:text-indigo-600 transition-colors">
+                      <span className="hidden sm:block text-sm font-medium text-subtext group-hover:text-primary transition-colors">
                         {userProfile.name.split(' ')[0]}
                       </span>
                       
@@ -282,7 +282,7 @@ function Navbar() {
               ) : (
                 <Link
                   to="/signin"
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-sm hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                  className="btn btn-primary gap-1.5 px-3 sm:px-4 py-1.5 text-sm"
                 >
                   <span>Sign In</span>
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
