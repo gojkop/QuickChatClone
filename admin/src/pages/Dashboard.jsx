@@ -1,210 +1,173 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { 
+  Menu, X, Bell, Search, 
+  BarChart3, Flag, Shield, Users, CreditCard, Settings 
+} from 'lucide-react';
 
-function StatCard({ label, value, sub }) {
+function NavItem({ to, label, icon: Icon, onClick }) {
+  const loc = useLocation();
+  const active = loc.pathname === to;
+  
   return (
-    <div style={{ background: '#111827', border: '1px solid #374151', borderRadius: 12, padding: 16, minWidth: 200 }}>
-      <div style={{ fontSize: 12, opacity: 0.7, textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>{sub}</div>}
-    </div>
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`
+        flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
+        transition-all duration-200
+        ${active 
+          ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm' 
+          : 'text-gray-700 hover:bg-gray-100'
+        }
+      `}
+    >
+      <Icon className="w-5 h-5" />
+      {label}
+    </Link>
   );
 }
 
-function Section({ title, children, right }) {
-  return (
-    <section style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-        <h2 style={{ fontSize: 18 }}>{title}</h2>
-        {right}
-      </div>
-      <div style={{ background: '#0b1220', border: '1px solid #374151', borderRadius: 12, padding: 16 }}>
-        {children}
-      </div>
-    </section>
-  );
-}
+export default function Layout({ me, onLogout, children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-export default function Dashboard() {
-  // Mock KPI values for MVP rollout
-  const kpis = [
-    { label: 'Experts', value: 128, sub: 'Active last 30d: 83' },
-    { label: 'Askers', value: 2_145, sub: 'Repeat rate: 18.4%' },
-    { label: 'GTV (This Month)', value: '€12,480', sub: 'Prev: €10,350 (+20.6%)' },
-    { label: 'Questions Pending', value: 37, sub: 'SLA compliance: 93.1%' }
+  const navItems = [
+    { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+    { to: '/feature-flags', label: 'Feature Flags', icon: Flag },
+    { to: '/moderation', label: 'Moderation', icon: Shield },
+    { to: '/experts', label: 'Experts', icon: Users },
+    { to: '/transactions', label: 'Transactions', icon: CreditCard },
+    { to: '/settings', label: 'Settings', icon: Settings }
   ];
 
-  const atRiskExperts = [
-    { id: 101, name: 'Sarah Chen', pending: 3, avgHours: 28, status: 'warning' },
-    { id: 204, name: 'Amit Gupta', pending: 5, avgHours: 35, status: 'critical' }
-  ];
-
-  const recentTransactions = [
-    { id: 'pi_1', expert: 'Sarah Chen', amount: '€125', status: 'completed', ts: 'Today 10:21' },
-    { id: 'pi_2', expert: 'Amit Gupta', amount: '€75', status: 'refunded', ts: 'Today 09:54' },
-    { id: 'pi_3', expert: 'Elena Rossi', amount: '€100', status: 'completed', ts: 'Yesterday 18:12' }
-  ];
-
-  const moderationQueue = [
-    { id: 'q_329', type: 'question', reason: 'auto_detected', confidence: 0.84, status: 'pending' },
-    { id: 'a_812', type: 'answer', reason: 'quality', confidence: 0.42, status: 'pending' }
-  ];
+  const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div>
-      {/* KPI Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 20 }}>
-        {kpis.map(k => (
-          <StatCard key={k.label} label={k.label} value={k.value} sub={k.sub} />
-        ))}
-      </div>
-
-      {/* Conversion Funnel (placeholder) */}
-      <Section title="Conversion Funnel (Last 7d)" right={<span style={{ fontSize: 12, opacity: 0.7 }}>Mocked</span>}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-          {[
-            { step: 'Link Visits', value: 5420 },
-            { step: 'Question Started', value: 375 },
-            { step: 'Payment Completed', value: 312 },
-            { step: 'Answer Delivered', value: 295 }
-          ].map(s => (
-            <div key={s.step} style={{ background: '#111827', border: '1px solid #374151', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>{s.step}</div>
-              <div style={{ fontSize: 20, fontWeight: 800, marginTop: 6 }}>{s.value}</div>
-            </div>
-          ))}
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-4">
+        <button 
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label="Toggle menu"
+        >
+          {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold">
+            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+              mind
+            </span>
+            <span className="text-gray-900">Pick</span>
+          </span>
+          <span className="text-[10px] text-gray-500 uppercase tracking-wider">Admin</span>
         </div>
-      </Section>
+        
+        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
+          <Bell className="w-5 h-5 text-gray-400" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+        </button>
+      </div>
 
-      {/* At-Risk Experts */}
-      <Section title="Experts Needing Attention" right={<button style={btnGhost}>View All</button>}>
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th>Expert</th>
-              <th>Pending</th>
-              <th>Avg Response (h)</th>
-              <th>Health</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {atRiskExperts.map(e => (
-              <tr key={e.id}>
-                <td>{e.name}</td>
-                <td>{e.pending}</td>
-                <td>{e.avgHours}</td>
-                <td>
-                  <span style={pill(e.status)}>{e.status}</span>
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button style={btn}>Send Reminder</button>
-                    <button style={btn}>Pause New Qs</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
+      {/* Sidebar */}
+      <aside className={`
+        fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40
+        transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0
+      `}>
+        {/* Logo */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-2xl font-bold">
+              <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                mind
+              </span>
+              <span className="text-gray-900">Pick</span>
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 uppercase tracking-wider">Admin Console</p>
+        </div>
 
-      {/* Recent Transactions */}
-      <Section title="Recent Transactions" right={<button style={btnGhost}>Export CSV</button>}>
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th>Payment ID</th>
-              <th>Expert</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>When</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentTransactions.map(t => (
-              <tr key={t.id}>
-                <td>{t.id}</td>
-                <td>{t.expert}</td>
-                <td>{t.amount}</td>
-                <td><span style={pill(t.status)}>{t.status}</span></td>
-                <td>{t.ts}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
+        {/* Navigation */}
+        <nav className="p-4 space-y-1">
+          {navItems.map(item => (
+            <NavItem 
+              key={item.to} 
+              {...item} 
+              onClick={closeSidebar}
+            />
+          ))}
+        </nav>
 
-      {/* Moderation Queue */}
-      <Section title="Moderation Queue" right={<button style={btnGhost}>Open Queue</button>}>
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Type</th>
-              <th>Reason</th>
-              <th>Confidence</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {moderationQueue.map(m => (
-              <tr key={m.id}>
-                <td>{m.id}</td>
-                <td>{m.type}</td>
-                <td>{m.reason}</td>
-                <td>{Math.round(m.confidence * 100)}%</td>
-                <td><span style={pill(m.status)}>{m.status}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
+        {/* User Profile & Logout */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white text-sm font-bold">
+              {me?.role?.[0]?.toUpperCase() || 'A'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {me?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+              </p>
+              <p className="text-xs text-gray-500">ID: {me?.admin_id}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onLogout}
+            className="w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
+        {/* Desktop Top Bar */}
+        <div className="hidden lg:flex items-center justify-between p-6 bg-white border-b border-gray-200">
+          <div className="flex-1 max-w-xl">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search experts, transactions, flags..."
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
+              <Bell className="w-5 h-5 text-gray-600" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            </button>
+            
+            <div className="w-px h-6 bg-gray-200" />
+            
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600" />
+              <span className="text-sm font-medium text-gray-900">
+                {me?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Page Content */}
+        <div className="p-4 lg:p-6">
+          {children}
+        </div>
+      </main>
+
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
+          onClick={closeSidebar}
+        />
+      )}
     </div>
   );
-}
-
-const tableStyle = {
-  width: '100%',
-  borderCollapse: 'separate',
-  borderSpacing: 0,
-  fontSize: 14
-};
-
-const btn = {
-  padding: '6px 10px',
-  borderRadius: 8,
-  border: '1px solid #4b5563',
-  background: '#111827',
-  color: '#e5e7eb',
-  cursor: 'pointer'
-};
-
-const btnGhost = {
-  padding: '6px 10px',
-  borderRadius: 8,
-  border: '1px solid #4b5563',
-  background: 'transparent',
-  color: '#e5e7eb',
-  cursor: 'pointer'
-};
-
-function pill(kind) {
-  const colors = {
-    completed: { bg: '#064e3b', border: '#065f46', text: '#d1fae5' },
-    refunded: { bg: '#7f1d1d', border: '#991b1b', text: '#fee2e2' },
-    pending: { bg: '#1f2937', border: '#374151', text: '#e5e7eb' },
-    warning: { bg: '#78350f', border: '#92400e', text: '#fde68a' },
-    critical: { bg: '#7f1d1d', border: '#991b1b', text: '#fee2e2' },
-    approved: { bg: '#064e3b', border: '#065f46', text: '#d1fae5' }
-  }[kind] || { bg: '#1f2937', border: '#374151', text: '#e5e7eb' };
-
-  return {
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: 999,
-    background: colors.bg,
-    color: colors.text,
-    border: `1px solid ${colors.border}`,
-    fontSize: 12
-  };
 }
