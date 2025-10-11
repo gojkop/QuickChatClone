@@ -1,6 +1,6 @@
 # mindPick Admin Console
 
-Basic scaffold for a standalone Admin Console, designed to be deployed directly from the `admin/` subfolder as a separate Vercel project served on `admin.mindpick.me`. No functionality is implemented yet (no backend calls, no DB connections)..
+Basic scaffold for a standalone Admin Console, designed to be deployed directly from the `admin/` subfolder as a separate Vercel project served on `admin.mindpick.me`. No functionality is implemented yet (no backend calls, no DB connections).!
 
 ## Overview
 
