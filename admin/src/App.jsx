@@ -18,7 +18,11 @@ export default function App() {
   // Check existing session on load
   const didAuto = useRef(false);
 
+  const didCheck = useRef(false);
+
   useEffect(() => {
+    if (didCheck.current) return;
+    didCheck.current = true;
     const checkSession = async () => {
       try {
         // 1) Try existing admin_session
