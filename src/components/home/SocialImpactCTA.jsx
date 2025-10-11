@@ -47,7 +47,7 @@ function SocialImpactCTA() {
             className="group mt-8 inline-flex items-center justify-center gap-2 font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 py-4 px-8 rounded-full transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 text-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
           >
             <span>Discover Our Impact</span>
-            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
           </Link>
