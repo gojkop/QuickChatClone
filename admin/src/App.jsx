@@ -11,7 +11,24 @@ export default function App() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch('/api/me', { credentials: 'include' });
+        // 1) Try existing admin_session
+        let res = await fetch('/api/me', { credentials: 'include' });
+        console.log('[admin-ui] /api/me (pre) status =', res.status);
+
+        // 2) If not authenticated, auto-exchange qc_session -> admin_session
+        if (!res.ok) {
+          console.log('[admin-ui] Attempt auto exchange via POST /api/auth/verify (no body)');
+          const v = await fetch('/api/auth/verify', {
+            method: 'POST',
+            credentials: 'include'
+          });
+          console.log('[admin-ui] /api/auth/verify (auto) status =', v.status);
+
+          // 3) Retry /api/me after auto exchange
+          res = await fetch('/api/me', { credentials: 'include' });
+          console.log('[admin-ui] /api/me (post-auto) status =', res.status);
+        }
+
         if (res.ok) {
           const data = await res.json();
           setMe(data);
@@ -19,6 +36,7 @@ export default function App() {
           setMe(null);
         }
       } catch (e) {
+        console.error('[admin-ui] checkSession error:', e);
         setMe(null);
       } finally {
         setLoading(false);
