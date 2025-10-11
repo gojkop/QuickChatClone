@@ -114,7 +114,7 @@ function PricingPage() {
 
                 <Link 
                   to={isAuthenticated ? "/expert" : "/signin?plan=pro"} 
-                  className="block w-full text-center py-3 px-4 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:shadow-lg transform hover:scale-[1.02]"
+                  className="group block w-full text-center py-3 px-4 rounded-lg font-semibold transition duration-base ease-in-out bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   {isAuthenticated ? "Upgrade to Pro" : "Start with Pro"}
                 </Link>
@@ -239,9 +239,9 @@ function PricingPage() {
             </div>
 
             <div className="text-center mt-12">
-              <Link to="/faq" className="inline-flex items-center gap-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors">
+              <Link to="/faq" className="group inline-flex items-center gap-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors">
                 <span>View all FAQs</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </Link>
