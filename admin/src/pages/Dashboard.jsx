@@ -1,173 +1,375 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React from 'react';
 import { 
-  Menu, X, Bell, Search, 
-  BarChart3, Flag, Shield, Users, CreditCard, Settings 
+  Users, TrendingUp, Clock, AlertCircle, CheckCircle,
+  ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
+import { 
+  Card, 
+  StatCard, 
+  Badge, 
+  Button, 
+  SectionHeader,
+  EmptyState 
+} from '../components/ui';
 
-function NavItem({ to, label, icon: Icon, onClick }) {
-  const loc = useLocation();
-  const active = loc.pathname === to;
+// Mock data - replace with API calls
+const kpis = [
+  { 
+    label: 'Active Experts', 
+    value: '128', 
+    change: '+12%', 
+    trend: 'up', 
+    icon: Users 
+  },
+  { 
+    label: 'Total Askers', 
+    value: '2,145', 
+    change: '+8%', 
+    trend: 'up', 
+    icon: Users 
+  },
+  { 
+    label: 'GTV This Month', 
+    value: '€12,480', 
+    change: '+21%', 
+    trend: 'up', 
+    icon: TrendingUp 
+  },
+  { 
+    label: 'Pending Questions', 
+    value: '37', 
+    change: '-5%', 
+    trend: 'down', 
+    icon: Clock 
+  }
+];
+
+const recentActivity = [
+  { 
+    type: 'payment', 
+    user: 'Sarah Chen', 
+    action: 'completed answer', 
+    amount: '€125', 
+    time: '5m ago', 
+    status: 'success' 
+  },
+  { 
+    type: 'flag', 
+    user: 'Auto-mod', 
+    action: 'flagged content', 
+    amount: null, 
+    time: '12m ago', 
+    status: 'warning' 
+  },
+  { 
+    type: 'expert', 
+    user: 'Amit Gupta', 
+    action: 'joined platform', 
+    amount: null, 
+    time: '1h ago', 
+    status: 'info' 
+  },
+  { 
+    type: 'payment', 
+    user: 'Elena Rossi', 
+    action: 'refund issued', 
+    amount: '€75', 
+    time: '2h ago', 
+    status: 'danger' 
+  }
+];
+
+const atRiskExperts = [
+  { 
+    id: 101, 
+    name: 'Sarah Chen', 
+    pending: 3, 
+    avgHours: 28, 
+    health: 'warning' 
+  },
+  { 
+    id: 204, 
+    name: 'Amit Gupta', 
+    pending: 5, 
+    avgHours: 35, 
+    health: 'danger' 
+  }
+];
+
+const funnelSteps = [
+  { step: 'Link Visits', value: '5,420', rate: 100 },
+  { step: 'Question Started', value: '375', rate: 6.9 },
+  { step: 'Payment Complete', value: '312', rate: 83.2 },
+  { step: 'Answer Delivered', value: '295', rate: 94.6 }
+];
+
+// ============================================================================
+// Activity Item Component
+// ============================================================================
+function ActivityItem({ item }) {
+  const statusConfig = {
+    success: { dot: 'bg-green-500', bg: 'bg-green-50' },
+    warning: { dot: 'bg-amber-500', bg: 'bg-amber-50' },
+    danger: { dot: 'bg-red-500', bg: 'bg-red-50' },
+    info: { dot: 'bg-blue-500', bg: 'bg-blue-50' }
+  };
+  
+  const config = statusConfig[item.status] || statusConfig.info;
   
   return (
-    <Link
-      to={to}
-      onClick={onClick}
-      className={`
-        flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-        transition-all duration-200
-        ${active 
-          ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm' 
-          : 'text-gray-700 hover:bg-gray-100'
-        }
-      `}
-    >
-      <Icon className="w-5 h-5" />
-      {label}
-    </Link>
+    <div className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 rounded-lg transition-colors">
+      <div className={`w-2 h-2 rounded-full ${config.dot}`} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-900 truncate">{item.user}</p>
+        <p className="text-xs text-gray-500">{item.action}</p>
+      </div>
+      {item.amount && (
+        <span className="text-sm font-semibold text-gray-900">{item.amount}</span>
+      )}
+      <span className="text-xs text-gray-400 whitespace-nowrap">{item.time}</span>
+    </div>
   );
 }
 
-export default function Layout({ me, onLogout, children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const navItems = [
-    { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-    { to: '/feature-flags', label: 'Feature Flags', icon: Flag },
-    { to: '/moderation', label: 'Moderation', icon: Shield },
-    { to: '/experts', label: 'Experts', icon: Users },
-    { to: '/transactions', label: 'Transactions', icon: CreditCard },
-    { to: '/settings', label: 'Settings', icon: Settings }
-  ];
-
-  const closeSidebar = () => setSidebarOpen(false);
-
+// ============================================================================
+// Expert Health Row Component
+// ============================================================================
+function ExpertHealthRow({ expert }) {
+  const healthConfig = {
+    warning: { 
+      badge: 'warning', 
+      label: 'Warning',
+      action: 'Send reminder' 
+    },
+    danger: { 
+      badge: 'danger', 
+      label: 'Critical',
+      action: 'Urgent action' 
+    }
+  };
+  
+  const config = healthConfig[expert.health];
+  
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-4">
-        <button 
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          aria-label="Toggle menu"
-        >
-          {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold">
-            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              mind
-            </span>
-            <span className="text-gray-900">Pick</span>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition-shadow">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center flex-shrink-0">
+          <span className="text-sm font-bold text-indigo-700">
+            {expert.name.split(' ').map(n => n[0]).join('')}
           </span>
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider">Admin</span>
         </div>
-        
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
-          <Bell className="w-5 h-5 text-gray-400" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+        <div>
+          <p className="text-sm font-semibold text-gray-900">{expert.name}</p>
+          <p className="text-xs text-gray-500">
+            {expert.pending} pending • {expert.avgHours}h avg response
+          </p>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-2 ml-13 sm:ml-0">
+        <Badge variant={config.badge}>
+          {config.label}
+        </Badge>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => console.log('Remind', expert.id)}
+        >
+          {config.action}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Funnel Step Component
+// ============================================================================
+function FunnelStep({ step, isLast }) {
+  return (
+    <div className="relative">
+      <div className="text-center mb-2">
+        <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+          <div 
+            className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full transition-all duration-500"
+            style={{ width: `${step.rate}%` }}
+          />
+        </div>
+        <p className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
+          {step.value}
+        </p>
+        <p className="text-xs text-gray-500 mb-1">{step.step}</p>
+        <p className="text-xs font-semibold text-indigo-600">{step.rate}%</p>
+      </div>
+      
+      {!isLast && (
+        <div className="hidden lg:block absolute top-8 -right-4 text-gray-300">
+          <ArrowUpRight className="w-5 h-5" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Dashboard Component
+// ============================================================================
+export default function Dashboard() {
+  return (
+    <div className="space-y-6">
+      {/* KPI Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpis.map((stat, i) => (
+          <StatCard key={i} {...stat} />
+        ))}
       </div>
 
-      {/* Sidebar */}
-      <aside className={`
-        fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40
-        transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0
-      `}>
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-2xl font-bold">
-              <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                mind
-              </span>
-              <span className="text-gray-900">Pick</span>
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 uppercase tracking-wider">Admin Console</p>
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Activity - Takes 2 columns on desktop */}
+        <div className="lg:col-span-2">
+          <Card padding="none">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Real-time updates from your platform
+                  </p>
+                </div>
+                <Button variant="ghost" size="sm">
+                  View all
+                </Button>
+              </div>
+            </div>
+            
+            <div className="divide-y divide-gray-100">
+              {recentActivity.length > 0 ? (
+                recentActivity.map((item, i) => (
+                  <ActivityItem key={i} item={item} />
+                ))
+              ) : (
+                <EmptyState 
+                  icon={Clock}
+                  title="No recent activity"
+                  description="Activity will appear here as users interact with your platform"
+                />
+              )}
+            </div>
+          </Card>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-1">
-          {navItems.map(item => (
-            <NavItem 
-              key={item.to} 
-              {...item} 
-              onClick={closeSidebar}
+        {/* Sidebar - Quick Actions & System Health */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card>
+            <h3 className="text-sm font-bold text-gray-900 mb-4">Quick Actions</h3>
+            <div className="space-y-2">
+              <Button 
+                variant="primary" 
+                fullWidth
+                onClick={() => console.log('Create flag')}
+              >
+                Create Feature Flag
+              </Button>
+              <Button 
+                variant="secondary" 
+                fullWidth
+                onClick={() => console.log('Review queue')}
+              >
+                Review Moderation Queue
+              </Button>
+              <Button 
+                variant="secondary" 
+                fullWidth
+                onClick={() => console.log('Export')}
+              >
+                Export Transactions
+              </Button>
+            </div>
+          </Card>
+
+          {/* System Health */}
+          <Card className="bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-100">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">System Health</h3>
+                <p className="text-xs text-gray-600">All systems operational</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">API Response</span>
+                <span className="font-semibold text-green-600">45ms</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">Uptime</span>
+                <span className="font-semibold text-green-600">99.9%</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">Active Sessions</span>
+                <span className="font-semibold text-gray-900">243</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Experts Needing Attention */}
+      <Card padding="none">
+        <div className="p-6 border-b border-gray-100">
+          <SectionHeader
+            title="Experts Needing Attention"
+            description="Approaching SLA limits or missed deadlines"
+            action={
+              <Button variant="ghost" size="sm">
+                View all experts
+              </Button>
+            }
+          />
+        </div>
+        
+        <div className="p-6 space-y-3">
+          {atRiskExperts.length > 0 ? (
+            atRiskExperts.map((expert, i) => (
+              <ExpertHealthRow key={i} expert={expert} />
+            ))
+          ) : (
+            <EmptyState 
+              icon={CheckCircle}
+              title="All experts healthy"
+              description="No experts currently need attention"
+            />
+          )}
+        </div>
+      </Card>
+
+      {/* Conversion Funnel */}
+      <Card>
+        <SectionHeader
+          title="Conversion Funnel"
+          description="Last 7 days performance"
+          action={
+            <Button variant="ghost" size="sm">
+              Export report
+            </Button>
+          }
+        />
+        
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-6">
+          {funnelSteps.map((step, i) => (
+            <FunnelStep 
+              key={i} 
+              step={step} 
+              isLast={i === funnelSteps.length - 1} 
             />
           ))}
-        </nav>
-
-        {/* User Profile & Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white text-sm font-bold">
-              {me?.role?.[0]?.toUpperCase() || 'A'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">
-                {me?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
-              </p>
-              <p className="text-xs text-gray-500">ID: {me?.admin_id}</p>
-            </div>
-          </div>
-          <button 
-            onClick={onLogout}
-            className="w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            Logout
-          </button>
         </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
-        {/* Desktop Top Bar */}
-        <div className="hidden lg:flex items-center justify-between p-6 bg-white border-b border-gray-200">
-          <div className="flex-1 max-w-xl">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search experts, transactions, flags..."
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
-              <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
-            
-            <div className="w-px h-6 bg-gray-200" />
-            
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600" />
-              <span className="text-sm font-medium text-gray-900">
-                {me?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Page Content */}
-        <div className="p-4 lg:p-6">
-          {children}
-        </div>
-      </main>
-
-      {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
-          onClick={closeSidebar}
-        />
-      )}
+      </Card>
     </div>
   );
 }
