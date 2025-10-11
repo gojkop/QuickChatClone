@@ -34,22 +34,27 @@ export default function App() {
       return;
     }
     try {
+      // Normalize token: strip quotes/backticks and remove whitespace/newlines
+      const cleanedToken = tokenInput
+        .trim()
+        .replace(/^["'`]|["'`]$/g, '')
+        .replace(/\s+/g, '');
       const res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${tokenInput.trim()}`
+          Authorization: `Bearer ${cleanedToken}`
         },
         credentials: 'include'
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || 'Sign-in failed');
+        throw new Error(body.error || `Sign-in failed (${res.status})`);
       }
       // Session cookie set; fetch /api/me
       const meRes = await fetch('/api/me', { credentials: 'include' });
       if (!meRes.ok) {
         const body = await meRes.json().catch(() => ({}));
-        throw new Error(body.error || 'Session validation failed');
+        throw new Error(body.error || `Session validation failed (${meRes.status})`);
       }
       const meData = await meRes.json();
       setMe(meData);
