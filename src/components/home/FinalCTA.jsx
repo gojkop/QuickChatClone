@@ -25,20 +25,17 @@ function FinalCTA() {
           <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link 
               to="/signin" 
-              className="group relative inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-5 px-10 rounded-xl text-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden"
+              className="group inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-5 px-10 rounded-xl text-lg transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             >
-              <span className="relative z-10">Start for Free</span>
-              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span>Start for Free</span>
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
-              
-              {/* Shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 group-hover:translate-x-full transition-transform duration-1000"></div>
             </Link>
             
             <Link 
               to="/pricing" 
-              className="inline-flex items-center gap-2 text-gray-700 font-semibold py-5 px-8 rounded-xl border-2 border-gray-300 hover:border-indigo-600 hover:bg-indigo-50 transition-all duration-300"
+              className="inline-flex items-center gap-2 text-gray-700 font-semibold py-5 px-8 rounded-xl border-2 border-gray-300 hover:border-indigo-600 hover:bg-indigo-50 transition duration-base ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             >
               View Pricing
             </Link>
