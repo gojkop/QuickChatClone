@@ -1,5 +1,5 @@
-// admin/src/components/ui/index.js
-// Reusable UI components aligned with mindPick brand guidelines
+// admin/src/components/ui/index.jsx
+// Reusable UI components - NO external icon dependencies
 
 import React from 'react';
 
@@ -187,18 +187,17 @@ export function Select({
 // Empty State Component
 // ============================================================================
 export function EmptyState({ 
-  icon: Icon,
   title,
   description,
   action 
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      {Icon && (
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-50 to-violet-50 flex items-center justify-center mb-4">
-          <Icon className="w-8 h-8 text-indigo-600" />
-        </div>
-      )}
+      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-50 to-violet-50 flex items-center justify-center mb-4">
+        <svg className="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+      </div>
       <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
       {description && (
         <p className="text-sm text-gray-500 mb-6 max-w-md">{description}</p>
@@ -254,14 +253,14 @@ export function SectionHeader({
   className = '' 
 }) {
   return (
-    <div className={`flex items-start justify-between mb-6 ${className}`}>
+    <div className={`flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 ${className}`}>
       <div>
         <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
         {description && (
           <p className="text-sm text-gray-500 mt-1">{description}</p>
         )}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="sm:flex-shrink-0">{action}</div>}
     </div>
   );
 }
@@ -274,7 +273,7 @@ export function StatCard({
   value, 
   change,
   trend = 'neutral',
-  icon: Icon 
+  icon
 }) {
   const trendColors = {
     up: 'text-green-600',
@@ -297,9 +296,9 @@ export function StatCard({
             </div>
           )}
         </div>
-        {Icon && (
+        {icon && (
           <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-50 to-violet-50 flex items-center justify-center">
-            <Icon className="w-6 h-6 text-indigo-600" />
+            {icon}
           </div>
         )}
       </div>
