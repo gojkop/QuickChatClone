@@ -113,7 +113,7 @@ export default async function handler(req, res) {
       role: rows[0].role,
       email,
       name
-    });
+    }, req);
   } catch (e) {
     console.error('[admin] /api/auth/verify error:', e);
     return err(res, 500, 'Internal server error');
