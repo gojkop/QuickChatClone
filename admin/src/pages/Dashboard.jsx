@@ -1,4 +1,6 @@
 import React from 'react';
+import { Users, TrendingUp, Clock, CheckCircle, ArrowUpRight } from 'lucide-react';
+
 import { 
   Users, TrendingUp, Clock, AlertCircle, CheckCircle,
   ArrowUpRight, ArrowDownRight
