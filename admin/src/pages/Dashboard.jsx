@@ -1,10 +1,4 @@
 import React from 'react';
-import { Users, TrendingUp, Clock, CheckCircle, ArrowUpRight } from 'lucide-react';
-
-import { 
-  Users, TrendingUp, Clock, AlertCircle, CheckCircle,
-  ArrowUpRight, ArrowDownRight
-} from 'lucide-react';
 import { 
   Card, 
   StatCard, 
@@ -14,35 +8,69 @@ import {
   EmptyState 
 } from '../components/ui';
 
-// Mock data - replace with API calls
+// Inline SVG Icons
+const Icons = {
+  Users: () => (
+    <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  ),
+  TrendingUp: () => (
+    <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+  ),
+  Clock: () => (
+    <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  CheckCircle: () => (
+    <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  AlertCircle: () => (
+    <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  ArrowUpRight: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+    </svg>
+  )
+};
+
+// Mock data
 const kpis = [
   { 
     label: 'Active Experts', 
     value: '128', 
     change: '+12%', 
     trend: 'up', 
-    icon: Users 
+    icon: <Icons.Users />
   },
   { 
     label: 'Total Askers', 
     value: '2,145', 
     change: '+8%', 
     trend: 'up', 
-    icon: Users 
+    icon: <Icons.Users />
   },
   { 
     label: 'GTV This Month', 
     value: '€12,480', 
     change: '+21%', 
     trend: 'up', 
-    icon: TrendingUp 
+    icon: <Icons.TrendingUp />
   },
   { 
     label: 'Pending Questions', 
     value: '37', 
     change: '-5%', 
     trend: 'down', 
-    icon: Clock 
+    icon: <Icons.Clock />
   }
 ];
 
@@ -206,7 +234,7 @@ function FunnelStep({ step, isLast }) {
       
       {!isLast && (
         <div className="hidden lg:block absolute top-8 -right-4 text-gray-300">
-          <ArrowUpRight className="w-5 h-5" />
+          <Icons.ArrowUpRight />
         </div>
       )}
     </div>
@@ -252,7 +280,6 @@ export default function Dashboard() {
                 ))
               ) : (
                 <EmptyState 
-                  icon={Clock}
                   title="No recent activity"
                   description="Activity will appear here as users interact with your platform"
                 />
@@ -295,7 +322,7 @@ export default function Dashboard() {
           <Card className="bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-100">
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+                <Icons.CheckCircle />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-gray-900">System Health</h3>
@@ -324,15 +351,15 @@ export default function Dashboard() {
       {/* Experts Needing Attention */}
       <Card padding="none">
         <div className="p-6 border-b border-gray-100">
-          <SectionHeader
-            title="Experts Needing Attention"
-            description="Approaching SLA limits or missed deadlines"
-            action={
-              <Button variant="ghost" size="sm">
-                View all experts
-              </Button>
-            }
-          />
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Experts Needing Attention</h2>
+              <p className="text-sm text-gray-500 mt-1">Approaching SLA limits or missed deadlines</p>
+            </div>
+            <Button variant="ghost" size="sm">
+              View all experts
+            </Button>
+          </div>
         </div>
         
         <div className="p-6 space-y-3">
@@ -342,7 +369,6 @@ export default function Dashboard() {
             ))
           ) : (
             <EmptyState 
-              icon={CheckCircle}
               title="All experts healthy"
               description="No experts currently need attention"
             />
@@ -352,15 +378,15 @@ export default function Dashboard() {
 
       {/* Conversion Funnel */}
       <Card>
-        <SectionHeader
-          title="Conversion Funnel"
-          description="Last 7 days performance"
-          action={
-            <Button variant="ghost" size="sm">
-              Export report
-            </Button>
-          }
-        />
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Conversion Funnel</h2>
+            <p className="text-sm text-gray-500 mt-1">Last 7 days performance</p>
+          </div>
+          <Button variant="ghost" size="sm">
+            Export report
+          </Button>
+        </div>
         
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-6">
           {funnelSteps.map((step, i) => (
