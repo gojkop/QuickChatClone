@@ -13,15 +13,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const cookie = req.headers.cookie || '';
-    const m = cookie.match(/(?:^|;\\s*)admin_session=([^;]+)/);
-    if (!m) return err(res, 401, 'Not authenticated');
+    const cookieHeader = req.headers.cookie || '';
+    const m1 = cookieHeader.match(/(?:^|;\\s*)admin_session=([^;]+)/);
+    const m2 = cookieHeader.match(/(?:^|;\\s*)admin_seession=([^;]+)/);
+    const cookieMatch = m1 ? m1 : m2;
+    if (!cookieMatch) return err(res, 401, 'Not authenticated', {}, req);
 
     let payload;
     try {
-      payload = verifyAdminSession(m[1]);
+      payload = verifyAdminSession(cookieMatch[1]);
     } catch {
-      return err(res, 401, 'Invalid or expired session');
+      return err(res, 401, 'Invalid or expired session', {}, req);
     }
 
     const rows = await sql`
@@ -32,10 +34,10 @@ export default async function handler(req, res) {
     `;
 
     if (rows.length === 0 || rows[0].disabled) {
-      return err(res, 403, 'Access revoked');
+      return err(res, 403, 'Access revoked', {}, req);
     }
     if (rows[0].token_version !== payload.tv) {
-      return err(res, 401, 'Session expired');
+      return err(res, 401, 'Session expired', {}, req);
     }
 
     return ok(res, {
@@ -43,9 +45,9 @@ export default async function handler(req, res) {
       admin_id: payload.admin_id,
       xano_user_id: payload.xano_user_id,
       role: rows[0].role
-    });
+    }, req);
   } catch (e) {
     console.error('[admin] /api/me error:', e);
-    return err(res, 500, 'Internal server error');
+    return err(res, 500, 'Internal server error', {}, req);
   }
 }
