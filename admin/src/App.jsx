@@ -41,9 +41,8 @@ export default function App() {
         .replace(/\s+/g, '');
       const res = await fetch('/api/auth/verify', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${cleanedToken}`
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: cleanedToken }),
         credentials: 'include'
       });
       if (!res.ok) {

@@ -23,9 +23,15 @@ export default async function handler(req, res) {
     }
 
     const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+    // Fallback: accept token from JSON body for browser-based sign-in
+    if (!token && req.body && typeof req.body.token === 'string') {
+      token = req.body.token.trim();
+    }
+
     if (!token) {
-      return err(res, 401, 'Missing Authorization Bearer token');
+      return err(res, 401, 'Missing admin token (Authorization: Bearer <token> or JSON body { "token": "..." })');
     }
 
     // 1) Validate with Xano (/auth/me preferred, fallback to /me)
