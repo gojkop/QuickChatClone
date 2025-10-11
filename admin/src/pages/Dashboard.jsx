@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Card, 
   StatCard, 
   Badge, 
   Button, 
   SectionHeader,
-  EmptyState 
+  EmptyState,
+  Select 
 } from '../components/ui';
+import {
+  TrendLineChart,
+  AreaChartComponent,
+  BarChartComponent,
+  DonutChart,
+  Sparkline
+} from '../components/charts';
 
 // Inline SVG Icons
 const Icons = {
@@ -29,48 +37,81 @@ const Icons = {
     <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
-  ),
-  AlertCircle: () => (
-    <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  ArrowUpRight: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-    </svg>
   )
 };
 
-// Mock data
+// Mock data for charts
+const gtvTrendData = [
+  { date: 'Oct 1', gtv: 8400, questions: 34 },
+  { date: 'Oct 2', gtv: 9200, questions: 38 },
+  { date: 'Oct 3', gtv: 7800, questions: 31 },
+  { date: 'Oct 4', gtv: 10500, questions: 42 },
+  { date: 'Oct 5', gtv: 11200, questions: 45 },
+  { date: 'Oct 6', gtv: 9800, questions: 39 },
+  { date: 'Oct 7', gtv: 12480, questions: 48 }
+];
+
+const expertPerformanceData = [
+  { name: 'Sarah Chen', questions: 87, revenue: 10875 },
+  { name: 'Elena Rossi', questions: 134, revenue: 13400 },
+  { name: 'Amit Gupta', questions: 42, revenue: 3150 },
+  { name: 'Tom Wilson', questions: 65, revenue: 8125 },
+  { name: 'Lisa Park', questions: 91, revenue: 11375 }
+];
+
+const questionStatusData = [
+  { name: 'Completed', value: 295 },
+  { name: 'Pending', value: 37 },
+  { name: 'Missed SLA', value: 8 },
+  { name: 'Refunded', value: 5 }
+];
+
+const categoryBreakdownData = [
+  { name: 'Product', value: 142 },
+  { name: 'Engineering', value: 98 },
+  { name: 'Design', value: 87 },
+  { name: 'Marketing', value: 65 },
+  { name: 'Other', value: 53 }
+];
+
+const sparklineData = [
+  { value: 24 }, { value: 28 }, { value: 22 }, { value: 31 },
+  { value: 35 }, { value: 29 }, { value: 37 }, { value: 42 }
+];
+
+// KPI data with sparklines
 const kpis = [
   { 
     label: 'Active Experts', 
     value: '128', 
     change: '+12%', 
     trend: 'up', 
-    icon: <Icons.Users />
+    icon: <Icons.Users />,
+    sparkline: sparklineData
   },
   { 
     label: 'Total Askers', 
     value: '2,145', 
     change: '+8%', 
     trend: 'up', 
-    icon: <Icons.Users />
+    icon: <Icons.Users />,
+    sparkline: sparklineData.map(d => ({ value: d.value * 2 }))
   },
   { 
     label: 'GTV This Month', 
     value: '€12,480', 
     change: '+21%', 
     trend: 'up', 
-    icon: <Icons.TrendingUp />
+    icon: <Icons.TrendingUp />,
+    sparkline: gtvTrendData.map(d => ({ value: d.gtv / 100 }))
   },
   { 
     label: 'Pending Questions', 
     value: '37', 
     change: '-5%', 
     trend: 'down', 
-    icon: <Icons.Clock />
+    icon: <Icons.Clock />,
+    sparkline: sparklineData.map(d => ({ value: 50 - d.value }))
   }
 ];
 
@@ -98,14 +139,6 @@ const recentActivity = [
     amount: null, 
     time: '1h ago', 
     status: 'info' 
-  },
-  { 
-    type: 'payment', 
-    user: 'Elena Rossi', 
-    action: 'refund issued', 
-    amount: '€75', 
-    time: '2h ago', 
-    status: 'danger' 
   }
 ];
 
@@ -126,22 +159,15 @@ const atRiskExperts = [
   }
 ];
 
-const funnelSteps = [
-  { step: 'Link Visits', value: '5,420', rate: 100 },
-  { step: 'Question Started', value: '375', rate: 6.9 },
-  { step: 'Payment Complete', value: '312', rate: 83.2 },
-  { step: 'Answer Delivered', value: '295', rate: 94.6 }
-];
-
 // ============================================================================
 // Activity Item Component
 // ============================================================================
 function ActivityItem({ item }) {
   const statusConfig = {
-    success: { dot: 'bg-green-500', bg: 'bg-green-50' },
-    warning: { dot: 'bg-amber-500', bg: 'bg-amber-50' },
-    danger: { dot: 'bg-red-500', bg: 'bg-red-50' },
-    info: { dot: 'bg-blue-500', bg: 'bg-blue-50' }
+    success: { dot: 'bg-green-500' },
+    warning: { dot: 'bg-amber-500' },
+    danger: { dot: 'bg-red-500' },
+    info: { dot: 'bg-blue-500' }
   };
   
   const config = statusConfig[item.status] || statusConfig.info;
@@ -213,31 +239,36 @@ function ExpertHealthRow({ expert }) {
 }
 
 // ============================================================================
-// Funnel Step Component
+// Enhanced Stat Card with Sparkline
 // ============================================================================
-function FunnelStep({ step, isLast }) {
+function EnhancedStatCard({ stat }) {
   return (
-    <div className="relative">
-      <div className="text-center mb-2">
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-          <div 
-            className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full transition-all duration-500"
-            style={{ width: `${step.rate}%` }}
+    <Card hover>
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</p>
+          <div className="flex items-center gap-1">
+            <span className={`text-sm font-semibold ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+              {stat.change}
+            </span>
+            <span className="text-xs text-gray-500">vs last month</span>
+          </div>
+        </div>
+        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-50 to-violet-50 flex items-center justify-center flex-shrink-0">
+          {stat.icon}
+        </div>
+      </div>
+      {stat.sparkline && (
+        <div className="mt-2 -mx-2">
+          <Sparkline 
+            data={stat.sparkline} 
+            dataKey="value"
+            color={stat.trend === 'up' ? '#10B981' : '#EF4444'}
           />
         </div>
-        <p className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
-          {step.value}
-        </p>
-        <p className="text-xs text-gray-500 mb-1">{step.step}</p>
-        <p className="text-xs font-semibold text-indigo-600">{step.rate}%</p>
-      </div>
-      
-      {!isLast && (
-        <div className="hidden lg:block absolute top-8 -right-4 text-gray-300">
-          <Icons.ArrowUpRight />
-        </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -245,18 +276,100 @@ function FunnelStep({ step, isLast }) {
 // Main Dashboard Component
 // ============================================================================
 export default function Dashboard() {
+  const [dateRange, setDateRange] = useState('7d');
+
+  const currencyFormatter = (value) => `€${value.toLocaleString()}`;
+
   return (
     <div className="space-y-6">
-      {/* KPI Stats Grid */}
+      {/* Header with Date Range Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <SectionHeader
+          title="Dashboard"
+          description="Platform performance and key metrics"
+        />
+        <Select
+          value={dateRange}
+          onChange={(e) => setDateRange(e.target.value)}
+          options={[
+            { value: '7d', label: 'Last 7 days' },
+            { value: '30d', label: 'Last 30 days' },
+            { value: '90d', label: 'Last 90 days' }
+          ]}
+        />
+      </div>
+
+      {/* KPI Stats Grid with Sparklines */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((stat, i) => (
-          <StatCard key={i} {...stat} />
+          <EnhancedStatCard key={i} stat={stat} />
         ))}
       </div>
 
-      {/* Two Column Layout */}
+      {/* Charts Row 1: GTV Trend & Question Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* GTV Trend */}
+        <Card>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">GTV & Questions Trend</h3>
+          <TrendLineChart
+            data={gtvTrendData}
+            dataKeys={['gtv', 'questions']}
+            height={300}
+            formatter={(value, name) => 
+              name === 'gtv' ? `€${value.toLocaleString()}` : value
+            }
+          />
+        </Card>
+
+        {/* Question Status Distribution */}
+        <Card>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Question Status</h3>
+          <DonutChart
+            data={questionStatusData}
+            height={300}
+            centerText="345"
+          />
+        </Card>
+      </div>
+
+      {/* Charts Row 2: Expert Performance & Category Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity - Takes 2 columns on desktop */}
+        {/* Expert Performance */}
+        <Card className="lg:col-span-2">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Top Experts by Revenue</h3>
+          <BarChartComponent
+            data={expertPerformanceData}
+            dataKeys={['revenue']}
+            height={300}
+            formatter={currencyFormatter}
+          />
+        </Card>
+
+        {/* Category Breakdown */}
+        <Card>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Categories</h3>
+          <div className="space-y-3">
+            {categoryBreakdownData.map((cat, i) => (
+              <div key={i}>
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-gray-700">{cat.name}</span>
+                  <span className="font-semibold text-gray-900">{cat.value}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full transition-all duration-500"
+                    style={{ width: `${(cat.value / 445) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Two Column Layout: Activity & Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Activity */}
         <div className="lg:col-span-2">
           <Card padding="none">
             <div className="p-6 border-b border-gray-100">
@@ -274,16 +387,9 @@ export default function Dashboard() {
             </div>
             
             <div className="divide-y divide-gray-100">
-              {recentActivity.length > 0 ? (
-                recentActivity.map((item, i) => (
-                  <ActivityItem key={i} item={item} />
-                ))
-              ) : (
-                <EmptyState 
-                  title="No recent activity"
-                  description="Activity will appear here as users interact with your platform"
-                />
-              )}
+              {recentActivity.map((item, i) => (
+                <ActivityItem key={i} item={item} />
+              ))}
             </div>
           </Card>
         </div>
@@ -373,29 +479,6 @@ export default function Dashboard() {
               description="No experts currently need attention"
             />
           )}
-        </div>
-      </Card>
-
-      {/* Conversion Funnel */}
-      <Card>
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Conversion Funnel</h2>
-            <p className="text-sm text-gray-500 mt-1">Last 7 days performance</p>
-          </div>
-          <Button variant="ghost" size="sm">
-            Export report
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-6">
-          {funnelSteps.map((step, i) => (
-            <FunnelStep 
-              key={i} 
-              step={step} 
-              isLast={i === funnelSteps.length - 1} 
-            />
-          ))}
         </div>
       </Card>
     </div>

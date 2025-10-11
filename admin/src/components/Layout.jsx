@@ -1,11 +1,63 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Menu, X, Bell, Search, 
-  BarChart3, Flag, Shield, Users, CreditCard, Settings 
-} from 'lucide-react';
+import MobileBottomNav from './MobileBottomNav.jsx';
 
-function NavItem({ to, label, icon: Icon, onClick }) {
+// Inline SVG Icons
+const Icons = {
+  Menu: () => (
+    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  ),
+  X: () => (
+    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+  Bell: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  ),
+  Search: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  ),
+  BarChart: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  ),
+  Flag: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+    </svg>
+  ),
+  Shield: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  ),
+  Users: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  ),
+  CreditCard: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  Settings: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  )
+};
+
+function NavItem({ to, label, Icon, onClick }) {
   const loc = useLocation();
   const active = loc.pathname === to;
   
@@ -22,7 +74,7 @@ function NavItem({ to, label, icon: Icon, onClick }) {
         }
       `}
     >
-      <Icon className="w-5 h-5" />
+      <Icon />
       {label}
     </Link>
   );
@@ -31,13 +83,20 @@ function NavItem({ to, label, icon: Icon, onClick }) {
 export default function Layout({ me, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Mock badges for notifications
+  const badges = {
+    flags: 0,
+    moderation: 3,  // 3 pending items
+    experts: 2,     // 2 at-risk experts
+  };
+
   const navItems = [
-    { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-    { to: '/feature-flags', label: 'Feature Flags', icon: Flag },
-    { to: '/moderation', label: 'Moderation', icon: Shield },
-    { to: '/experts', label: 'Experts', icon: Users },
-    { to: '/transactions', label: 'Transactions', icon: CreditCard },
-    { to: '/settings', label: 'Settings', icon: Settings }
+    { to: '/dashboard', label: 'Dashboard', Icon: Icons.BarChart },
+    { to: '/feature-flags', label: 'Feature Flags', Icon: Icons.Flag },
+    { to: '/moderation', label: 'Moderation', Icon: Icons.Shield },
+    { to: '/experts', label: 'Experts', Icon: Icons.Users },
+    { to: '/transactions', label: 'Transactions', Icon: Icons.CreditCard },
+    { to: '/settings', label: 'Settings', Icon: Icons.Settings }
   ];
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -51,7 +110,7 @@ export default function Layout({ me, onLogout, children }) {
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           aria-label="Toggle menu"
         >
-          {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {sidebarOpen ? <Icons.X /> : <Icons.Menu />}
         </button>
         
         <div className="flex items-center gap-2">
@@ -65,12 +124,14 @@ export default function Layout({ me, onLogout, children }) {
         </div>
         
         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
-          <Bell className="w-5 h-5 text-gray-400" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+          <Icons.Bell />
+          {(badges.moderation + badges.experts) > 0 && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+          )}
         </button>
       </div>
 
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <aside className={`
         fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40
         transition-transform duration-300 ease-in-out
@@ -124,12 +185,14 @@ export default function Layout({ me, onLogout, children }) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
+      <main className="lg:ml-64 pt-16 lg:pt-0 pb-20 lg:pb-0 min-h-screen">
         {/* Desktop Top Bar */}
         <div className="hidden lg:flex items-center justify-between p-6 bg-white border-b border-gray-200">
           <div className="flex-1 max-w-xl">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <Icons.Search />
+              </div>
               <input
                 type="text"
                 placeholder="Search experts, transactions, flags..."
@@ -140,8 +203,10 @@ export default function Layout({ me, onLogout, children }) {
           
           <div className="flex items-center gap-3">
             <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
-              <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              <Icons.Bell />
+              {(badges.moderation + badges.experts) > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              )}
             </button>
             
             <div className="w-px h-6 bg-gray-200" />
@@ -160,6 +225,9 @@ export default function Layout({ me, onLogout, children }) {
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav badges={badges} />
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
