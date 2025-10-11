@@ -76,6 +76,61 @@ Session bootstrapping and loops
 - Routing fix: App is mounted for '/*' to prevent route redirect loops
 - StrictMode removed in admin/src/main.jsx to avoid double-effect invocations in production
 
+Feature Flags in plain language (simple on/off)
+
+What is a feature flag?
+- A feature flag is a named switch (on/off) that lets us enable or disable a piece of functionality without deploying code.
+- Each flag has a key (e.g., deep_dive_question), a human name, an optional description, and a single boolean: enabled (true/false).
+
+How it works at runtime (simple flow)
+1) The Admin panel stores flags (key + enabled) in the control-plane database (Neon).
+2) The app (frontend/backend) fetches the current flags from a read endpoint (e.g., GET /api/flags/public) and caches them.
+3) In code, before showing or using a feature, we check the flag by key:
+   - If enabled = true → show/allow the feature.
+   - If enabled = false → hide/disable the feature (and protect server routes too).
+4) Admins can flip the flag at any time in the Admin panel; apps will reflect it on the next refresh (or after a short cache period).
+
+Admin side: what you do
+- Create a flag with:
+  - key: a permanent identifier used in code (e.g., deep_dive_question)
+  - name: a human-friendly label (e.g., Deep Dive Question Type)
+  - description: explain what the feature does
+  - enabled: on/off
+- To turn a feature on (or off), toggle the flag in the Admin → Feature Flags page. No deployment needed.
+
+Example: Deep Dive Question Type (simple on/off)
+Goal: Control whether users can choose a “Deep Dive” question option (longer answers, higher price).
+
+1) Admin panel
+   - Create the flag:
+     - key: deep_dive_question
+     - name: Deep Dive Question Type
+     - description: Offer long-form, higher-priced question type
+     - enabled: false (default)
+   - When we’re ready to launch, toggle enabled: true.
+
+2) Frontend (UI gating)
+   - On the Ask page and Pricing page, check deep_dive_question.enabled.
+     - If true: show “Deep Dive” option and pricing.
+     - If false: hide “Deep Dive” option so users can’t select it.
+   - This prevents confusing users when the feature is not ready.
+
+3) Backend (server protection)
+   - In the submission endpoint, double-check the flag before accepting a deep_dive type.
+     - If flag is off, reject that type and return a friendly error.
+   - This ensures the feature stays off even if the UI is bypassed.
+
+4) Testing and rollout
+   - Toggle the flag on in a preview/staging environment, verify UI shows the option and the backend accepts it.
+   - Toggle it off and confirm the UI hides it and backend blocks it.
+   - In production, flipping the flag on instantly enables the feature without redeploying.
+
+Notes
+- Keep flags simple: one boolean per feature. Avoid rollout percentages for the first iteration.
+- Name keys clearly and consistently; keys are permanent because they’re referenced in code.
+- Always guard on the server too (UI + server checks) for security and consistency.
+- Document each flag (what it gates, where it is used, any dependencies).
+
 4) Admin UI (mock MVP)
 - Framework: Vite + React + React Router
 - Layout (admin/src/components/Layout.jsx):
