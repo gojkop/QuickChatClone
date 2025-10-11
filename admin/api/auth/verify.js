@@ -46,7 +46,20 @@ export default async function handler(req, res) {
     }
 
     if (!token) {
-      return err(res, 401, 'Missing admin token (Authorization: Bearer <token> or JSON body { "token": "..." })');
+      // Try qc_session cookie (contains Xano token on your domain)
+      const cookieHeader = req.headers.cookie || '';
+      const m = cookieHeader.match(/(?:^|;\\s*)qc_session=([^;]+)/);
+      if (m) {
+        try {
+          token = decodeURIComponent(m[1]).trim();
+        } catch {
+          token = m[1].trim();
+        }
+      }
+    }
+
+    if (!token) {
+      return err(res, 401, 'Missing admin token (Authorization: Bearer <token> or JSON body { "token": "..." } or qc_session cookie)');
     }
 
     // 1) Validate with Xano (/auth/me preferred, fallback to /me)
