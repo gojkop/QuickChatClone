@@ -29,28 +29,47 @@ export default function App() {
 
   const handleSignIn = async () => {
     setError('');
+    console.log('[admin-ui] Sign In clicked');
     if (!tokenInput.trim()) {
       setError('Paste a valid Xano JWT token first.');
       return;
     }
+    // Normalize token: strip quotes/backticks and remove whitespace/newlines
+    const cleanedToken = tokenInput
+      .trim()
+      .replace(/^["'`]|["'`]$/g, '')
+      .replace(/\s+/g, '');
+
+    // Try JSON POST first, then fallback to form-encoded if needed
     try {
-      // Normalize token: strip quotes/backticks and remove whitespace/newlines
-      const cleanedToken = tokenInput
-        .trim()
-        .replace(/^["'`]|["'`]$/g, '')
-        .replace(/\s+/g, '');
-      const res = await fetch('/api/auth/verify', {
+      console.log('[admin-ui] POST /api/auth/verify with JSON body');
+      let res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: cleanedToken }),
         credentials: 'include'
       });
+      console.log('[admin-ui] /api/auth/verify (json) status =', res.status);
+      if (!res.ok) {
+        // Attempt form-encoded fallback
+        console.log('[admin-ui] JSON POST failed, trying form-encoded fallback');
+        const formBody = new URLSearchParams({ token: cleanedToken }).toString();
+        res = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formBody,
+          credentials: 'include'
+        });
+        console.log('[admin-ui] /api/auth/verify (form) status =', res.status);
+      }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `Sign-in failed (${res.status})`);
       }
-      // Session cookie set; fetch /api/me
+
+      console.log('[admin-ui] Fetch /api/me to confirm session');
       const meRes = await fetch('/api/me', { credentials: 'include' });
+      console.log('[admin-ui] /api/me status =', meRes.status);
       if (!meRes.ok) {
         const body = await meRes.json().catch(() => ({}));
         throw new Error(body.error || `Session validation failed (${meRes.status})`);
@@ -60,6 +79,7 @@ export default function App() {
       setTokenInput('');
       setError('');
     } catch (e) {
+      console.error('[admin-ui] Sign in error:', e);
       setError(e.message || 'Sign-in failed');
     }
   };

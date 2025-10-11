@@ -17,6 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('[admin] /api/auth/verify start', { method: req.method, hasAuth: !!(req.headers?.authorization), bodyType: typeof req.body });
     const xanoBase = process.env.XANO_BASE_URL;
     if (!xanoBase) {
       return err(res, 500, 'XANO_BASE_URL not configured');
@@ -26,8 +27,22 @@ export default async function handler(req, res) {
     let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
     // Fallback: accept token from JSON body for browser-based sign-in
-    if (!token && req.body && typeof req.body.token === 'string') {
-      token = req.body.token.trim();
+    if (!token) {
+      let body = req.body;
+      if (typeof body === 'string') {
+        // Try JSON first
+        try { body = JSON.parse(body); } catch {
+          // Then try URL-encoded form (token=<value>)
+          try {
+            const params = new URLSearchParams(req.body);
+            const t = params.get('token');
+            if (t) token = t.trim();
+          } catch { /* ignore */ }
+        }
+      }
+      if (!token && body && typeof body.token === 'string') {
+        token = body.token.trim();
+      }
     }
 
     if (!token) {
