@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -16,6 +16,8 @@ export default function App() {
   const [flags, setFlags] = useState(null);
 
   // Check existing session on load
+  const didAuto = useRef(false);
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -24,7 +26,8 @@ export default function App() {
         console.log('[admin-ui] /api/me (pre) status =', res.status);
 
         // 2) If not authenticated, auto-exchange qc_session -> admin_session
-        if (!res.ok) {
+        if (!res.ok && !didAuto.current) {
+          didAuto.current = true;
           console.log('[admin-ui] Attempt auto exchange via POST /api/auth/verify (no body)');
           const v = await fetch('/api/auth/verify', {
             method: 'POST',
