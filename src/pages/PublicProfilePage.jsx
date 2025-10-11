@@ -234,18 +234,18 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocial
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [isMobile]);
 
-  // Generate particles
-  const particleCount = isMobile ? 8 : 16;
-  const particles = Array.from({ length: particleCount }, (_, i) => {
-    const angle = (i / particleCount) * Math.PI * 2;
-    const radius = isMobile ? 70 : 85;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    const delay = i * 0.15;
-    const duration = 8 + (i % 3) * 2;
-    
-    return { x, y, delay, duration, id: i };
-  });
+  // Generate particles - DISABLED
+  // const particleCount = isMobile ? 8 : 16;
+  // const particles = Array.from({ length: particleCount }, (_, i) => {
+  //   const angle = (i / particleCount) * Math.PI * 2;
+  //   const radius = isMobile ? 70 : 85;
+  //   const x = Math.cos(angle) * radius;
+  //   const y = Math.sin(angle) * radius;
+  //   const delay = i * 0.15;
+  //   const duration = 8 + (i % 3) * 2;
+  //   
+  //   return { x, y, delay, duration, id: i };
+  // });
 
   const parallaxStyle = !isMobile ? {
     transform: `translate(${mousePosition.x}px, ${mousePosition.y}px)`,
@@ -263,8 +263,8 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocial
         {/* Ambient glow - enhanced with breathing */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-violet-400 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500 living-breath"/>
         
-        {/* Particle field */}
-        <div className="absolute inset-0 pointer-events-none">
+        {/* Particle field - DISABLED */}
+        {/* <div className="absolute inset-0 pointer-events-none">
           {particles.map((particle) => (
             <div
               key={particle.id}
@@ -283,7 +283,7 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocial
               }}
             />
           ))}
-        </div>
+        </div> */}
 
         {/* Avatar container with breathing animation and parallax */}
         <div 
