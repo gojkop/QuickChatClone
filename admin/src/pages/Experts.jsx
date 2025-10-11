@@ -1,152 +1,313 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
+import { 
+  Card, 
+  Button, 
+  Badge,
+  Input,
+  Select,
+  SectionHeader,
+  EmptyState 
+} from '../components/ui';
 
-function Section({ title, children, right }) {
-  return (
-    <section style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-        <h2 style={{ fontSize: 18 }}>{title}</h2>
-        {right}
-      </div>
-      <div style={{ background: '#0b1220', border: '1px solid #374151', borderRadius: 12, padding: 16 }}>
-        {children}
-      </div>
-    </section>
-  );
-}
+// Mock data
+const initialExperts = [
+  { 
+    id: 1, 
+    name: 'Sarah Chen', 
+    email: 'sarah@example.com', 
+    stripe_connected: true, 
+    price_cents: 12500, 
+    sla_hours: 24, 
+    accepting_questions: true,
+    total_questions: 87,
+    avg_response_hours: 18,
+    rating: 4.8,
+    specialty: 'Product Management'
+  },
+  { 
+    id: 2, 
+    name: 'Amit Gupta', 
+    email: 'amit@example.com', 
+    stripe_connected: false, 
+    price_cents: 7500, 
+    sla_hours: 48, 
+    accepting_questions: false,
+    total_questions: 42,
+    avg_response_hours: 35,
+    rating: 4.5,
+    specialty: 'Engineering'
+  },
+  { 
+    id: 3, 
+    name: 'Elena Rossi', 
+    email: 'elena@example.com', 
+    stripe_connected: true, 
+    price_cents: 10000, 
+    sla_hours: 24, 
+    accepting_questions: true,
+    total_questions: 134,
+    avg_response_hours: 16,
+    rating: 4.9,
+    specialty: 'Design'
+  }
+];
 
-function ExpertRow({ e, onAction }) {
+// ============================================================================
+// Expert Card Component
+// ============================================================================
+function ExpertCard({ expert, onAction }) {
   return (
-    <tr>
-      <td style={{ fontWeight: 700 }}>{e.name}</td>
-      <td>{e.email}</td>
-      <td>
-        <span style={pill(e.stripe_connected ? 'connected' : 'disconnected')}>
-          {e.stripe_connected ? 'Connected' : 'Not Connected'}
-        </span>
-      </td>
-      <td>{e.sla_hours}h</td>
-      <td>€{(e.price_cents / 100).toFixed(0)}</td>
-      <td>
-        <span style={pill(e.accepting_questions ? 'enabled' : 'disabled')}>
-          {e.accepting_questions ? 'Available' : 'Away'}
-        </span>
-      </td>
-      <td>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button style={btn} onClick={() => onAction('view', e)}>View</button>
-          <button style={btn} onClick={() => onAction('toggle_availability', e)}>
-            {e.accepting_questions ? 'Set Away' : 'Set Available'}
-          </button>
-          <button style={btnGhost} onClick={() => onAction('impersonate', e)}>Impersonate</button>
+    <Card hover>
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Avatar */}
+        <div className="flex-shrink-0">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center">
+            <span className="text-xl font-bold text-indigo-700">
+              {expert.name.split(' ').map(n => n[0]).join('')}
+            </span>
+          </div>
         </div>
-      </td>
-    </tr>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">{expert.name}</h3>
+              <p className="text-sm text-gray-500">{expert.email}</p>
+            </div>
+            <div className="flex gap-2">
+              <Badge variant={expert.accepting_questions ? 'success' : 'default'}>
+                {expert.accepting_questions ? 'Available' : 'Away'}
+              </Badge>
+              <Badge variant={expert.stripe_connected ? 'success' : 'danger'}>
+                {expert.stripe_connected ? 'Connected' : 'No Stripe'}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            <div>
+              <p className="text-xs text-gray-500">Specialty</p>
+              <p className="text-sm font-semibold text-gray-900">{expert.specialty}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Price</p>
+              <p className="text-sm font-semibold text-gray-900">€{(expert.price_cents / 100).toFixed(0)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">SLA</p>
+              <p className="text-sm font-semibold text-gray-900">{expert.sla_hours}h</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Rating</p>
+              <p className="text-sm font-semibold text-gray-900">⭐ {expert.rating}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="text-center p-2 bg-gray-50 rounded-lg">
+              <p className="text-lg font-bold text-gray-900">{expert.total_questions}</p>
+              <p className="text-xs text-gray-500">Questions</p>
+            </div>
+            <div className="text-center p-2 bg-gray-50 rounded-lg">
+              <p className="text-lg font-bold text-gray-900">{expert.avg_response_hours}h</p>
+              <p className="text-xs text-gray-500">Avg Response</p>
+            </div>
+            <div className="text-center p-2 bg-gray-50 rounded-lg">
+              <p className="text-lg font-bold text-gray-900">
+                {expert.sla_hours > expert.avg_response_hours ? '✓' : '⚠️'}
+              </p>
+              <p className="text-xs text-gray-500">SLA Health</p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="primary" 
+              size="sm"
+              onClick={() => onAction('view', expert)}
+            >
+              View Details
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm"
+              onClick={() => onAction('toggle_availability', expert)}
+            >
+              {expert.accepting_questions ? 'Set Away' : 'Set Available'}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onAction('message', expert)}
+            >
+              Send Message
+            </Button>
+            {!expert.stripe_connected && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => onAction('connect_stripe', expert)}
+              >
+                Connect Stripe
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 
+// ============================================================================
+// Main Component
+// ============================================================================
 export default function Experts() {
-  const [query, setQuery] = useState('');
-  const [availability, setAvailability] = useState('all');
-  const [stripe, setStripe] = useState('all');
+  const [experts, setExperts] = useState(initialExperts);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [availabilityFilter, setAvailabilityFilter] = useState('all');
+  const [stripeFilter, setStripeFilter] = useState('all');
 
-  const [experts, setExperts] = useState([
-    { id: 1, name: 'Sarah Chen', email: 'sarah@example.com', stripe_connected: true, price_cents: 12500, sla_hours: 24, accepting_questions: true },
-    { id: 2, name: 'Amit Gupta', email: 'amit@example.com', stripe_connected: false, price_cents: 7500, sla_hours: 48, accepting_questions: false },
-    { id: 3, name: 'Elena Rossi', email: 'elena@example.com', stripe_connected: true, price_cents: 10000, sla_hours: 24, accepting_questions: true }
-  ]);
+  // Filter experts
+  const filteredExperts = experts.filter(expert => {
+    const matchesSearch = 
+      expert.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      expert.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      expert.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesAvailability = 
+      availabilityFilter === 'all' ? true :
+      availabilityFilter === 'available' ? expert.accepting_questions :
+      !expert.accepting_questions;
 
-  const filtered = useMemo(() => {
-    return experts.filter(e => {
-      const matchQ = query ? (e.name.toLowerCase().includes(query.toLowerCase()) || e.email.toLowerCase().includes(query.toLowerCase())) : true;
-      const matchA = availability === 'all' ? true : (availability === 'available' ? e.accepting_questions : !e.accepting_questions);
-      const matchS = stripe === 'all' ? true : (stripe === 'connected' ? e.stripe_connected : !e.stripe_connected);
-      return matchQ && matchA && matchS;
-    });
-  }, [experts, query, availability, stripe]);
+    const matchesStripe = 
+      stripeFilter === 'all' ? true :
+      stripeFilter === 'connected' ? expert.stripe_connected :
+      !expert.stripe_connected;
 
-  const onAction = (action, expert) => {
-    if (action === 'toggle_availability') {
-      setExperts(prev => prev.map(e => e.id === expert.id ? { ...e, accepting_questions: !e.accepting_questions } : e));
+    return matchesSearch && matchesAvailability && matchesStripe;
+  });
+
+  // Handlers
+  const handleAction = (action, expert) => {
+    switch (action) {
+      case 'toggle_availability':
+        setExperts(prev => prev.map(e => 
+          e.id === expert.id ? { ...e, accepting_questions: !e.accepting_questions } : e
+        ));
+        break;
+      case 'view':
+        console.log('View expert:', expert);
+        break;
+      case 'message':
+        console.log('Message expert:', expert);
+        break;
+      case 'connect_stripe':
+        console.log('Connect Stripe for:', expert);
+        break;
+      default:
+        break;
     }
-    // Other actions (view, impersonate) are mocked
-    console.log('Action:', action, 'Expert:', expert);
+  };
+
+  const stats = {
+    total: experts.length,
+    available: experts.filter(e => e.accepting_questions).length,
+    connected: experts.filter(e => e.stripe_connected).length,
+    avgRating: (experts.reduce((sum, e) => sum + e.rating, 0) / experts.length).toFixed(1)
   };
 
   return (
-    <div>
-      <Section
+    <div className="space-y-6">
+      {/* Header */}
+      <SectionHeader
         title="Experts"
-        right={
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              style={input}
-              placeholder="Search name or email…"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-            <select style={input} value={availability} onChange={e => setAvailability(e.target.value)}>
-              <option value="all">All</option>
-              <option value="available">Available</option>
-              <option value="away">Away</option>
-            </select>
-            <select style={input} value={stripe} onChange={e => setStripe(e.target.value)}>
-              <option value="all">Stripe: All</option>
-              <option value="connected">Connected</option>
-              <option value="disconnected">Disconnected</option>
-            </select>
-            <button style={btnGhost}>Export CSV</button>
-          </div>
+        description="Manage expert profiles and availability"
+        action={
+          <Button variant="secondary">
+            Export CSV
+          </Button>
         }
-      >
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Stripe</th>
-              <th>SLA</th>
-              <th>Price</th>
-              <th>Availability</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(e => (
-              <ExpertRow key={e.id} e={e} onAction={onAction} />
-            ))}
-          </tbody>
-        </table>
-      </Section>
+      />
 
-      <Section title="Selected Expert (mock)">
-        <div style={{ fontSize: 14, opacity: 0.8 }}>
-          Pick an expert from the table to manage settings, view performance, and moderate content. In the real MVP, this will open a detail drawer with profile, performance KPIs, and quick actions (toggle availability, connect Stripe, refund last tx, etc.).
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+            <p className="text-sm text-gray-500 mt-1">Total Experts</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-green-600">{stats.available}</p>
+            <p className="text-sm text-gray-500 mt-1">Available Now</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-indigo-600">{stats.connected}</p>
+            <p className="text-sm text-gray-500 mt-1">Stripe Connected</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-gray-900">⭐ {stats.avgRating}</p>
+            <p className="text-sm text-gray-500 mt-1">Avg Rating</p>
+          </div>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Input
+            placeholder="Search by name, email, or specialty..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="sm:col-span-1"
+          />
+          <Select
+            value={availabilityFilter}
+            onChange={(e) => setAvailabilityFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Availability' },
+              { value: 'available', label: 'Available Only' },
+              { value: 'away', label: 'Away Only' }
+            ]}
+          />
+          <Select
+            value={stripeFilter}
+            onChange={(e) => setStripeFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Stripe Status' },
+              { value: 'connected', label: 'Connected Only' },
+              { value: 'disconnected', label: 'Not Connected' }
+            ]}
+          />
         </div>
-      </Section>
+      </Card>
+
+      {/* Experts List */}
+      {filteredExperts.length > 0 ? (
+        <div className="space-y-4">
+          {filteredExperts.map(expert => (
+            <ExpertCard
+              key={expert.id}
+              expert={expert}
+              onAction={handleAction}
+            />
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <EmptyState
+            title="No experts found"
+            description={searchQuery ? "Try adjusting your search or filters" : "No experts match the current filters"}
+          />
+        </Card>
+      )}
     </div>
   );
-}
-
-const tableStyle = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: 14 };
-const btn = { padding: '6px 10px', borderRadius: 8, border: '1px solid #4b5563', background: '#111827', color: '#e5e7eb', cursor: 'pointer' };
-const btnGhost = { padding: '6px 10px', borderRadius: 8, border: '1px solid #4b5563', background: 'transparent', color: '#e5e7eb', cursor: 'pointer' };
-const input = { width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #4b5563', background: '#0b1220', color: '#e5e7eb' };
-
-function pill(kind) {
-  const colors = {
-    connected: { bg: '#064e3b', border: '#065f46', text: '#d1fae5' },
-    disconnected: { bg: '#7f1d1d', border: '#991b1b', text: '#fee2e2' },
-    enabled: { bg: '#064e3b', border: '#065f46', text: '#d1fae5' },
-    disabled: { bg: '#1f2937', border: '#374151', text: '#e5e7eb' }
-  }[kind] || { bg: '#1f2937', border: '#374151', text: '#e5e7eb' };
-
-  return {
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: 999,
-    background: colors.bg,
-    color: colors.text,
-    border: `1px solid ${colors.border}`,
-    fontSize: 12
-  };
 }

@@ -1,150 +1,375 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
+import { 
+  Card, 
+  Button, 
+  Badge,
+  Input,
+  Select,
+  Modal,
+  SectionHeader,
+  EmptyState 
+} from '../components/ui';
 
-function Section({ title, children, right }) {
-  return (
-    <section style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-        <h2 style={{ fontSize: 18 }}>{title}</h2>
-        {right}
-      </div>
-      <div style={{ background: '#0b1220', border: '1px solid #374151', borderRadius: 12, padding: 16 }}>
-        {children}
-      </div>
-    </section>
-  );
-}
+// Mock data
+const initialTransactions = [
+  { 
+    id: 'pi_3Jk81', 
+    expert: 'Sarah Chen', 
+    asker: 'john@acme.com', 
+    amount: 12500, 
+    status: 'completed', 
+    created_at: 'Today 10:21',
+    question_id: 'q_1234'
+  },
+  { 
+    id: 'pi_9Ds20', 
+    expert: 'Amit Gupta', 
+    asker: 'maria@globex.com', 
+    amount: 7500, 
+    status: 'refunded', 
+    created_at: 'Today 09:54',
+    question_id: 'q_1235'
+  },
+  { 
+    id: 'pi_0Ke11', 
+    expert: 'Elena Rossi', 
+    asker: 'ops@initech.com', 
+    amount: 10000, 
+    status: 'pending', 
+    created_at: 'Yesterday 18:12',
+    question_id: 'q_1236'
+  },
+  { 
+    id: 'pi_7Qa50', 
+    expert: 'Amit Gupta', 
+    asker: 'sam@contoso.com', 
+    amount: 8500, 
+    status: 'disputed', 
+    created_at: 'Yesterday 16:40',
+    question_id: 'q_1237'
+  }
+];
 
-function TxRow({ tx, onAction }) {
-  return (
-    <tr>
-      <td style={{ fontFamily: 'monospace' }}>{tx.id}</td>
-      <td>{tx.expert}</td>
-      <td>{tx.asker}</td>
-      <td>{tx.amount}</td>
-      <td><span style={pill(tx.status)}>{tx.status}</span></td>
-      <td>{tx.ts}</td>
-      <td>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button style={btnGhost} onClick={() => onAction('view', tx)}>View</button>
-          <button style={btnDanger} disabled={tx.status !== 'completed'} onClick={() => onAction('refund', tx)}>
-            Refund
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-}
-
-export default function Transactions() {
-  const [status, setStatus] = useState('all');
-  const [query, setQuery] = useState('');
-  const [range, setRange] = useState('7d'); // placeholder
-
-  const [txs, setTxs] = useState([
-    { id: 'pi_3Jk81', expert: 'Sarah Chen', asker: 'john@acme.com', amount: '€125', status: 'completed', ts: 'Today 10:21' },
-    { id: 'pi_9Ds20', expert: 'Amit Gupta', asker: 'maria@globex.com', amount: '€75', status: 'refunded', ts: 'Today 09:54' },
-    { id: 'pi_0Ke11', expert: 'Elena Rossi', asker: 'ops@initech.com', amount: '€100', status: 'pending', ts: 'Yesterday 18:12' },
-    { id: 'pi_7Qa50', expert: 'Amit Gupta', asker: 'sam@contoso.com', amount: '€85', status: 'disputed', ts: 'Yesterday 16:40' }
-  ]);
-
-  const filtered = useMemo(() => {
-    return txs.filter(t => {
-      const matchS = status === 'all' ? true : t.status === status;
-      const q = query.trim().toLowerCase();
-      const matchQ = !q ? true :
-        t.id.toLowerCase().includes(q) ||
-        t.expert.toLowerCase().includes(q) ||
-        t.asker.toLowerCase().includes(q);
-      // range filter is mocked
-      return matchS && matchQ;
-    });
-  }, [txs, status, query, range]);
-
-  const onAction = (action, tx) => {
-    console.log('Tx action:', action, tx);
-    if (action === 'refund' && tx.status === 'completed') {
-      setTxs(prev => prev.map(t => t.id === tx.id ? { ...t, status: 'refunded' } : t));
-    }
+// ============================================================================
+// Transaction Row Component
+// ============================================================================
+function TransactionRow({ transaction, onAction }) {
+  const statusConfig = {
+    completed: { variant: 'success', label: 'Completed' },
+    pending: { variant: 'warning', label: 'Pending' },
+    refunded: { variant: 'danger', label: 'Refunded' },
+    disputed: { variant: 'danger', label: 'Disputed' }
   };
 
-  return (
-    <div>
-      <Section
-        title="Transactions"
-        right={
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              style={input}
-              placeholder="Search id/expert/asker…"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-            <select style={input} value={status} onChange={e => setStatus(e.target.value)}>
-              <option value="all">All Statuses</option>
-              <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="refunded">Refunded</option>
-              <option value="disputed">Disputed</option>
-            </select>
-            <select style={input} value={range} onChange={e => setRange(e.target.value)}>
-              <option value="7d">Last 7d</option>
-              <option value="30d">Last 30d</option>
-              <option value="90d">Last 90d</option>
-            </select>
-            <button style={btnGhost}>Export CSV</button>
-          </div>
-        }
-      >
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th>Payment ID</th>
-              <th>Expert</th>
-              <th>Asker</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>When</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(t => (
-              <TxRow key={t.id} tx={t} onAction={onAction} />
-            ))}
-          </tbody>
-        </table>
-      </Section>
+  const config = statusConfig[transaction.status];
 
-      <Section title="Stripe Events (mock)">
-        <div style={{ fontSize: 14, opacity: 0.8 }}>
-          In the MVP, view a transaction to see its timeline and Stripe events (payment_intent.created, charge.succeeded, payout.paid, etc.).
+  return (
+    <div className="p-4 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition-shadow">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+        {/* Left: Transaction Info */}
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center gap-3">
+            <code className="text-sm font-mono text-gray-900 font-semibold">
+              {transaction.id}
+            </code>
+            <Badge variant={config.variant}>
+              {config.label}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+            <div>
+              <span className="text-gray-500">Expert: </span>
+              <span className="text-gray-900 font-medium">{transaction.expert}</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Asker: </span>
+              <span className="text-gray-900">{transaction.asker}</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Time: </span>
+              <span className="text-gray-900">{transaction.created_at}</span>
+            </div>
+          </div>
         </div>
-      </Section>
+
+        {/* Right: Amount & Actions */}
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-2xl font-bold text-gray-900">
+              €{(transaction.amount / 100).toFixed(2)}
+            </p>
+            <p className="text-xs text-gray-500">Question {transaction.question_id}</p>
+          </div>
+
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onAction('view', transaction)}
+            >
+              View
+            </Button>
+            {transaction.status === 'completed' && (
+              <Button 
+                variant="danger" 
+                size="sm"
+                onClick={() => onAction('refund', transaction)}
+              >
+                Refund
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-const tableStyle = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: 14 };
-const btn = { padding: '6px 10px', borderRadius: 8, border: '1px solid #4b5563', background: '#111827', color: '#e5e7eb', cursor: 'pointer' };
-const btnGhost = { padding: '6px 10px', borderRadius: 8, border: '1px solid #4b5563', background: 'transparent', color: '#e5e7eb', cursor: 'pointer' };
-const btnDanger = { padding: '6px 10px', borderRadius: 8, border: '1px solid #991b1b', background: '#7f1d1d', color: '#fff', cursor: 'pointer' };
-const input = { width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #4b5563', background: '#0b1220', color: '#e5e7eb' };
+// ============================================================================
+// Refund Confirmation Modal
+// ============================================================================
+function RefundModal({ isOpen, onClose, transaction, onConfirm }) {
+  const [reason, setReason] = useState('');
 
-function pill(kind) {
-  const colors = {
-    completed: { bg: '#064e3b', border: '#065f46', text: '#d1fae5' },
-    refunded: { bg: '#7f1d1d', border: '#991b1b', text: '#fee2e2' },
-    pending: { bg: '#1f2937', border: '#374151', text: '#e5e7eb' },
-    disputed: { bg: '#78350f', border: '#92400e', text: '#fde68a' }
-  }[kind] || { bg: '#1f2937', border: '#374151', text: '#e5e7eb' };
+  if (!transaction) return null;
 
-  return {
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: 999,
-    background: colors.bg,
-    color: colors.text,
-    border: `1px solid ${colors.border}`,
-    fontSize: 12
+  const handleConfirm = () => {
+    onConfirm(transaction, reason);
+    setReason('');
+    onClose();
   };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Confirm Refund"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={handleConfirm}
+            disabled={!reason.trim()}
+          >
+            Issue Refund
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">
+            <strong>Warning:</strong> This action cannot be undone. The full amount will be refunded to the asker.
+          </p>
+        </div>
+
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-500">Transaction ID:</span>
+            <span className="font-mono text-gray-900">{transaction.id}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Amount:</span>
+            <span className="font-bold text-gray-900">€{(transaction.amount / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Expert:</span>
+            <span className="text-gray-900">{transaction.expert}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Asker:</span>
+            <span className="text-gray-900">{transaction.asker}</span>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Reason for Refund <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            rows={3}
+            placeholder="Explain why this transaction is being refunded..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            required
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+export default function Transactions() {
+  const [transactions, setTransactions] = useState(initialTransactions);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [rangeFilter, setRangeFilter] = useState('7d');
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundingTransaction, setRefundingTransaction] = useState(null);
+
+  // Filter transactions
+  const filteredTransactions = transactions.filter(tx => {
+    const matchesSearch = 
+      tx.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tx.expert.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tx.asker.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = 
+      statusFilter === 'all' ? true : tx.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Handlers
+  const handleAction = (action, transaction) => {
+    if (action === 'refund') {
+      setRefundingTransaction(transaction);
+      setShowRefundModal(true);
+    } else if (action === 'view') {
+      console.log('View transaction:', transaction);
+    }
+  };
+
+  const handleRefundConfirm = (transaction, reason) => {
+    setTransactions(prev => prev.map(tx => 
+      tx.id === transaction.id ? { ...tx, status: 'refunded', refund_reason: reason } : tx
+    ));
+    console.log('Refund issued for', transaction.id, 'Reason:', reason);
+  };
+
+  // Calculate stats
+  const stats = {
+    total: transactions.length,
+    totalAmount: transactions
+      .filter(tx => tx.status === 'completed')
+      .reduce((sum, tx) => sum + tx.amount, 0),
+    completed: transactions.filter(tx => tx.status === 'completed').length,
+    pending: transactions.filter(tx => tx.status === 'pending').length,
+    refunded: transactions.filter(tx => tx.status === 'refunded').length,
+    disputed: transactions.filter(tx => tx.status === 'disputed').length
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <SectionHeader
+        title="Transactions"
+        description="View and manage payment transactions"
+        action={
+          <Button variant="secondary">
+            Export CSV
+          </Button>
+        }
+      />
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-gray-900">
+              €{(stats.totalAmount / 100).toFixed(0)}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">Total Volume</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
+            <p className="text-sm text-gray-500 mt-1">Completed</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-amber-600">{stats.pending}</p>
+            <p className="text-sm text-gray-500 mt-1">Pending</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-red-600">{stats.refunded + stats.disputed}</p>
+            <p className="text-sm text-gray-500 mt-1">Refunded/Disputed</p>
+          </div>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Input
+            placeholder="Search by ID, expert, or asker..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Statuses' },
+              { value: 'completed', label: 'Completed' },
+              { value: 'pending', label: 'Pending' },
+              { value: 'refunded', label: 'Refunded' },
+              { value: 'disputed', label: 'Disputed' }
+            ]}
+          />
+          <Select
+            value={rangeFilter}
+            onChange={(e) => setRangeFilter(e.target.value)}
+            options={[
+              { value: '7d', label: 'Last 7 days' },
+              { value: '30d', label: 'Last 30 days' },
+              { value: '90d', label: 'Last 90 days' },
+              { value: 'all', label: 'All time' }
+            ]}
+          />
+        </div>
+      </Card>
+
+      {/* Transactions List */}
+      {filteredTransactions.length > 0 ? (
+        <div className="space-y-3">
+          {filteredTransactions.map(tx => (
+            <TransactionRow
+              key={tx.id}
+              transaction={tx}
+              onAction={handleAction}
+            />
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <EmptyState
+            title="No transactions found"
+            description={searchQuery ? "Try adjusting your search or filters" : "No transactions match the current filters"}
+          />
+        </Card>
+      )}
+
+      {/* Stripe Events Info */}
+      <Card className="bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-100">
+        <h3 className="text-sm font-bold text-gray-900 mb-2">Stripe Events</h3>
+        <p className="text-sm text-gray-600">
+          Click "View" on any transaction to see the full Stripe event timeline including payment_intent.created, charge.succeeded, and payout.paid events.
+        </p>
+      </Card>
+
+      {/* Refund Modal */}
+      <RefundModal
+        isOpen={showRefundModal}
+        onClose={() => {
+          setShowRefundModal(false);
+          setRefundingTransaction(null);
+        }}
+        transaction={refundingTransaction}
+        onConfirm={handleRefundConfirm}
+      />
+    </div>
+  );
 }

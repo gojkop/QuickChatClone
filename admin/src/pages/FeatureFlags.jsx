@@ -1,195 +1,427 @@
 import React, { useState } from 'react';
+import { 
+  Card, 
+  Button, 
+  Badge, 
+  Input,
+  Select,
+  Modal,
+  SectionHeader,
+  EmptyState 
+} from '../components/ui';
 
-function Row({ flag, onToggle }) {
+// Inline SVG Icons
+const Icons = {
+  Plus: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    </svg>
+  ),
+  Edit: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  ),
+  Trash: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  ),
+  Flag: () => (
+    <svg className="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+    </svg>
+  )
+};
+
+// Mock data
+const initialFlags = [
+  { 
+    id: 1,
+    key: 'coach_tier2', 
+    name: 'AI Coach Tier 2', 
+    description: 'Enable Tier 2 analysis and clarifications', 
+    enabled: true, 
+    rollout_percentage: 100,
+    created_at: '2025-01-15',
+    updated_at: '2025-02-10'
+  },
+  { 
+    id: 2,
+    key: 'copilot_beta', 
+    name: 'Expert Copilot (Beta)', 
+    description: 'Show Copilot panel to selected experts', 
+    enabled: false, 
+    rollout_percentage: 10,
+    created_at: '2025-02-01',
+    updated_at: '2025-02-05'
+  },
+  { 
+    id: 3,
+    key: 'deep_dive_question', 
+    name: 'Deep Dive Question Type', 
+    description: 'Offer long-form, higher-priced question type', 
+    enabled: false, 
+    rollout_percentage: 0,
+    created_at: '2025-02-20',
+    updated_at: '2025-02-20'
+  }
+];
+
+const auditLog = [
+  { time: '10:12', action: 'Enabled copilot_beta', user: 'Admin', details: 'rollout 10% → 25%' },
+  { time: '09:44', action: 'Created deep_dive_question', user: 'Admin', details: null },
+  { time: 'Yesterday', action: 'Disabled coach_tier2', user: 'Support Admin', details: null }
+];
+
+// ============================================================================
+// Flag Row Component
+// ============================================================================
+function FlagRow({ flag, onToggle, onEdit, onDelete }) {
   return (
-    <tr>
-      <td style={{ fontWeight: 700 }}>{flag.key}</td>
-      <td>{flag.name}</td>
-      <td>{flag.description}</td>
-      <td>
-        <span style={pill(flag.enabled ? 'enabled' : 'disabled')}>
-          {flag.enabled ? 'Enabled' : 'Disabled'}
-        </span>
-      </td>
-      <td>{flag.rollout_percentage}%</td>
-      <td>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button style={btn} onClick={() => onToggle(flag.key)}>
+    <div className="p-4 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition-shadow">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        {/* Left: Flag Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="text-sm font-bold text-gray-900">{flag.name}</h3>
+            <Badge variant={flag.enabled ? 'success' : 'default'}>
+              {flag.enabled ? 'Enabled' : 'Disabled'}
+            </Badge>
+          </div>
+          <p className="text-xs text-gray-500 mb-2">{flag.description}</p>
+          <div className="flex items-center gap-4 text-xs text-gray-400">
+            <span>Key: <code className="font-mono text-gray-600">{flag.key}</code></span>
+            <span>Rollout: <strong className="text-gray-600">{flag.rollout_percentage}%</strong></span>
+            <span>Updated: {flag.updated_at}</span>
+          </div>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2">
+          <Button 
+            variant={flag.enabled ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={() => onToggle(flag.id)}
+          >
             {flag.enabled ? 'Disable' : 'Enable'}
+          </Button>
+          <button 
+            onClick={() => onEdit(flag)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Edit"
+          >
+            <Icons.Edit />
           </button>
-          <button style={btnGhost}>Edit</button>
-          <button style={btnDanger}>Delete</button>
+          <button 
+            onClick={() => onDelete(flag.id)}
+            className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+            title="Delete"
+          >
+            <Icons.Trash />
+          </button>
         </div>
-      </td>
-    </tr>
-  );
-}
-
-function Section({ title, children, right }) {
-  return (
-    <section style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-        <h2 style={{ fontSize: 18 }}>{title}</h2>
-        {right}
       </div>
-      <div style={{ background: '#0b1220', border: '1px solid #374151', borderRadius: 12, padding: 16 }}>
-        {children}
-      </div>
-    </section>
-  );
-}
 
-export default function FeatureFlags() {
-  const [flags, setFlags] = useState([
-    { key: 'coach_tier2', name: 'AI Coach Tier 2', description: 'Enable Tier 2 analysis and clarifications', enabled: true, rollout_percentage: 100 },
-    { key: 'copilot_beta', name: 'Expert Copilot (Beta)', description: 'Show Copilot panel to selected experts', enabled: false, rollout_percentage: 10 },
-    { key: 'deep_dive_question', name: 'Deep Dive Question Type', description: 'Offer long-form, higher-priced question type', enabled: false, rollout_percentage: 0 }
-  ]);
-
-  const [showCreate, setShowCreate] = useState(false);
-  const [draft, setDraft] = useState({ key: '', name: '', description: '', enabled: false, rollout_percentage: 0 });
-
-  const toggle = (key) => {
-    setFlags(prev => prev.map(f => f.key === key ? { ...f, enabled: !f.enabled } : f));
-  };
-
-  const create = () => {
-    if (!draft.key || !draft.name) return;
-    if (flags.some(f => f.key === draft.key)) return;
-    setFlags(prev => [{ ...draft }, ...prev]);
-    setDraft({ key: '', name: '', description: '', enabled: false, rollout_percentage: 0 });
-    setShowCreate(false);
-  };
-
-  const filtered = flags; // Add filters/search later
-
-  return (
-    <div>
-      <Section
-        title="Feature Flags"
-        right={
-          <button style={btn} onClick={() => setShowCreate(true)}>New Flag</button>
-        }
-      >
-        <div style={{ display: showCreate ? 'block' : 'none', marginBottom: 12, background: '#111827', border: '1px solid #374151', borderRadius: 10, padding: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            <div>
-              <label style={label}>Key</label>
-              <input style={input} value={draft.key} onChange={e => setDraft({ ...draft, key: e.target.value })} placeholder="unique_key" />
-            </div>
-            <div>
-              <label style={label}>Name</label>
-              <input style={input} value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Human name" />
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={label}>Description</label>
-              <input style={input} value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="What does this flag do?" />
-            </div>
-            <div>
-              <label style={label}>Enabled</label>
-              <select style={input} value={draft.enabled ? '1' : '0'} onChange={e => setDraft({ ...draft, enabled: e.target.value === '1' })}>
-                <option value="1">Enabled</option>
-                <option value="0">Disabled</option>
-              </select>
-            </div>
-            <div>
-              <label style={label}>Rollout %</label>
-              <input style={input} type="number" min="0" max="100" value={draft.rollout_percentage} onChange={e => setDraft({ ...draft, rollout_percentage: parseInt(e.target.value || '0', 10) })} />
-            </div>
+      {/* Rollout Progress Bar */}
+      {flag.enabled && flag.rollout_percentage < 100 && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span className="text-gray-500">Rollout Progress</span>
+            <span className="font-semibold text-indigo-600">{flag.rollout_percentage}%</span>
           </div>
-          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <button style={btn} onClick={create}>Create</button>
-            <button style={btnGhost} onClick={() => setShowCreate(false)}>Cancel</button>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full transition-all duration-500"
+              style={{ width: `${flag.rollout_percentage}%` }}
+            />
           </div>
         </div>
-
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Rollout</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(f => (
-              <Row key={f.key} flag={f} onToggle={toggle} />
-            ))}
-          </tbody>
-        </table>
-      </Section>
-
-      <Section title="Audit Trail" right={<span style={{ fontSize: 12, opacity: 0.7 }}>Mocked</span>}>
-        <ul style={{ margin: 0, padding: 0, listStyle: 'none', fontSize: 14 }}>
-          <li>10:12 — Enabled copilot_beta by Admin (rollout 10% → 25%)</li>
-          <li>09:44 — Created deep_dive_question by Admin</li>
-          <li>Yesterday — Disabled coach_tier2 by Support Admin</li>
-        </ul>
-      </Section>
+      )}
     </div>
   );
 }
 
-const tableStyle = {
-  width: '100%',
-  borderCollapse: 'separate',
-  borderSpacing: 0,
-  fontSize: 14
-};
+// ============================================================================
+// Create/Edit Modal
+// ============================================================================
+function FlagModal({ isOpen, onClose, flag, onSave }) {
+  const [formData, setFormData] = useState(
+    flag || { 
+      key: '', 
+      name: '', 
+      description: '', 
+      enabled: false, 
+      rollout_percentage: 0 
+    }
+  );
 
-const btn = {
-  padding: '6px 10px',
-  borderRadius: 8,
-  border: '1px solid #4b5563',
-  background: '#111827',
-  color: '#e5e7eb',
-  cursor: 'pointer'
-};
-
-const btnGhost = {
-  padding: '6px 10px',
-  borderRadius: 8,
-  border: '1px solid #4b5563',
-  background: 'transparent',
-  color: '#e5e7eb',
-  cursor: 'pointer'
-};
-
-const btnDanger = {
-  padding: '6px 10px',
-  borderRadius: 8,
-  border: '1px solid #991b1b',
-  background: '#7f1d1d',
-  color: '#fff',
-  cursor: 'pointer'
-};
-
-const label = { fontSize: 12, opacity: 0.8, display: 'block', marginBottom: 4 };
-const input = {
-  width: '100%',
-  padding: '8px 10px',
-  borderRadius: 8,
-  border: '1px solid #4b5563',
-  background: '#0b1220',
-  color: '#e5e7eb'
-};
-
-function pill(kind) {
-  const colors = {
-    enabled: { bg: '#064e3b', border: '#065f46', text: '#d1fae5' },
-    disabled: { bg: '#1f2937', border: '#374151', text: '#e5e7eb' }
-  }[kind] || { bg: '#1f2937', border: '#374151', text: '#e5e7eb' };
-
-  return {
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: 999,
-    background: colors.bg,
-    color: colors.text,
-    border: `1px solid ${colors.border}`,
-    fontSize: 12
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+    onClose();
   };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={flag ? 'Edit Feature Flag' : 'Create Feature Flag'}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSubmit}>
+            {flag ? 'Save Changes' : 'Create Flag'}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Key (unique identifier)"
+          placeholder="deep_dive_question"
+          value={formData.key}
+          onChange={(e) => setFormData({ ...formData, key: e.target.value })}
+          required
+          helperText="Use lowercase with underscores. Cannot be changed after creation."
+        />
+
+        <Input
+          label="Name"
+          placeholder="Deep Dive Question Type"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+        />
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description
+          </label>
+          <textarea
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            rows={3}
+            placeholder="What does this flag control?"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            label="Status"
+            value={formData.enabled ? '1' : '0'}
+            onChange={(e) => setFormData({ ...formData, enabled: e.target.value === '1' })}
+            options={[
+              { value: '1', label: 'Enabled' },
+              { value: '0', label: 'Disabled' }
+            ]}
+          />
+
+          <Input
+            label="Rollout %"
+            type="number"
+            min="0"
+            max="100"
+            value={formData.rollout_percentage}
+            onChange={(e) => setFormData({ ...formData, rollout_percentage: parseInt(e.target.value || '0', 10) })}
+          />
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+export default function FeatureFlags() {
+  const [flags, setFlags] = useState(initialFlags);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showModal, setShowModal] = useState(false);
+  const [editingFlag, setEditingFlag] = useState(null);
+
+  // Filter flags
+  const filteredFlags = flags.filter(flag => {
+    const matchesSearch = 
+      flag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      flag.key.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = 
+      statusFilter === 'all' ? true :
+      statusFilter === 'enabled' ? flag.enabled :
+      !flag.enabled;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Handlers
+  const handleToggle = (id) => {
+    setFlags(prev => prev.map(f => 
+      f.id === id ? { ...f, enabled: !f.enabled, updated_at: new Date().toISOString().split('T')[0] } : f
+    ));
+  };
+
+  const handleEdit = (flag) => {
+    setEditingFlag(flag);
+    setShowModal(true);
+  };
+
+  const handleDelete = (id) => {
+    if (confirm('Are you sure you want to delete this flag?')) {
+      setFlags(prev => prev.filter(f => f.id !== id));
+    }
+  };
+
+  const handleSave = (formData) => {
+    if (editingFlag) {
+      // Update existing
+      setFlags(prev => prev.map(f => 
+        f.id === editingFlag.id ? { ...f, ...formData, updated_at: new Date().toISOString().split('T')[0] } : f
+      ));
+    } else {
+      // Create new
+      setFlags(prev => [...prev, {
+        ...formData,
+        id: Date.now(),
+        created_at: new Date().toISOString().split('T')[0],
+        updated_at: new Date().toISOString().split('T')[0]
+      }]);
+    }
+    setEditingFlag(null);
+  };
+
+  const handleCreateNew = () => {
+    setEditingFlag(null);
+    setShowModal(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <SectionHeader
+        title="Feature Flags"
+        description="Control feature rollout and experimentation"
+        action={
+          <Button variant="primary" onClick={handleCreateNew}>
+            <Icons.Plus />
+            <span className="ml-2">New Flag</span>
+          </Button>
+        }
+      />
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-gray-900">{flags.length}</p>
+            <p className="text-sm text-gray-500 mt-1">Total Flags</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-green-600">{flags.filter(f => f.enabled).length}</p>
+            <p className="text-sm text-gray-500 mt-1">Enabled</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-gray-400">{flags.filter(f => !f.enabled).length}</p>
+            <p className="text-sm text-gray-500 mt-1">Disabled</p>
+          </div>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input
+              placeholder="Search flags by name or key..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Flags' },
+              { value: 'enabled', label: 'Enabled Only' },
+              { value: 'disabled', label: 'Disabled Only' }
+            ]}
+          />
+        </div>
+      </Card>
+
+      {/* Flags List */}
+      <Card padding="none">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900">
+            Flags ({filteredFlags.length})
+          </h2>
+        </div>
+        
+        <div className="p-6 space-y-3">
+          {filteredFlags.length > 0 ? (
+            filteredFlags.map(flag => (
+              <FlagRow
+                key={flag.id}
+                flag={flag}
+                onToggle={handleToggle}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ))
+          ) : (
+            <EmptyState
+              title="No flags found"
+              description={searchQuery ? "Try adjusting your search" : "Create your first feature flag"}
+              action={
+                !searchQuery && (
+                  <Button variant="primary" onClick={handleCreateNew}>
+                    <Icons.Plus />
+                    <span className="ml-2">Create Flag</span>
+                  </Button>
+                )
+              }
+            />
+          )}
+        </div>
+      </Card>
+
+      {/* Audit Trail */}
+      <Card>
+        <h3 className="text-sm font-bold text-gray-900 mb-4">Recent Changes</h3>
+        <div className="space-y-2">
+          {auditLog.map((entry, i) => (
+            <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+              <div className="flex-1">
+                <p className="text-sm text-gray-900">{entry.action}</p>
+                <p className="text-xs text-gray-500">by {entry.user}</p>
+              </div>
+              {entry.details && (
+                <span className="text-xs text-gray-500">{entry.details}</span>
+              )}
+              <span className="text-xs text-gray-400 ml-4">{entry.time}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Modal */}
+      <FlagModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setEditingFlag(null);
+        }}
+        flag={editingFlag}
+        onSave={handleSave}
+      />
+    </div>
+  );
 }
