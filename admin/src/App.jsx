@@ -1,4 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import Layout from './components/Layout.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import FeatureFlags from './pages/FeatureFlags.jsx';
+import Moderation from './pages/Moderation.jsx';
+import Experts from './pages/Experts.jsx';
+import Transactions from './pages/Transactions.jsx';
+import Settings from './pages/Settings.jsx';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -203,70 +211,24 @@ export default function App() {
     );
   }
 
-  // Authenticated: show simple dashboard shell
+  // Authenticated: show shell + routed pages
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
-      <header style={{ padding: '16px 24px', borderBottom: '1px solid #374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontSize: 12, opacity: 0.7, letterSpacing: 1.5, textTransform: 'uppercase' }}>mindPick</div>
-          <div style={{ fontSize: 16, marginTop: 4 }}>
-            Admin Dashboard — <span style={{ opacity: 0.85 }}>{me.role}</span>
-          </div>
+    <Layout me={me} onLogout={handleLogout}>
+      {error && (
+        <div style={{ marginBottom: 12, color: '#fca5a5', fontSize: 12 }}>
+          {error}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button
-            onClick={handleLoadFlags}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 8,
-              border: '1px solid #4b5563',
-              background: '#111827',
-              color: '#e5e7eb',
-              cursor: 'pointer'
-            }}
-          >
-            Load Flags
-          </button>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 8,
-              border: '1px solid #b91c1c',
-              background: '#7f1d1d',
-              color: '#fff',
-              cursor: 'pointer'
-            }}
-          >
-            Logout
-          </button>
-        </div>
-      </header>
-
-      <main style={{ padding: 24 }}>
-        {error && (
-          <div style={{ marginBottom: 12, color: '#fca5a5', fontSize: 12 }}>
-            {error}
-          </div>
-        )}
-
-        <section style={{ marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, marginBottom: 8 }}>Session</h2>
-          <pre style={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, padding: 12, overflowX: 'auto' }}>
-{JSON.stringify(me, null, 2)}
-          </pre>
-        </section>
-
-        <section>
-          <h2 style={{ fontSize: 18, marginBottom: 8 }}>Feature Flags (public)</h2>
-          <div style={{ marginBottom: 8, fontSize: 12, opacity: 0.8 }}>
-            This reads from /api/flags/public. In production, you&#39;ll add CRUD with RBAC + audit.
-          </div>
-          <pre style={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, padding: 12, overflowX: 'auto' }}>
-{JSON.stringify(flags, null, 2)}
-          </pre>
-        </section>
-      </main>
-    </div>
+      )}
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/feature-flags" element={<FeatureFlags />} />
+        <Route path="/moderation" element={<Moderation />} />
+        <Route path="/experts" element={<Experts />} />
+        <Route path="/transactions" element={<Transactions />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </Layout>
   );
 }
