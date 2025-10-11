@@ -28,10 +28,17 @@ export default async function handler(req, res) {
       return err(res, 401, 'Missing Authorization Bearer token');
     }
 
-    // 1) Validate with Xano /me
-    const meResp = await fetch(`${xanoBase}/me`, {
+    // 1) Validate with Xano (/auth/me preferred, fallback to /me)
+    let meResp = await fetch(`${xanoBase}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` }
     });
+
+    if (!meResp.ok && meResp.status === 404) {
+      // Fallback to legacy /me if /auth/me is not available
+      meResp = await fetch(`${xanoBase}/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }
 
     if (!meResp.ok) {
       return err(res, 401, 'Xano validation failed');
