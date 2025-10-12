@@ -2,7 +2,7 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
+import { FeatureFlagsProvider } from './context/FeatureFlagsContext';
 
 // Import Page Components
 import HomePage from '@/pages/HomePage';
