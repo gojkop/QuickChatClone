@@ -32,7 +32,10 @@ export default async function handler(req, res) {
 
     // Exchange code for token at Xano
     const r = await axios.get(`${XANO_LINKEDIN_AUTH_BASE_URL}/oauth/linkedin/continue`, {
-      params: { code },
+      params: {
+        code,
+        redirect_uri  // Xano function needs this to exchange code
+      },
       validateStatus: () => true
     });
 
