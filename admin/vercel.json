@@ -1,4 +1,7 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
   "rewrites": [
     {
       "source": "/api/feedback/:id",
@@ -22,14 +25,25 @@
           "value": "true"
         },
         {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://www.mindpick.me"
+        },
+        {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET,POST,PATCH,DELETE,OPTIONS"
+          "value": "GET, POST, PATCH, DELETE, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Authorization, Content-Type"
+          "value": "X-Requested-With, Content-Type, Authorization, Cookie"
+        },
+        {
+          "key": "Access-Control-Max-Age",
+          "value": "86400"
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

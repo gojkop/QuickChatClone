@@ -1,5 +1,5 @@
 // admin/src/pages/FeedbackDashboard.jsx
-// Main feedback dashboard with filters, table, and detail panel
+// Main feedback dashboard with filters, table, and detail panel - FIXED
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -336,7 +336,7 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira }) {
             </h4>
             <div className="space-y-2">
               {feedback.attachments.map(att => (
-                
+                <a
                   key={att.id}
                   href={att.storage_url}
                   target="_blank"

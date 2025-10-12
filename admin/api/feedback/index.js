@@ -1,14 +1,31 @@
 // admin/api/feedback/index.js
-// Main feedback API - List and Create
+// Main feedback API - List (admin) and Create (public)
 
 import { sql } from '../_lib/db.js';
 import { verifyAdminSession } from '../_lib/jwt.js';
-import { allowCors, ok, err } from '../_lib/respond.js';
+import { allowCors, ok, err, parseBody, validateRequired } from '../_lib/respond.js';
 
 export default async function handler(req, res) {
+  // CRITICAL: Handle CORS first, before any other logic
   if (allowCors(req, res)) return;
 
-  // Verify admin authentication for all operations
+  // Route based on method
+  switch (req.method) {
+    case 'GET':
+      return listFeedback(req, res);
+    case 'POST':
+      return createFeedback(req, res);
+    default:
+      return err(res, 405, 'Method not allowed', {}, req);
+  }
+}
+
+// ============================================================================
+// LIST FEEDBACK (Admin only - requires authentication)
+// ============================================================================
+
+async function listFeedback(req, res) {
+  // Verify admin authentication
   const cookieHeader = req.headers.cookie || '';
   const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
   
@@ -32,22 +49,6 @@ export default async function handler(req, res) {
     return err(res, 403, 'Admin access revoked', {}, req);
   }
 
-  // Route based on method
-  switch (req.method) {
-    case 'GET':
-      return listFeedback(req, res, session);
-    case 'POST':
-      return createFeedback(req, res, session);
-    default:
-      return err(res, 405, 'Method not allowed', {}, req);
-  }
-}
-
-// ============================================================================
-// LIST FEEDBACK (with filters)
-// ============================================================================
-
-async function listFeedback(req, res, session) {
   try {
     const {
       page = '1',
@@ -196,48 +197,26 @@ async function listFeedback(req, res, session) {
 }
 
 // ============================================================================
-// CREATE FEEDBACK (Public endpoint, no auth required)
+// CREATE FEEDBACK (Public endpoint - NO authentication required)
 // ============================================================================
 
-async function createFeedback(req, res, session) {
+async function createFeedback(req, res) {
   try {
-    let body;
-    if (typeof req.body === 'string') {
-      try {
-        body = JSON.parse(req.body);
-      } catch (parseError) {
-        return err(res, 400, 'Invalid JSON body', {}, req);
-      }
-    } else {
-      body = req.body;
+    // Parse body
+    const body = parseBody(req);
+
+    // Validate required fields
+    const validation = validateRequired(body, ['type', 'message', 'page_url', 'session_id']);
+    if (!validation.valid) {
+      return err(res, 400, validation.message, {}, req);
     }
 
-    // Required fields
     const {
       type,
       message,
       page_url,
       session_id,
-      user_agent,
-    } = body;
-
-    if (!type || !message || !page_url || !session_id) {
-      return err(res, 400, 'Missing required fields: type, message, page_url, session_id', {}, req);
-    }
-
-    // Validate type
-    const validTypes = ['bug', 'feature', 'feedback', 'question', 'other'];
-    if (!validTypes.includes(type)) {
-      return err(res, 400, `Invalid type. Must be one of: ${validTypes.join(', ')}`, {}, req);
-    }
-
-    // Validate message length
-    if (message.length < 10 || message.length > 2000) {
-      return err(res, 400, 'Message must be between 10 and 2000 characters', {}, req);
-    }
-
-    // Optional fields with defaults
-    const {
+      user_agent = null,
       user_id = null,
       email = null,
       wants_followup = false,
@@ -267,6 +246,22 @@ async function createFeedback(req, res, session) {
       contact_consent = false,
       screenshot_consent = false,
     } = body;
+
+    // Validate type
+    const validTypes = ['bug', 'feature', 'feedback', 'question', 'other'];
+    if (!validTypes.includes(type)) {
+      return err(res, 400, `Invalid type. Must be one of: ${validTypes.join(', ')}`, {}, req);
+    }
+
+    // Validate message length
+    if (message.length < 10 || message.length > 2000) {
+      return err(res, 400, 'Message must be between 10 and 2000 characters', {}, req);
+    }
+
+    // Validate rating if provided
+    if (rating !== null && (rating < 1 || rating > 5)) {
+      return err(res, 400, 'Rating must be between 1 and 5', {}, req);
+    }
 
     // Insert feedback
     const newFeedback = await sql`
@@ -367,8 +362,10 @@ async function createFeedback(req, res, session) {
       }
     }
 
+    // Log submission
+    console.log(`[feedback/create] New ${type} feedback: ${newFeedback[0].id.slice(0, 8)}`);
+
     return ok(res, {
-      success: true,
       feedback_id: newFeedback[0].id,
       message: 'Thank you! Your feedback helps us improve.'
     }, req);
