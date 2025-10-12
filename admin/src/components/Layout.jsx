@@ -34,6 +34,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
     </svg>
   ),
+  MessageSquare: () => ( // ADDED
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  ),
   Shield: () => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -83,16 +88,18 @@ function NavItem({ to, label, Icon, onClick }) {
 export default function Layout({ me, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Mock badges for notifications
+  // Mock badges for notifications - UPDATED with feedback
   const badges = {
     flags: 0,
-    moderation: 3,  // 3 pending items
-    experts: 2,     // 2 at-risk experts
+    feedback: 12, // ADDED - pending feedback count
+    moderation: 3,
+    experts: 2,
   };
 
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', Icon: Icons.BarChart },
     { to: '/feature-flags', label: 'Feature Flags', Icon: Icons.Flag },
+    { to: '/feedback', label: 'Feedback', Icon: Icons.MessageSquare }, // ADDED
     { to: '/moderation', label: 'Moderation', Icon: Icons.Shield },
     { to: '/experts', label: 'Experts', Icon: Icons.Users },
     { to: '/transactions', label: 'Transactions', Icon: Icons.CreditCard },
@@ -125,7 +132,7 @@ export default function Layout({ me, onLogout, children }) {
         
         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
           <Icons.Bell />
-          {(badges.moderation + badges.experts) > 0 && (
+          {(badges.feedback + badges.moderation + badges.experts) > 0 && (
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
           )}
         </button>
@@ -204,7 +211,7 @@ export default function Layout({ me, onLogout, children }) {
           <div className="flex items-center gap-3">
             <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
               <Icons.Bell />
-              {(badges.moderation + badges.experts) > 0 && (
+              {(badges.feedback + badges.moderation + badges.experts) > 0 && (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               )}
             </button>

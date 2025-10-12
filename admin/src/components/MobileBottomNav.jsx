@@ -1,5 +1,5 @@
 // admin/src/components/MobileBottomNav.jsx
-// Mobile-first bottom navigation bar for small screens
+// Mobile-first bottom navigation bar for small screens - WITH FEEDBACK
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -14,6 +14,11 @@ const NavIcons = {
   Flags: ({ active }) => (
     <svg className={`w-6 h-6 ${active ? 'text-indigo-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2.5 : 2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+    </svg>
+  ),
+  Feedback: ({ active }) => ( // ADDED
+    <svg className={`w-6 h-6 ${active ? 'text-indigo-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2.5 : 2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   ),
   Shield: ({ active }) => (
@@ -77,6 +82,12 @@ export default function MobileBottomNav({ badges = {} }) {
       badge: badges.flags
     },
     { 
+      to: '/feedback', 
+      label: 'Feedback', 
+      icon: NavIcons.Feedback,
+      badge: badges.feedback // ADDED
+    },
+    { 
       to: '/moderation', 
       label: 'Moderation', 
       icon: NavIcons.Shield,
@@ -87,11 +98,6 @@ export default function MobileBottomNav({ badges = {} }) {
       label: 'Experts', 
       icon: NavIcons.Users,
       badge: badges.experts
-    },
-    { 
-      to: '/settings', 
-      label: 'Settings', 
-      icon: NavIcons.Settings
     }
   ];
 

@@ -1,10 +1,11 @@
-// admin/src/App.jsx - With Toast Integration
+// admin/src/App.jsx - With Feedback Dashboard Integration
 import React, { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useToast } from './components/Toast';
 import Layout from './components/Layout.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import FeatureFlags from './pages/FeatureFlags.jsx';
+import FeedbackDashboard from './pages/FeedbackDashboard.jsx'; // ADDED
 import Moderation from './pages/Moderation.jsx';
 import Experts from './pages/Experts.jsx';
 import Transactions from './pages/Transactions.jsx';
@@ -225,6 +226,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/feature-flags" element={<FeatureFlags />} />
+        <Route path="/feedback" element={<FeedbackDashboard />} /> {/* ADDED */}
         <Route path="/moderation" element={<Moderation />} />
         <Route path="/experts" element={<Experts />} />
         <Route path="/transactions" element={<Transactions />} />
