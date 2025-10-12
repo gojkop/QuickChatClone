@@ -201,8 +201,24 @@ function AnswerReviewPage() {
     if (data.answer.media_assets && data.answer.media_assets.length > 0) {
       data.answer.media_assets.forEach((asset, index) => {
         if (asset.url) {
-          const fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'media'}.${asset.url.includes('.webm') ? 'webm' : 'mp4'}`;
-          downloads.push({ url: asset.url, name: fileName });
+          const isVideo = asset.metadata?.mode === 'video' || 
+                          asset.metadata?.mode === 'screen' || 
+                          asset.metadata?.mode === 'screen-camera' ||
+                          asset.url?.includes('cloudflarestream.com');
+          
+          let downloadUrl = asset.url;
+          
+          // For Cloudflare Stream videos, reconstruct URL with correct customer code
+          if (isVideo && asset.url.includes('cloudflarestream.com')) {
+            const videoId = getStreamVideoId(asset.url);
+            if (videoId) {
+              // Use the correct customer code for download
+              downloadUrl = `https://${CUSTOMER_CODE_OVERRIDE}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
+            }
+          }
+          
+          const fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'media'}.${isVideo ? 'mp4' : 'webm'}`;
+          downloads.push({ url: downloadUrl, name: fileName });
         }
       });
     }
