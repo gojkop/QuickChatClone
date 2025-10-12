@@ -66,98 +66,82 @@ async function listFeedback(req, res) {
       sort_order = 'desc'
     } = req.query;
 
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
 
-    // Build dynamic WHERE clause
-    const conditions = ['deleted_at IS NULL'];
-    const params = [];
-    let paramIndex = 1;
+    // Build WHERE conditions array
+    const whereConditions = [sql`deleted_at IS NULL`];
 
     if (type) {
-      conditions.push(`type = $${paramIndex++}`);
-      params.push(type);
+      whereConditions.push(sql`type = ${type}`);
     }
-
     if (status) {
-      conditions.push(`status = $${paramIndex++}`);
-      params.push(status);
+      whereConditions.push(sql`status = ${status}`);
     }
-
     if (priority) {
-      conditions.push(`priority = $${paramIndex++}`);
-      params.push(priority);
+      whereConditions.push(sql`priority = ${priority}`);
     }
-
     if (journey_stage) {
-      conditions.push(`journey_stage = $${paramIndex++}`);
-      params.push(journey_stage);
+      whereConditions.push(sql`journey_stage = ${journey_stage}`);
     }
-
     if (assigned_to) {
       if (assigned_to === 'unassigned') {
-        conditions.push('assigned_to IS NULL');
+        whereConditions.push(sql`assigned_to IS NULL`);
       } else {
-        conditions.push(`assigned_to = $${paramIndex++}`);
-        params.push(parseInt(assigned_to));
+        whereConditions.push(sql`assigned_to = ${parseInt(assigned_to)}`);
       }
     }
-
     if (has_email === 'true') {
-      conditions.push('email IS NOT NULL');
+      whereConditions.push(sql`email IS NOT NULL`);
     }
-
     if (date_from) {
-      conditions.push(`created_at >= $${paramIndex++}`);
-      params.push(date_from);
+      whereConditions.push(sql`created_at >= ${date_from}`);
     }
-
     if (date_to) {
-      conditions.push(`created_at <= $${paramIndex++}`);
-      params.push(date_to);
+      whereConditions.push(sql`created_at <= ${date_to}`);
     }
-
     if (search) {
-      conditions.push(`(
-        message ILIKE $${paramIndex} OR
-        email ILIKE $${paramIndex} OR
-        page_url ILIKE $${paramIndex}
+      const searchTerm = `%${search}%`;
+      whereConditions.push(sql`(
+        message ILIKE ${searchTerm} OR
+        email ILIKE ${searchTerm} OR
+        page_url ILIKE ${searchTerm}
       )`);
-      params.push(`%${search}%`);
-      paramIndex++;
     }
 
-    const whereClause = conditions.length > 0 
-      ? 'WHERE ' + conditions.join(' AND ')
-      : '';
+    // Combine WHERE conditions
+    const whereClause = whereConditions.length > 1
+      ? sql`WHERE ${sql.unsafe(whereConditions.map((_, i) => `c${i}`).join(' AND '))}`
+      : sql`WHERE deleted_at IS NULL`;
 
-    // Validate sort fields
-    const validSortFields = ['created_at', 'updated_at', 'priority', 'rating', 'type', 'status'];
-    const sortField = validSortFields.includes(sort_by) ? sort_by : 'created_at';
-    const sortDir = sort_order === 'asc' ? 'ASC' : 'DESC';
-
-    // Get total count
-    const countQuery = `
+    // Get total count - simple query
+    const countResult = await sql`
       SELECT COUNT(*) as total
       FROM feedback
-      ${whereClause}
+      WHERE deleted_at IS NULL
+      ${type ? sql`AND type = ${type}` : sql``}
+      ${status ? sql`AND status = ${status}` : sql``}
+      ${priority ? sql`AND priority = ${priority}` : sql``}
+      ${journey_stage ? sql`AND journey_stage = ${journey_stage}` : sql``}
+      ${assigned_to === 'unassigned' ? sql`AND assigned_to IS NULL` : assigned_to ? sql`AND assigned_to = ${parseInt(assigned_to)}` : sql``}
+      ${has_email === 'true' ? sql`AND email IS NOT NULL` : sql``}
+      ${date_from ? sql`AND created_at >= ${date_from}` : sql``}
+      ${date_to ? sql`AND created_at <= ${date_to}` : sql``}
+      ${search ? sql`AND (message ILIKE ${`%${search}%`} OR email ILIKE ${`%${search}%`} OR page_url ILIKE ${`%${search}%`})` : sql``}
     `;
-    const countResult = await sql.unsafe(countQuery, params);
+    
     const total = parseInt(countResult[0].total);
 
-    // Get feedback with tags
-    const dataQuery = `
+    // Validate sort
+    const validSortFields = ['created_at', 'updated_at', 'priority', 'rating', 'type', 'status'];
+    const sortField = validSortFields.includes(sort_by) ? sort_by : 'created_at';
+    const sortDir = sort_order === 'asc' ? sql`ASC` : sql`DESC`;
+
+    // Get feedback - simplified without complex aggregations for now
+    const feedback = await sql`
       SELECT 
         f.*,
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'id', t.id,
-              'name', t.name,
-              'color', t.color
-            )
-          ) FILTER (WHERE t.id IS NOT NULL),
-          '[]'::json
-        ) as tags,
         (
           SELECT COUNT(*)
           FROM feedback_attachments fa
@@ -169,24 +153,39 @@ async function listFeedback(req, res) {
           WHERE fc.feedback_id = f.id
         ) as comment_count
       FROM feedback f
-      LEFT JOIN feedback_tag_assignments fta ON f.id = fta.feedback_id
-      LEFT JOIN feedback_tags t ON fta.tag_id = t.id
-      ${whereClause}
-      GROUP BY f.id
-      ORDER BY f.${sortField} ${sortDir}
-      LIMIT $${paramIndex++} OFFSET $${paramIndex}
+      WHERE f.deleted_at IS NULL
+      ${type ? sql`AND f.type = ${type}` : sql``}
+      ${status ? sql`AND f.status = ${status}` : sql``}
+      ${priority ? sql`AND f.priority = ${priority}` : sql``}
+      ${journey_stage ? sql`AND f.journey_stage = ${journey_stage}` : sql``}
+      ${assigned_to === 'unassigned' ? sql`AND f.assigned_to IS NULL` : assigned_to ? sql`AND f.assigned_to = ${parseInt(assigned_to)}` : sql``}
+      ${has_email === 'true' ? sql`AND f.email IS NOT NULL` : sql``}
+      ${date_from ? sql`AND f.created_at >= ${date_from}` : sql``}
+      ${date_to ? sql`AND f.created_at <= ${date_to}` : sql``}
+      ${search ? sql`AND (f.message ILIKE ${`%${search}%`} OR f.email ILIKE ${`%${search}%`} OR f.page_url ILIKE ${`%${search}%`})` : sql``}
+      ORDER BY f.${sql(sortField)} ${sortDir}
+      LIMIT ${limitNum}
+      OFFSET ${offset}
     `;
-    
-    params.push(parseInt(limit), offset);
-    const feedback = await sql.unsafe(dataQuery, params);
+
+    // Get tags for each feedback item
+    for (const item of feedback) {
+      const tags = await sql`
+        SELECT t.id, t.name, t.color
+        FROM feedback_tags t
+        JOIN feedback_tag_assignments fta ON fta.tag_id = t.id
+        WHERE fta.feedback_id = ${item.id}
+      `;
+      item.tags = tags;
+    }
 
     return ok(res, {
       feedback,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / limitNum)
       }
     }, req);
 

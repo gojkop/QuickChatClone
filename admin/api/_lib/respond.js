@@ -19,11 +19,11 @@ export function allowCors(req, res) {
   const allowedOrigins = allowedOriginsString.split(',').map(o => o.trim());
 
   // Set Access-Control-Allow-Origin header if origin is allowed
-  if (allowedOrigins.includes(origin)) {
+  if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-  } else if (process.env.NODE_ENV === 'development') {
+  } else if (process.env.NODE_ENV === 'development' && origin) {
     // In development, allow any localhost origin
-    if (origin && origin.includes('localhost')) {
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
       res.setHeader('Access-Control-Allow-Origin', origin);
     }
   }

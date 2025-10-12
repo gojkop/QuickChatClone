@@ -25,10 +25,6 @@
           "value": "true"
         },
         {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://www.mindpick.me"
-        },
-        {
           "key": "Access-Control-Allow-Methods",
           "value": "GET, POST, PATCH, DELETE, OPTIONS"
         },
