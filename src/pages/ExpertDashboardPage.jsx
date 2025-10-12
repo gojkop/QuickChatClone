@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '@/api';
+import { useFeature } from '@/hooks/useFeature'; 
 import SettingsModal from '@/components/dashboard/SettingsModal';
 import AccountModal from '@/components/dashboard/AccountModal';
 import ProfilePreviewModal from '@/components/dashboard/ProfilePreviewModal';
@@ -160,6 +161,8 @@ function ExpertDashboardPage() {
   const [availabilityMessage, setAvailabilityMessage] = useState('');
   const [sortBy, setSortBy] = useState('time_left');
   const [showHidden, setShowHidden] = useState(false);
+  const { isEnabled: socialImpactEnabled, loading: featureFlagLoading } = useFeature('social_impact_dashboard');
+
   
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [showQuestionDetailModal, setShowQuestionDetailModal] = useState(false);
@@ -709,12 +712,14 @@ function ExpertDashboardPage() {
               allQuestions={allQuestions} 
               targetResponseTime={profile?.slaHours || 24}
             />
+            {socialImpactEnabled && (
             <SocialImpactStats 
               totalDonated={profile?.total_donated || 0}
               charityPercentage={profile?.charity_percentage || 0}
               selectedCharity={profile?.selected_charity}
               onOpenSettings={() => navigate('#profile-settings')}
             />
+            })
           </div>
 
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
