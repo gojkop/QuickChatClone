@@ -26,19 +26,17 @@ export default function MarketingLayout({
   }
 
   return (
-        <div className="min-h-screen bg-canvas">
-    {/* 📏 Container matches ExpertDashboardPage */}
-         <main className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       {/* Header */}
-          <div className="mb-6">
-             <div className="flex items-center justify-between mb-2">
-         <div>
-            <h1 className="text-3xl font-black text-ink tracking-tight">Marketing</h1>
-            <p className="text-subtext mt-1">Track campaigns and grow revenue</p>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900">Marketing</h1>
+            <p className="text-gray-600 mt-1">Track campaigns and grow your consulting business</p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-warning/10 border border-warning/20 rounded-lg">
-            <div className="w-2 h-2 rounded-full bg-warning animate-pulse"></div>
-            <span className="text-sm font-semibold text-warning">BETA</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">
+            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+            <span className="text-sm font-semibold text-indigo-700">Beta</span>
           </div>
         </div>
       </div>
