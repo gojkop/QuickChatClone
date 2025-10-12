@@ -54,7 +54,7 @@ const flagsAPI = {
   },
   
   update: async (key, data) => {
-    const res = await fetch(`/api/flags/${key}`, {
+    const res = await fetch(`/api/flags?key=${encodeURIComponent(key)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -68,7 +68,7 @@ const flagsAPI = {
   },
   
   delete: async (key) => {
-    const res = await fetch(`/api/flags/${key}`, {
+    const res = await fetch(`/api/flags?key=${encodeURIComponent(key)}`, {
       method: 'DELETE',
       credentials: 'include'
     });

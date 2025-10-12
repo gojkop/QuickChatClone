@@ -20,10 +20,18 @@ export default async function handler(req, res) {
   if (allowCors(req, res)) return;
 
   try {
-    // Extract key from URL path
-    // URL format: /api/flags or /api/flags/key_name
-    const urlParts = req.url.split('?')[0].split('/');
-    const key = urlParts[3]; // /api/flags/KEY_HERE
+    // Extract key from query parameter or URL path
+    // Support both /api/flags?key=KEY and /api/flags/KEY
+    let key;
+    
+    // First try query parameter
+    if (req.query && req.query.key) {
+      key = req.query.key;
+    } else {
+      // Fallback to URL path parsing
+      const urlParts = req.url.split('?')[0].split('/');
+      key = urlParts[3]; // /api/flags/KEY_HERE
+    }
 
     // Verify admin authentication
     const cookieHeader = req.headers.cookie || '';
