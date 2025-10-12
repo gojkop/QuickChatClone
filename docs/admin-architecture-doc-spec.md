@@ -1,5 +1,208 @@
 # QuickChat Admin System Architecture
 
+Implementation Status and Rollout Plan (Updated: October 2025)
+
+This section documents what has been implemented so far for the Admin Console MVP, the control-plane database on Neon, the additional Vercel project configuration, the current authentication model, the mock UI components delivered, and the next features to implement (aligned to the original architecture plan below).
+
+1) Deployed Admin Console (separate Vercel project)
+- Project: Admin Console deployed from the repo subfolder admin/
+- Build: Vite + React (no Tailwind dependency)
+- SPA routing: admin/vercel.json uses rewrites to send all paths to /index.html
+- Root Directory: admin
+- PostCSS override: admin/postcss.config.cjs with plugins: [] to avoid root Tailwind requirement
+- Monorepo deploy rules: Main app can skip builds on admin-only changes via Vercel’s Ignored Build Step (bash). Admin project builds only on admin/ changes
+- Routing fix: admin/src/main.jsx routes App for all subpaths ('/*') to avoid redirect loops
+
+Recommended env vars (Admin Vercel project):
+- DATABASE_URL: Neon connection string
+- XANO_BASE_URL: https://x8ki-letl-twmt.n7.xano.io/api:3B14WLbJ (working group used for /auth/me)
+- ADMIN_JWT_SECRET: Strong random secret for admin_session JWT
+- CORS_ALLOW_ORIGIN: https://admin.mindpick.me (or leave unset; dynamic origin echoing enabled)
+
+2) Control-plane: Neon database schema (created)
+- Extensions: pgcrypto, citext
+- Enums:
+  - admin_role ('super_admin','support_admin')
+  - content_type ('question','answer','profile')
+  - flagged_reason ('inappropriate','spam','quality','pii_leak','auto_detected')
+  - moderation_status ('pending','approved','rejected','escalated')
+- Utility: set_updated_at() trigger function
+
+Core tables:
+- admin_users
+  - id (uuid PK), xano_user_id (unique), email (citext), name, role (admin_role)
+  - disabled (bool), token_version (int), created_at, updated_at + trigger
+  - Indexes: role, email
+- admin_audit_log
+  - id, admin_user_id (FK), action, resource_type, resource_id, before_data, after_data, ip, user_agent, created_at
+  - Indexes: (admin_user_id, created_at desc), (resource_type, resource_id)
+- feature_flags
+  - id, key (unique), name, description, enabled (bool), rollout_percentage (0..100), created_at, updated_at + trigger
+  - Indexes: enabled, rollout_percentage
+- feature_flag_targets
+  - id, flag_id (FK), xano_user_id, created_at. Unique (flag_id, xano_user_id)
+  - Indexes: flag_id, xano_user_id
+- feature_flag_audit
+  - id, flag_id (FK), admin_user_id (FK), action, old_value, new_value, created_at
+  - Index: (flag_id, created_at desc)
+- moderation_queue
+  - id, content_type, content_id, flagged_reason, auto_detection_confidence (0..1), status, reviewed_by_admin_id (FK), reviewed_at, notes, created_at
+  - Indexes: (status, created_at desc), (content_type, content_id)
+- pro_overrides (optional for entitlements)
+  - id, xano_user_id (unique), plan ('free','pro'), expires_at, reason, created_at
+
+3) Authentication and session model (implemented)
+Identity source of truth: Xano
+- Validation endpoint used: XANO_BASE_URL/auth/me (fallback to /me if /auth/me not found)
+
+Admin session (control plane):
+- Endpoints:
+  - POST /api/auth/verify
+    - Accepts token from Authorization: Bearer, JSON body { token }, form-encoded token, or qc_session cookie (Xano JWT)
+    - Validates token with Xano, checks Neon admin_users, then issues httpOnly admin_session cookie (JWT) with 15 min TTL
+    - CORS is origin-aware and credentials allowed only for explicit origins
+  - GET /api/me
+    - If admin_session present and valid → returns { ok: true, role, admin_id, xano_user_id }
+    - If admin_session missing: attempts qc_session → validates via Xano → checks Neon RBAC → mints admin_session → returns ok (bootstraps session)
+    - Returns origin-aware CORS headers
+  - POST /api/auth/logout
+    - Clears admin_session cookie (Max-Age=0)
+
+Session bootstrapping and loops
+- Client:
+  - On page load, calls GET /api/me
+  - If 401 and not yet tried, auto-calls POST /api/auth/verify (no body) to exchange qc_session → admin_session, then retries /api/me once
+  - Guards ensure the bootstrap runs only once
+- Routing fix: App is mounted for '/*' to prevent route redirect loops
+- StrictMode removed in admin/src/main.jsx to avoid double-effect invocations in production
+
+Feature Flags in plain language (simple on/off)
+
+What is a feature flag?
+- A feature flag is a named switch (on/off) that lets us enable or disable a piece of functionality without deploying code.
+- Each flag has a key (e.g., deep_dive_question), a human name, an optional description, and a single boolean: enabled (true/false).
+
+How it works at runtime (simple flow)
+1) The Admin panel stores flags (key + enabled) in the control-plane database (Neon).
+2) The app (frontend/backend) fetches the current flags from a read endpoint (e.g., GET /api/flags/public) and caches them.
+3) In code, before showing or using a feature, we check the flag by key:
+   - If enabled = true → show/allow the feature.
+   - If enabled = false → hide/disable the feature (and protect server routes too).
+4) Admins can flip the flag at any time in the Admin panel; apps will reflect it on the next refresh (or after a short cache period).
+
+Admin side: what you do
+- Create a flag with:
+  - key: a permanent identifier used in code (e.g., deep_dive_question)
+  - name: a human-friendly label (e.g., Deep Dive Question Type)
+  - description: explain what the feature does
+  - enabled: on/off
+- To turn a feature on (or off), toggle the flag in the Admin → Feature Flags page. No deployment needed.
+
+Example: Deep Dive Question Type (simple on/off)
+Goal: Control whether users can choose a “Deep Dive” question option (longer answers, higher price).
+
+1) Admin panel
+   - Create the flag:
+     - key: deep_dive_question
+     - name: Deep Dive Question Type
+     - description: Offer long-form, higher-priced question type
+     - enabled: false (default)
+   - When we’re ready to launch, toggle enabled: true.
+
+2) Frontend (UI gating)
+   - On the Ask page and Pricing page, check deep_dive_question.enabled.
+     - If true: show “Deep Dive” option and pricing.
+     - If false: hide “Deep Dive” option so users can’t select it.
+   - This prevents confusing users when the feature is not ready.
+
+3) Backend (server protection)
+   - In the submission endpoint, double-check the flag before accepting a deep_dive type.
+     - If flag is off, reject that type and return a friendly error.
+   - This ensures the feature stays off even if the UI is bypassed.
+
+4) Testing and rollout
+   - Toggle the flag on in a preview/staging environment, verify UI shows the option and the backend accepts it.
+   - Toggle it off and confirm the UI hides it and backend blocks it.
+   - In production, flipping the flag on instantly enables the feature without redeploying.
+
+Notes
+- Keep flags simple: one boolean per feature. Avoid rollout percentages for the first iteration.
+- Name keys clearly and consistently; keys are permanent because they’re referenced in code.
+- Always guard on the server too (UI + server checks) for security and consistency.
+- Document each flag (what it gates, where it is used, any dependencies).
+
+4) Admin UI (mock MVP)
+- Framework: Vite + React + React Router
+- Layout (admin/src/components/Layout.jsx):
+  - Sidebar: Dashboard, Feature Flags, Moderation, Experts, Transactions, Settings + Logout
+- Pages (admin/src/pages):
+  - Dashboard.jsx: KPI cards (experts, askers, GTV, pending), conversion funnel (mock), at-risk experts list, recent transactions, moderation queue snapshot
+  - FeatureFlags.jsx: Table listing flags, enable/disable toggle (mock), creation form (key/name/description/enabled/rollout%), mock audit trail list
+  - Moderation.jsx: Queue table with filters (pending/escalated/approved/rejected/all), detail panel (summary, actions, notes), mock context
+  - Experts.jsx: Search/filter by availability/Stripe status, toggle availability (mock), impersonate/view (mock)
+  - Transactions.jsx: Filterable list by status and range (mock), refund action (mock), Stripe events section (mock)
+  - Settings.jsx: Admin users (RBAC) mock list (disable/enable, token_version bump), Security toggles (2FA, IP allowlist, rate limits), SLA & Alerts thresholds, API/Webhooks, Env summary, Feature Defaults
+
+5) Additional project notes
+- Admin project deploys separately from the main app; monorepo-friendly
+- SPA rewrites are in admin/vercel.json
+- PostCSS override in admin/postcss.config.cjs avoids pulling Tailwind from root
+- Dynamic CORS helper returns the request origin or configured CORS_ALLOW_ORIGIN and sets Allow-Credentials only for non-wildcard origins
+
+6) What’s next (implementation roadmap)
+- Feature Flags (server + UI):
+  - Add POST /api/flags (create), PATCH /api/flags/:key (update), DELETE /api/flags/:key
+  - Write feature_flag_audit entries and admin_audit_log records on each change
+  - UI: Wire create/edit/enable/disable/delete to endpoints with optimistic updates
+
+- Moderation MVP (server + UI):
+  - Add GET /api/moderation (list with filters), GET /api/moderation/:id
+  - Add POST /api/moderation/:id/approve|reject|escalate
+  - Write back to Xano for content actions as appropriate, log to admin_audit_log
+  - UI: Replace mock lists with data from Neon/Xano, add pagination/bulk actions
+
+- Experts (server + UI):
+  - Add GET /api/experts?search=&availability=&stripe=
+  - Add POST /api/experts/:id/availability to toggle
+  - Implement impersonation (view-only) with audit trail
+  - UI: Add detail drawer with performance KPIs (avg response time, SLA compliance, earnings)
+
+- Transactions (server + UI):
+  - Add GET /api/transactions?status=&range=&query=
+  - Add POST /api/transactions/:id/refund (Stripe + Xano) with confirmation, audit, and email notification
+  - UI: Transaction detail timeline with Stripe events (payment_intent.created, charge.succeeded, payout.paid, etc.)
+
+- Security & Observability:
+  - Add 2FA (TOTP) for admins and “step-up” prompts for sensitive actions
+  - Rate limiting for sensitive endpoints
+  - Add Sentry (frontend and backend) and structured logs
+  - Admin audit log UI (filter/search/export)
+
+- QA/Validation:
+  - E2E: Verify session bootstrap across production and preview domains
+  - Ensure CORS_ALLOW_ORIGIN matches actual hostnames as needed
+  - Confirm no infinite loops and minimal /api/me calls after initial load
+
+7) Quick start for contributors
+- Admin project location: admin/
+- Run locally (optional):
+  - npm install in admin/
+  - npm run dev → http://localhost:5174
+- Env required (Admin Vercel project):
+  - DATABASE_URL, XANO_BASE_URL (api:3B14WLbJ), ADMIN_JWT_SECRET, optional CORS_ALLOW_ORIGIN
+- First admin:
+  - Insert into Neon admin_users with xano_user_id and role, disabled=false
+- Test auth:
+  - With qc_session set (from the main app login), admin auto-bootstraps
+  - Manual fallback: POST /api/auth/verify with Authorization or JSON body { token }
+- Where to add endpoints:
+  - admin/api/* (Node.js serverless functions)
+- Where to add UI:
+  - admin/src/pages/* and admin/src/components/*
+
+The sections below contain the original architecture specification and phased roadmap for reference.
+
+
 ## Executive Summary - TEST
 
 A modern, secure admin system for managing a C2C async consulting marketplace with payment processing, SLA monitoring, and content moderation.

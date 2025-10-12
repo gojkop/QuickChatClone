@@ -235,10 +235,10 @@ function SocialImpactPage() {
             </p>
             <Link 
               to={isAuthenticated ? "/expert" : "/signin"} 
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-8 rounded-xl text-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+              className="group inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-8 rounded-xl text-lg transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             >
               <span>{isAuthenticated ? "Go to Dashboard" : "Start Making Impact"}</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </Link>

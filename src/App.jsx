@@ -2,6 +2,7 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { FeatureFlagsProvider } from './context/FeatureFlagsContext';
 
 // Import Page Components
 import HomePage from '@/pages/HomePage';
@@ -22,8 +23,7 @@ import AnswerReviewPage from '@/pages/AnswerReviewPage';
 import TestAICoachPage from '@/pages/TestAICoachPage';
 import FeedbackWidget from '@/components/common/FeedbackWidget';
 import FeedbackDashboardPage from '@/pages/FeedbackDashboardPage'; 
-
-
+import ExpertMarketingPage from '@/pages/ExpertMarketingPage';
 
 // Import Common Components
 import Navbar from '@/components/common/Navbar';
@@ -43,13 +43,13 @@ const AppLayout = () => {
   
   // Also hide on pages with their own isolated design
   const isPublicProfile = location.pathname.startsWith('/u/');
-  const isAnswerReview = location.pathname.startsWith('/r/'); // ✅ ADD THIS LINE
+  const isAnswerReview = location.pathname.startsWith('/r/');
   
   // Combined condition for hiding navbar/footer
-  const shouldHideLayout = hideLayout || isPublicProfile || isAnswerReview; // ✅ UPDATE THIS LINE
+  const shouldHideLayout = hideLayout || isPublicProfile || isAnswerReview;
 
   return (
-    <div className="App bg-brand-light-gray min-h-screen flex flex-col">
+    <div className="App bg-canvas min-h-screen flex flex-col">
       {!shouldHideLayout && <Navbar />}
       <main className="flex-grow">
         <Routes>
@@ -67,14 +67,13 @@ const AppLayout = () => {
           <Route path="/u/:handle" element={<PublicProfilePage />} />
           <Route path="/r/:token" element={<AnswerReviewPage />} />
           <Route path="/test-ai-coach" element={<TestAICoachPage />} />
-          <Route path="/feedback-dashboard" element={<FeedbackDashboardPage />} /> {/* ✅ ADD THIS */}
-
+          <Route path="/feedback-dashboard" element={<FeedbackDashboardPage />} /> 
           
           {/* Auth Routes */}
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
-          {/* Protected Routes */}
+          {/* Protected Routes - Expert Dashboard and Marketing */}
           <Route 
             path="/expert" 
             element={
@@ -83,13 +82,21 @@ const AppLayout = () => {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/expert/marketing" 
+            element={
+              <ProtectedRoute>
+                <ExpertMarketingPage />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
       </main>
       {!shouldHideLayout && <Footer />}
       {(import.meta.env.MODE === 'development' || 
-  import.meta.env.VITE_SHOW_FEEDBACK === 'true') && (
-  <FeedbackWidget />
-)}
+        import.meta.env.VITE_SHOW_FEEDBACK === 'true') && (
+        <FeedbackWidget />
+      )}
     </div>
   );
 }
@@ -97,7 +104,9 @@ const AppLayout = () => {
 function App() {
   return (
     <AuthProvider>
-      <AppLayout />
+      <FeatureFlagsProvider> 
+        <AppLayout />
+      </FeatureFlagsProvider>
     </AuthProvider>
   );
 }

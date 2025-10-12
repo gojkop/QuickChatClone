@@ -95,10 +95,10 @@ function ValueCalculator() {
             {/* CTA */}
             <Link
               to="/signin"
-              className="btn btn-primary px-6 py-3"
+              className="group inline-flex items-center justify-center gap-2 bg-primary text-white font-bold py-4 px-8 rounded-lg transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             >
               <span>Get Your Link</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </Link>

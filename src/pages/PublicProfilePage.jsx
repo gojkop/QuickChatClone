@@ -192,6 +192,172 @@ const CharityHeroBadge = () => {
   );
 };
 
+// Living Avatar Component with breathing animation and particle field
+const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocials, socials }) => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
+  const avatarRef = React.useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Detect if touch device (mobile)
+    const checkMobile = () => {
+      setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) return; // Skip mouse tracking on mobile
+
+    const handleMouseMove = (e) => {
+      if (!avatarRef.current) return;
+      
+      const rect = avatarRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      // Calculate distance from center (normalized to -1 to 1)
+      const deltaX = (e.clientX - centerX) / (rect.width / 2);
+      const deltaY = (e.clientY - centerY) / (rect.height / 2);
+      
+      // Apply subtle parallax (max 12px movement)
+      setMousePosition({
+        x: deltaX * 12,
+        y: deltaY * 12
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [isMobile]);
+
+  // Generate particles - DISABLED
+  // const particleCount = isMobile ? 8 : 16;
+  // const particles = Array.from({ length: particleCount }, (_, i) => {
+  //   const angle = (i / particleCount) * Math.PI * 2;
+  //   const radius = isMobile ? 70 : 85;
+  //   const x = Math.cos(angle) * radius;
+  //   const y = Math.sin(angle) * radius;
+  //   const delay = i * 0.15;
+  //   const duration = 8 + (i % 3) * 2;
+  //   
+  //   return { x, y, delay, duration, id: i };
+  // });
+
+  const parallaxStyle = !isMobile ? {
+    transform: `translate(${mousePosition.x}px, ${mousePosition.y}px)`,
+    transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
+  } : {};
+
+  return (
+    <div className="flex items-start gap-4 -mt-16 md:-mt-18 relative z-10">
+      <div 
+        ref={avatarRef}
+        className="relative flex-shrink-0 group"
+        onMouseEnter={() => !isMobile && setIsHovering(true)}
+        onMouseLeave={() => !isMobile && setIsHovering(false)}
+      >
+        {/* Ambient glow - enhanced with breathing */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-violet-400 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500 living-breath"/>
+        
+        {/* Particle field - DISABLED */}
+        {/* <div className="absolute inset-0 pointer-events-none">
+          {particles.map((particle) => (
+            <div
+              key={particle.id}
+              className="absolute w-1.5 h-1.5 rounded-full living-particle"
+              style={{
+                left: '50%',
+                top: '50%',
+                marginLeft: `${particle.x}px`,
+                marginTop: `${particle.y}px`,
+                animationDelay: `${particle.delay}s`,
+                animationDuration: `${particle.duration}s`,
+                background: particle.id % 2 === 0 
+                  ? 'linear-gradient(135deg, #4F46E5, #7C3AED)' 
+                  : 'linear-gradient(135deg, #7C3AED, #8B5CF6)',
+                boxShadow: '0 0 8px rgba(79, 70, 229, 0.5)'
+              }}
+            />
+          ))}
+        </div> */}
+
+        {/* Avatar container with breathing animation and parallax */}
+        <div 
+          className="relative living-breath-avatar"
+          style={parallaxStyle}
+        >
+          {avatarUrl ? (
+            <img 
+              className="relative w-24 h-24 md:w-28 md:h-28 rounded-full object-cover ring-4 ring-white shadow-2xl" 
+              src={avatarUrl}
+              alt={(name || 'Expert') + "'s avatar"}
+              onError={function(e) {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+          ) : null}
+          <div 
+            className="relative w-24 h-24 md:w-28 md:h-28 flex-shrink-0" 
+            style={{ display: avatarUrl ? 'none' : 'block' }}
+          >
+            <DefaultAvatar size={112} />
+          </div>
+        </div>
+        
+        {/* Activity indicator with pulse */}
+        <div className={`absolute -bottom-1 -right-1 w-9 h-9 rounded-full border-4 border-white shadow-lg flex items-center justify-center living-status ${
+          isAcceptingQuestions 
+            ? 'bg-gradient-to-br from-green-400 to-green-500' 
+            : 'bg-gradient-to-br from-yellow-400 to-yellow-500'
+        }`}>
+          {isAcceptingQuestions ? (
+            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+            </svg>
+          ) : (
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
+        </div>
+
+        {/* Hover ring effect (desktop only) */}
+        {!isMobile && isHovering && (
+          <div className="absolute inset-0 rounded-full border-2 border-indigo-400/30 animate-ping" style={{ animationDuration: '2s' }} />
+        )}
+      </div>
+      
+      {/* Social Links */}
+      {hasSocials && (
+        <div className="pt-12 md:pt-14 flex-1">
+          <div className="flex items-center justify-end gap-2 flex-wrap">
+            {socials.twitter && (
+              <SocialLink platform="twitter" url={socials.twitter} />
+            )}
+            {socials.linkedin && (
+              <SocialLink platform="linkedin" url={socials.linkedin} />
+            )}
+            {socials.instagram && (
+              <SocialLink platform="instagram" url={socials.instagram} />
+            )}
+            {socials.github && (
+              <SocialLink platform="github" url={socials.github} />
+            )}
+            {socials.website && (
+              <SocialLink platform="website" url={socials.website} />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 function PublicProfilePage() {
   const { handle } = useParams();
   const navigate = useNavigate();
@@ -476,70 +642,15 @@ function PublicProfilePage() {
             </div>
 
             <div className="px-5 md:px-6 pb-28 md:pb-6 space-y-5">
-              {/* Avatar Section */}
-              <div className="flex items-start gap-4 -mt-16 md:-mt-18 relative z-10">
-                <div className="relative flex-shrink-0 group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-violet-400 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity"/>
-                  
-                  {profile.avatar_url ? (
-                    <img 
-                      className="relative w-24 h-24 md:w-28 md:h-28 rounded-full object-cover ring-4 ring-white shadow-2xl" 
-                      src={profile.avatar_url}
-                      alt={(profile.name || 'Expert') + "'s avatar"}
-                      onError={function(e) {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
-                      }}
-                    />
-                  ) : null}
-                  <div 
-                    className="relative w-24 h-24 md:w-28 md:h-28 flex-shrink-0" 
-                    style={{ display: profile.avatar_url ? 'none' : 'block' }}
-                  >
-                    <DefaultAvatar size={112} />
-                  </div>
-                  
-                  {/* Activity indicator */}
-                  <div className={`absolute -bottom-1 -right-1 w-9 h-9 rounded-full border-4 border-white shadow-lg flex items-center justify-center ${
-                    isAcceptingQuestions 
-                      ? 'bg-gradient-to-br from-green-400 to-green-500' 
-                      : 'bg-gradient-to-br from-yellow-400 to-yellow-500'
-                  }`}>
-                    {isAcceptingQuestions ? (
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Social Links */}
-                {hasSocials && (
-                  <div className="pt-12 md:pt-14 flex-1">
-                    <div className="flex items-center justify-end gap-2 flex-wrap">
-                      {profile.socials.twitter && (
-                        <SocialLink platform="twitter" url={profile.socials.twitter} />
-                      )}
-                      {profile.socials.linkedin && (
-                        <SocialLink platform="linkedin" url={profile.socials.linkedin} />
-                      )}
-                      {profile.socials.instagram && (
-                        <SocialLink platform="instagram" url={profile.socials.instagram} />
-                      )}
-                      {profile.socials.github && (
-                        <SocialLink platform="github" url={profile.socials.github} />
-                      )}
-                      {profile.socials.website && (
-                        <SocialLink platform="website" url={profile.socials.website} />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Living Avatar Section */}
+              <LivingAvatar 
+                avatarUrl={profile.avatar_url}
+                name={profile.name}
+                handle={handle}
+                isAcceptingQuestions={isAcceptingQuestions}
+                hasSocials={hasSocials}
+                socials={profile.socials}
+              />
 
               {/* Name, Title */}
               <div className="space-y-2.5">
@@ -593,7 +704,7 @@ function PublicProfilePage() {
                 </div>
               )}
 
-              {/* Expertise Section - Changed heading */}
+              {/* Expertise Section */}
               {profile.expertise && profile.expertise.length > 0 && (
                 <div className="space-y-3.5">
                   <h3 className="text-sm font-bold text-gray-900 tracking-wide">Ask me about</h3>

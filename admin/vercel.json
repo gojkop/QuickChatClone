@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/flags/:key",
+      "destination": "/api/flags?key=:key"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
