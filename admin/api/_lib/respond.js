@@ -1,85 +1,150 @@
 // admin/api/_lib/respond.js
-// Secure CORS and response helpers
-
-// Allowed origins for admin endpoints (more restrictive than public)
-const ADMIN_ALLOWED_ORIGINS = [
-  'https://admin.mindpick.me',
-  // Add preview URLs if needed
-  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
-  // Development only
-  process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : null,
-  process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : null
-].filter(Boolean);
+// Response helpers and CORS handling
 
 /**
- * Secure CORS helper - DOES NOT echo arbitrary origins
- * Only allows explicitly configured origins
+ * Handle CORS headers for cross-origin requests
+ * CRITICAL: Must be called FIRST in every API handler
+ * @param {Request} req - Incoming request
+ * @param {Response} res - Outgoing response
+ * @returns {boolean} - true if OPTIONS request (handler should return)
  */
 export function allowCors(req, res) {
+  // Get origin from request
   const origin = req.headers.origin;
   
-  // Strict origin validation
-  if (origin && ADMIN_ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  } else if (origin) {
-    // Log unauthorized attempts
-    console.warn('[CORS] Blocked unauthorized origin:', origin);
-    // Don't set any CORS headers - will fail in browser
-  }
-  // If no origin header, allow (same-origin or server-side)
-
-  res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
-
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return true;
-  }
+  // Get allowed origins from env or use defaults
+  const allowedOriginsString = process.env.CORS_ALLOW_ORIGIN || 
+    'https://www.mindpick.me,https://mindpick.me,http://localhost:5173,http://localhost:3000';
   
-  return false;
+  const allowedOrigins = allowedOriginsString.split(',').map(o => o.trim());
+
+  // Set Access-Control-Allow-Origin header if origin is allowed
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (process.env.NODE_ENV === 'development' && origin) {
+    // In development, allow any localhost origin
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+  }
+
+  // Allow credentials (cookies)
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Allowed methods
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  
+  // Allowed headers
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, Cookie, X-Requested-With'
+  );
+
+  // Max age for preflight cache (1 hour)
+  res.setHeader('Access-Control-Max-Age', '3600');
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return true; // Signal handler to stop processing
+  }
+
+  return false; // Continue processing
 }
 
 /**
- * Success response helper
+ * Send successful JSON response
  */
 export function ok(res, data, req = null) {
-  // Add security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Content-Type', 'application/json');
-  res.status(200).send(JSON.stringify(data));
+  const response = {
+    success: true,
+    ...data,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Log successful requests in development
+  if (process.env.NODE_ENV === 'development' && req) {
+    console.log(`[${req.method}] ${req.url} → 200 OK`);
+  }
+
+  res.status(200).json(response);
 }
 
 /**
- * Error response helper
- * @param {Response} res - Response object
- * @param {number} code - HTTP status code
- * @param {string} message - Error message (user-facing)
- * @param {object} extra - Additional data (internal only in dev)
- * @param {Request} req - Request object
+ * Send error JSON response
  */
-export function err(res, code, message, extra = {}, req = null) {
-  // Log error with context
-  console.error(`[API Error ${code}]`, {
-    message,
-    ip: req?.headers?.['x-forwarded-for'] || req?.connection?.remoteAddress,
-    path: req?.url,
-    method: req?.method,
-    ...extra
-  });
-
-  // Don't leak internal details in production
+export function err(res, status, message, data = {}, req = null) {
   const response = {
-    error: message
+    success: false,
+    error: message,
+    ...data,
+    timestamp: new Date().toISOString(),
   };
 
-  // Only include extra details in development
-  if (process.env.NODE_ENV === 'development') {
-    response.details = extra;
+  // Log errors
+  if (req) {
+    console.error(`[${req.method}] ${req.url} → ${status} ${message}`);
   }
 
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Content-Type', 'application/json');
-  res.status(code).send(JSON.stringify(response));
+  res.status(status).json(response);
+}
+
+/**
+ * Send paginated response
+ */
+export function paginated(res, data, pagination, req = null) {
+  const response = {
+    success: true,
+    data,
+    pagination: {
+      page: parseInt(pagination.page) || 1,
+      limit: parseInt(pagination.limit) || 20,
+      total: parseInt(pagination.total) || 0,
+      pages: Math.ceil((parseInt(pagination.total) || 0) / (parseInt(pagination.limit) || 20)),
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  if (process.env.NODE_ENV === 'development' && req) {
+    console.log(`[${req.method}] ${req.url} → 200 OK (${data.length} items)`);
+  }
+
+  res.status(200).json(response);
+}
+
+/**
+ * Validate required fields in request body
+ */
+export function validateRequired(body, requiredFields) {
+  const missing = [];
+  
+  for (const field of requiredFields) {
+    if (body[field] === undefined || body[field] === null || body[field] === '') {
+      missing.push(field);
+    }
+  }
+
+  if (missing.length > 0) {
+    return {
+      valid: false,
+      message: `Missing required fields: ${missing.join(', ')}`,
+      missing,
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Parse request body (handles string and object)
+ */
+export function parseBody(req) {
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (e) {
+      throw new Error('Invalid JSON body');
+    }
+  }
+  return req.body || {};
 }
