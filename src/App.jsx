@@ -23,6 +23,8 @@ import AnswerReviewPage from '@/pages/AnswerReviewPage';
 import TestAICoachPage from '@/pages/TestAICoachPage';
 import FeedbackWidget from '@/components/common/FeedbackWidget';
 import FeedbackDashboardPage from '@/pages/FeedbackDashboardPage'; 
+import ExpertMarketingPage from '@/pages/ExpertMarketingPage';
+
 
 
 
@@ -68,7 +70,8 @@ const AppLayout = () => {
           <Route path="/u/:handle" element={<PublicProfilePage />} />
           <Route path="/r/:token" element={<AnswerReviewPage />} />
           <Route path="/test-ai-coach" element={<TestAICoachPage />} />
-          <Route path="/feedback-dashboard" element={<FeedbackDashboardPage />} /> {/* ✅ ADD THIS */}
+          <Route path="/feedback-dashboard" element={<FeedbackDashboardPage />} /> 
+          <Route path="/expert/marketing" element={<ExpertMarketingPage />} />
 
           
           {/* Auth Routes */}
