@@ -2,6 +2,7 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 
 // Import Page Components
 import HomePage from '@/pages/HomePage';
@@ -97,6 +98,7 @@ const AppLayout = () => {
 function App() {
   return (
     <AuthProvider>
+      <FeatureFlagsProvider> 
       <AppLayout />
     </AuthProvider>
   );
