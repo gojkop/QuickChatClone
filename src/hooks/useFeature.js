@@ -1,4 +1,4 @@
-import { useFeatureFlags } from '../contexts/FeatureFlagsContext';
+import { useFeatureFlags } from '../context/FeatureFlagsContext';
 import { useAuth } from '../context/AuthContext'; // Your existing auth context
 
 const PLAN_LEVELS = {
