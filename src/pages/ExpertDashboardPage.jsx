@@ -719,7 +719,7 @@ function ExpertDashboardPage() {
               selectedCharity={profile?.selected_charity}
               onOpenSettings={() => navigate('#profile-settings')}
             />
-            })
+            )}
           </div>
 
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
