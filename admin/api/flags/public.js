@@ -1,5 +1,5 @@
 // admin/api/flags/public.js
-// Public read-only endpoint with strict CORS security
+// Public read-only endpoint with environment-controlled caching
 import { sql } from '../_lib/db.js';
 
 const PLAN_NAMES = {
@@ -128,13 +128,26 @@ export default async function handler(req, res) {
       min_plan_level: flag.min_plan_level
     }));
 
-    // Cache headers with randomized TTL for security
-    const randomOffset = Math.floor(Math.random() * 60); // 0-60 seconds
-    const ttl = 300 + randomOffset; // 5-6 minutes
-    res.setHeader('Cache-Control', `s-maxage=${ttl}, stale-while-revalidate=600`);
-    res.setHeader('Content-Type', 'application/json');
+    // ✅ SMART CACHING: Check environment variable
+    // Default to enabled (true) if not set
+    const cacheEnabled = process.env.ENABLE_FLAG_CACHE !== 'false';
     
-    // Security headers
+    if (cacheEnabled) {
+      // Cache enabled: Good performance, 5-6 minute delay for updates
+      const randomOffset = Math.floor(Math.random() * 60); // 0-60 seconds
+      const ttl = 300 + randomOffset; // 5-6 minutes
+      res.setHeader('Cache-Control', `s-maxage=${ttl}, stale-while-revalidate=600`);
+      console.log(`[flags/public] ✅ Cache enabled (TTL: ${ttl}s)`);
+    } else {
+      // Cache disabled: Instant updates, more database load
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      console.log('[flags/public] ⚠️ Cache DISABLED - instant updates enabled');
+    }
+    
+    // Content type and security headers
+    res.setHeader('Content-Type', 'application/json');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     
@@ -142,11 +155,16 @@ export default async function handler(req, res) {
       flags,
       _meta: {
         count: flags.length,
-        cached: true
+        cached: cacheEnabled,
+        timestamp: new Date().toISOString()
       }
     });
   } catch (e) {
-    console.error('[flags/public] Database error:', e);
+    console.error('[flags/public] Database error:', {
+      error: e.message,
+      stack: e.stack,
+      timestamp: new Date().toISOString()
+    });
     
     // Don't leak internal errors to client
     return res.status(500).json({ 
