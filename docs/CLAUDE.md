@@ -162,16 +162,21 @@ Supports both Google OAuth and LinkedIn OAuth with JWT tokens stored in localSto
 
 ### OAuth Flow (LinkedIn)
 
-1. User clicks "Sign in with LinkedIn" → `/api/oauth/linkedin/init`
-2. Redirects to LinkedIn authorization
-3. LinkedIn redirects back to `/auth/callback`
-4. `/api/oauth/linkedin/continue` exchanges code for access token (Vercel)
-5. Vercel fetches user info from LinkedIn `/v2/userinfo`
-6. Vercel calls Xano `/auth/linkedin/create_user` with user data
-7. Xano creates/updates user, returns JWT token
-8. Frontend stores token, redirects to `/expert` dashboard
+1. User clicks "Sign in with LinkedIn" → `/api/oauth/linkedin/init` (Vercel)
+2. Vercel generates LinkedIn authorization URL directly
+3. Redirects to LinkedIn authorization
+4. LinkedIn redirects back to `/auth/callback`
+5. `/api/oauth/linkedin/continue` exchanges code for access token (Vercel)
+6. Vercel fetches user info from LinkedIn `/v2/userinfo`
+7. Vercel calls Xano `/auth/linkedin/create_user` with user data
+8. Xano creates/updates user, returns JWT token
+9. Frontend stores token, redirects to `/expert` dashboard
 
-**Architecture Note:** LinkedIn OAuth is handled by Vercel (not Xano directly) because Xano Free tier has limitations with form-encoded OAuth requests. Vercel acts as a proxy to handle the OAuth complexity, then passes clean user data to Xano.
+**Architecture Note:** LinkedIn OAuth is **entirely handled by Vercel** (no Xano OAuth integration needed). This approach:
+- Avoids Xano Free tier limitations with form-encoded OAuth requests
+- Eliminates dependency on Xano OAuth marketplace addons
+- Gives full control over the OAuth flow
+- Only requires Xano for user creation and token generation
 
 ### Auth Middleware
 
@@ -418,15 +423,21 @@ Use presigned URLs for private access.
 - Xano directly exchanges authorization code for user token
 
 **LinkedIn OAuth:**
-- Endpoint: Vercel proxy at `/api/oauth/linkedin/continue`
-- Why Vercel proxy? Xano Free tier limitations with form-encoded OAuth
+- **Init endpoint:** `/api/oauth/linkedin/init` (Vercel) - generates LinkedIn auth URL directly
+- **Continue endpoint:** `/api/oauth/linkedin/continue` (Vercel) - exchanges code with LinkedIn
+- **No Xano OAuth integration needed** - Vercel handles entire OAuth flow
 - Vercel exchanges code with LinkedIn, then creates user in Xano via `/auth/linkedin/create_user`
 
 **Required Vercel Environment Variables:**
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-- `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`
-- `XANO_BASE_URL`, `XANO_AUTH_BASE_URL`
-- `CLIENT_PUBLIC_ORIGIN` (for OAuth redirect URI)
+- **Google OAuth:**
+  - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+  - `XANO_AUTH_BASE_URL` or `XANO_GOOGLE_AUTH_BASE_URL`
+- **LinkedIn OAuth:**
+  - `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`
+  - `XANO_BASE_URL` (for user creation endpoint)
+  - `XANO_INTERNAL_API_KEY` (for secure Xano API calls)
+- **Common:**
+  - `CLIENT_PUBLIC_ORIGIN` (e.g., https://mindpick.me for OAuth redirect URI)
 
 ### Xano LinkedIn Endpoint Configuration
 
@@ -461,6 +472,12 @@ Use presigned URLs for private access.
 - `email`, `name`, `fname`, `lname` → text fields
 
 ### Common Issues
+
+**LinkedIn OAuth 404 Error:**
+- **Symptom:** `/api/oauth/linkedin/init` returns 404
+- **Cause:** LinkedIn OAuth integration was removed from Xano
+- **Solution:** The init endpoint now runs entirely in Vercel (no Xano dependency)
+- **Fix applied:** `api/oauth/linkedin/init.js` generates auth URL directly
 
 **429 Rate Limit Errors:**
 - Xano Free tier has rate limits
