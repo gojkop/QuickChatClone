@@ -10,6 +10,8 @@ import StatsSection from '@/components/dashboard/StatsSection';
 import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
 import QuestionTable from '@/components/dashboard/QuestionTable';
 import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
+import MarketingPreview from '@/components/dashboard/MarketingPreview';
+
 
 // ✅ Hidden Questions Toggle Component
 function HiddenToggle({ showHidden, onToggle, hiddenCount }) {
@@ -162,6 +164,8 @@ function ExpertDashboardPage() {
   const [sortBy, setSortBy] = useState('time_left');
   const [showHidden, setShowHidden] = useState(false);
   const { isEnabled: socialImpactEnabled, loading: featureFlagLoading } = useFeature('social_impact_dashboard');
+  const { isEnabled: marketingEnabled } = useFeature('marketing_module');
+
 
   
   const [selectedQuestion, setSelectedQuestion] = useState(null);
@@ -720,6 +724,12 @@ function ExpertDashboardPage() {
               onOpenSettings={() => navigate('#profile-settings')}
             />
             )}
+            {
+            <MarketingPreview 
+                isEnabled={marketingEnabled}
+                onNavigate={() => navigate('/expert/marketing')}
+            />
+            }
           </div>
 
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
