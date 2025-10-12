@@ -100,6 +100,7 @@ function App() {
     <AuthProvider>
       <FeatureFlagsProvider> 
       <AppLayout />
+      </FeatureFlagsProvider>
     </AuthProvider>
   );
 }
