@@ -161,6 +161,11 @@ Uses Google OAuth with JWT tokens stored in localStorage as `qc_token`.
 
 **LinkedIn OAuth:** In progress, similar flow with `/api/oauth/linkedin/*`
 
+**Common Xano LinkedIn Issues:**
+- "Not numeric" error: Usually caused by trying to manually set the `id` field when creating users. Remove any `id` field from "Add Record" inputs in Xano - it should auto-generate.
+- LinkedIn returns string IDs: Store LinkedIn's user ID in a `linkedin_id` TEXT field, not in your numeric `id` field.
+- Check Xano function stack: Remove any "Convert to Number" functions on `linkedin_id` or text fields.
+
 **Auth Middleware:**
 - Frontend: `src/api/index.js` intercepts all requests, adds `Authorization: Bearer {token}`
 - Auto-logout on 401 (except during OAuth flow)
@@ -393,7 +398,95 @@ Use presigned URLs for private access.
 3. **Knowledge Graph:** Not implemented (requires Neo4j setup)
 4. **Rate Limiting:** AI Coach rate limits not enforced yet
 5. **Session Persistence:** AI Coach sessions not saved to Xano
-6. **LinkedIn OAuth:** In progress, not fully functional
+6. **LinkedIn OAuth:** In progress, requires Xano function stack configuration
+
+## Troubleshooting
+
+### LinkedIn OAuth Integration
+
+**Architecture:** LinkedIn OAuth is handled by Vercel backend, which then calls Xano for user creation.
+
+**Flow:**
+1. Frontend → `/api/oauth/linkedin/init` → LinkedIn authorization
+2. LinkedIn callback → `/api/oauth/linkedin/continue`
+3. Vercel exchanges code for LinkedIn access token
+4. Vercel fetches user info from LinkedIn `/v2/userinfo`
+5. Vercel calls Xano `/auth/linkedin/create_user` with user data
+6. Xano creates/updates user and returns auth token
+7. Frontend receives token and authenticates user
+
+**Why this approach:**
+- Xano Free tier has limitations with form-encoded OAuth requests
+- Vercel properly handles `application/x-www-form-urlencoded` format
+- Xano focuses on simple user creation, not OAuth complexity
+
+### Previous "Not numeric" Error (Fixed)
+
+**Error:** `Exception: Not numeric` when running `linkedin_oauth_getaccesstoken`
+
+**Root Causes (historical):**
+1. Xano couldn't properly encode form data for LinkedIn token endpoint
+2. The `linkedin_oauth` object schema had `id` field defined as numeric (should be text)
+3. LinkedIn returns user IDs as strings, not numbers
+4. LinkedIn doesn't return `id_token` like Google (can't use JWE Decode)
+
+**Solution:** Use Vercel as proxy to handle LinkedIn OAuth, then call simplified Xano endpoint.
+
+**New Xano Endpoint:** `POST /auth/linkedin/create_user`
+
+**Inputs:**
+- `linkedin_id` (text) - LinkedIn's user ID
+- `email` (text)
+- `name` (text)
+- `given_name` (text)
+- `family_name` (text)
+
+**Function Stack:**
+1. Get Record From user (WHERE auth_provider_id = linkedin_id)
+2. Conditional: If user doesn't exist → Add Record, Else → Edit Record
+3. Create Authentication Token
+4. Return token + user data
+
+**Required Environment Variables (Vercel):**
+- `LINKEDIN_CLIENT_ID`
+- `LINKEDIN_CLIENT_SECRET`
+- `XANO_BASE_URL`
+
+**Correct user creation inputs for your table:**
+```
+✅ name: {{first_name}} {{last_name}}
+✅ email: {{email_from_linkedin}}
+✅ fname: {{first_name}}
+✅ lname: {{last_name}}
+✅ auth_provider: "linkedin"
+✅ auth_provider_id: {{linkedin_id_as_text}}
+✅ linkedin_oauth: {
+     "id": {{linkedin_id}},              // TEXT value, not numeric
+     "name": {{first_name}} + " " + {{last_name}},
+     "email": {{email}},
+     "firstName": {{first_name}},
+     "lastName": {{last_name}}
+   }
+❌ id: [REMOVE - auto-generated]
+❌ created_at: [REMOVE - auto-generated]
+```
+
+**Important:** The `linkedin_oauth.id` field must be TEXT in the object schema, otherwise you'll get "Not numeric" error when LinkedIn returns a string ID.
+
+**User table schema (actual):**
+- `id` → int (auto-increment) - never set manually
+- `auth_provider` → text (set to "linkedin")
+- `auth_provider_id` → text (LinkedIn user ID as string)
+- `linkedin_oauth` → object (full LinkedIn profile)
+- `email`, `name`, `fname`, `lname` → text fields
+
+**Common mistakes:**
+- ❌ Using `WHERE id = {{linkedin_id}}` (compares int with text)
+- ✅ Use `WHERE auth_provider_id = {{linkedin_id}}` (compares text with text)
+- ❌ Converting `auth_provider_id` to number
+- ✅ Keep `auth_provider_id` as text (LinkedIn IDs are strings)
+
+**Note:** LinkedIn API returns user IDs as strings (e.g., "abc123xyz"), not numbers. Store in `auth_provider_id` TEXT field, separate from your auto-increment `id` field.
 
 ## Next Steps (from spec doc)
 
