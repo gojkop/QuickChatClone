@@ -23,8 +23,8 @@ export default function MarketingPreview({ isEnabled }) {
   // Don't render if feature is disabled
   if (!isEnabled) return null;
 
-  const handleClick = () => {
-    // On mobile: first click expands, second click navigates
+  const handleCardClick = () => {
+    // On mobile: first click expands, subsequent clicks navigate
     // On desktop: always navigates
     const isMobile = window.innerWidth < 1024;
     
@@ -33,6 +33,14 @@ export default function MarketingPreview({ isEnabled }) {
     } else {
       navigate('/expert/marketing');
     }
+  };
+
+  const handleChevronClick = (e) => {
+    // Prevent card click from firing
+    e.stopPropagation();
+    
+    // Toggle expansion state
+    setIsExpanded(!isExpanded);
   };
 
   return (
@@ -126,7 +134,7 @@ export default function MarketingPreview({ isEnabled }) {
 
       {/* Mobile Version - Collapsible */}
       <div 
-        onClick={handleClick}
+        onClick={handleCardClick}
         className={`lg:hidden bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-elev-2 border border-indigo-200 cursor-pointer transition-all duration-base ${
           isExpanded ? 'p-6' : 'p-4'
         }`}
@@ -158,14 +166,20 @@ export default function MarketingPreview({ isEnabled }) {
                 </div>
               </div>
             </div>
-            <svg 
-              className="w-5 h-5 text-primary flex-shrink-0" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
+            <button
+              onClick={handleChevronClick}
+              className="flex-shrink-0 p-2 -mr-2 hover:bg-indigo-100 rounded-lg transition-colors duration-fast"
+              aria-label="Expand marketing details"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
+              <svg 
+                className="w-5 h-5 text-primary" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
           </div>
         )}
 
@@ -190,14 +204,20 @@ export default function MarketingPreview({ isEnabled }) {
                   <p className="text-sm text-subtext font-medium">Track campaigns & grow</p>
                 </div>
               </div>
-              <svg 
-                className="w-5 h-5 text-primary" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
+              <button
+                onClick={handleChevronClick}
+                className="flex-shrink-0 p-2 -mr-2 hover:bg-indigo-100 rounded-lg transition-colors duration-fast"
+                aria-label="Collapse marketing details"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
-              </svg>
+                <svg 
+                  className="w-5 h-5 text-primary" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+                </svg>
+              </button>
             </div>
 
             {/* Top Campaign Highlight */}
@@ -249,7 +269,7 @@ export default function MarketingPreview({ isEnabled }) {
             {/* Tap Hint */}
             <div className="mt-3 pt-3 border-t border-indigo-200">
               <p className="text-xs text-center text-indigo-700 font-bold">
-                Tap to view full dashboard →
+                Tap card to view full dashboard →
               </p>
             </div>
           </div>
