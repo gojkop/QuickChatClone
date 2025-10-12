@@ -102,6 +102,7 @@ export default async function handler(req, res) {
     const xanoResponse = await axios.post(
       `${XANO_BASE_URL}/auth/linkedin/create_user`,
       {
+        x_api_key: XANO_INTERNAL_API_KEY,  // Send in body instead of header
         linkedin_id: userInfo.sub,
         email: userInfo.email,
         name: userInfo.name,
@@ -110,9 +111,6 @@ export default async function handler(req, res) {
         picture: userInfo.picture
       },
       {
-        headers: {
-          'X-API-Key': XANO_INTERNAL_API_KEY
-        },
         validateStatus: () => true
       }
     );
