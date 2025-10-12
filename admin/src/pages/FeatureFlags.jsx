@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Button, 
@@ -7,8 +7,10 @@ import {
   Select,
   Modal,
   SectionHeader,
-  EmptyState 
+  EmptyState,
+  Spinner
 } from '../components/ui';
+import { useToast } from '../components/Toast';
 
 // Inline SVG Icons
 const Icons = {
@@ -26,53 +28,57 @@ const Icons = {
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
     </svg>
-  ),
-  Flag: () => (
-    <svg className="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-    </svg>
   )
 };
 
-// Mock data - FIXED: Define this BEFORE using it
-const initialFlags = [
-  { 
-    id: 1,
-    key: 'coach_tier2', 
-    name: 'AI Coach Tier 2', 
-    description: 'Enable Tier 2 analysis and clarifications', 
-    enabled: true, 
-    rollout_percentage: 100,
-    created_at: '2025-01-15',
-    updated_at: '2025-02-10'
+// API helper functions
+const flagsAPI = {
+  list: async () => {
+    const res = await fetch('/api/flags', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch flags');
+    return res.json();
   },
-  { 
-    id: 2,
-    key: 'copilot_beta', 
-    name: 'Expert Copilot (Beta)', 
-    description: 'Show Copilot panel to selected experts', 
-    enabled: false, 
-    rollout_percentage: 10,
-    created_at: '2025-02-01',
-    updated_at: '2025-02-05'
+  
+  create: async (data) => {
+    const res = await fetch('/api/flags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to create flag');
+    }
+    return res.json();
   },
-  { 
-    id: 3,
-    key: 'deep_dive_question', 
-    name: 'Deep Dive Question Type', 
-    description: 'Offer long-form, higher-priced question type', 
-    enabled: false, 
-    rollout_percentage: 0,
-    created_at: '2025-02-20',
-    updated_at: '2025-02-20'
+  
+  update: async (key, data) => {
+    const res = await fetch(`/api/flags/${key}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to update flag');
+    }
+    return res.json();
+  },
+  
+  delete: async (key) => {
+    const res = await fetch(`/api/flags/${key}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to delete flag');
+    }
+    return res.json();
   }
-];
-
-const auditLog = [
-  { time: '10:12', action: 'Enabled copilot_beta', user: 'Admin', details: 'rollout 10% → 25%' },
-  { time: '09:44', action: 'Created deep_dive_question', user: 'Admin', details: null },
-  { time: 'Yesterday', action: 'Disabled coach_tier2', user: 'Support Admin', details: null }
-];
+};
 
 // ============================================================================
 // Flag Row Component
@@ -83,17 +89,19 @@ function FlagRow({ flag, onToggle, onEdit, onDelete }) {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Left: Flag Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
             <h3 className="text-sm font-bold text-gray-900">{flag.name}</h3>
             <Badge variant={flag.enabled ? 'success' : 'default'}>
-              {flag.enabled ? 'Enabled' : 'Disabled'}
+              {flag.enabled ? '✓ Enabled' : '○ Disabled'}
+            </Badge>
+            <Badge variant={flag.min_plan === 'pro' ? 'primary' : 'info'}>
+              {flag.min_plan === 'pro' ? '⭐ Pro' : '✓ Free'}
             </Badge>
           </div>
-          <p className="text-xs text-gray-500 mb-2">{flag.description}</p>
+          <p className="text-xs text-gray-500 mb-2">{flag.description || 'No description'}</p>
           <div className="flex items-center gap-4 text-xs text-gray-400">
             <span>Key: <code className="font-mono text-gray-600">{flag.key}</code></span>
-            <span>Rollout: <strong className="text-gray-600">{flag.rollout_percentage}%</strong></span>
-            <span>Updated: {flag.updated_at}</span>
+            <span>Updated: {new Date(flag.updated_at).toLocaleDateString()}</span>
           </div>
         </div>
 
@@ -102,7 +110,7 @@ function FlagRow({ flag, onToggle, onEdit, onDelete }) {
           <Button 
             variant={flag.enabled ? 'secondary' : 'primary'}
             size="sm"
-            onClick={() => onToggle(flag.id)}
+            onClick={() => onToggle(flag)}
           >
             {flag.enabled ? 'Disable' : 'Enable'}
           </Button>
@@ -114,7 +122,7 @@ function FlagRow({ flag, onToggle, onEdit, onDelete }) {
             <Icons.Edit />
           </button>
           <button 
-            onClick={() => onDelete(flag.id)}
+            onClick={() => onDelete(flag)}
             className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
             title="Delete"
           >
@@ -122,22 +130,6 @@ function FlagRow({ flag, onToggle, onEdit, onDelete }) {
           </button>
         </div>
       </div>
-
-      {/* Rollout Progress Bar */}
-      {flag.enabled && flag.rollout_percentage < 100 && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <div className="flex items-center justify-between text-xs mb-1">
-            <span className="text-gray-500">Rollout Progress</span>
-            <span className="font-semibold text-indigo-600">{flag.rollout_percentage}%</span>
-          </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full transition-all duration-500"
-              style={{ width: `${flag.rollout_percentage}%` }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -152,14 +144,36 @@ function FlagModal({ isOpen, onClose, flag, onSave }) {
       name: '', 
       description: '', 
       enabled: false, 
-      rollout_percentage: 0 
+      min_plan: 'free'
     }
   );
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (flag) {
+      setFormData(flag);
+    } else {
+      setFormData({ 
+        key: '', 
+        name: '', 
+        description: '', 
+        enabled: false, 
+        min_plan: 'free'
+      });
+    }
+  }, [flag]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    setSaving(true);
+    try {
+      await onSave(formData);
+      onClose();
+    } catch (error) {
+      // Error handled by parent
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -169,10 +183,11 @@ function FlagModal({ isOpen, onClose, flag, onSave }) {
       title={flag ? 'Edit Feature Flag' : 'Create Feature Flag'}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSubmit}>
+          <Button variant="primary" onClick={handleSubmit} disabled={saving}>
+            {saving ? <Spinner size="sm" className="mr-2" /> : null}
             {flag ? 'Save Changes' : 'Create Flag'}
           </Button>
         </>
@@ -181,16 +196,17 @@ function FlagModal({ isOpen, onClose, flag, onSave }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Key (unique identifier)"
-          placeholder="deep_dive_question"
+          placeholder="profile_video"
           value={formData.key}
           onChange={(e) => setFormData({ ...formData, key: e.target.value })}
           required
-          helperText="Use lowercase with underscores. Cannot be changed after creation."
+          disabled={!!flag}
+          helperText={flag ? "Key cannot be changed after creation" : "Use lowercase with underscores. Cannot be changed later."}
         />
 
         <Input
           label="Name"
-          placeholder="Deep Dive Question Type"
+          placeholder="Profile Video on Public Profile"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
@@ -203,7 +219,7 @@ function FlagModal({ isOpen, onClose, flag, onSave }) {
           <textarea
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             rows={3}
-            placeholder="What does this flag control?"
+            placeholder="What does this feature do?"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
@@ -216,17 +232,19 @@ function FlagModal({ isOpen, onClose, flag, onSave }) {
             onChange={(e) => setFormData({ ...formData, enabled: e.target.value === '1' })}
             options={[
               { value: '1', label: 'Enabled' },
-              { value: '0', label: 'Disabled' }
+              { value: '0', label: 'Disabled (safer)' }
             ]}
           />
 
-          <Input
-            label="Rollout %"
-            type="number"
-            min="0"
-            max="100"
-            value={formData.rollout_percentage}
-            onChange={(e) => setFormData({ ...formData, rollout_percentage: parseInt(e.target.value || '0', 10) })}
+          <Select
+            label="Minimum Plan"
+            value={formData.min_plan}
+            onChange={(e) => setFormData({ ...formData, min_plan: e.target.value })}
+            options={[
+              { value: 'free', label: '✓ Free (All Users)' },
+              { value: 'pro', label: '⭐ Pro Only' }
+            ]}
+            helperText="Who can access when enabled?"
           />
         </div>
       </form>
@@ -238,11 +256,32 @@ function FlagModal({ isOpen, onClose, flag, onSave }) {
 // Main Component
 // ============================================================================
 export default function FeatureFlags() {
-  const [flags, setFlags] = useState(initialFlags);
+  const toast = useToast();
+  const [flags, setFlags] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [planFilter, setPlanFilter] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingFlag, setEditingFlag] = useState(null);
+
+  // Load flags on mount
+  useEffect(() => {
+    loadFlags();
+  }, []);
+
+  async function loadFlags() {
+    try {
+      setLoading(true);
+      const data = await flagsAPI.list();
+      setFlags(data.flags || []);
+    } catch (error) {
+      toast.error('Failed to load feature flags');
+      console.error('Load flags error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Filter flags
   const filteredFlags = flags.filter(flag => {
@@ -255,14 +294,27 @@ export default function FeatureFlags() {
       statusFilter === 'enabled' ? flag.enabled :
       !flag.enabled;
 
-    return matchesSearch && matchesStatus;
+    const matchesPlan =
+      planFilter === 'all' ? true :
+      flag.min_plan === planFilter;
+
+    return matchesSearch && matchesStatus && matchesPlan;
   });
 
   // Handlers
-  const handleToggle = (id) => {
-    setFlags(prev => prev.map(f => 
-      f.id === id ? { ...f, enabled: !f.enabled, updated_at: new Date().toISOString().split('T')[0] } : f
-    ));
+  const handleToggle = async (flag) => {
+    const action = flag.enabled ? 'disable' : 'enable';
+    const loadingId = toast.info(`${action === 'enable' ? 'Enabling' : 'Disabling'} ${flag.name}...`, 0);
+    
+    try {
+      await flagsAPI.update(flag.key, { enabled: !flag.enabled });
+      await loadFlags();
+      toast.dismiss(loadingId);
+      toast.success(`${flag.name} is now ${action}d`);
+    } catch (error) {
+      toast.dismiss(loadingId);
+      toast.error(error.message);
+    }
   };
 
   const handleEdit = (flag) => {
@@ -270,28 +322,44 @@ export default function FeatureFlags() {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
-    if (confirm('Are you sure you want to delete this flag?')) {
-      setFlags(prev => prev.filter(f => f.id !== id));
+  const handleDelete = async (flag) => {
+    if (!confirm(`Are you sure you want to delete "${flag.name}"? This cannot be undone.`)) {
+      return;
+    }
+
+    const loadingId = toast.info(`Deleting ${flag.name}...`, 0);
+    
+    try {
+      await flagsAPI.delete(flag.key);
+      await loadFlags();
+      toast.dismiss(loadingId);
+      toast.success(`${flag.name} deleted successfully`);
+    } catch (error) {
+      toast.dismiss(loadingId);
+      toast.error(error.message);
     }
   };
 
-  const handleSave = (formData) => {
-    if (editingFlag) {
-      // Update existing
-      setFlags(prev => prev.map(f => 
-        f.id === editingFlag.id ? { ...f, ...formData, updated_at: new Date().toISOString().split('T')[0] } : f
-      ));
-    } else {
-      // Create new
-      setFlags(prev => [...prev, {
-        ...formData,
-        id: Date.now(),
-        created_at: new Date().toISOString().split('T')[0],
-        updated_at: new Date().toISOString().split('T')[0]
-      }]);
+  const handleSave = async (formData) => {
+    const loadingId = toast.info(editingFlag ? 'Updating flag...' : 'Creating flag...', 0);
+    
+    try {
+      if (editingFlag) {
+        await flagsAPI.update(editingFlag.key, formData);
+        toast.dismiss(loadingId);
+        toast.success(`${formData.name} updated successfully`);
+      } else {
+        await flagsAPI.create(formData);
+        toast.dismiss(loadingId);
+        toast.success(`${formData.name} created successfully`);
+      }
+      await loadFlags();
+      setEditingFlag(null);
+    } catch (error) {
+      toast.dismiss(loadingId);
+      toast.error(error.message);
+      throw error; // Re-throw to prevent modal from closing
     }
-    setEditingFlag(null);
   };
 
   const handleCreateNew = () => {
@@ -299,12 +367,27 @@ export default function FeatureFlags() {
     setShowModal(true);
   };
 
+  const stats = {
+    total: flags.length,
+    enabled: flags.filter(f => f.enabled).length,
+    disabled: flags.filter(f => !f.enabled).length,
+    pro: flags.filter(f => f.min_plan === 'pro').length
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <SectionHeader
         title="Feature Flags"
-        description="Control feature rollout and experimentation"
+        description="Control feature rollout and plan-based access"
         action={
           <Button variant="primary" onClick={handleCreateNew}>
             <Icons.Plus />
@@ -314,44 +397,57 @@ export default function FeatureFlags() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <div className="text-center">
-            <p className="text-3xl font-bold text-gray-900">{flags.length}</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
             <p className="text-sm text-gray-500 mt-1">Total Flags</p>
           </div>
         </Card>
         <Card>
           <div className="text-center">
-            <p className="text-3xl font-bold text-green-600">{flags.filter(f => f.enabled).length}</p>
+            <p className="text-3xl font-bold text-green-600">{stats.enabled}</p>
             <p className="text-sm text-gray-500 mt-1">Enabled</p>
           </div>
         </Card>
         <Card>
           <div className="text-center">
-            <p className="text-3xl font-bold text-gray-400">{flags.filter(f => !f.enabled).length}</p>
+            <p className="text-3xl font-bold text-gray-400">{stats.disabled}</p>
             <p className="text-sm text-gray-500 mt-1">Disabled</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-indigo-600">{stats.pro}</p>
+            <p className="text-sm text-gray-500 mt-1">Pro Features</p>
           </div>
         </Card>
       </div>
 
       {/* Filters */}
       <Card>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <Input
-              placeholder="Search flags by name or key..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Input
+            placeholder="Search flags by name or key..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             options={[
-              { value: 'all', label: 'All Flags' },
+              { value: 'all', label: 'All Statuses' },
               { value: 'enabled', label: 'Enabled Only' },
               { value: 'disabled', label: 'Disabled Only' }
+            ]}
+          />
+          <Select
+            value={planFilter}
+            onChange={(e) => setPlanFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Plans' },
+              { value: 'free', label: 'Free Only' },
+              { value: 'pro', label: 'Pro Only' }
             ]}
           />
         </div>
@@ -369,7 +465,7 @@ export default function FeatureFlags() {
           {filteredFlags.length > 0 ? (
             filteredFlags.map(flag => (
               <FlagRow
-                key={flag.id}
+                key={flag.key}
                 flag={flag}
                 onToggle={handleToggle}
                 onEdit={handleEdit}
@@ -379,7 +475,7 @@ export default function FeatureFlags() {
           ) : (
             <EmptyState
               title="No flags found"
-              description={searchQuery ? "Try adjusting your search" : "Create your first feature flag"}
+              description={searchQuery ? "Try adjusting your search or filters" : "Create your first feature flag"}
               action={
                 !searchQuery && (
                   <Button variant="primary" onClick={handleCreateNew}>
@@ -393,23 +489,17 @@ export default function FeatureFlags() {
         </div>
       </Card>
 
-      {/* Audit Trail */}
-      <Card>
-        <h3 className="text-sm font-bold text-gray-900 mb-4">Recent Changes</h3>
-        <div className="space-y-2">
-          {auditLog.map((entry, i) => (
-            <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-              <div className="flex-1">
-                <p className="text-sm text-gray-900">{entry.action}</p>
-                <p className="text-xs text-gray-500">by {entry.user}</p>
-              </div>
-              {entry.details && (
-                <span className="text-xs text-gray-500">{entry.details}</span>
-              )}
-              <span className="text-xs text-gray-400 ml-4">{entry.time}</span>
-            </div>
-          ))}
-        </div>
+      {/* Info Box */}
+      <Card className="bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-100">
+        <h3 className="text-sm font-bold text-gray-900 mb-2">How Feature Flags Work</h3>
+        <ul className="text-sm text-gray-700 space-y-1">
+          <li>• <strong>Enabled + Free:</strong> All users can access the feature</li>
+          <li>• <strong>Enabled + Pro:</strong> Only Pro users can access</li>
+          <li>• <strong>Disabled:</strong> Feature is hidden and blocked for everyone</li>
+        </ul>
+        <p className="text-xs text-gray-600 mt-3">
+          Changes take effect within 5 minutes due to edge caching.
+        </p>
       </Card>
 
       {/* Modal */}
