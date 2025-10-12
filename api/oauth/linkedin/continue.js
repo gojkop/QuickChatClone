@@ -98,7 +98,6 @@ export default async function handler(req, res) {
     // Step 3: Create/update user in Xano and get auth token
     console.log('Creating/updating user in Xano...');
     const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
-    console.log('API Key first 10 chars:', XANO_INTERNAL_API_KEY?.substring(0, 10) + '...');
 
     const xanoResponse = await axios.post(
       `${XANO_BASE_URL}/auth/linkedin/create_user`,
