@@ -304,15 +304,26 @@ export default function FeatureFlags() {
   // Handlers
   const handleToggle = async (flag) => {
     const action = flag.enabled ? 'disable' : 'enable';
-    const loadingId = toast.info(`${action === 'enable' ? 'Enabling' : 'Disabling'} ${flag.name}...`, 0);
+    
+    // Optimistic update - update UI immediately
+    setFlags(prev => prev.map(f => 
+      f.key === flag.key ? { ...f, enabled: !f.enabled } : f
+    ));
+    
+    const toastId = toast.info(`${action === 'enable' ? 'Enabling' : 'Disabling'} ${flag.name}...`, 0);
     
     try {
       await flagsAPI.update(flag.key, { enabled: !flag.enabled });
-      await loadFlags();
-      toast.dismiss(loadingId);
-      toast.success(`${flag.name} is now ${action}d`);
+      toast.dismiss(toastId);
+      toast.success(`${flag.name} is now ${action}d`, 2000);
+      // Refresh in background
+      loadFlags();
     } catch (error) {
-      toast.dismiss(loadingId);
+      // Rollback on error
+      setFlags(prev => prev.map(f => 
+        f.key === flag.key ? { ...f, enabled: flag.enabled } : f
+      ));
+      toast.dismiss(toastId);
       toast.error(error.message);
     }
   };
@@ -327,36 +338,50 @@ export default function FeatureFlags() {
       return;
     }
 
-    const loadingId = toast.info(`Deleting ${flag.name}...`, 0);
+    // Optimistic delete - remove from UI immediately
+    setFlags(prev => prev.filter(f => f.key !== flag.key));
+    
+    const toastId = toast.info(`Deleting ${flag.name}...`, 0);
     
     try {
       await flagsAPI.delete(flag.key);
-      await loadFlags();
-      toast.dismiss(loadingId);
-      toast.success(`${flag.name} deleted successfully`);
+      toast.dismiss(toastId);
+      toast.success(`${flag.name} deleted successfully`, 2000);
     } catch (error) {
-      toast.dismiss(loadingId);
+      // Rollback on error
+      loadFlags();
+      toast.dismiss(toastId);
       toast.error(error.message);
     }
   };
 
   const handleSave = async (formData) => {
-    const loadingId = toast.info(editingFlag ? 'Updating flag...' : 'Creating flag...', 0);
+    const toastId = toast.info(editingFlag ? 'Updating flag...' : 'Creating flag...', 0);
     
     try {
       if (editingFlag) {
+        // Optimistic update
+        setFlags(prev => prev.map(f => 
+          f.key === editingFlag.key ? { ...f, ...formData } : f
+        ));
+        
         await flagsAPI.update(editingFlag.key, formData);
-        toast.dismiss(loadingId);
-        toast.success(`${formData.name} updated successfully`);
+        toast.dismiss(toastId);
+        toast.success(`${formData.name} updated successfully`, 2000);
       } else {
         await flagsAPI.create(formData);
-        toast.dismiss(loadingId);
-        toast.success(`${formData.name} created successfully`);
+        toast.dismiss(toastId);
+        toast.success(`${formData.name} created successfully`, 2000);
+        // Reload to get server-generated fields
+        await loadFlags();
       }
-      await loadFlags();
       setEditingFlag(null);
     } catch (error) {
-      toast.dismiss(loadingId);
+      // Rollback on error
+      if (editingFlag) {
+        loadFlags();
+      }
+      toast.dismiss(toastId);
       toast.error(error.message);
       throw error; // Re-throw to prevent modal from closing
     }
