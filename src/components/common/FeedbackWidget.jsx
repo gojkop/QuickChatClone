@@ -1,5 +1,6 @@
 // src/components/common/FeedbackWidget.jsx
 // Enhanced feedback widget with progressive disclosure and journey tracking
+// FIXED: Navigation issues - back button, state reset on close
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -24,26 +25,18 @@ const API_BASE = import.meta.env.VITE_ADMIN_API_URL || 'https://admin.mindpick.m
 
 // Detect journey stage from URL
 function detectJourneyStage(pathname, isAuthenticated) {
-  // Awareness: Public marketing pages
   if (['/', '/pricing', '/social-impact', '/faq'].includes(pathname)) {
     return 'awareness';
   }
-  
-  // Consideration: Exploring experts
   if (pathname.startsWith('/u/') || pathname === '/experts') {
     return 'consideration';
   }
-  
-  // Conversion: Taking action to transact
   if (['/ask', '/signin', '/payment'].some(p => pathname.includes(p))) {
     return 'conversion';
   }
-  
-  // Retention: Using the product regularly
   if (isAuthenticated && ['/expert', '/dashboard'].some(p => pathname.includes(p))) {
     return 'retention';
   }
-  
   return null;
 }
 
@@ -73,7 +66,7 @@ function getSessionId() {
 function getPreviousActions() {
   try {
     const actions = JSON.parse(sessionStorage.getItem('user_actions') || '[]');
-    return actions.slice(-5); // Last 5 actions
+    return actions.slice(-5);
   } catch {
     return [];
   }
@@ -110,11 +103,9 @@ function FeedbackWidget() {
     rating: 0,
     email: '',
     wants_followup: false,
-    // Bug-specific
     expected_behavior: '',
     actual_behavior: '',
     reproduction_steps: '',
-    // Feature-specific
     problem_statement: '',
     current_workaround: '',
   });
@@ -133,10 +124,8 @@ function FeedbackWidget() {
   // ============================================================================
 
   useEffect(() => {
-    // Track time on page
     startTimeRef.current = Date.now();
 
-    // Track scroll depth
     const handleScroll = () => {
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
@@ -145,7 +134,6 @@ function FeedbackWidget() {
       scrollDepthRef.current = Math.max(scrollDepthRef.current, scrollPercentage);
     };
 
-    // Track interactions
     const handleInteraction = () => {
       interactionsRef.current += 1;
     };
@@ -185,17 +173,56 @@ function FeedbackWidget() {
     trackAction(`feedback_type_selected:${type}`);
   };
 
+  const handleBack = () => {
+    setStep(1);
+    setSelectedType(null);
+    // Clear form data
+    setFormData({
+      message: '',
+      rating: 0,
+      email: isAuthenticated && user?.email ? user.email : '',
+      wants_followup: false,
+      expected_behavior: '',
+      actual_behavior: '',
+      reproduction_steps: '',
+      problem_statement: '',
+      current_workaround: '',
+    });
+    setAttachments([]);
+    trackAction('feedback_back_to_type_selection');
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    // Reset state after animation completes
+    setTimeout(() => {
+      setStep(1);
+      setSelectedType(null);
+      setSubmitted(false);
+      setFormData({
+        message: '',
+        rating: 0,
+        email: isAuthenticated && user?.email ? user.email : '',
+        wants_followup: false,
+        expected_behavior: '',
+        actual_behavior: '',
+        reproduction_steps: '',
+        problem_statement: '',
+        current_workaround: '',
+      });
+      setAttachments([]);
+    }, 300); // Wait for close animation
+  };
+
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     
     for (const file of files) {
-      // Validate file
       if (file.size > 10 * 1024 * 1024) {
         alert('File too large. Max size is 10MB.');
         continue;
       }
 
-      // Create preview
       const reader = new FileReader();
       reader.onload = () => {
         setAttachments(prev => [...prev, {
@@ -232,19 +259,14 @@ function FeedbackWidget() {
     trackAction('feedback_submit_started');
 
     try {
-      // Calculate time on page
       const timeOnPage = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
-      // Build payload
       const payload = {
-        // Core fields
         type: selectedType,
         message: formData.message.trim(),
         rating: formData.rating || null,
         email: formData.email.trim() || null,
         wants_followup: formData.wants_followup,
-        
-        // Context (automatic)
         page_url: window.location.href,
         page_title: document.title,
         referrer: document.referrer || null,
@@ -255,47 +277,36 @@ function FeedbackWidget() {
           width: window.innerWidth,
           height: window.innerHeight
         },
-        
-        // User state
         user_id: user?.id || null,
         user_role: user?.role || 'guest',
         is_authenticated: isAuthenticated,
         account_age_days: user?.created_at ? 
           Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 
           null,
-        
-        // Journey & engagement
         journey_stage: detectJourneyStage(location.pathname, isAuthenticated),
         previous_actions: getPreviousActions(),
         time_on_page: timeOnPage,
         scroll_depth: scrollDepthRef.current,
         interactions_count: interactionsRef.current,
-        
-        // Type-specific fields
         ...(selectedType === 'bug' && {
           expected_behavior: formData.expected_behavior.trim() || null,
           actual_behavior: formData.actual_behavior.trim() || null,
           reproduction_steps: formData.reproduction_steps.trim() || null,
           bug_severity: inferBugSeverity(formData.message),
         }),
-        
         ...(selectedType === 'feature' && {
           problem_statement: formData.problem_statement.trim() || null,
           current_workaround: formData.current_workaround.trim() || null,
         }),
-        
-        // Privacy
         analytics_consent: true,
         contact_consent: formData.wants_followup,
         screenshot_consent: attachments.length > 0,
       };
 
-      // Upload attachments to storage first (if any)
       if (attachments.length > 0) {
         payload.attachments = await uploadAttachments(attachments);
       }
 
-      // Submit to admin API
       const response = await fetch(`${API_BASE}/feedback`, {
         method: 'POST',
         headers: {
@@ -310,29 +321,13 @@ function FeedbackWidget() {
 
       const result = await response.json();
       
-      // Success!
       setSubmitted(true);
       setStep(3);
       trackAction('feedback_submit_success');
       
-      // Reset after 5 seconds
+      // Reset after 5 seconds using handleClose
       setTimeout(() => {
-        setIsOpen(false);
-        setSubmitted(false);
-        setStep(1);
-        setSelectedType(null);
-        setFormData({
-          message: '',
-          rating: 0,
-          email: isAuthenticated && user?.email ? user.email : '',
-          wants_followup: false,
-          expected_behavior: '',
-          actual_behavior: '',
-          reproduction_steps: '',
-          problem_statement: '',
-          current_workaround: '',
-        });
-        setAttachments([]);
+        handleClose();
       }, 5000);
 
     } catch (error) {
@@ -344,21 +339,17 @@ function FeedbackWidget() {
     }
   };
 
-  // Helper: Upload attachments to Cloudflare R2 (simplified)
   const uploadAttachments = async (files) => {
-    // In production, upload to Cloudflare R2 via presigned URLs
-    // For now, return base64 data URLs (not recommended for production)
     return files.map(file => ({
       file_type: file.type,
       file_name: file.name,
       file_size: file.size,
       mime_type: file.file.type,
       storage_key: `feedback/${Date.now()}_${file.name}`,
-      storage_url: file.preview, // In production, this would be R2 URL
+      storage_url: file.preview,
     }));
   };
 
-  // Helper: Infer bug severity from message
   const inferBugSeverity = (message) => {
     const lowerMessage = message.toLowerCase();
     if (lowerMessage.includes('crash') || lowerMessage.includes('data loss') || lowerMessage.includes('payment')) {
@@ -385,17 +376,14 @@ function FeedbackWidget() {
         aria-label="Send feedback"
       >
         <div className="group relative">
-          {/* Beta badge (pre-GA only) */}
           {import.meta.env.VITE_APP_STAGE === 'beta' && (
             <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
               Beta
             </div>
           )}
           
-          {/* Pulsing animation */}
           <div className="absolute inset-0 rounded-full bg-indigo-400 animate-ping opacity-75"></div>
           
-          {/* Button */}
           <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -415,6 +403,19 @@ function FeedbackWidget() {
           {/* Header */}
           <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2">
+              {/* Back button for step 2 */}
+              {step === 2 && (
+                <button
+                  onClick={handleBack}
+                  className="text-white/80 hover:text-white transition-colors mr-1"
+                  aria-label="Go back"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                </button>
+              )}
+              
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
               </svg>
@@ -425,8 +426,9 @@ function FeedbackWidget() {
               </h3>
             </div>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               className="text-white/80 hover:text-white transition-colors"
+              aria-label="Close"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -460,13 +462,13 @@ function FeedbackWidget() {
             {/* Step 2: Form */}
             {step === 2 && (
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Page context (read-only) */}
+                {/* Page context */}
                 <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                   <p className="text-xs font-semibold text-gray-500 mb-1">Current page:</p>
                   <p className="text-xs text-gray-700 font-mono truncate">{location.pathname}</p>
                 </div>
 
-                {/* Rating (optional) */}
+                {/* Rating */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     How's your experience? (optional)
@@ -597,7 +599,6 @@ function FeedbackWidget() {
                     📎 Add screenshot or video
                   </button>
                   
-                  {/* Attachment previews */}
                   {attachments.length > 0 && (
                     <div className="mt-2 space-y-2">
                       {attachments.map((att, i) => (
@@ -630,7 +631,6 @@ function FeedbackWidget() {
                     disabled={isAuthenticated}
                   />
                   
-                  {/* Follow-up checkbox */}
                   {formData.email && (
                     <label className="flex items-center gap-2 mt-2 text-xs text-gray-600">
                       <input
@@ -658,7 +658,6 @@ function FeedbackWidget() {
             {/* Step 3: Success */}
             {step === 3 && (
               <div className="text-center py-6">
-                {/* Team photo */}
                 <div className="mb-4 flex justify-center">
                   <div className="relative inline-block">
                     <img 
@@ -670,14 +669,12 @@ function FeedbackWidget() {
                         e.target.nextElementSibling.style.display = 'flex';
                       }}
                     />
-                    {/* Fallback */}
                     <div className="w-24 h-24 rounded-lg bg-green-100 border-4 border-green-200 hidden items-center justify-center shadow-lg">
                       <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                     
-                    {/* Success badge */}
                     <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-4 border-white shadow-md">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
@@ -686,7 +683,6 @@ function FeedbackWidget() {
                   </div>
                 </div>
                 
-                {/* Thank you message */}
                 <h4 className="text-xl font-black text-gray-900 mb-2">
                   Thank You! 🙏
                 </h4>
@@ -697,7 +693,6 @@ function FeedbackWidget() {
                   Your input helps us build something amazing together.
                 </p>
                 
-                {/* Decorative stars */}
                 <div className="mt-4 flex justify-center gap-1">
                   {[...Array(5)].map((_, i) => (
                     <span key={i} className="text-yellow-400 animate-bounce" style={{ animationDelay: `${i * 0.1}s` }}>
@@ -715,7 +710,7 @@ function FeedbackWidget() {
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity"
-          onClick={() => setIsOpen(false)}
+          onClick={handleClose}
         />
       )}
     </>
