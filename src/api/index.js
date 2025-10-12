@@ -1,12 +1,11 @@
 // client/src/api/index.js
 import axios from "axios";
+import { XANO_BASE_URL } from "@/config/xano";
 
 const AUTH_TOKEN_KEY = "qc_token";
-// All non-Google endpoints live here:
-const XANO_BASE = "https://x8ki-letl-twmt.n7.xano.io/api:3B14WLbJ";
 
 const apiClient = axios.create({
-  baseURL: XANO_BASE,
+  baseURL: XANO_BASE_URL,
   withCredentials: false // critical: do NOT send Xano cookies
 });
 
