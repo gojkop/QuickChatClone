@@ -47,7 +47,7 @@ const flagsAPI = {
       body: JSON.stringify(data)
     });
     if (!res.ok) {
-      const error = await res.json();
+      const error = await res.json().catch(() => ({ error: 'Failed to create flag' }));
       throw new Error(error.error || 'Failed to create flag');
     }
     return res.json();
@@ -61,7 +61,7 @@ const flagsAPI = {
       body: JSON.stringify(data)
     });
     if (!res.ok) {
-      const error = await res.json();
+      const error = await res.json().catch(() => ({ error: 'Failed to update flag' }));
       throw new Error(error.error || 'Failed to update flag');
     }
     return res.json();
@@ -73,7 +73,7 @@ const flagsAPI = {
       credentials: 'include'
     });
     if (!res.ok) {
-      const error = await res.json();
+      const error = await res.json().catch(() => ({ error: 'Failed to delete flag' }));
       throw new Error(error.error || 'Failed to delete flag');
     }
     return res.json();
