@@ -2197,7 +2197,7 @@ src/
 └── api/
     └── index.js ✅ EXISTS
         └── Axios client for Xano
-        └── baseURL: https://x8ki-letl-twmt.n7.xano.io/api:3B14WLbJ
+        └── baseURL: https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ
 ✅ Test Infrastructure
 public/
 └── test-ai.html ✅ WORKING
@@ -2564,7 +2564,7 @@ npm install
 # Make sure these are set in Vercel:
 # - LLM_PROVIDER=gemini
 # - GOOGLE_AI_API_KEY=<key>
-# - XANO_BASE_URL=https://x8ki-letl-twmt.n7.xano.io/api:3B14WLbJ
+# - XANO_BASE_URL=https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ
 
 # 3. Test current implementation
 npm run dev

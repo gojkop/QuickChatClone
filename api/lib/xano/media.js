@@ -3,7 +3,7 @@
 // Xano media_asset operations
 // ============================================
 
-const XANO_BASE_URL = process.env.XANO_BASE_URL || 'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L';
+const XANO_BASE_URL = process.env.XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
 
 /**
  * Create media_asset record in Xano

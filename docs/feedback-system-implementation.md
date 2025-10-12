@@ -1182,7 +1182,7 @@ Production Setup:
 DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
 
 # Xano (for admin auth)
-XANO_BASE_URL=https://x8ki-letl-twmt.n7.xano.io/api:3B14WLbJ
+XANO_BASE_URL=https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ
 
 # Admin JWT
 ADMIN_JWT_SECRET=generate-strong-random-secret-min-32-chars

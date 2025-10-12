@@ -15,7 +15,7 @@ This section documents what has been implemented so far for the Admin Console MV
 
 Recommended env vars (Admin Vercel project):
 - DATABASE_URL: Neon connection string
-- XANO_BASE_URL: https://x8ki-letl-twmt.n7.xano.io/api:3B14WLbJ (working group used for /auth/me)
+- XANO_BASE_URL: https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ (working group used for /auth/me)
 - ADMIN_JWT_SECRET: Strong random secret for admin_session JWT
 - CORS_ALLOW_ORIGIN: https://admin.mindpick.me (or leave unset; dynamic origin echoing enabled)
 

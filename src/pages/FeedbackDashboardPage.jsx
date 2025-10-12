@@ -32,7 +32,7 @@ function FeedbackDashboardPage() {
     setError(null);
     
     try {
-      const response = await fetch('https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/feedback');
+      const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/feedback');
       
       if (!response.ok) {
         throw new Error('Failed to fetch feedback');
