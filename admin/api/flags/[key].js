@@ -1,11 +1,8 @@
-// admin/api/flags/[key].js
-// Update and delete specific feature flag
-
+// admin/api/flags/[key].js (FIXED)
 import { sql } from '../_lib/db.js';
 import { verifyAdminSession } from '../_lib/jwt.js';
 import { allowCors, ok, err } from '../_lib/respond.js';
 
-// Plan level constants
 const PLAN_LEVELS = {
   FREE: 0,
   PRO: 10,
@@ -18,69 +15,49 @@ const PLAN_NAMES = {
   20: 'enterprise'
 };
 
-// admin/api/flags/[key].js
-// Update and delete specific feature flag
-
-import { sql } from '../_lib/db.js';
-import { verifyAdminSession } from '../_lib/jwt.js';
-import { allowCors, ok, err } from '../_lib/respond.js';
-
-// Plan level constants
-const PLAN_LEVELS = {
-  FREE: 0,
-  PRO: 10,
-  ENTERPRISE: 20
-};
-
-const PLAN_NAMES = {
-  0: 'free',
-  10: 'pro',
-  20: 'enterprise'
-};
-
-/**
- * PATCH /api/flags/[key] - Update feature flag
- * DELETE /api/flags/[key] - Delete feature flag
- */
 export default async function handler(req, res) {
   if (allowCors(req, res)) return;
 
-  // Verify admin authentication
-  const cookieHeader = req.headers.cookie || '';
-  const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
-  
-  if (!match) {
-    return err(res, 401, 'Admin authentication required', {}, req);
-  }
-
-  let session;
   try {
-    session = verifyAdminSession(match[1]);
-  } catch (e) {
-    return err(res, 401, 'Invalid or expired admin session', {}, req);
-  }
+    // Verify admin authentication
+    const cookieHeader = req.headers.cookie || '';
+    const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
+    
+    if (!match) {
+      return err(res, 401, 'Admin authentication required', {}, req);
+    }
 
-  // Extract key from Vercel's req.query
-  const key = req.query?.key;
+    let session;
+    try {
+      session = verifyAdminSession(match[1]);
+    } catch (e) {
+      return err(res, 401, 'Invalid or expired admin session', {}, req);
+    }
 
-  if (!key) {
-    return err(res, 400, 'Feature flag key is required', {}, req);
-  }
+    // Extract key from Vercel's req.query
+    const key = req.query?.key;
 
-  // Route to appropriate handler
-  switch (req.method) {
-    case 'PATCH':
-      return updateFlag(req, res, session, key);
-    case 'DELETE':
-      return deleteFlag(req, res, session, key);
-    default:
-      return err(res, 405, 'Method not allowed', {}, req);
+    if (!key) {
+      return err(res, 400, 'Feature flag key is required', {}, req);
+    }
+
+    // Route to appropriate handler
+    switch (req.method) {
+      case 'PATCH':
+        return updateFlag(req, res, session, key);
+      case 'DELETE':
+        return deleteFlag(req, res, session, key);
+      default:
+        return err(res, 405, 'Method not allowed', {}, req);
+    }
+  } catch (error) {
+    console.error('[flags/key] Unhandled error:', error);
+    return err(res, 500, 'Internal server error', { 
+      message: error.message
+    }, req);
   }
 }
 
-/**
- * Update feature flag
- */
 async function updateFlag(req, res, session, key) {
   try {
     // Parse request body
@@ -106,47 +83,69 @@ async function updateFlag(req, res, session, key) {
 
     const oldFlag = existing[0];
 
-    // Build update fields
-    const updates = {};
-    
-    if (body.name !== undefined) {
-      if (body.name.length < 3 || body.name.length > 100) {
-        return err(res, 400, 'name must be 3-100 characters', {}, req);
+    // Build update - handle each field separately
+    let updated;
+
+    if (body.name !== undefined && body.description !== undefined && 
+        body.enabled !== undefined && body.min_plan !== undefined) {
+      // All fields provided
+      const minPlanLevel = PLAN_LEVELS[body.min_plan.toUpperCase()] ?? 0;
+      updated = await sql`
+        UPDATE feature_flags
+        SET 
+          name = ${body.name},
+          description = ${body.description},
+          enabled = ${body.enabled},
+          min_plan_level = ${minPlanLevel},
+          updated_at = NOW()
+        WHERE key = ${key}
+        RETURNING *
+      `;
+    } else if (body.enabled !== undefined && body.min_plan === undefined) {
+      // Just toggle enabled
+      updated = await sql`
+        UPDATE feature_flags
+        SET enabled = ${body.enabled}, updated_at = NOW()
+        WHERE key = ${key}
+        RETURNING *
+      `;
+    } else if (body.min_plan !== undefined) {
+      // Update plan level (and other fields if provided)
+      const minPlanLevel = PLAN_LEVELS[body.min_plan.toUpperCase()] ?? 0;
+      if (body.name !== undefined) {
+        updated = await sql`
+          UPDATE feature_flags
+          SET 
+            name = ${body.name},
+            description = ${body.description || oldFlag.description},
+            enabled = ${body.enabled ?? oldFlag.enabled},
+            min_plan_level = ${minPlanLevel},
+            updated_at = NOW()
+          WHERE key = ${key}
+          RETURNING *
+        `;
+      } else {
+        updated = await sql`
+          UPDATE feature_flags
+          SET min_plan_level = ${minPlanLevel}, updated_at = NOW()
+          WHERE key = ${key}
+          RETURNING *
+        `;
       }
-      updates.name = body.name;
-    }
-
-    if (body.description !== undefined) {
-      if (body.description && body.description.length > 500) {
-        return err(res, 400, 'description must be max 500 characters', {}, req);
-      }
-      updates.description = body.description;
-    }
-
-    if (body.enabled !== undefined) {
-      updates.enabled = body.enabled;
-    }
-
-    if (body.min_plan !== undefined) {
-      updates.min_plan_level = PLAN_LEVELS[body.min_plan.toUpperCase()] ?? 0;
-    }
-
-    // Check if there are any updates
-    if (Object.keys(updates).length === 0) {
+    } else if (body.name !== undefined) {
+      // Update name and description
+      updated = await sql`
+        UPDATE feature_flags
+        SET 
+          name = ${body.name},
+          description = ${body.description || oldFlag.description},
+          updated_at = NOW()
+        WHERE key = ${key}
+        RETURNING *
+      `;
+    } else {
       return err(res, 400, 'No valid update fields provided', {}, req);
     }
-
-    // Build dynamic UPDATE query
-    const setClause = Object.keys(updates)
-      .map((k) => sql`${sql(k)} = ${updates[k]}`)
-      .reduce((acc, curr) => sql`${acc}, ${curr}`);
-
-    const updated = await sql`
-      UPDATE feature_flags
-      SET ${setClause}, updated_at = NOW()
-      WHERE key = ${key}
-      RETURNING id, key, name, description, enabled, min_plan_level, created_at, updated_at
-    `;
 
     // Log to feature_flag_audit
     await sql`
@@ -157,30 +156,25 @@ async function updateFlag(req, res, session, key) {
         ${session.admin_id},
         'update',
         ${JSON.stringify({
-          name: oldFlag.name,
-          description: oldFlag.description,
           enabled: oldFlag.enabled,
           min_plan_level: oldFlag.min_plan_level
-        })},
+        })}::jsonb,
         ${JSON.stringify({
-          name: updated[0].name,
-          description: updated[0].description,
           enabled: updated[0].enabled,
           min_plan_level: updated[0].min_plan_level
-        })}
+        })}::jsonb
       )
     `;
 
-    // Log to admin_audit_log
+    // Log to admin_audit_log (correct columns)
     await sql`
       INSERT INTO admin_audit_log (
-        admin_user_id, action, resource_type, resource_id, request_body
+        admin_user_id, action, resource_type, resource_id
       ) VALUES (
         ${session.admin_id},
         'update_feature_flag',
         'feature_flag',
-        ${oldFlag.id},
-        ${JSON.stringify(body)}
+        ${oldFlag.id}
       )
     `;
 
@@ -192,14 +186,11 @@ async function updateFlag(req, res, session, key) {
 
     return ok(res, { flag: result, message: 'Feature flag updated successfully' }, req);
   } catch (e) {
-    console.error(`[admin] PATCH /api/flags/${key} error:`, e);
+    console.error(`[flags/key] PATCH error:`, e);
     return err(res, 500, 'Failed to update feature flag', { details: e.message }, req);
   }
 }
 
-/**
- * Delete feature flag
- */
 async function deleteFlag(req, res, session, key) {
   try {
     // Get existing flag
@@ -224,9 +215,8 @@ async function deleteFlag(req, res, session, key) {
         ${JSON.stringify({
           key: flag.key,
           name: flag.name,
-          enabled: flag.enabled,
-          min_plan_level: flag.min_plan_level
-        })},
+          enabled: flag.enabled
+        })}::jsonb,
         NULL
       )
     `;
@@ -250,7 +240,7 @@ async function deleteFlag(req, res, session, key) {
 
     return ok(res, { message: 'Feature flag deleted successfully' }, req);
   } catch (e) {
-    console.error(`[admin] DELETE /api/flags/${key} error:`, e);
+    console.error(`[flags/key] DELETE error:`, e);
     return err(res, 500, 'Failed to delete feature flag', { details: e.message }, req);
   }
 }
