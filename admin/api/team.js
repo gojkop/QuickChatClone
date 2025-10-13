@@ -87,7 +87,7 @@ async function addAdmin(req, res, session) {
       return err(res, 400, validation.message, {}, req);
     }
 
-    const { email, name } = body;
+    const { email, name, xano_user_id } = body;
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -104,9 +104,23 @@ async function addAdmin(req, res, session) {
       return err(res, 409, 'Admin with this email already exists', {}, req);
     }
 
-    // Generate a placeholder xano_user_id (in production, this would come from Xano)
-    // For now, use email hash as placeholder
-    const xanoUserId = `temp_${Buffer.from(email).toString('base64').slice(0, 16)}`;
+    // Use provided xano_user_id or generate placeholder
+    let finalXanoUserId = xano_user_id;
+    
+    if (!finalXanoUserId || finalXanoUserId.trim() === '') {
+      // Generate a placeholder xano_user_id (in production, this would come from Xano)
+      // For now, use email hash as placeholder
+      finalXanoUserId = `temp_${Buffer.from(email).toString('base64').slice(0, 16)}`;
+    } else {
+      // Check if xano_user_id already exists
+      const existingXano = await sql`
+        SELECT id FROM admin_users WHERE xano_user_id = ${finalXanoUserId}
+      `;
+      
+      if (existingXano.length > 0) {
+        return err(res, 409, 'Admin with this Xano User ID already exists', {}, req);
+      }
+    }
 
     // Create admin (always super_admin, never disabled)
     const newAdmin = await sql`
@@ -117,13 +131,13 @@ async function addAdmin(req, res, session) {
         role,
         disabled
       ) VALUES (
-        ${xanoUserId},
+        ${finalXanoUserId},
         ${email.toLowerCase()},
         ${name},
         'super_admin',
         false
       )
-      RETURNING id, email, name, role, created_at
+      RETURNING id, email, name, role, xano_user_id, created_at
     `;
 
     // Log to audit
@@ -142,7 +156,8 @@ async function addAdmin(req, res, session) {
         ${JSON.stringify({
           email: email.toLowerCase(),
           name,
-          role: 'super_admin'
+          role: 'super_admin',
+          xano_user_id: finalXanoUserId
         })}
       )
     `;

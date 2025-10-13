@@ -42,6 +42,11 @@ function AdminRow({ admin, onRemove, isCurrentUser }) {
             )}
           </div>
           <p className="text-xs text-gray-500 truncate">{admin.email}</p>
+          {admin.xano_user_id && (
+            <p className="text-xs text-gray-400 font-mono">
+              Xano: {admin.xano_user_id.substring(0, 20)}...
+            </p>
+          )}
           {admin.last_activity && (
             <p className="text-xs text-gray-400">
               Last active: {new Date(admin.last_activity).toLocaleDateString()}
@@ -108,10 +113,12 @@ export default function Settings() {
   const [notificationConfig, setNotificationConfig] = useState(null);
   
   const [loading, setLoading] = useState(true);
+  const [healthLoading, setHealthLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminXanoId, setNewAdminXanoId] = useState('');
   
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
@@ -136,14 +143,19 @@ export default function Settings() {
     debounce(async (config) => {
       setSaving(true);
       try {
-        await fetch('/api/notifications/config', {
+        const res = await fetch('/api/notifications', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify(config)
         });
+        
+        if (!res.ok) {
+          throw new Error('Failed to save');
+        }
       } catch (error) {
-        toast.error('Failed to save settings');
+        toast.error('Failed to save notification settings');
+        console.error('Save error:', error);
       } finally {
         setSaving(false);
       }
@@ -181,6 +193,7 @@ export default function Settings() {
       const data = await res.json();
       setAdmins(data.admins || []);
     } catch (error) {
+      console.error('Load admins error:', error);
       toast.error('Failed to load admin team');
     } finally {
       setLoading(false);
@@ -188,25 +201,37 @@ export default function Settings() {
   }
 
   async function loadHealth() {
+    setHealthLoading(true);
     try {
-      const res = await fetch('/api/health/system', { credentials: 'include' });
+      const res = await fetch('/api/health', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch health');
       
       const data = await res.json();
       setHealth(data);
     } catch (error) {
+      console.error('Load health error:', error);
       toast.error('Failed to load system health');
+      // Set error state so it doesn't spin forever
+      setHealth({
+        timestamp: new Date().toISOString(),
+        database: { status: 'error', message: 'Failed to load' },
+        xano: { status: 'error', message: 'Failed to load' },
+        environment: { status: 'error', message: 'Failed to load' }
+      });
+    } finally {
+      setHealthLoading(false);
     }
   }
 
   async function loadNotificationConfig() {
     try {
-      const res = await fetch('/api/notifications/config', { credentials: 'include' });
+      const res = await fetch('/api/notifications', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch config');
       
       const data = await res.json();
       setNotificationConfig(data.config);
     } catch (error) {
+      console.error('Load notification config error:', error);
       toast.error('Failed to load notification config');
     }
   }
@@ -224,14 +249,21 @@ export default function Settings() {
     const loadingId = toast.info('Adding admin...', 0);
     
     try {
+      const payload = {
+        email: newAdminEmail,
+        name: newAdminName
+      };
+      
+      // Only include xano_user_id if it's provided
+      if (newAdminXanoId.trim()) {
+        payload.xano_user_id = newAdminXanoId;
+      }
+      
       const res = await fetch('/api/team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          email: newAdminEmail,
-          name: newAdminName
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
@@ -244,6 +276,7 @@ export default function Settings() {
       
       setNewAdminEmail('');
       setNewAdminName('');
+      setNewAdminXanoId('');
       loadAdmins();
       
     } catch (error) {
@@ -382,6 +415,12 @@ export default function Settings() {
               onChange={(e) => setNewAdminName(e.target.value)}
             />
           </div>
+          <Input
+            placeholder="Xano User ID (optional - auto-generated if empty)"
+            value={newAdminXanoId}
+            onChange={(e) => setNewAdminXanoId(e.target.value)}
+            helperText="Leave empty to auto-generate a temporary ID"
+          />
           <Button 
             variant="primary" 
             onClick={handleAddAdmin}
@@ -409,8 +448,14 @@ export default function Settings() {
       <Card>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">System Health</h2>
-          <Button variant="ghost" size="sm" onClick={loadHealth}>
-            🔄 Check Now
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={loadHealth}
+            disabled={healthLoading}
+          >
+            {healthLoading ? <Spinner size="sm" className="mr-2" /> : '🔄'}
+            Check Now
           </Button>
         </div>
 
@@ -466,51 +511,32 @@ export default function Settings() {
               helperText="Comma-separated email addresses"
             />
 
-            {/* SLA Threshold */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                SLA Compliance Alert (when below)
-              </label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  min="50"
-                  max="100"
-                  value={notificationConfig.sla_threshold}
-                  onChange={(e) => setNotificationConfig({
-                    ...notificationConfig,
-                    sla_threshold: parseInt(e.target.value)
-                  })}
-                  className="flex-1"
-                />
-                <span className="font-bold text-gray-900 w-16 text-right">
-                  {notificationConfig.sla_threshold}%
-                </span>
-              </div>
-            </div>
+            {/* SLA Threshold - Number Input */}
+            <Input
+              label="SLA Compliance Alert Threshold"
+              type="number"
+              min="0"
+              max="100"
+              value={notificationConfig.sla_threshold}
+              onChange={(e) => setNotificationConfig({
+                ...notificationConfig,
+                sla_threshold: parseInt(e.target.value) || 0
+              })}
+              helperText="Alert when SLA compliance drops below this percentage"
+            />
 
-            {/* Moderation Threshold */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Moderation Queue Alert (when above)
-              </label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  min="5"
-                  max="50"
-                  value={notificationConfig.moderation_threshold}
-                  onChange={(e) => setNotificationConfig({
-                    ...notificationConfig,
-                    moderation_threshold: parseInt(e.target.value)
-                  })}
-                  className="flex-1"
-                />
-                <span className="font-bold text-gray-900 w-16 text-right">
-                  {notificationConfig.moderation_threshold} items
-                </span>
-              </div>
-            </div>
+            {/* Moderation Threshold - Number Input */}
+            <Input
+              label="Moderation Queue Alert Threshold"
+              type="number"
+              min="0"
+              value={notificationConfig.moderation_threshold}
+              onChange={(e) => setNotificationConfig({
+                ...notificationConfig,
+                moderation_threshold: parseInt(e.target.value) || 0
+              })}
+              helperText="Alert when moderation queue exceeds this number of items"
+            />
 
             {/* Test Button */}
             <div className="flex items-center gap-3">
