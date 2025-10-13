@@ -496,7 +496,7 @@ CLOUDFLARE_R2_PUBLIC_URL=https://pub-xxx.r2.dev  # ⭐ CRITICAL
 VITE_CLOUDFLARE_ACCOUNT_ID=your_account_id
 
 # Xano Database
-XANO_BASE_URL=https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L
+XANO_BASE_URL=https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L
 ```
 
 ### Setting Up Cloudflare R2

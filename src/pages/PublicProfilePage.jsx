@@ -389,7 +389,7 @@ function PublicProfilePage() {
       setError('');
       try {
         const response = await fetch(
-          'https://x8ki-letl-twmt.n7.xano.io/api:BQW1GS7L/public/profile?handle=' + encodeURIComponent(handle)
+          'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/profile?handle=' + encodeURIComponent(handle)
         );
         
         if (!response.ok) {
