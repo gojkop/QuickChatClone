@@ -367,8 +367,12 @@ export function useAnswerUpload() {
       console.log('✅ Answer created in Xano:', response.data);
 
       // Trigger email notification via separate endpoint
+      // Pass question data from answer response (if embedded)
       try {
         console.log('📧 Triggering answer notification email...');
+
+        const questionData = response.data.question || response.data._question;
+
         await fetch('/api/send-answer-notification', {
           method: 'POST',
           headers: {
@@ -379,6 +383,7 @@ export function useAnswerUpload() {
             question_id: questionId,
             answer_id: response.data.id,
             user_id: userId,
+            question_data: questionData, // Pass embedded question data
           }),
         });
         console.log('✅ Email notification triggered');

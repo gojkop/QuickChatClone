@@ -9,31 +9,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { question_id, answer_id, user_id } = req.body;
+    const { question_id, answer_id, user_id, question_data } = req.body;
 
     console.log('=== ANSWER NOTIFICATION ===');
     console.log('Question ID:', question_id);
     console.log('Answer ID:', answer_id);
     console.log('User ID:', user_id);
 
-    // Fetch question details - try with internal API key
-    console.log('Fetching question from Xano...');
-    let questionData;
-    try {
-      const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
-      const questionUrl = `${process.env.XANO_BASE_URL}/question/${question_id}?x_api_key=${XANO_INTERNAL_API_KEY}`;
+    // Use question data from request if provided (embedded in answer response)
+    let questionData = question_data;
 
-      const response = await fetch(questionUrl);
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    if (!questionData) {
+      console.log('⚠️ No question data provided, trying to fetch from Xano...');
+      try {
+        const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
+        const questionUrl = `${process.env.XANO_BASE_URL}/question/${question_id}?x_api_key=${XANO_INTERNAL_API_KEY}`;
+
+        const response = await fetch(questionUrl);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        questionData = await response.json();
+        console.log('✅ Question data retrieved from Xano:', questionData.title);
+      } catch (error) {
+        console.error('❌ Failed to fetch question:', error.message);
+        return res.status(400).json({ error: 'Question not found', details: error.message });
       }
-
-      questionData = await response.json();
-      console.log('✅ Question data retrieved:', questionData.title);
-    } catch (error) {
-      console.error('❌ Failed to fetch question:', error.message);
-      return res.status(400).json({ error: 'Question not found', details: error.message });
+    } else {
+      console.log('✅ Using embedded question data:', questionData.title);
     }
 
     // Fetch expert details
