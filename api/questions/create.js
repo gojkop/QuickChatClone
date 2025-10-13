@@ -24,8 +24,12 @@ export default async function handler(req, res) {
     // 1. Get expert profile
     console.log('Fetching expert profile...');
     
+    // ✅ FIX: Use Public API base URL for public endpoints
+    const XANO_PUBLIC_BASE_URL = process.env.XANO_PUBLIC_BASE_URL || 
+                                   'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
+    
     const profileResponse = await fetch(
-      `${process.env.XANO_BASE_URL}/public/profile?handle=${encodeURIComponent(expertHandle)}`
+      `${XANO_PUBLIC_BASE_URL}/public/profile?handle=${encodeURIComponent(expertHandle)}`
     );
 
     if (!profileResponse.ok) {
@@ -67,10 +71,10 @@ export default async function handler(req, res) {
     };
 
     console.log('Question payload:', JSON.stringify(questionPayload, null, 2));
-    console.log('Posting to:', `${process.env.XANO_BASE_URL}/question`);
+    console.log('Posting to:', `${XANO_PUBLIC_BASE_URL}/question`);
 
     const questionResponse = await fetch(
-      `${process.env.XANO_BASE_URL}/question`,
+      `${XANO_PUBLIC_BASE_URL}/question`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,61 +156,61 @@ export default async function handler(req, res) {
       console.warn('⚠️ No payer email found - skipping asker confirmation');
     }
 
-    // 3. Create media assets (try singular endpoint)
     // 3. Create media assets
-  if (recordingSegments && recordingSegments.length > 0) {
-    console.log(`Creating ${recordingSegments.length} media assets...`);
-    
-    for (let i = 0; i < recordingSegments.length; i++) {
-      const segment = recordingSegments[i];
+    if (recordingSegments && recordingSegments.length > 0) {
+      console.log(`Creating ${recordingSegments.length} media assets...`);
       
-      // ⭐ FIX: Extract status string from the status object
-      let statusString = 'ready';
-      if (segment.status && typeof segment.status === 'object') {
-        statusString = segment.status.state || 'ready';
-      } else if (typeof segment.status === 'string') {
-        statusString = segment.status;
-      }
-      
-      // ⭐ FIX: Ensure duration_sec is a number, not a string
-      const durationSec = parseInt(segment.duration) || 0;
-      
-      const mediaAssetPayload = {
-        owner_type: 'question',
-        owner_id: questionId,
-        provider: 'cloudflare_stream',
-        asset_id: segment.uid,
-        url: segment.playbackUrl,
-        duration_sec: durationSec,
-        status: statusString, // ⭐ Now a string
-        segment_index: i,
-        metadata: JSON.stringify({
-          mode: segment.mode,
-          segmentIndex: i,
-        }),
-      };
-
-      console.log(`Creating media asset ${i}:`, mediaAssetPayload);
-
-      const mediaResponse = await fetch(
-        `${process.env.XANO_BASE_URL}/media_asset`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(mediaAssetPayload),
+      for (let i = 0; i < recordingSegments.length; i++) {
+        const segment = recordingSegments[i];
+        
+        // ⭐ FIX: Extract status string from the status object
+        let statusString = 'ready';
+        if (segment.status && typeof segment.status === 'object') {
+          statusString = segment.status.state || 'ready';
+        } else if (typeof segment.status === 'string') {
+          statusString = segment.status;
         }
-      );
+        
+        // ⭐ FIX: Ensure duration_sec is a number, not a string
+        const durationSec = parseInt(segment.duration) || 0;
+        
+        const mediaAssetPayload = {
+          owner_type: 'question',
+          owner_id: questionId,
+          provider: 'cloudflare_stream',
+          asset_id: segment.uid,
+          url: segment.playbackUrl,
+          duration_sec: durationSec,
+          status: statusString,
+          segment_index: i,
+          metadata: JSON.stringify({
+            mode: segment.mode,
+            segmentIndex: i,
+          }),
+        };
 
-      const mediaResponseText = await mediaResponse.text();
+        console.log(`Creating media asset ${i}:`, mediaAssetPayload);
 
-      if (!mediaResponse.ok) {
-        console.error(`Failed to create media asset ${i}:`, mediaResponseText);
-      } else {
-        const mediaAsset = JSON.parse(mediaResponseText);
-        console.log(`✅ Media asset ${i} created with ID:`, mediaAsset.id);
+        // ✅ FIX: Use Public API for media_asset creation during question submission
+        const mediaResponse = await fetch(
+          `${XANO_PUBLIC_BASE_URL}/media_asset`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mediaAssetPayload),
+          }
+        );
+
+        const mediaResponseText = await mediaResponse.text();
+
+        if (!mediaResponse.ok) {
+          console.error(`Failed to create media asset ${i}:`, mediaResponseText);
+        } else {
+          const mediaAsset = JSON.parse(mediaResponseText);
+          console.log(`✅ Media asset ${i} created with ID:`, mediaAsset.id);
+        }
       }
     }
-  }
 
     return res.status(200).json({
       success: true,
