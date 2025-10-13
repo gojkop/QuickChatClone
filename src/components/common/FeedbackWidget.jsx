@@ -102,7 +102,10 @@ function FeedbackWidget() {
 
   useEffect(() => {
     if (isAuthenticated && user?.email) {
+      console.log('[FeedbackWidget] Setting email from user:', user.email);
       setFormData(prev => ({ ...prev, email: user.email }));
+    } else {
+      console.log('[FeedbackWidget] User not authenticated or no email:', { isAuthenticated, user });
     }
   }, [isAuthenticated, user]);
 
@@ -187,16 +190,25 @@ function FeedbackWidget() {
       return;
     }
 
+    console.log('[FeedbackWidget] Submitting with email:', formData.email);
+    console.log('[FeedbackWidget] User object:', user);
+    console.log('[FeedbackWidget] Is authenticated:', isAuthenticated);
+
     setIsSubmitting(true);
     trackAction('feedback_submit_started');
 
     try {
       const timeOnPage = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      
+      // Ensure email is included
+      const emailToSend = formData.email.trim() || (isAuthenticated && user?.email) || null;
+      console.log('[FeedbackWidget] Email to send:', emailToSend);
+      
       const payload = {
         type: selectedType,
         message: formData.message.trim(),
         rating: formData.rating || null,
-        email: formData.email.trim() || null,
+        email: emailToSend,
         wants_followup: formData.wants_followup,
         page_url: window.location.href,
         page_title: document.title,
@@ -239,7 +251,16 @@ function FeedbackWidget() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error('Failed to submit feedback');
+      console.log('[FeedbackWidget] Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[FeedbackWidget] Error response:', errorData);
+        throw new Error('Failed to submit feedback');
+      }
+
+      const result = await response.json();
+      console.log('[FeedbackWidget] Success response:', result);
 
       setSubmitted(true);
       trackAction('feedback_submit_success');
@@ -484,10 +505,19 @@ function FeedbackWidget() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-sm disabled:bg-gray-50 disabled:text-gray-600"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-sm ${
+                      isAuthenticated 
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-medium' 
+                        : 'bg-white border-gray-300'
+                    }`}
                     placeholder="your@email.com"
-                    disabled={isAuthenticated}
+                    readOnly={isAuthenticated}
                   />
+                  {isAuthenticated && !formData.email && (
+                    <p className="text-[10px] text-red-600 mt-1">
+                      ⚠️ Email not found in profile. Please add one manually or contact support.
+                    </p>
+                  )}
                   {formData.email && (
                     <label className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-600">
                       <input
