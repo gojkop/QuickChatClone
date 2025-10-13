@@ -48,7 +48,9 @@ export async function sendEmail({ to, toName, subject, htmlBody, textBody }) {
   try {
     console.log('📧 Sending email via ZeptoMail to:', to);
     console.log('📧 Subject:', subject);
-    console.log('📧 Authorization token length:', ZEPTOMAIL_TOKEN?.length);
+    console.log('📧 From:', FROM_EMAIL);
+    console.log('📧 Authorization header:', ZEPTOMAIL_TOKEN?.substring(0, 30) + '...');
+    console.log('📧 Payload:', JSON.stringify(payload, null, 2));
 
     const response = await fetch(ZEPTOMAIL_API_URL, {
       method: 'POST',
@@ -62,9 +64,13 @@ export async function sendEmail({ to, toName, subject, htmlBody, textBody }) {
 
     const responseData = await response.json();
 
+    console.log('📧 ZeptoMail response status:', response.status);
+    console.log('📧 ZeptoMail response:', responseData);
+
     if (!response.ok) {
       console.error('❌ ZeptoMail API error:', responseData);
-      throw new Error(responseData.message || 'Failed to send email');
+      console.error('❌ Error details:', JSON.stringify(responseData, null, 2));
+      throw new Error(JSON.stringify(responseData) || 'Failed to send email');
     }
 
     console.log('✅ Email sent successfully:', responseData);
