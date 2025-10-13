@@ -48,10 +48,12 @@ export async function sendEmail({ to, toName, subject, htmlBody, textBody }) {
   try {
     console.log('📧 Sending email via ZeptoMail to:', to);
     console.log('📧 Subject:', subject);
+    console.log('📧 Authorization token length:', ZEPTOMAIL_TOKEN?.length);
 
     const response = await fetch(ZEPTOMAIL_API_URL, {
       method: 'POST',
       headers: {
+        'Accept': 'application/json',
         'Content-Type': 'application/json',
         'Authorization': ZEPTOMAIL_TOKEN,
       },
