@@ -89,14 +89,24 @@ export default async function handler(req, res) {
     }
 
     if (questionData) {
+      console.log('📧 Question data retrieved:', {
+        title: questionData.title,
+        payer_email: questionData.payer_email,
+        payer_first_name: questionData.payer_first_name,
+        payer_last_name: questionData.payer_last_name
+      });
+
       // 4. Fetch expert details (the person who answered)
       const expertData = await fetchUserData(user_id);
       const expertName = expertData?.name || 'Your Expert';
+      console.log('📧 Expert name:', expertName);
 
       // 5. Get asker details from question data
       const askerEmail = getAskerEmail(questionData);
       const askerName = getAskerName(questionData);
       const questionTitle = questionData.title;
+
+      console.log('📧 Asker details extracted:', { askerEmail, askerName, questionTitle });
 
       if (askerEmail) {
         console.log('📧 Sending answer notification to asker:', askerEmail);
