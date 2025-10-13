@@ -1,6 +1,6 @@
-// admin/src/App.jsx - Complete version with improved auth and error handling
-import React, { useEffect, useRef, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+// admin/src/App.jsx - Optimized version with auth caching
+import React, { useEffect, useRef, useState, createContext, useContext } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from './components/Toast';
 import Layout from './components/Layout.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -11,111 +11,202 @@ import Experts from './pages/Experts.jsx';
 import Transactions from './pages/Transactions.jsx';
 import Settings from './pages/Settings.jsx';
 
+// ============================================================================
+// AUTH CACHE - Persist auth state across navigations
+// ============================================================================
+const AUTH_CACHE_KEY = 'admin_auth_cache';
+const AUTH_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const AuthCache = {
+  get() {
+    try {
+      const cached = sessionStorage.getItem(AUTH_CACHE_KEY);
+      if (!cached) return null;
+      
+      const { data, timestamp } = JSON.parse(cached);
+      const age = Date.now() - timestamp;
+      
+      // Return cached data if less than 5 minutes old
+      if (age < AUTH_CACHE_TTL) {
+        console.log('[auth-cache] Using cached auth (age:', Math.floor(age/1000), 'seconds)');
+        return data;
+      }
+      
+      console.log('[auth-cache] Cache expired');
+      return null;
+    } catch (e) {
+      return null;
+    }
+  },
+  
+  set(data) {
+    try {
+      sessionStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+      console.log('[auth-cache] Cached auth state');
+    } catch (e) {
+      console.error('[auth-cache] Failed to cache:', e);
+    }
+  },
+  
+  clear() {
+    sessionStorage.removeItem(AUTH_CACHE_KEY);
+    console.log('[auth-cache] Cleared cache');
+  }
+};
+
+// ============================================================================
+// AUTH CONTEXT - Share auth state across components
+// ============================================================================
+const AuthContext = createContext(null);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+};
+
+// ============================================================================
+// MAIN APP COMPONENT
+// ============================================================================
 export default function App() {
   const toast = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState(null);
   const [error, setError] = useState(null);
   const [manualLoginMode, setManualLoginMode] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
   
-  const didCheck = useRef(false);
-  const didAutoLogin = useRef(false);
+  const didInitialCheck = useRef(false);
+  const checkInProgress = useRef(false);
 
   // ========================================================================
-  // AUTO-LOGIN ON MOUNT
+  // OPTIMIZED AUTH CHECK - Only runs once on mount
   // ========================================================================
   useEffect(() => {
-    if (didCheck.current) return;
-    didCheck.current = true;
+    // Prevent multiple simultaneous checks
+    if (didInitialCheck.current || checkInProgress.current) {
+      console.log('[auth] Skipping check (already done or in progress)');
+      return;
+    }
     
-    checkSession();
-  }, []);
+    didInitialCheck.current = true;
+    checkInProgress.current = true;
+    
+    checkAuthWithCache();
+  }, []); // Empty deps - only run on mount
 
-  async function checkSession() {
-    console.log('[admin-ui] Starting authentication check...');
+  async function checkAuthWithCache() {
+    console.log('[auth] Starting optimized auth check...');
     
+    // Step 1: Try cache first (instant)
+    const cached = AuthCache.get();
+    if (cached) {
+      console.log('[auth] ✅ Loaded from cache (instant)');
+      setMe(cached);
+      setLoading(false);
+      
+      // Revalidate in background (don't block UI)
+      revalidateAuthInBackground();
+      return;
+    }
+    
+    // Step 2: No cache, do full check
     try {
-      // Step 1: Check existing admin_session
-      console.log('[admin-ui] Step 1: Checking for existing admin session...');
-      let res = await fetch('/api/me', { credentials: 'include' });
-      console.log('[admin-ui] /api/me (existing session) status:', res.status);
-
+      console.log('[auth] Cache miss, checking /api/me...');
+      const res = await fetch('/api/me', { credentials: 'include' });
+      
       if (res.ok) {
         const data = await res.json();
-        console.log('[admin-ui] Already logged in as:', data.role);
+        console.log('[auth] ✅ Authenticated as:', data.role);
+        
         setMe(data);
+        AuthCache.set(data); // Cache for next time
         toast.success(`Welcome back, ${data.role.replace('_', ' ')}!`, 3000);
         setLoading(false);
         return;
       }
 
-      // Step 2: Try auto-login with qc_session cookie
-      if (!didAutoLogin.current) {
-        didAutoLogin.current = true;
-        console.log('[admin-ui] Step 2: Attempting auto-login from main app...');
+      // Step 3: No session, try auto-login from main app
+      console.log('[auth] No session, attempting auto-login...');
+      const verifyRes = await fetch('/api/auth/verify', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (verifyRes.ok) {
+        // Auto-login successful, check session again
+        const meRes = await fetch('/api/me', { credentials: 'include' });
         
-        const verifyRes = await fetch('/api/auth/verify', {
-          method: 'POST',
-          credentials: 'include'
-        });
-        
-        console.log('[admin-ui] /api/auth/verify (auto) status:', verifyRes.status);
-
-        if (verifyRes.ok) {
-          // Auto-login successful, check session again
-          console.log('[admin-ui] Auto-login successful, verifying session...');
-          res = await fetch('/api/me', { credentials: 'include' });
+        if (meRes.ok) {
+          const data = await meRes.json();
+          console.log('[auth] ✅ Auto-login successful:', data.role);
           
-          if (res.ok) {
-            const data = await res.json();
-            console.log('[admin-ui] Auto-login complete:', data.role);
-            setMe(data);
-            toast.success(`Logged in as ${data.role.replace('_', ' ')}`, 3000);
-            setLoading(false);
-            return;
-          }
-        } else {
-          // Log detailed error for debugging
-          const errorData = await verifyRes.json().catch(() => ({}));
-          console.error('[admin-ui] Auto-login failed:', {
-            status: verifyRes.status,
-            error: errorData
-          });
-          
-          setError({
-            title: 'Auto-login failed',
-            message: errorData.error || 'Could not authenticate automatically',
-            hint: errorData.hint || 'You may need to log in to the main app first',
-            details: errorData
-          });
+          setMe(data);
+          AuthCache.set(data);
+          toast.success(`Logged in as ${data.role.replace('_', ' ')}`, 3000);
+          setLoading(false);
+          return;
         }
       }
 
-      // Step 3: Auto-login failed, show manual login
-      console.log('[admin-ui] Auto-login not available, showing manual login');
+      // Step 4: Auth failed, show login
+      console.log('[auth] Authentication failed');
+      setError({
+        title: 'Authentication required',
+        message: 'Please log in to the main app first',
+        hint: 'Visit www.mindpick.me and sign in, then return here'
+      });
       setMe(null);
       setLoading(false);
       
     } catch (e) {
-      console.error('[admin-ui] Authentication check error:', e);
+      console.error('[auth] Error:', e);
       setError({
         title: 'Connection error',
-        message: e.message || 'Failed to connect to authentication server',
-        hint: 'Check your internet connection and try again'
+        message: e.message || 'Failed to connect to authentication server'
       });
-      toast.error('Authentication check failed', 4000);
       setMe(null);
       setLoading(false);
+    } finally {
+      checkInProgress.current = false;
+    }
+  }
+
+  // Background revalidation (doesn't block UI)
+  async function revalidateAuthInBackground() {
+    try {
+      console.log('[auth] Revalidating in background...');
+      const res = await fetch('/api/me', { credentials: 'include' });
+      
+      if (res.ok) {
+        const data = await res.json();
+        console.log('[auth] ✅ Revalidation successful');
+        
+        // Update cache and state silently
+        AuthCache.set(data);
+        setMe(data);
+      } else {
+        console.warn('[auth] Revalidation failed, clearing cache');
+        AuthCache.clear();
+        setMe(null);
+      }
+    } catch (e) {
+      console.error('[auth] Revalidation error:', e);
     }
   }
 
   // ========================================================================
-  // MANUAL LOGIN (FALLBACK)
+  // MANUAL LOGIN
   // ========================================================================
   const handleManualLogin = async () => {
-    console.log('[admin-ui] Manual login attempt');
-    
     if (!tokenInput.trim()) {
       toast.warning('Please paste a valid token');
       return;
@@ -136,8 +227,6 @@ export default function App() {
         credentials: 'include'
       });
       
-      console.log('[admin-ui] Manual login status:', res.status);
-      
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || `Login failed (${res.status})`);
@@ -155,13 +244,14 @@ export default function App() {
       toast.success(`Welcome! Signed in as ${meData.role.replace('_', ' ')}`);
       
       setMe(meData);
+      AuthCache.set(meData); // Cache the result
       setTokenInput('');
       setError(null);
       setManualLoginMode(false);
     } catch (e) {
-      console.error('[admin-ui] Manual login error:', e);
+      console.error('[auth] Manual login error:', e);
       toast.dismiss(loadingId);
-      toast.error(e.message || 'Sign-in failed. Please check your token.');
+      toast.error(e.message || 'Sign-in failed');
     }
   };
 
@@ -171,21 +261,26 @@ export default function App() {
         method: 'POST',
         credentials: 'include'
       });
+      
+      AuthCache.clear(); // Clear cache on logout
       toast.info('Logged out successfully');
     } catch (e) {
       toast.error('Logout failed');
     } finally {
       setMe(null);
       setError(null);
-      didAutoLogin.current = false;
+      didInitialCheck.current = false;
+      navigate('/');
     }
   };
 
   const handleRetryAutoLogin = () => {
-    didAutoLogin.current = false;
+    didInitialCheck.current = false;
+    checkInProgress.current = false;
+    AuthCache.clear();
     setError(null);
     setLoading(true);
-    checkSession();
+    checkAuthWithCache();
   };
 
   // ========================================================================
@@ -235,7 +330,7 @@ export default function App() {
   }
 
   // ========================================================================
-  // NOT AUTHENTICATED - SHOW LOGIN OPTIONS
+  // NOT AUTHENTICATED - SHOW LOGIN
   // ========================================================================
   if (!me?.ok) {
     return (
@@ -281,36 +376,9 @@ export default function App() {
                 </p>
               )}
               
-              {/* Special handling for token validation errors */}
-              {error.message?.includes('Token validation') && (
-                <div style={{ 
-                  background: '#7f1d1d', 
-                  borderRadius: 8, 
-                  padding: 12, 
-                  marginBottom: 12 
-                }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
-                    🔧 Quick Fix:
-                  </p>
-                  <p style={{ fontSize: 12, lineHeight: 1.5 }}>
-                    Your session token is from the old system. To fix this:
-                  </p>
-                  <ol style={{ 
-                    fontSize: 12, 
-                    lineHeight: 1.5, 
-                    marginLeft: 20, 
-                    marginTop: 8 
-                  }}>
-                    <li>Go to the main app and <strong>logout</strong></li>
-                    <li><strong>Login again</strong> to get a fresh token</li>
-                    <li>Return here - it will work automatically</li>
-                  </ol>
-                </div>
-              )}
-              
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 <a
-                  href="https://www.mindpick.me/logout"
+                  href="https://www.mindpick.me"
                   style={{
                     padding: '8px 16px',
                     borderRadius: 8,
@@ -323,7 +391,7 @@ export default function App() {
                     display: 'inline-block'
                   }}
                 >
-                  🔄 Go to Main App & Re-Login
+                  🔗 Go to Main App
                 </a>
                 <button
                   onClick={handleRetryAutoLogin}
@@ -357,7 +425,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Login Instructions */}
+          {/* Login Options */}
           {!manualLoginMode && !error && (
             <div style={{ 
               background: '#111827', 
@@ -416,13 +484,10 @@ export default function App() {
               <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
                 🔑 Manual Login
               </h3>
-              <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 12 }}>
-                Paste your authentication token from the main app.
-              </p>
               <textarea
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value)}
-                placeholder="Paste your token here (eyJhbGciOi...)"
+                placeholder="Paste your token here..."
                 rows={4}
                 style={{
                   width: '100%',
@@ -467,24 +532,6 @@ export default function App() {
               </div>
             </div>
           )}
-
-          {/* Debug Help */}
-          <div style={{ 
-            marginTop: 16, 
-            fontSize: 12, 
-            opacity: 0.7, 
-            textAlign: 'center' 
-          }}>
-            Having issues? Check the{' '}
-            <a 
-              href="/api/debug-migration" 
-              target="_blank"
-              style={{ color: '#4f46e5', textDecoration: 'underline' }}
-            >
-              debug endpoint
-            </a>
-            {' '}for detailed diagnostics
-          </div>
         </div>
       </div>
     );
@@ -494,18 +541,20 @@ export default function App() {
   // AUTHENTICATED - SHOW ADMIN INTERFACE
   // ========================================================================
   return (
-    <Layout me={me} onLogout={handleLogout}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/feature-flags" element={<FeatureFlags />} />
-        <Route path="/feedback" element={<FeedbackDashboard />} />
-        <Route path="/moderation" element={<Moderation />} />
-        <Route path="/experts" element={<Experts />} />
-        <Route path="/transactions" element={<Transactions />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Layout>
+    <AuthContext.Provider value={{ me, logout: handleLogout, revalidate: revalidateAuthInBackground }}>
+      <Layout me={me} onLogout={handleLogout}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/feature-flags" element={<FeatureFlags />} />
+          <Route path="/feedback" element={<FeedbackDashboard />} />
+          <Route path="/moderation" element={<Moderation />} />
+          <Route path="/experts" element={<Experts />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Layout>
+    </AuthContext.Provider>
   );
 }
