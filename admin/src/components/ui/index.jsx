@@ -1,44 +1,48 @@
 // admin/src/components/ui/index.jsx
-// Reusable UI components - NO external icon dependencies
+// Complete UI components library with Modal and danger Button variant
 
 import React from 'react';
 
 // ============================================================================
-// Button Component
+// BUTTON COMPONENT (with danger variant)
 // ============================================================================
 export function Button({ 
+  children, 
   variant = 'primary', 
-  size = 'md',
+  size = 'md', 
   fullWidth = false,
   disabled = false,
-  children, 
+  onClick,
   className = '',
   ...props 
 }) {
-  const variants = {
-    primary: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:shadow-md disabled:opacity-50',
-    secondary: 'border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50',
-    danger: 'bg-red-600 text-white hover:bg-red-700 disabled:opacity-50',
-    ghost: 'text-gray-700 hover:bg-gray-100 disabled:opacity-50'
-  };
+  const baseClasses = 'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
+  const variants = {
+    primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500',
+    secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
+    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+    success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
+    warning: 'bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500',
+  };
+
   const sizes = {
     sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2.5 text-sm',
-    lg: 'px-6 py-3 text-base'
+    md: 'px-4 py-2 text-sm',
+    lg: 'px-6 py-3 text-base',
   };
-  
+
   return (
     <button
-      disabled={disabled}
       className={`
-        font-medium rounded-lg transition-all duration-200
-        ${variants[variant]} 
+        ${baseClasses}
+        ${variants[variant]}
         ${sizes[size]}
         ${fullWidth ? 'w-full' : ''}
-        ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
         ${className}
       `}
+      disabled={disabled}
+      onClick={onClick}
       {...props}
     >
       {children}
@@ -47,180 +51,202 @@ export function Button({
 }
 
 // ============================================================================
-// Badge Component (Status Pills)
+// MODAL COMPONENT
 // ============================================================================
-export function Badge({ 
-  variant = 'default', 
-  children,
-  className = '' 
-}) {
-  const variants = {
-    success: 'bg-green-100 text-green-700 border-green-200',
-    warning: 'bg-amber-100 text-amber-700 border-amber-200',
-    danger: 'bg-red-100 text-red-700 border-red-200',
-    info: 'bg-blue-100 text-blue-700 border-blue-200',
-    default: 'bg-gray-100 text-gray-700 border-gray-200',
-    primary: 'bg-indigo-100 text-indigo-700 border-indigo-200'
+export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
+  if (!isOpen) return null;
+
+  const sizes = {
+    sm: 'max-w-md',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
   };
-  
+
   return (
-    <span className={`
-      inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border
-      ${variants[variant]}
-      ${className}
-    `}>
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className={`relative bg-white rounded-lg shadow-xl ${sizes[size]} w-full`}>
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Content */}
+          <div className="p-6">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// CARD COMPONENT
+// ============================================================================
+export function Card({ children, className = '', padding = 'default' }) {
+  const paddingClasses = {
+    none: '',
+    sm: 'p-3',
+    default: 'p-6',
+    lg: 'p-8',
+  };
+
+  return (
+    <div className={`bg-white rounded-lg border border-gray-200 shadow-sm ${paddingClasses[padding]} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+// ============================================================================
+// BADGE COMPONENT
+// ============================================================================
+export function Badge({ children, variant = 'default', className = '' }) {
+  const variants = {
+    default: 'bg-gray-100 text-gray-800',
+    primary: 'bg-indigo-100 text-indigo-800',
+    success: 'bg-green-100 text-green-800',
+    danger: 'bg-red-100 text-red-800',
+    warning: 'bg-yellow-100 text-yellow-800',
+    info: 'bg-blue-100 text-blue-800',
+  };
+
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variant]} ${className}`}>
       {children}
     </span>
   );
 }
 
 // ============================================================================
-// Card Component
-// ============================================================================
-export function Card({ 
-  children, 
-  className = '',
-  padding = 'default',
-  hover = false 
-}) {
-  const paddings = {
-    none: '',
-    sm: 'p-4',
-    default: 'p-6',
-    lg: 'p-8'
-  };
-  
-  return (
-    <div className={`
-      bg-white rounded-xl shadow-sm border border-gray-100
-      ${paddings[padding]}
-      ${hover ? 'hover:shadow-md transition-shadow duration-200' : ''}
-      ${className}
-    `}>
-      {children}
-    </div>
-  );
-}
-
-// ============================================================================
-// Input Component
+// INPUT COMPONENT
 // ============================================================================
 export function Input({ 
-  label,
-  error,
-  helperText,
-  fullWidth = true,
+  type = 'text',
+  placeholder = '',
+  value,
+  onChange,
+  disabled = false,
   className = '',
   ...props 
 }) {
   return (
-    <div className={fullWidth ? 'w-full' : ''}>
-      {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-      )}
-      <input
-        className={`
-          px-4 py-2.5 bg-white border rounded-lg text-sm
-          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-          transition-all duration-200
-          ${error ? 'border-red-300' : 'border-gray-200'}
-          ${fullWidth ? 'w-full' : ''}
-          ${className}
-        `}
-        {...props}
-      />
-      {error && (
-        <p className="mt-1 text-xs text-red-600">{error}</p>
-      )}
-      {helperText && !error && (
-        <p className="mt-1 text-xs text-gray-500">{helperText}</p>
-      )}
-    </div>
+    <input
+      type={type}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      className={`
+        w-full px-3 py-2 border border-gray-300 rounded-lg
+        focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none
+        disabled:bg-gray-50 disabled:cursor-not-allowed
+        transition text-sm
+        ${className}
+      `}
+      {...props}
+    />
   );
 }
 
 // ============================================================================
-// Select Component
+// SELECT COMPONENT
 // ============================================================================
 export function Select({ 
-  label,
-  error,
+  value,
+  onChange,
   options = [],
-  fullWidth = true,
+  disabled = false,
   className = '',
   ...props 
 }) {
   return (
-    <div className={fullWidth ? 'w-full' : ''}>
-      {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-      )}
-      <select
-        className={`
-          px-4 py-2.5 bg-white border rounded-lg text-sm
-          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-          transition-all duration-200
-          ${error ? 'border-red-300' : 'border-gray-200'}
-          ${fullWidth ? 'w-full' : ''}
-          ${className}
-        `}
-        {...props}
-      >
-        {options.map(opt => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      {error && (
-        <p className="mt-1 text-xs text-red-600">{error}</p>
-      )}
-    </div>
+    <select
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      className={`
+        w-full px-3 py-2 border border-gray-300 rounded-lg
+        focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none
+        disabled:bg-gray-50 disabled:cursor-not-allowed
+        transition text-sm
+        ${className}
+      `}
+      {...props}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
 // ============================================================================
-// Empty State Component
+// SECTION HEADER COMPONENT
 // ============================================================================
-export function EmptyState({ 
-  title,
-  description,
-  action 
-}) {
+export function SectionHeader({ title, description, action }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-50 to-violet-50 flex items-center justify-center mb-4">
-        <svg className="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
+    <div className="flex items-center justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        {description && (
+          <p className="text-sm text-gray-600 mt-1">{description}</p>
+        )}
       </div>
-      <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
-      {description && (
-        <p className="text-sm text-gray-500 mb-6 max-w-md">{description}</p>
-      )}
-      {action}
+      {action && <div>{action}</div>}
     </div>
   );
 }
 
 // ============================================================================
-// Loading Spinner
+// EMPTY STATE COMPONENT
+// ============================================================================
+export function EmptyState({ title, description, icon, action }) {
+  return (
+    <div className="text-center py-12">
+      {icon && <div className="mb-4">{icon}</div>}
+      <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+      {description && (
+        <p className="text-sm text-gray-600 mb-4">{description}</p>
+      )}
+      {action && <div className="mt-6">{action}</div>}
+    </div>
+  );
+}
+
+// ============================================================================
+// SPINNER COMPONENT
 // ============================================================================
 export function Spinner({ size = 'md', className = '' }) {
   const sizes = {
     sm: 'w-4 h-4',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8'
+    md: 'w-8 h-8',
+    lg: 'w-12 h-12',
   };
-  
+
   return (
-    <div className={`${sizes[size]} ${className}`}>
+    <div className={`inline-block ${className}`}>
       <svg 
-        className="animate-spin text-indigo-600" 
+        className={`animate-spin ${sizes[size]} text-indigo-600`}
         xmlns="http://www.w3.org/2000/svg" 
         fill="none" 
         viewBox="0 0 24 24"
@@ -244,60 +270,23 @@ export function Spinner({ size = 'md', className = '' }) {
 }
 
 // ============================================================================
-// Section Header
+// STAT CARD COMPONENT
 // ============================================================================
-export function SectionHeader({ 
-  title, 
-  description,
-  action,
-  className = '' 
-}) {
+export function StatCard({ label, value, icon, trend, className = '' }) {
   return (
-    <div className={`flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 ${className}`}>
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
-        {description && (
-          <p className="text-sm text-gray-500 mt-1">{description}</p>
-        )}
-      </div>
-      {action && <div className="sm:flex-shrink-0">{action}</div>}
-    </div>
-  );
-}
-
-// ============================================================================
-// Stat Card (Dashboard KPIs)
-// ============================================================================
-export function StatCard({ 
-  label, 
-  value, 
-  change,
-  trend = 'neutral',
-  icon
-}) {
-  const trendColors = {
-    up: 'text-green-600',
-    down: 'text-red-600',
-    neutral: 'text-gray-600'
-  };
-  
-  return (
-    <Card padding="default" hover>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
-          {change && (
-            <div className="flex items-center gap-1">
-              <span className={`text-sm font-semibold ${trendColors[trend]}`}>
-                {change}
-              </span>
-              <span className="text-xs text-gray-500">vs last period</span>
-            </div>
+    <Card className={className}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{label}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          {trend && (
+            <p className={`text-xs mt-1 ${trend.positive ? 'text-green-600' : 'text-red-600'}`}>
+              {trend.value} {trend.label}
+            </p>
           )}
         </div>
         {icon && (
-          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-50 to-violet-50 flex items-center justify-center">
+          <div className="flex-shrink-0">
             {icon}
           </div>
         )}
@@ -307,110 +296,162 @@ export function StatCard({
 }
 
 // ============================================================================
-// Modal Component
+// ALERT COMPONENT
 // ============================================================================
-export function Modal({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children,
-  footer 
-}) {
-  if (!isOpen) return null;
-  
+export function Alert({ type = 'info', title, children, onClose, className = '' }) {
+  const types = {
+    info: 'bg-blue-50 border-blue-200 text-blue-800',
+    success: 'bg-green-50 border-green-200 text-green-800',
+    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+    error: 'bg-red-50 border-red-200 text-red-800',
+  };
+
+  const icons = {
+    info: 'ℹ️',
+    success: '✅',
+    warning: '⚠️',
+    error: '❌',
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Backdrop */}
-        <div 
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-          onClick={onClose}
-        />
-        
-        {/* Modal */}
-        <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          {/* Body */}
-          <div className="p-6">
-            {children}
-          </div>
-          
-          {/* Footer */}
-          {footer && (
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
-              {footer}
-            </div>
-          )}
+    <div className={`border rounded-lg p-4 ${types[type]} ${className}`}>
+      <div className="flex items-start">
+        <span className="text-lg mr-3">{icons[type]}</span>
+        <div className="flex-1">
+          {title && <h4 className="font-medium mb-1">{title}</h4>}
+          <div className="text-sm">{children}</div>
         </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="ml-3 flex-shrink-0 hover:opacity-70 transition-opacity"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
 // ============================================================================
-// Table Component (Mobile Responsive)
+// TABS COMPONENT
 // ============================================================================
-export function Table({ columns, data, onRowClick }) {
+export function Tabs({ tabs, activeTab, onChange, className = '' }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead className="border-b border-gray-200">
-          <tr>
-            {columns.map((col, i) => (
-              <th 
-                key={i}
-                className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider py-3 px-4"
-              >
-                {col.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {data.map((row, i) => (
-            <tr 
-              key={i}
-              onClick={() => onRowClick?.(row)}
-              className={onRowClick ? 'hover:bg-gray-50 cursor-pointer transition-colors' : ''}
-            >
-              {columns.map((col, j) => (
-                <td key={j} className="py-3 px-4 text-sm text-gray-900">
-                  {col.render ? col.render(row[col.key], row) : row[col.key]}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className={`border-b border-gray-200 ${className}`}>
+      <nav className="-mb-px flex space-x-8">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            className={`
+              py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap
+              transition-colors
+              ${activeTab === tab.id
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }
+            `}
+          >
+            {tab.label}
+            {tab.count !== undefined && (
+              <span className={`
+                ml-2 py-0.5 px-2 rounded-full text-xs font-medium
+                ${activeTab === tab.id
+                  ? 'bg-indigo-100 text-indigo-600'
+                  : 'bg-gray-100 text-gray-600'
+                }
+              `}>
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
 
 // ============================================================================
-// Export all components
+// CHECKBOX COMPONENT
 // ============================================================================
+export function Checkbox({ 
+  checked,
+  onChange,
+  label,
+  disabled = false,
+  className = ''
+}) {
+  return (
+    <label className={`flex items-center cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+      />
+      {label && (
+        <span className="ml-2 text-sm text-gray-700">{label}</span>
+      )}
+    </label>
+  );
+}
+
+// ============================================================================
+// TOGGLE COMPONENT
+// ============================================================================
+export function Toggle({ 
+  checked,
+  onChange,
+  label,
+  disabled = false,
+  className = ''
+}) {
+  return (
+    <label className={`flex items-center cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}>
+      <div className="relative">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          disabled={disabled}
+          className="sr-only"
+        />
+        <div className={`
+          block w-10 h-6 rounded-full transition-colors
+          ${checked ? 'bg-indigo-600' : 'bg-gray-300'}
+        `}>
+          <div className={`
+            dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform
+            ${checked ? 'transform translate-x-4' : ''}
+          `} />
+        </div>
+      </div>
+      {label && (
+        <span className="ml-3 text-sm text-gray-700">{label}</span>
+      )}
+    </label>
+  );
+}
+
+// Export all components
 export default {
   Button,
-  Badge,
+  Modal,
   Card,
+  Badge,
   Input,
   Select,
+  SectionHeader,
   EmptyState,
   Spinner,
-  SectionHeader,
   StatCard,
-  Modal,
-  Table
+  Alert,
+  Tabs,
+  Checkbox,
+  Toggle,
 };

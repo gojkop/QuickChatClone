@@ -1,5 +1,5 @@
-// admin/src/pages/FeedbackDashboard.jsx - UPDATED VERSION
-// Compact design with fixed internal notes functionality
+// admin/src/pages/FeedbackDashboard.jsx - IMPROVED VERSION
+// Features: 10 items default, proper pagination, clear column layout, delete functionality
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -15,9 +15,8 @@ import {
   StatCard
 } from '../components/ui';
 import { useToast } from '../components/Toast';
-import { TrendLineChart, DonutChart } from '../components/charts';
 
-// Constants remain the same...
+// Constants
 const FEEDBACK_TYPES = {
   bug: { label: 'Bug', color: 'danger', icon: '🐛' },
   feature: { label: 'Feature', color: 'success', icon: '💡' },
@@ -50,9 +49,9 @@ const JOURNEY_STAGES = {
 };
 
 // ============================================================================
-// COMPACT FEEDBACK ROW (Updated)
+// FEEDBACK ROW WITH CLEAR COLUMNS
 // ============================================================================
-function CompactFeedbackRow({ feedback, onSelect, isSelected }) {
+function FeedbackRow({ feedback, onSelect, isSelected }) {
   const typeConfig = FEEDBACK_TYPES[feedback.type] || FEEDBACK_TYPES.other;
   const statusConfig = STATUS_CONFIG[feedback.status];
   const priorityConfig = PRIORITY_CONFIG[feedback.priority];
@@ -61,104 +60,104 @@ function CompactFeedbackRow({ feedback, onSelect, isSelected }) {
     <div 
       onClick={() => onSelect(feedback)}
       className={`
-        group relative flex items-center gap-3 px-4 py-2.5 
+        group relative grid grid-cols-12 gap-4 items-center px-4 py-3
         border-b border-gray-100 cursor-pointer transition-all
         hover:bg-gray-50
         ${isSelected ? 'bg-indigo-50 border-indigo-200' : ''}
       `}
     >
-      {/* Left: Icon & Badges */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-lg">{typeConfig.icon}</span>
-        
-        <div className="flex items-center gap-1">
-          <span className={`
-            px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide
-            ${statusConfig.color === 'warning' ? 'bg-amber-100 text-amber-700' : ''}
-            ${statusConfig.color === 'info' ? 'bg-blue-100 text-blue-700' : ''}
-            ${statusConfig.color === 'success' ? 'bg-green-100 text-green-700' : ''}
-            ${statusConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
-          `}>
-            {statusConfig.label}
-          </span>
-          
-          <span className={`
-            px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide
-            ${priorityConfig.color === 'danger' ? 'bg-red-100 text-red-700' : ''}
-            ${priorityConfig.color === 'warning' ? 'bg-orange-100 text-orange-700' : ''}
-            ${priorityConfig.color === 'info' ? 'bg-yellow-100 text-yellow-700' : ''}
-            ${priorityConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
-          `}>
-            {priorityConfig.label}
-          </span>
-        </div>
+      {/* Type Column (1 col) */}
+      <div className="col-span-1 flex justify-center">
+        <span className="text-2xl" title={typeConfig.label}>
+          {typeConfig.icon}
+        </span>
       </div>
 
-      {/* Center: Message (truncated) */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-900 truncate font-medium">
+      {/* Status Column (2 cols) */}
+      <div className="col-span-2 flex flex-col gap-1">
+        <span className={`
+          px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wide text-center
+          ${statusConfig.color === 'warning' ? 'bg-amber-100 text-amber-700' : ''}
+          ${statusConfig.color === 'info' ? 'bg-blue-100 text-blue-700' : ''}
+          ${statusConfig.color === 'success' ? 'bg-green-100 text-green-700' : ''}
+          ${statusConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
+        `}>
+          {statusConfig.label}
+        </span>
+        
+        <span className={`
+          px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wide text-center
+          ${priorityConfig.color === 'danger' ? 'bg-red-100 text-red-700' : ''}
+          ${priorityConfig.color === 'warning' ? 'bg-orange-100 text-orange-700' : ''}
+          ${priorityConfig.color === 'info' ? 'bg-yellow-100 text-yellow-700' : ''}
+          ${priorityConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
+        `}>
+          {priorityConfig.label}
+        </span>
+      </div>
+
+      {/* Message Column (6 cols) */}
+      <div className="col-span-6">
+        <p className="text-sm text-gray-900 line-clamp-2 font-medium">
           {feedback.message}
         </p>
+        {feedback.email && (
+          <p className="text-xs text-indigo-600 mt-1 truncate">
+            📧 {feedback.email}
+          </p>
+        )}
       </div>
 
-      {/* Right: Metadata Icons */}
-      <div className="flex items-center gap-3 flex-shrink-0 text-xs text-gray-500">
-        {/* Journey Stage */}
-        {feedback.journey_stage && (
-          <span className="hidden sm:inline" title={feedback.journey_stage}>
-            {JOURNEY_STAGES[feedback.journey_stage]?.icon}
+      {/* Metadata Column (3 cols) */}
+      <div className="col-span-3 flex flex-col gap-1 text-xs text-gray-600">
+        {/* Row 1: Journey + Date */}
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1">
+            {feedback.journey_stage && JOURNEY_STAGES[feedback.journey_stage]?.icon}
+            <span className="hidden lg:inline text-[11px]">
+              {feedback.journey_stage && JOURNEY_STAGES[feedback.journey_stage]?.label}
+            </span>
           </span>
-        )}
-
-        {/* Rating */}
-        {feedback.rating && (
-          <span className="hidden md:inline">
-            {'⭐'.repeat(feedback.rating)}
+          <span className="text-[11px] text-gray-500">
+            {new Date(feedback.created_at).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
           </span>
-        )}
+        </div>
 
-        {/* Email indicator */}
-        {feedback.email && (
-          <span className="text-indigo-600" title={feedback.email}>
-            📧
-          </span>
-        )}
+        {/* Row 2: Icons */}
+        <div className="flex items-center gap-2">
+          {feedback.rating && (
+            <span title={`Rating: ${feedback.rating}/5`}>
+              {'⭐'.repeat(feedback.rating)}
+            </span>
+          )}
+          
+          {feedback.attachment_count > 0 && (
+            <span title={`${feedback.attachment_count} attachments`}>
+              📎 {feedback.attachment_count}
+            </span>
+          )}
 
-        {/* Attachments */}
-        {feedback.attachment_count > 0 && (
-          <span title={`${feedback.attachment_count} attachments`}>
-            📎 {feedback.attachment_count}
-          </span>
-        )}
+          {feedback.comment_count > 0 && (
+            <span title={`${feedback.comment_count} comments`}>
+              💬 {feedback.comment_count}
+            </span>
+          )}
 
-        {/* Comments */}
-        {feedback.comment_count > 0 && (
-          <span title={`${feedback.comment_count} comments`}>
-            💬 {feedback.comment_count}
-          </span>
-        )}
-
-        {/* Jira */}
-        {feedback.jira_ticket_key && (
-          <span className="text-purple-600 font-mono text-[10px]" title="Jira ticket">
-            {feedback.jira_ticket_key}
-          </span>
-        )}
-
-        {/* Date */}
-        <span className="hidden lg:inline whitespace-nowrap">
-          {new Date(feedback.created_at).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric' 
-          })}
-        </span>
-
-        {/* Device */}
-        <span className="hidden xl:inline" title={feedback.device_type}>
-          {feedback.device_type === 'mobile' && '📱'}
-          {feedback.device_type === 'desktop' && '💻'}
-          {feedback.device_type === 'tablet' && '📱'}
-        </span>
+          {feedback.jira_ticket_key && (
+            <span className="text-purple-600 font-mono text-[10px]" title="Jira ticket">
+              {feedback.jira_ticket_key}
+            </span>
+          )}
+          
+          {feedback.device_type === 'mobile' && <span title="Mobile">📱</span>}
+          {feedback.device_type === 'desktop' && <span title="Desktop">💻</span>}
+          {feedback.device_type === 'tablet' && <span title="Tablet">📱</span>}
+        </div>
       </div>
 
       {/* Selection Indicator */}
@@ -170,9 +169,9 @@ function CompactFeedbackRow({ feedback, onSelect, isSelected }) {
 }
 
 // ============================================================================
-// DETAIL PANEL (Updated with fixed comment handler)
+// DETAIL PANEL (Same as before with delete)
 // ============================================================================
-function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onReload }) {
+function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onReload, onDelete }) {
   const toast = useToast();
   const [comment, setComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -181,7 +180,6 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
 
   const typeConfig = FEEDBACK_TYPES[feedback.type] || FEEDBACK_TYPES.other;
 
-  // FIXED: Add comment with proper API call
   const handleAddComment = async () => {
     if (!comment.trim()) return;
     
@@ -203,11 +201,9 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
         throw new Error(error.error || 'Failed to add comment');
       }
 
-      // Clear input and show success
       setComment('');
       toast.success('Note added successfully');
       
-      // Reload feedback detail to show new comment
       if (onReload) {
         onReload();
       }
@@ -390,7 +386,7 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
           </div>
         )}
 
-        {/* Add comment - FIXED */}
+        {/* Add comment */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">Add Internal Note</h4>
           <textarea
@@ -454,6 +450,20 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
               }))}
             />
           </div>
+
+          {/* Delete Button */}
+          <div className="pt-4 border-t border-gray-200">
+            <Button
+              variant="danger"
+              fullWidth
+              onClick={() => onDelete(feedback)}
+            >
+              🗑️ Delete Feedback
+            </Button>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              This will permanently archive this feedback
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -461,7 +471,7 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
 }
 
 // ============================================================================
-// MAIN DASHBOARD (Updated with compact rows)
+// MAIN DASHBOARD
 // ============================================================================
 export default function FeedbackDashboard() {
   const toast = useToast();
@@ -471,9 +481,13 @@ export default function FeedbackDashboard() {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [detailData, setDetailData] = useState(null);
   
+  // Delete state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [feedbackToDelete, setFeedbackToDelete] = useState(null);
+  
   const [filters, setFilters] = useState({
     page: 1,
-    limit: 20,
+    limit: 10, // Default to 10 items
     type: '',
     status: '',
     priority: '',
@@ -481,6 +495,8 @@ export default function FeedbackDashboard() {
     search: '',
     date_from: '',
     date_to: '',
+    sort_by: 'created_at',
+    sort_order: 'desc',
   });
   
   const [stats, setStats] = useState({
@@ -574,6 +590,46 @@ export default function FeedbackDashboard() {
     }
   };
 
+  // Delete handlers
+  const deleteFeedback = async (id) => {
+    try {
+      const res = await fetch(`/api/feedback/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (!res.ok) throw new Error('Failed to delete');
+      
+      toast.success('Feedback deleted successfully');
+      
+      setSelectedFeedback(null);
+      setDetailData(null);
+      loadFeedback();
+      setShowDeleteConfirm(false);
+      setFeedbackToDelete(null);
+      
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete feedback');
+    }
+  };
+
+  const handleDeleteClick = (feedback) => {
+    setFeedbackToDelete(feedback);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (feedbackToDelete) {
+      deleteFeedback(feedbackToDelete.id);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setFeedbackToDelete(null);
+  };
+
   const createJiraTicket = async (feedback) => {
     if (feedback.jira_ticket_key) {
       window.open(feedback.jira_ticket_url, '_blank');
@@ -622,7 +678,7 @@ export default function FeedbackDashboard() {
   const clearFilters = () => {
     setFilters({
       page: 1,
-      limit: 20,
+      limit: 10,
       type: '',
       status: '',
       priority: '',
@@ -630,6 +686,8 @@ export default function FeedbackDashboard() {
       search: '',
       date_from: '',
       date_to: '',
+      sort_by: 'created_at',
+      sort_order: 'desc',
     });
   };
 
@@ -682,76 +740,103 @@ export default function FeedbackDashboard() {
 
       {/* Filters */}
       <Card>
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Input
-            placeholder="Search..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange('search', e.target.value)}
-          />
-          <Select
-            value={filters.type}
-            onChange={(e) => handleFilterChange('type', e.target.value)}
-            options={[
-              { value: '', label: 'All Types' },
-              ...Object.entries(FEEDBACK_TYPES).map(([key, config]) => ({
-                value: key,
-                label: `${config.icon} ${config.label}`
-              }))
-            ]}
-          />
-          <Select
-            value={filters.status}
-            onChange={(e) => handleFilterChange('status', e.target.value)}
-            options={[
-              { value: '', label: 'All Status' },
-              ...Object.entries(STATUS_CONFIG).map(([key, config]) => ({
-                value: key,
-                label: config.label
-              }))
-            ]}
-          />
-          <Select
-            value={filters.priority}
-            onChange={(e) => handleFilterChange('priority', e.target.value)}
-            options={[
-              { value: '', label: 'All Priority' },
-              ...Object.entries(PRIORITY_CONFIG).map(([key, config]) => ({
-                value: key,
-                label: config.label
-              }))
-            ]}
-          />
-          <Select
-            value={filters.journey_stage}
-            onChange={(e) => handleFilterChange('journey_stage', e.target.value)}
-            options={[
-              { value: '', label: 'All Journeys' },
-              ...Object.entries(JOURNEY_STAGES).map(([key, config]) => ({
-                value: key,
-                label: `${config.icon} ${config.label}`
-              }))
-            ]}
-          />
-          <Button variant="secondary" onClick={clearFilters} fullWidth>
-            Clear
-          </Button>
+        <div className="space-y-3">
+          {/* Filter Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <Input
+              placeholder="Search..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+            />
+            <Select
+              value={filters.type}
+              onChange={(e) => handleFilterChange('type', e.target.value)}
+              options={[
+                { value: '', label: 'All Types' },
+                ...Object.entries(FEEDBACK_TYPES).map(([key, config]) => ({
+                  value: key,
+                  label: `${config.icon} ${config.label}`
+                }))
+              ]}
+            />
+            <Select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              options={[
+                { value: '', label: 'All Status' },
+                ...Object.entries(STATUS_CONFIG).map(([key, config]) => ({
+                  value: key,
+                  label: config.label
+                }))
+              ]}
+            />
+            <Select
+              value={filters.priority}
+              onChange={(e) => handleFilterChange('priority', e.target.value)}
+              options={[
+                { value: '', label: 'All Priority' },
+                ...Object.entries(PRIORITY_CONFIG).map(([key, config]) => ({
+                  value: key,
+                  label: config.label
+                }))
+              ]}
+            />
+            <Select
+              value={filters.journey_stage}
+              onChange={(e) => handleFilterChange('journey_stage', e.target.value)}
+              options={[
+                { value: '', label: 'All Journeys' },
+                ...Object.entries(JOURNEY_STAGES).map(([key, config]) => ({
+                  value: key,
+                  label: `${config.icon} ${config.label}`
+                }))
+              ]}
+            />
+            <Button variant="secondary" onClick={clearFilters} fullWidth>
+              Clear
+            </Button>
+          </div>
+
+          {/* Items per page selector */}
+          <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Show:</span>
+              <Select
+                value={filters.limit.toString()}
+                onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
+                options={[
+                  { value: '10', label: '10' },
+                  { value: '20', label: '20' },
+                  { value: '50', label: '50' },
+                  { value: '100', label: '100' },
+                ]}
+                className="w-20"
+              />
+              <span className="text-sm text-gray-600">items per page</span>
+            </div>
+            
+            <div className="text-sm text-gray-600">
+              Sorted by: <span className="font-semibold">Most Recent First</span>
+            </div>
+          </div>
         </div>
       </Card>
 
-      {/* Compact Feedback Table */}
+      {/* Feedback Table with Clear Columns */}
       <Card padding="none">
         {/* Table Header */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-          <div className="flex-shrink-0 w-32">Type & Status</div>
-          <div className="flex-1">Message</div>
-          <div className="flex-shrink-0 w-48 text-right">Metadata</div>
+        <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b-2 border-gray-200 text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          <div className="col-span-1 text-center">Type</div>
+          <div className="col-span-2 text-center">Status</div>
+          <div className="col-span-6">Message</div>
+          <div className="col-span-3 text-center">Metadata</div>
         </div>
         
         {/* Table Body */}
         <div>
           {feedback.length > 0 ? (
             feedback.map(item => (
-              <CompactFeedbackRow
+              <FeedbackRow
                 key={item.id}
                 feedback={item}
                 onSelect={setSelectedFeedback}
@@ -762,33 +847,107 @@ export default function FeedbackDashboard() {
             <div className="p-8">
               <EmptyState
                 title="No feedback found"
-                description="Try adjusting your filters"
+                description="Try adjusting your filters or wait for new feedback to arrive"
               />
             </div>
           )}
         </div>
 
-        {/* Table Footer */}
+        {/* Table Footer - Improved Pagination */}
         {feedback.length > 0 && (
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-sm text-gray-600">
-            <span>Showing {feedback.length} of {stats.total} feedback items</span>
-            <div className="flex gap-2">
-              <Button 
-                variant="secondary" 
-                size="sm"
-                disabled={filters.page === 1}
-                onClick={() => handleFilterChange('page', filters.page - 1)}
-              >
-                Previous
-              </Button>
-              <Button 
-                variant="secondary" 
-                size="sm"
-                disabled={feedback.length < filters.limit}
-                onClick={() => handleFilterChange('page', filters.page + 1)}
-              >
-                Next
-              </Button>
+          <div className="px-4 py-4 bg-gray-50 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              {/* Left: Info */}
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-700">
+                  Showing <span className="font-semibold">{(filters.page - 1) * filters.limit + 1}</span> to{' '}
+                  <span className="font-semibold">
+                    {Math.min(filters.page * filters.limit, stats.total)}
+                  </span> of{' '}
+                  <span className="font-semibold">{stats.total}</span> results
+                </span>
+              </div>
+
+              {/* Right: Pagination Controls */}
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  disabled={filters.page === 1}
+                  onClick={() => handleFilterChange('page', filters.page - 1)}
+                >
+                  ← Previous
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {/* Show page numbers */}
+                  {(() => {
+                    const totalPages = Math.ceil(stats.total / filters.limit);
+                    const currentPage = filters.page;
+                    const pageNumbers = [];
+                    
+                    // Always show first page
+                    if (currentPage > 2) {
+                      pageNumbers.push(
+                        <button
+                          key={1}
+                          onClick={() => handleFilterChange('page', 1)}
+                          className="px-3 py-1 text-sm rounded hover:bg-gray-200 transition-colors"
+                        >
+                          1
+                        </button>
+                      );
+                      if (currentPage > 3) {
+                        pageNumbers.push(<span key="ellipsis1" className="px-2 text-gray-500">...</span>);
+                      }
+                    }
+                    
+                    // Show current page and neighbors
+                    for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages, currentPage + 1); i++) {
+                      pageNumbers.push(
+                        <button
+                          key={i}
+                          onClick={() => handleFilterChange('page', i)}
+                          className={`px-3 py-1 text-sm rounded transition-colors ${
+                            i === currentPage
+                              ? 'bg-indigo-600 text-white font-semibold'
+                              : 'hover:bg-gray-200'
+                          }`}
+                        >
+                          {i}
+                        </button>
+                      );
+                    }
+                    
+                    // Always show last page
+                    if (currentPage < totalPages - 1) {
+                      if (currentPage < totalPages - 2) {
+                        pageNumbers.push(<span key="ellipsis2" className="px-2 text-gray-500">...</span>);
+                      }
+                      pageNumbers.push(
+                        <button
+                          key={totalPages}
+                          onClick={() => handleFilterChange('page', totalPages)}
+                          className="px-3 py-1 text-sm rounded hover:bg-gray-200 transition-colors"
+                        >
+                          {totalPages}
+                        </button>
+                      );
+                    }
+                    
+                    return pageNumbers;
+                  })()}
+                </div>
+                
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  disabled={feedback.length < filters.limit}
+                  onClick={() => handleFilterChange('page', filters.page + 1)}
+                >
+                  Next →
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -802,7 +961,47 @@ export default function FeedbackDashboard() {
           onUpdate={(updates) => updateFeedback(selectedFeedback.id, updates)}
           onCreateJira={createJiraTicket}
           onReload={() => loadFeedbackDetail(selectedFeedback.id)}
+          onDelete={handleDeleteClick}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && feedbackToDelete && (
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={handleDeleteCancel}
+          title="Delete Feedback?"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800 font-medium mb-2">
+                ⚠️ This action cannot be undone
+              </p>
+              <p className="text-sm text-red-700">
+                This will permanently archive the feedback item:
+              </p>
+              <p className="text-sm text-gray-900 mt-2 p-2 bg-white rounded border border-red-200 truncate">
+                "{feedbackToDelete.message}"
+              </p>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="secondary"
+                onClick={handleDeleteCancel}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteConfirm}
+              >
+                Yes, Delete
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
