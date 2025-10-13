@@ -588,6 +588,9 @@ export default function FeedbackDashboard() {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [detailData, setDetailData] = useState(null);
   
+  // Auth ready state - prevents race condition
+  const [authReady, setAuthReady] = useState(false);
+  
   // Delete state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [feedbackToDelete, setFeedbackToDelete] = useState(null);
@@ -623,10 +626,22 @@ export default function FeedbackDashboard() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Load feedback when filters change
+  // Wait for auth before marking ready
   useEffect(() => {
-    loadFeedback();
-  }, [filters.page, filters.limit, filters.type, filters.status, filters.priority, filters.journey_stage, filters.search]);
+    // Small delay to ensure auth is fully established
+    const timer = setTimeout(() => {
+      setAuthReady(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Load feedback only when auth is ready and filters change
+  useEffect(() => {
+    if (authReady) {
+      loadFeedback();
+    }
+  }, [authReady, filters.page, filters.limit, filters.type, filters.status, filters.priority, filters.journey_stage, filters.search]);
 
   useEffect(() => {
     if (selectedFeedback) {
