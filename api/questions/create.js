@@ -1,3 +1,5 @@
+import { sendNewQuestionNotification } from '../lib/zeptomail.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -88,6 +90,23 @@ export default async function handler(req, res) {
     const questionId = question.id;
 
     console.log('✅ Question created with ID:', questionId);
+
+    // Send email notification to expert (non-blocking)
+    const expertEmail = profileData.expert_profile?.email || profileData.email;
+    const expertName = profileData.expert_profile?.name || profileData.name;
+
+    if (expertEmail) {
+      sendNewQuestionNotification({
+        expertEmail,
+        expertName,
+        questionTitle: title,
+        questionText: text,
+        askerEmail: payerEmail,
+        questionId,
+      })
+        .then(() => console.log('✅ Expert notification sent'))
+        .catch((err) => console.error('❌ Failed to send expert notification:', err.message));
+    }
 
     // 3. Create media assets (try singular endpoint)
     // 3. Create media assets

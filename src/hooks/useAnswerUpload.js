@@ -358,12 +358,27 @@ export function useAnswerUpload() {
           : null,
       };
 
-      console.log('Sending to Xano /answer endpoint:', payload);
+      console.log('Sending to /api/answer/submit endpoint:', payload);
 
-      // Use apiClient to call Xano directly
-      const response = await apiClient.post('/answer', payload);
+      // Use fetch to call our backend API (which will proxy to Xano and send emails)
+      const response = await fetch('/api/answer/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Include auth token from localStorage
+          'Authorization': `Bearer ${localStorage.getItem('qc_token')}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-      console.log('✅ Answer submitted successfully:', response.data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit answer');
+      }
+
+      const responseData = await response.json();
+
+      console.log('✅ Answer submitted successfully:', responseData.data);
 
       setUploadState({
         uploading: false,
@@ -374,7 +389,7 @@ export function useAnswerUpload() {
         attachmentResults,
       });
 
-      return response.data;
+      return responseData.data;
 
     } catch (error) {
       console.error('❌ Answer submission failed:', error);
