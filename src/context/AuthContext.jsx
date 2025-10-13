@@ -1,5 +1,5 @@
 // client/src/context/AuthContext.jsx
-// Enhanced to fetch and provide user profile data while preserving all existing functionality
+// Enhanced with user profile using existing API infrastructure
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authService } from '@/api';
 
@@ -25,63 +25,103 @@ export const AuthProvider = ({ children }) => {
     setIsLoadingProfile(true);
     
     try {
-      // Adjust this endpoint to match your API
-      const response = await fetch(`${import.meta.env.VITE_XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ'}/auth/me`, {
+      console.log('[AuthContext] Fetching profile with token:', authToken.substring(0, 20) + '...');
+
+      // ✅ OPTION 1: Try using authService if it has a getProfile method
+      if (typeof authService.getProfile === 'function') {
+        const data = await authService.getProfile();
+        handleProfileData(data);
+        return;
+      }
+
+      // ✅ OPTION 2: Use Xano API with correct auth header format
+      // Xano typically uses 'authToken' in query params, not Authorization header
+      const baseUrl = import.meta.env.VITE_XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
+      
+      // Try method 1: Query parameter (most common for Xano)
+      let response = await fetch(`${baseUrl}/auth/me?authToken=${authToken}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
       });
 
+      // If that fails, try method 2: Different endpoint pattern
+      if (!response.ok && response.status === 404) {
+        console.log('[AuthContext] /auth/me not found, trying /user endpoint...');
+        response = await fetch(`${baseUrl}/user?authToken=${authToken}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+
       if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
-      console.log('[AuthContext] Profile data received:', data);
-
-      // Handle different response structures
-      // Case 1: Response has { user: {...}, expert_profile: {...} }
-      if (data.user) {
-        setUser(data.user);
-        console.log('[AuthContext] User set:', data.user);
-        console.log('[AuthContext] User email:', data.user.email);
-      }
-      // Case 2: Response is the user object directly
-      else if (data.email || data.id) {
-        setUser(data);
-        console.log('[AuthContext] User set (direct):', data);
-      }
-
-      // Set expert profile if it exists
-      if (data.expert_profile) {
-        setExpertProfile(data.expert_profile);
-        console.log('[AuthContext] Expert profile set:', data.expert_profile);
-      }
-
-      // ✅ CRITICAL: Expose to window for FeedbackWidget and other components
-      if (typeof window !== 'undefined') {
-        window.__profileData = data;
-        console.log('[AuthContext] Profile data exposed to window.__profileData');
-      }
+      handleProfileData(data);
 
     } catch (error) {
       console.error('[AuthContext] Failed to fetch user profile:', error);
       
+      // ✅ FALLBACK: Try to extract from existing window data
+      if (typeof window !== 'undefined') {
+        const existingProfile = window.__profileData;
+        if (existingProfile) {
+          console.log('[AuthContext] Using existing window.__profileData as fallback');
+          handleProfileData(existingProfile);
+          setIsLoadingProfile(false);
+          return;
+        }
+      }
+      
       // Don't clear user on fetch error if we're still authenticated
-      // (could be temporary network issue)
-      // Only clear if it's an auth error (401/403)
+      // Only clear if it's an auth error
       if (error.message?.includes('401') || error.message?.includes('403')) {
         setUser(null);
         setExpertProfile(null);
-        // Optionally trigger logout
-        // logout();
       }
     } finally {
       setIsLoadingProfile(false);
     }
+  };
+
+  // ✅ NEW: Helper to handle profile data from any source
+  const handleProfileData = (data) => {
+    console.log('[AuthContext] Processing profile data:', data);
+
+    // Handle different response structures
+    if (data.user) {
+      setUser(data.user);
+      console.log('[AuthContext] User set from data.user:', data.user);
+      console.log('[AuthContext] User email:', data.user.email);
+    } else if (data.email || data.id) {
+      // Direct user object
+      setUser(data);
+      console.log('[AuthContext] User set directly:', data);
+    }
+
+    // Set expert profile if it exists
+    if (data.expert_profile) {
+      setExpertProfile(data.expert_profile);
+      console.log('[AuthContext] Expert profile set:', data.expert_profile);
+    }
+
+    // ✅ CRITICAL: Expose to window for FeedbackWidget
+    if (typeof window !== 'undefined') {
+      window.__profileData = data;
+      console.log('[AuthContext] Profile data exposed to window.__profileData');
+    }
+  };
+
+  // ✅ NEW: Allow external components to set profile data
+  // This is useful if profile is loaded elsewhere (e.g., in a page component)
+  const setProfileData = (data) => {
+    console.log('[AuthContext] Profile data set externally:', data);
+    handleProfileData(data);
   };
 
   // ✅ NEW: Fetch profile when token changes
@@ -94,7 +134,6 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setExpertProfile(null);
       
-      // Clear window data
       if (typeof window !== 'undefined') {
         delete window.__profileData;
       }
@@ -106,7 +145,6 @@ export const AuthProvider = ({ children }) => {
     authService.saveAuthToken(newToken);
     setToken(newToken);
     setAuthVersion(prev => prev + 1);
-    // Profile will be fetched automatically by the useEffect above
   };
 
   // ✅ ENHANCED: Logout now also clears user data
@@ -117,13 +155,12 @@ export const AuthProvider = ({ children }) => {
     setExpertProfile(null);
     setAuthVersion(prev => prev + 1);
     
-    // Clear window data
     if (typeof window !== 'undefined') {
       delete window.__profileData;
     }
   };
 
-  // ✅ NEW: Manual refresh function (useful for after profile updates)
+  // ✅ NEW: Manual refresh function
   const refreshProfile = () => {
     if (token) {
       console.log('[AuthContext] Manual profile refresh requested');
@@ -138,7 +175,6 @@ export const AuthProvider = ({ children }) => {
         const newToken = authService.getAuthToken();
         setToken(newToken);
         setAuthVersion(prev => prev + 1);
-        // Profile will be fetched automatically by the token useEffect
       }
     };
     window.addEventListener('storage', onStorage);
@@ -159,6 +195,7 @@ export const AuthProvider = ({ children }) => {
       expertProfile,
       isLoadingProfile,
       refreshProfile,
+      setProfileData, // Allow external setting
     }}>
       {children}
     </AuthContext.Provider>

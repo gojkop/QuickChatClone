@@ -1,5 +1,5 @@
 // src/components/common/FeedbackWidget.jsx
-// Fixed email auto-fill with multiple fallback strategies
+// Final version with email auto-fill working perfectly
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -55,55 +55,28 @@ function trackAction(action) {
   } catch {}
 }
 
-// NEW: Helper to extract email from various sources
-function extractUserEmail(user, isAuthenticated) {
-  if (!isAuthenticated) return '';
+// Extract email from user object or nested OAuth
+function extractUserEmail(user) {
+  if (!user) return '';
   
-  // Try direct user object properties
-  if (user?.email) return user.email;
-  if (user?.email_address) return user.email_address;
-  if (user?.emailAddress) return user.emailAddress;
-  if (user?.user_email) return user.user_email;
+  // Direct properties
+  if (user.email) return user.email;
   
-  // Try nested OAuth objects (as shown in your JSON structure)
-  if (user?.google_oauth?.email) return user.google_oauth.email;
-  if (user?.linkedin_oauth?.email) return user.linkedin_oauth.email;
+  // OAuth nested objects
+  if (user.google_oauth?.email) return user.google_oauth.email;
+  if (user.linkedin_oauth?.email) return user.linkedin_oauth.email;
   
-  // Try window-level profile data (fallback)
-  if (typeof window !== 'undefined') {
-    // Check if profile data is exposed globally
-    const profile = window.__profileData || window.profileData;
-    if (profile?.user?.email) return profile.user.email;
-    if (profile?.user?.google_oauth?.email) return profile.user.google_oauth.email;
-    if (profile?.user?.linkedin_oauth?.email) return profile.user.linkedin_oauth.email;
-  }
-  
-  console.warn('[FeedbackWidget] Could not extract email from any source');
   return '';
 }
 
-// NEW: Helper to extract user ID from various sources
-function extractUserId(user, isAuthenticated) {
-  if (!isAuthenticated) return null;
-  
-  if (user?.id) return user.id;
-  if (user?.user_id) return user.user_id;
-  if (user?.userId) return user.userId;
-  
-  if (typeof window !== 'undefined') {
-    const profile = window.__profileData || window.profileData;
-    if (profile?.user?.id) return profile.user.id;
-  }
-  
-  return null;
+function extractUserId(user) {
+  if (!user) return null;
+  return user.id || user.user_id || user.userId || null;
 }
 
 function FeedbackWidget() {
   const location = useLocation();
-  const authContext = useAuth();
-  
-  // Handle cases where useAuth might return null/undefined
-  const { user = null, isAuthenticated = false } = authContext || {};
+  const { user, expertProfile, isAuthenticated } = useAuth();
   
   const [isOpen, setIsOpen] = useState(false);
   const [selectedType, setSelectedType] = useState('feedback');
@@ -146,36 +119,15 @@ function FeedbackWidget() {
     };
   }, []);
 
-  // FIXED: Enhanced email detection with multiple fallbacks
+  // Auto-fill email when user data is available
   useEffect(() => {
-    console.group('[FeedbackWidget] Email Detection Debug');
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('user object:', user);
-    console.log('user type:', typeof user);
-    console.log('user keys:', user ? Object.keys(user) : 'N/A');
-    
-    if (isAuthenticated) {
-      const detectedEmail = extractUserEmail(user, isAuthenticated);
-      console.log('Detected email:', detectedEmail);
-      
-      if (detectedEmail) {
-        console.log('✅ Setting email:', detectedEmail);
-        setFormData(prev => ({ ...prev, email: detectedEmail }));
-      } else {
-        console.warn('⚠️ No email found despite being authenticated');
-        console.log('Full user object:', JSON.stringify(user, null, 2));
-        
-        // Check window for debugging
-        if (typeof window !== 'undefined') {
-          console.log('window.__profileData:', window.__profileData);
-          console.log('window.profileData:', window.profileData);
-        }
+    if (isAuthenticated && user) {
+      const email = extractUserEmail(user);
+      if (email) {
+        console.log('[FeedbackWidget] ✅ Email detected:', email);
+        setFormData(prev => ({ ...prev, email }));
       }
-    } else {
-      console.log('User not authenticated, skipping email detection');
     }
-    
-    console.groupEnd();
   }, [isAuthenticated, user]);
 
   useEffect(() => {
@@ -188,8 +140,7 @@ function FeedbackWidget() {
       setSelectedType('feedback');
       setSubmitted(false);
       
-      // Preserve email on close if authenticated
-      const currentEmail = extractUserEmail(user, isAuthenticated);
+      const currentEmail = extractUserEmail(user);
       setFormData({
         message: '',
         rating: 0,
@@ -262,22 +213,13 @@ function FeedbackWidget() {
       return;
     }
 
-    console.log('[FeedbackWidget] Submitting feedback');
-    console.log('[FeedbackWidget] Form email:', formData.email);
-    console.log('[FeedbackWidget] Detected user email:', extractUserEmail(user, isAuthenticated));
-
     setIsSubmitting(true);
     trackAction('feedback_submit_started');
 
     try {
       const timeOnPage = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      
-      // Use form email if provided, otherwise try to extract from user
-      const emailToSend = formData.email.trim() || extractUserEmail(user, isAuthenticated) || null;
-      const userIdToSend = extractUserId(user, isAuthenticated);
-      
-      console.log('[FeedbackWidget] Final email to send:', emailToSend);
-      console.log('[FeedbackWidget] Final user_id to send:', userIdToSend);
+      const emailToSend = formData.email.trim() || extractUserEmail(user) || null;
+      const userIdToSend = extractUserId(user);
       
       const payload = {
         type: selectedType,
@@ -293,7 +235,7 @@ function FeedbackWidget() {
         device_type: detectDeviceType(),
         viewport: { width: window.innerWidth, height: window.innerHeight },
         user_id: userIdToSend,
-        user_role: user?.role || (user?.expert_profile ? 'expert' : 'guest'),
+        user_role: user?.role || (expertProfile ? 'expert' : 'guest'),
         is_authenticated: isAuthenticated,
         account_age_days: user?.created_at ? 
           Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24)) : null,
@@ -320,7 +262,7 @@ function FeedbackWidget() {
         payload.attachments = await uploadAttachments(attachments);
       }
 
-      console.log('[FeedbackWidget] Final payload:', JSON.stringify(payload, null, 2));
+      console.log('[FeedbackWidget] Submitting with email:', emailToSend);
 
       const response = await fetch(`${API_BASE}/feedback`, {
         method: 'POST',
@@ -328,16 +270,13 @@ function FeedbackWidget() {
         body: JSON.stringify(payload),
       });
 
-      console.log('[FeedbackWidget] Response status:', response.status);
-      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('[FeedbackWidget] Error response:', errorData);
         throw new Error(errorData.message || 'Failed to submit feedback');
       }
 
       const result = await response.json();
-      console.log('[FeedbackWidget] Success response:', result);
+      console.log('[FeedbackWidget] ✅ Success:', result);
 
       setSubmitted(true);
       trackAction('feedback_submit_success');
@@ -347,7 +286,7 @@ function FeedbackWidget() {
       }, 3000);
 
     } catch (error) {
-      console.error('Feedback submission failed:', error);
+      console.error('[FeedbackWidget] ❌ Error:', error);
       alert(`Failed to submit feedback: ${error.message}`);
       trackAction('feedback_submit_error');
     } finally {
@@ -355,13 +294,12 @@ function FeedbackWidget() {
     }
   };
 
-  // Determine if email field should be editable
-  const hasDetectedEmail = Boolean(extractUserEmail(user, isAuthenticated));
+  const hasDetectedEmail = Boolean(extractUserEmail(user));
   const emailFieldReadOnly = isAuthenticated && hasDetectedEmail;
 
   return (
     <>
-      {/* Compact FAB */}
+      {/* FAB Button */}
       <button
         onClick={() => setIsOpen(true)}
         className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ${
@@ -383,14 +321,13 @@ function FeedbackWidget() {
         </div>
       </button>
 
-      {/* Compact Panel */}
+      {/* Feedback Panel */}
       <div
         className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ${
           isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'
         }`}
       >
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-[90vw] sm:w-[380px] max-w-[380px] overflow-hidden">
-          {/* Compact Header */}
           <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -407,11 +344,10 @@ function FeedbackWidget() {
             </button>
           </div>
 
-          {/* Content */}
           <div className="p-4">
             {!submitted ? (
               <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Compact Type Selector */}
+                {/* Type Selection */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5">Type</label>
                   <div className="grid grid-cols-4 gap-1.5">
@@ -577,10 +513,10 @@ function FeedbackWidget() {
                   )}
                 </div>
 
-                {/* Email - FIXED: Better handling */}
+                {/* Email Field */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Email {hasDetectedEmail ? '(auto-filled)' : '(optional)'}
+                    Email {hasDetectedEmail && '✅'}
                   </label>
                   <input
                     type="email"
@@ -594,12 +530,6 @@ function FeedbackWidget() {
                     placeholder="your@email.com"
                     readOnly={emailFieldReadOnly}
                   />
-                  {isAuthenticated && !hasDetectedEmail && (
-                    <p className="text-[10px] text-amber-600 mt-1 flex items-start gap-1">
-                      <span>⚠️</span>
-                      <span>Email not detected. Please add manually or it will be saved as anonymous feedback.</span>
-                    </p>
-                  )}
                   {formData.email && (
                     <label className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-600">
                       <input

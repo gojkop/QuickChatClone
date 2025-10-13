@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '@/api';
+import { useAuth } from '@/context/AuthContext'; // ✅ ADDED
 import { useFeature } from '@/hooks/useFeature'; 
 import SettingsModal from '@/components/dashboard/SettingsModal';
 import AccountModal from '@/components/dashboard/AccountModal';
@@ -146,6 +147,7 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
 function ExpertDashboardPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { setProfileData } = useAuth(); // ✅ ADDED
   const [profile, setProfile] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [allQuestions, setAllQuestions] = useState([]);
@@ -315,6 +317,8 @@ function ExpertDashboardPage() {
         };
         
         setProfile(processedProfile);
+        setProfileData(response.data); // ✅ ADDED - Share profile with AuthContext
+        
       } catch (err) {
         console.error("Failed to fetch profile:", err);
         setError("Could not load your profile. Please try refreshing the page.");
