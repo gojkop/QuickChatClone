@@ -101,11 +101,28 @@ function FeedbackWidget() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated && user?.email) {
-      console.log('[FeedbackWidget] Setting email from user:', user.email);
-      setFormData(prev => ({ ...prev, email: user.email }));
+    if (isAuthenticated && user) {
+      console.log('[FeedbackWidget] User object:', JSON.stringify(user, null, 2));
+      console.log('[FeedbackWidget] User.email specifically:', user.email);
+      console.log('[FeedbackWidget] All user keys:', Object.keys(user));
+      
+      // Temporarily expose to window for debugging
+      if (typeof window !== 'undefined') {
+        window.__debugUser = user;
+        console.log('[FeedbackWidget] User object exposed as window.__debugUser');
+      }
+      
+      // Try to find email in common property names
+      const email = user.email || user.email_address || user.emailAddress || user.user_email;
+      
+      if (email) {
+        console.log('[FeedbackWidget] Setting email from user:', email);
+        setFormData(prev => ({ ...prev, email }));
+      } else {
+        console.warn('[FeedbackWidget] No email found in user object. User has these properties:', Object.keys(user));
+      }
     } else {
-      console.log('[FeedbackWidget] User not authenticated or no email:', { isAuthenticated, user });
+      console.log('[FeedbackWidget] User not authenticated or no user:', { isAuthenticated, hasUser: !!user });
     }
   }, [isAuthenticated, user]);
 
