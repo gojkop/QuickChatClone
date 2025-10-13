@@ -585,6 +585,188 @@ export default function FeedbackDashboard() {
           <span className="text-xs">Resize your window to see the responsive design in action</span>
         </div>
       </div>
+
+      {/* Detail Panel - Slide Out */}
+      {selectedFeedback && (
+        <div className="fixed inset-0 sm:right-0 sm:left-auto h-full w-full sm:w-[500px] bg-white border-l border-gray-200 shadow-2xl z-50 overflow-y-auto">
+          {/* Header */}
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                Feedback #{selectedFeedback.id.slice(0, 8)}
+              </h3>
+              <p className="text-xs text-gray-500">
+                {new Date(selectedFeedback.created_at).toLocaleString()}
+              </p>
+            </div>
+            <button
+              onClick={() => setSelectedFeedback(null)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-4 sm:p-6 space-y-6">
+            {/* Type & Status */}
+            <div>
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="text-3xl">{FEEDBACK_TYPES[selectedFeedback.type]?.icon}</span>
+                <div className="flex flex-wrap gap-2">
+                  <span className={`
+                    px-2 py-1 rounded text-xs font-semibold uppercase
+                    ${STATUS_CONFIG[selectedFeedback.status]?.color === 'warning' ? 'bg-amber-100 text-amber-700' : ''}
+                    ${STATUS_CONFIG[selectedFeedback.status]?.color === 'info' ? 'bg-blue-100 text-blue-700' : ''}
+                    ${STATUS_CONFIG[selectedFeedback.status]?.color === 'success' ? 'bg-green-100 text-green-700' : ''}
+                    ${STATUS_CONFIG[selectedFeedback.status]?.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
+                  `}>
+                    {STATUS_CONFIG[selectedFeedback.status]?.label}
+                  </span>
+                  <span className={`
+                    px-2 py-1 rounded text-xs font-semibold uppercase
+                    ${PRIORITY_CONFIG[selectedFeedback.priority]?.color === 'danger' ? 'bg-red-100 text-red-700' : ''}
+                    ${PRIORITY_CONFIG[selectedFeedback.priority]?.color === 'warning' ? 'bg-orange-100 text-orange-700' : ''}
+                    ${PRIORITY_CONFIG[selectedFeedback.priority]?.color === 'info' ? 'bg-yellow-100 text-yellow-700' : ''}
+                    ${PRIORITY_CONFIG[selectedFeedback.priority]?.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
+                  `}>
+                    {PRIORITY_CONFIG[selectedFeedback.priority]?.label}
+                  </span>
+                  <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-semibold uppercase">
+                    {FEEDBACK_TYPES[selectedFeedback.type]?.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* User info */}
+            {selectedFeedback.email && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">User</h4>
+                <p className="text-sm text-gray-900 break-words">
+                  📧 {selectedFeedback.email}
+                </p>
+              </div>
+            )}
+
+            {/* Message */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Message</h4>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p className="text-sm text-gray-900 whitespace-pre-wrap break-words">
+                  {selectedFeedback.message}
+                </p>
+              </div>
+            </div>
+
+            {/* Rating */}
+            {selectedFeedback.rating && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Rating</h4>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{'⭐'.repeat(selectedFeedback.rating)}</span>
+                  <span className="text-sm text-gray-600">
+                    {selectedFeedback.rating} out of 5
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Attachments */}
+            {selectedFeedback.attachment_count > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  Attachments ({selectedFeedback.attachment_count})
+                </h4>
+                <div className="space-y-2">
+                  {Array.from({ length: selectedFeedback.attachment_count }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <span className="text-sm truncate flex-1">attachment-{i + 1}.png</span>
+                      <span className="text-xs text-gray-500 flex-shrink-0">2.5 MB</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Comments */}
+            {selectedFeedback.comment_count > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  Internal Notes ({selectedFeedback.comment_count})
+                </h4>
+                <div className="space-y-2">
+                  {Array.from({ length: selectedFeedback.comment_count }).map((_, i) => (
+                    <div key={i} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <p className="text-sm text-gray-900 break-words">Sample comment {i + 1}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Admin • {new Date().toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="space-y-2 pt-4 border-t border-gray-200">
+              {selectedFeedback.jira_ticket_key ? (
+                <Button variant="primary" fullWidth>
+                  🎫 Jira: {selectedFeedback.jira_ticket_key}
+                </Button>
+              ) : (
+                <Button variant="primary" fullWidth>
+                  🎫 Create Jira Ticket
+                </Button>
+              )}
+              
+              {selectedFeedback.email && (
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => window.location.href = `mailto:${selectedFeedback.email}`}
+                >
+                  ✉️ Email User
+                </Button>
+              )}
+              
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  value={selectedFeedback.status}
+                  onChange={(e) => {
+                    setSelectedFeedback({...selectedFeedback, status: e.target.value});
+                  }}
+                  options={Object.entries(STATUS_CONFIG).map(([key, config]) => ({
+                    value: key,
+                    label: config.label
+                  }))}
+                />
+                <Select
+                  value={selectedFeedback.priority}
+                  onChange={(e) => {
+                    setSelectedFeedback({...selectedFeedback, priority: e.target.value});
+                  }}
+                  options={Object.entries(PRIORITY_CONFIG).map(([key, config]) => ({
+                    value: key,
+                    label: config.label
+                  }))}
+                />
+              </div>
+
+              <div className="pt-4 border-t border-gray-200">
+                <Button variant="danger" fullWidth>
+                  🗑️ Delete Feedback
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
