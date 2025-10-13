@@ -13,14 +13,18 @@ export async function fetchUserData(userId) {
   }
 
   const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
-  const XANO_BASE_URL = process.env.XANO_BASE_URL;
+  
+  // ✅ FIX: Use Public API base URL for internal endpoints
+  // Internal endpoints are in api:BQW1GS7L (Public API), not api:3B14WLbJ (Auth API)
+  const XANO_PUBLIC_BASE_URL = process.env.XANO_PUBLIC_BASE_URL || 
+                                 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
 
   if (!XANO_INTERNAL_API_KEY) {
     console.error('❌ XANO_INTERNAL_API_KEY not configured');
     return null;
   }
 
-  const internalEndpoint = `${XANO_BASE_URL}/internal/user/${userId}/email?x_api_key=${XANO_INTERNAL_API_KEY}`;
+  const internalEndpoint = `${XANO_PUBLIC_BASE_URL}/internal/user/${userId}/email?x_api_key=${XANO_INTERNAL_API_KEY}`;
 
   try {
     console.log('📧 Fetching user data for user_id:', userId);
