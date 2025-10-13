@@ -1,5 +1,6 @@
 // api/answer/submit.js
 // Proxy endpoint for answer submission that sends email notifications
+// Last updated: 2025-10-13
 import { sendAnswerReceivedNotification } from '../lib/zeptomail.js';
 import { fetchUserData, getAskerName, getAskerEmail } from '../lib/user-data.js';
 
