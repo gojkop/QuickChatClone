@@ -1,95 +1,187 @@
+// admin/api/auth/verify-v2.js
+// Improved authentication with better error handling and auto-login
+
 import { sql } from '../_lib/db.js';
 import { signAdminSession } from '../_lib/jwt.js';
 import { allowCors, ok, err } from '../_lib/respond.js';
 
-/**
- * POST /api/auth/verify
- * Headers: Authorization: Bearer <xano_token>
- * Flow:
- *  - Validate token against Xano /me
- *  - Check Neon admin_users (RBAC)
- *  - Issue short-lived admin_session cookie
- */
 export default async function handler(req, res) {
   if (allowCors(req, res)) return;
+  
   if (req.method !== 'POST') {
     return err(res, 405, 'Method not allowed');
   }
 
-  try {
-    console.log('[admin] /api/auth/verify start', { method: req.method, hasAuth: !!(req.headers?.authorization), bodyType: typeof req.body });
-    const xanoBase = process.env.XANO_BASE_URL;
-    if (!xanoBase) {
-      return err(res, 500, 'XANO_BASE_URL not configured');
-    }
+  const xanoBase = process.env.XANO_BASE_URL;
+  
+  console.log('[auth/verify-v2] Starting authentication');
+  console.log('[auth/verify-v2] XANO_BASE_URL configured:', !!xanoBase);
+  
+  if (!xanoBase) {
+    return err(res, 500, 'XANO_BASE_URL not configured');
+  }
 
-    const authHeader = req.headers.authorization || '';
-    let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  // ========================================================================
+  // STEP 1: Get token from multiple sources
+  // ========================================================================
+  let token = null;
+  const sources = [];
 
-    // Fallback: accept token from JSON body for browser-based sign-in
-    if (!token) {
-      let body = req.body;
-      if (typeof body === 'string') {
-        // Try JSON first
-        try { body = JSON.parse(body); } catch {
-          // Then try URL-encoded form (token=<value>)
-          try {
-            const params = new URLSearchParams(req.body);
-            const t = params.get('token');
-            if (t) token = t.trim();
-          } catch { /* ignore */ }
-        }
-      }
-      if (!token && body && typeof body.token === 'string') {
-        token = body.token.trim();
-      }
-    }
+  // Source 1: Authorization header
+  const authHeader = req.headers.authorization || '';
+  if (authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7).trim();
+    sources.push('Authorization header');
+  }
 
-    if (!token) {
-      // Try qc_session cookie (contains Xano token on your domain)
-      const cookieHeader = req.headers.cookie || '';
-      const m = cookieHeader.match(/(?:^|;\\s*)qc_session=([^;]+)/);
-      if (m) {
+  // Source 2: Request body (JSON or form-encoded)
+  if (!token && req.body) {
+    let body = req.body;
+    
+    // Parse if string
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
         try {
-          token = decodeURIComponent(m[1]).trim();
-        } catch {
-          token = m[1].trim();
+          const params = new URLSearchParams(body);
+          const t = params.get('token');
+          if (t) {
+            token = t.trim();
+            sources.push('Form body');
+          }
+        } catch (e) {
+          console.error('[auth/verify-v2] Body parse error:', e);
         }
       }
     }
-
-    if (!token) {
-      return err(res, 401, 'Missing admin token (Authorization: Bearer <token> or JSON body { "token": "..." } or qc_session cookie)');
+    
+    if (!token && body && typeof body.token === 'string') {
+      token = body.token.trim();
+      sources.push('JSON body');
     }
+  }
 
-    // 1) Validate with Xano (/auth/me preferred, fallback to /me)
-    let meResp = await fetch(`${xanoBase}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` }
+  // Source 3: qc_session cookie (from main app)
+  if (!token) {
+    const cookieHeader = req.headers.cookie || '';
+    const qcMatch = cookieHeader.match(/(?:^|;\s*)qc_session=([^;]+)/);
+    
+    if (qcMatch) {
+      try {
+        token = decodeURIComponent(qcMatch[1]).trim();
+        sources.push('qc_session cookie');
+      } catch {
+        token = qcMatch[1].trim();
+        sources.push('qc_session cookie (fallback)');
+      }
+    }
+  }
+
+  console.log('[auth/verify-v2] Token sources checked:', sources.join(', '));
+  console.log('[auth/verify-v2] Token found:', !!token);
+
+  if (!token) {
+    return err(res, 401, 'No authentication token found', {
+      hint: 'Make sure you are logged in to the main app first',
+      sourcesChecked: ['Authorization header', 'Request body', 'qc_session cookie']
+    });
+  }
+
+  // ========================================================================
+  // STEP 2: Validate token with Xano
+  // ========================================================================
+  console.log('[auth/verify-v2] Validating token with Xano...');
+  
+  let meResp;
+  let xanoEndpoint = `${xanoBase}/auth/me`;
+  
+  try {
+    meResp = await fetch(xanoEndpoint, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
 
+    console.log('[auth/verify-v2] /auth/me status:', meResp.status);
+
+    // Fallback to legacy /me endpoint
     if (!meResp.ok && meResp.status === 404) {
-      // Fallback to legacy /me if /auth/me is not available
-      meResp = await fetch(`${xanoBase}/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+      console.log('[auth/verify-v2] Trying fallback /me endpoint');
+      xanoEndpoint = `${xanoBase}/me`;
+      
+      meResp = await fetch(xanoEndpoint, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      console.log('[auth/verify-v2] /me status:', meResp.status);
     }
 
     if (!meResp.ok) {
-      return err(res, 401, 'Xano validation failed');
+      const errorText = await meResp.text();
+      console.error('[auth/verify-v2] Xano validation failed:', {
+        status: meResp.status,
+        endpoint: xanoEndpoint,
+        error: errorText
+      });
+      
+      return err(res, 401, 'Token validation failed', {
+        xanoStatus: meResp.status,
+        xanoEndpoint: xanoEndpoint,
+        xanoError: errorText.substring(0, 200),
+        hint: 'Your session may have expired. Please log in to the main app again.'
+      });
     }
+  } catch (error) {
+    console.error('[auth/verify-v2] Xano request error:', error);
+    return err(res, 500, 'Failed to connect to authentication server', {
+      error: error.message,
+      xanoBaseUrl: xanoBase
+    });
+  }
 
-    const me = await meResp.json();
-    const xanoUserId =
-      me?.user?.id != null ? String(me.user.id) :
-      me?.id != null ? String(me.id) : null;
-    const email = me?.user?.email || me?.email || null;
-    const name = me?.user?.name || me?.name || null;
+  // ========================================================================
+  // STEP 3: Parse user data from Xano
+  // ========================================================================
+  let me;
+  try {
+    me = await meResp.json();
+    console.log('[auth/verify-v2] Xano response structure:', Object.keys(me));
+  } catch (error) {
+    console.error('[auth/verify-v2] Failed to parse Xano response:', error);
+    return err(res, 500, 'Invalid response from authentication server');
+  }
 
-    if (!xanoUserId) {
-      return err(res, 401, 'Invalid identity payload from Xano');
-    }
+  // Extract user ID (handle different response structures)
+  const xanoUserId = 
+    me?.user?.id != null ? String(me.user.id) :
+    me?.id != null ? String(me.id) : null;
+    
+  const email = me?.user?.email || me?.email || null;
+  const name = me?.user?.name || me?.name || null;
 
-    // 2) RBAC in Neon
+  console.log('[auth/verify-v2] Extracted xanoUserId:', xanoUserId);
+  console.log('[auth/verify-v2] Extracted email:', email);
+
+  if (!xanoUserId) {
+    console.error('[auth/verify-v2] No user ID in Xano response');
+    return err(res, 401, 'Invalid user data from authentication server', {
+      hint: 'The authentication response is missing user ID',
+      responseStructure: Object.keys(me)
+    });
+  }
+
+  // ========================================================================
+  // STEP 4: Check RBAC in Neon
+  // ========================================================================
+  console.log('[auth/verify-v2] Checking admin permissions...');
+  
+  let adminUser;
+  try {
     const rows = await sql`
       SELECT id, role, disabled, token_version
       FROM admin_users
@@ -97,17 +189,42 @@ export default async function handler(req, res) {
       LIMIT 1
     `;
 
-    if (rows.length === 0 || rows[0].disabled) {
-      return err(res, 403, 'Not an admin');
+    adminUser = rows[0];
+    console.log('[auth/verify-v2] Admin user found:', !!adminUser);
+    
+    if (adminUser) {
+      console.log('[auth/verify-v2] Admin role:', adminUser.role);
+      console.log('[auth/verify-v2] Admin disabled:', adminUser.disabled);
     }
+  } catch (error) {
+    console.error('[auth/verify-v2] Database error:', error);
+    return err(res, 500, 'Database error', {
+      error: error.message
+    });
+  }
 
-    // 3) Issue short-lived admin session (15 minutes default)
+  if (!adminUser || adminUser.disabled) {
+    console.log('[auth/verify-v2] Access denied - not an admin or disabled');
+    return err(res, 403, 'Access denied', {
+      reason: !adminUser ? 'not_admin' : 'account_disabled',
+      hint: !adminUser 
+        ? 'You do not have admin privileges. Contact a super admin to grant access.'
+        : 'Your admin account has been disabled. Contact a super admin.'
+    });
+  }
+
+  // ========================================================================
+  // STEP 5: Issue admin session
+  // ========================================================================
+  console.log('[auth/verify-v2] Issuing admin session...');
+  
+  try {
     const session = signAdminSession({
-      admin_id: rows[0].id,
+      admin_id: adminUser.id,
       xano_user_id: xanoUserId,
-      role: rows[0].role,
-      tv: rows[0].token_version
-    }, 900);
+      role: adminUser.role,
+      tv: adminUser.token_version
+    }, 900); // 15 minutes
 
     // Set secure httpOnly cookie
     const cookie = [
@@ -121,14 +238,19 @@ export default async function handler(req, res) {
 
     res.setHeader('Set-Cookie', cookie);
 
+    console.log('[auth/verify-v2] Success! Admin logged in:', adminUser.role);
+
     return ok(res, {
-      ok: true,
-      role: rows[0].role,
-      email,
-      name
+      success: true,
+      role: adminUser.role,
+      email: email,
+      name: name,
+      tokenSource: sources[0] || 'unknown'
     }, req);
-  } catch (e) {
-    console.error('[admin] /api/auth/verify error:', e);
-    return err(res, 500, 'Internal server error');
+  } catch (error) {
+    console.error('[auth/verify-v2] Session creation error:', error);
+    return err(res, 500, 'Failed to create admin session', {
+      error: error.message
+    });
   }
 }
