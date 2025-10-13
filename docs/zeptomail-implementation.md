@@ -2,9 +2,11 @@
 
 ## Overview
 
-ZeptoMail has been successfully integrated into QuickChat to send transactional email notifications for three key events:
+ZeptoMail has been successfully integrated into QuickChat to send transactional email notifications for four key events:
 1. **Sign In** - Welcome back notification when users sign in via OAuth
-2. **Create Question** - Notification to expert when a new question is received
+2. **Create Question** - Dual notifications:
+   - Expert notification when a new question is received
+   - Payer/asker confirmation that their question was submitted successfully
 3. **Answer Question** - Notification to asker when their question is answered
 
 **Status:** ✅ Fully implemented and tested
@@ -48,6 +50,7 @@ ZeptoMail has been successfully integrated into QuickChat to send transactional 
 Separated email templates for easy maintenance and customization:
 - **sign-in.js** - Welcome back email with security notice
 - **new-question.js** - Expert notification with question details
+- **question-confirmation.js** - Payer/asker confirmation that question was submitted
 - **answer-received.js** - Asker notification with answer link
 
 Each template exports a function that returns:
@@ -63,8 +66,9 @@ Each template exports a function that returns:
 Core email service with clean, maintainable functions:
 - `sendEmail()` - Generic email sending function
 - `sendSignInNotification()` - Sign-in email wrapper
-- `sendNewQuestionNotification()` - Question email wrapper
-- `sendAnswerReceivedNotification()` - Answer email wrapper
+- `sendNewQuestionNotification()` - Expert notification email wrapper
+- `sendQuestionConfirmationNotification()` - Payer/asker confirmation email wrapper
+- `sendAnswerReceivedNotification()` - Answer received email wrapper
 
 #### 3. **User Data Utilities** (`/api/lib/user-data.js`)
 Modular functions for fetching and processing user information:
@@ -75,7 +79,9 @@ Modular functions for fetching and processing user information:
 #### 4. **Integration Points**
 Email notifications are triggered at:
 - **OAuth callbacks** - Non-blocking after successful authentication
-- **Question creation** - Non-blocking after question is saved to Xano
+- **Question creation** - Non-blocking dual emails after question is saved to Xano:
+  1. Expert notification (new question received)
+  2. Payer/asker confirmation (question submitted successfully)
 - **Answer submission** - Non-blocking after answer is saved to Xano
 
 ---
@@ -124,7 +130,7 @@ Required environment variables (set in Vercel):
 
 ---
 
-### 2. New Question Notification
+### 2. New Question Notification (to Expert)
 
 **Triggered:** When a new question is created
 **Sent to:** Expert's email address (from expert profile)
@@ -141,7 +147,26 @@ Required environment variables (set in Vercel):
 
 ---
 
-### 3. Answer Received Notification
+### 3. Question Confirmation (to Payer/Asker)
+
+**Triggered:** When a new question is created
+**Sent to:** Payer's email address (from question submission)
+**Subject:** "Question Submitted Successfully - mindPick.me"
+
+**Content:**
+- Confirmation message
+- Question title and description
+- Expert's name
+- Question ID and timestamp
+- Expected response time (SLA hours)
+- Link to view questions dashboard
+- "What's Next" guidance
+
+**Template:** `/api/lib/email-templates/question-confirmation.js`
+
+---
+
+### 4. Answer Received Notification
 
 **Triggered:** When expert submits an answer
 **Sent to:** Asker's email address (payer_email from question)
@@ -204,11 +229,12 @@ https://your-domain.vercel.app/api/diagnose-zeptomail?email=YOUR_EMAIL
 3. Check email inbox (and spam folder)
 4. Verify email is received within 30 seconds
 
-#### Test Question Email:
+#### Test Question Emails:
 1. Create a new question for an expert
-2. Check expert's email inbox
-3. Verify question details are correct
-4. Click dashboard link to verify it works
+2. Check expert's email inbox for "New Question Received" notification
+3. Check payer/asker's email inbox for "Question Submitted Successfully" confirmation
+4. Verify question details are correct in both emails
+5. Click dashboard links to verify they work
 
 #### Test Answer Email:
 1. Submit an answer as an expert
@@ -573,6 +599,23 @@ Send answer notification to asker.
 }
 ```
 
+### sendQuestionConfirmationNotification(data)
+
+Send question confirmation to payer/asker.
+
+**Parameters:**
+```javascript
+{
+  askerEmail: string,
+  askerName: string,
+  expertName: string,
+  questionTitle: string,
+  questionText: string,
+  questionId: number,
+  slaHours: number  // optional
+}
+```
+
 ---
 
 ## Support
@@ -592,6 +635,16 @@ Send answer notification to asker.
 ---
 
 ## Changelog
+
+### v1.2.0 (2025-10-13)
+- ✅ Fixed bug: Added question confirmation email to payer/asker
+- ✅ Created new email template: `question-confirmation.js`
+- ✅ Added `sendQuestionConfirmationNotification()` function to zeptomail.js
+- ✅ Updated `/api/questions/create.js` to send dual emails:
+  1. Expert notification (existing)
+  2. Payer/asker confirmation (new)
+- ✅ Both emails now sent when question is created
+- ✅ Updated documentation to reflect new email flow
 
 ### v1.1.0 (2025-10-13)
 - ✅ Modular refactoring: Created `/api/lib/user-data.js`
@@ -620,7 +673,9 @@ Send answer notification to asker.
 
 **Active Notifications:**
 1. Sign-in welcome email
-2. New question alert to experts
+2. New question notifications (dual emails):
+   - Expert notification (new question received)
+   - Payer/asker confirmation (question submitted successfully)
 3. Answer received notification to askers
 
 **Status:** Production-ready and tested

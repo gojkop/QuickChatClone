@@ -1,5 +1,5 @@
-import { sendNewQuestionNotification } from '../lib/zeptomail.js';
-import { fetchUserData } from '../lib/user-data.js';
+import { sendNewQuestionNotification, sendQuestionConfirmationNotification } from '../lib/zeptomail.js';
+import { fetchUserData, getAskerName } from '../lib/user-data.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -92,9 +92,11 @@ export default async function handler(req, res) {
 
     console.log('✅ Question created with ID:', questionId);
 
-    // Send email notification to expert
+    // Send email notifications to both expert and payer/asker
     const userId = profileData.expert_profile?.user_id;
+    const expertProfileName = profileData.expert_profile?.name || profileData.name || 'Expert';
 
+    // 1. Send notification to expert
     if (userId) {
       const expertData = await fetchUserData(userId);
 
@@ -112,14 +114,42 @@ export default async function handler(req, res) {
           });
           console.log('✅ Expert notification sent successfully');
         } catch (emailErr) {
-          console.error('❌ Failed to send notification:', emailErr.message);
+          console.error('❌ Failed to send expert notification:', emailErr.message);
           console.error('❌ Email error stack:', emailErr.stack);
         }
       } else {
-        console.warn('⚠️ Could not retrieve expert email - skipping notification');
+        console.warn('⚠️ Could not retrieve expert email - skipping expert notification');
       }
     } else {
-      console.warn('⚠️ No user_id found in expert profile - skipping notification');
+      console.warn('⚠️ No user_id found in expert profile - skipping expert notification');
+    }
+
+    // 2. Send confirmation to payer/asker
+    if (payerEmail) {
+      console.log('📧 Sending asker confirmation...');
+
+      // Construct asker name from payerFirstName and payerLastName
+      const askerName = [payerFirstName, payerLastName].filter(Boolean).join(' ') ||
+                        getAskerName(question) ||
+                        payerEmail.split('@')[0];
+
+      try {
+        await sendQuestionConfirmationNotification({
+          askerEmail: payerEmail,
+          askerName: askerName,
+          expertName: expertProfileName,
+          questionTitle: title,
+          questionText: text,
+          questionId,
+          slaHours: slaHours,
+        });
+        console.log('✅ Asker confirmation sent successfully');
+      } catch (emailErr) {
+        console.error('❌ Failed to send asker confirmation:', emailErr.message);
+        console.error('❌ Email error stack:', emailErr.stack);
+      }
+    } else {
+      console.warn('⚠️ No payer email found - skipping asker confirmation');
     }
 
     // 3. Create media assets (try singular endpoint)
