@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import MobileBottomNav from './MobileBottomNav.jsx';
 
-// Inline SVG Icons
+// Icons
 const Icons = {
   Menu: () => (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -34,7 +33,7 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
     </svg>
   ),
-  MessageSquare: () => ( // ADDED
+  MessageSquare: () => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
@@ -62,7 +61,7 @@ const Icons = {
   )
 };
 
-function NavItem({ to, label, Icon, onClick }) {
+function NavItem({ to, label, Icon, onClick, comingSoon = false }) {
   const loc = useLocation();
   const active = loc.pathname === to;
   
@@ -72,26 +71,103 @@ function NavItem({ to, label, Icon, onClick }) {
       onClick={onClick}
       className={`
         flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-        transition-all duration-200
+        transition-all duration-200 relative
         ${active 
           ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm' 
+          : comingSoon
+          ? 'text-gray-400 cursor-not-allowed'
           : 'text-gray-700 hover:bg-gray-100'
         }
       `}
     >
       <Icon />
       {label}
+      {comingSoon && (
+        <span className="ml-auto text-[10px] px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full font-semibold">
+          Soon
+        </span>
+      )}
     </Link>
+  );
+}
+
+function MobileBottomNav({ badges = {} }) {
+  const location = useLocation();
+
+  const navItems = [
+    { 
+      to: '/dashboard', 
+      label: 'Dashboard', 
+      icon: Icons.BarChart
+    },
+    { 
+      to: '/feature-flags', 
+      label: 'Flags', 
+      icon: Icons.Flag,
+      badge: badges.flags
+    },
+    { 
+      to: '/feedback', 
+      label: 'Feedback', 
+      icon: Icons.MessageSquare,
+      badge: badges.feedback
+    },
+    { 
+      to: '/experts', 
+      label: 'Experts', 
+      icon: Icons.Users,
+      badge: badges.experts
+    },
+    { 
+      to: '/settings', 
+      label: 'Settings', 
+      icon: Icons.Settings
+    }
+  ];
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+      <div className="grid grid-cols-5 gap-1 px-2 py-1">
+        {navItems.map((item) => {
+          const active = location.pathname === item.to;
+          const ItemIcon = item.icon;
+          
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`
+                flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-lg
+                transition-all duration-200 min-w-0
+                ${active ? 'bg-indigo-50' : 'hover:bg-gray-50'}
+              `}
+            >
+              <div className="relative">
+                <ItemIcon active={active} />
+                {item.badge && item.badge > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
+              </div>
+              <span className={`text-[10px] font-medium truncate max-w-full ${active ? 'text-indigo-600' : 'text-gray-500'}`}>
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
 export default function Layout({ me, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Mock badges for notifications - UPDATED with feedback
+  // Mock badges - will be replaced with real data
   const badges = {
     flags: 0,
-    feedback: 12, // ADDED - pending feedback count
+    feedback: 12, // This will come from API
     moderation: 3,
     experts: 2,
   };
@@ -99,10 +175,10 @@ export default function Layout({ me, onLogout, children }) {
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', Icon: Icons.BarChart },
     { to: '/feature-flags', label: 'Feature Flags', Icon: Icons.Flag },
-    { to: '/feedback', label: 'Feedback', Icon: Icons.MessageSquare }, // ADDED
-    { to: '/moderation', label: 'Moderation', Icon: Icons.Shield },
+    { to: '/feedback', label: 'Feedback', Icon: Icons.MessageSquare },
+    { to: '/moderation', label: 'Moderation', Icon: Icons.Shield, comingSoon: true },
     { to: '/experts', label: 'Experts', Icon: Icons.Users },
-    { to: '/transactions', label: 'Transactions', Icon: Icons.CreditCard },
+    { to: '/transactions', label: 'Transactions', Icon: Icons.CreditCard, comingSoon: true },
     { to: '/settings', label: 'Settings', Icon: Icons.Settings }
   ];
 
