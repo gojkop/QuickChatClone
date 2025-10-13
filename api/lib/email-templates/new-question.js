@@ -25,12 +25,9 @@ export function getNewQuestionTemplate(data) {
               <!-- Logo Header -->
               <tr>
                 <td style="padding: 0 0 40px 0;">
-                  <!-- Logo as text with gradient - always works -->
+                  <!-- Logo as text - always works -->
                   <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 32px; font-weight: 900; letter-spacing: -1px; color: #1F2937;">
                     <span style="color: #1F2937;">mind</span><span style="color: #4F46E5;">Pick</span>
-                  </div>
-                  <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1.5px; color: #6B7280; text-transform: uppercase; margin-top: 4px;">
-                    Beyond AI Answers
                   </div>
                 </td>
               </tr>
