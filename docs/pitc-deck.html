@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mindPick Pitch Deck</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #F9FAFB;
+            color: #111827;
+            line-height: 1.5;
+            padding: 48px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .slide {
+            max-width: 1400px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 24px;
+            padding: 56px 64px;
+            box-shadow: 0 12px 24px rgba(17,24,39,0.12);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 2px solid #F9FAFB;
+        }
+        
+        .logo {
+            font-size: 56px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+        
+        .logo-mind {
+            color: #111827;
+        }
+        
+        .logo-pick {
+            background: linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .tagline {
+            font-size: 18px;
+            color: #4B5563;
+            font-weight: 400;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        .section {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 16px;
+            padding: 24px;
+            border-left: 4px solid;
+            transition: all 240ms cubic-bezier(0.2, 0.0, 0.2, 1);
+        }
+        
+        .section:hover {
+            box-shadow: 0 6px 16px rgba(17,24,39,0.10);
+            transform: translateY(-2px);
+        }
+        
+        .section.problem { border-left-color: #EF4444; }
+        .section.solution { border-left-color: #10B981; }
+        .section.ai-flywheel { 
+            grid-column: 1 / -1;
+            border-left-color: #4F46E5;
+            background: linear-gradient(135deg, #F9FAFB 0%, #EEF2FF 100%);
+        }
+        .section.market { border-left-color: #F59E0B; }
+        .section.traction { border-left-color: #3B82F6; }
+        .section.vision { 
+            grid-column: 1 / -1;
+            border-left-color: #7C3AED;
+            background: linear-gradient(135deg, #F9FAFB 0%, #FAF5FF 100%);
+            text-align: center;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        
+        .section-content {
+            font-size: 14px;
+            color: #4B5563;
+            line-height: 1.6;
+        }
+        
+        .section-content ul {
+            list-style: none;
+            margin-top: 10px;
+        }
+        
+        .section-content li {
+            margin-bottom: 8px;
+            padding-left: 18px;
+            position: relative;
+        }
+        
+        .section-content li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #4F46E5;
+            font-weight: 700;
+            font-size: 18px;
+            line-height: 1.2;
+        }
+        
+        .highlight {
+            color: #4F46E5;
+            font-weight: 600;
+        }
+        
+        .highlight-violet {
+            color: #7C3AED;
+            font-weight: 600;
+        }
+        
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .flywheel-item {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(17,24,39,0.06);
+        }
+        
+        .flywheel-label {
+            font-weight: 700;
+            color: #4F46E5;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        
+        .flywheel-text {
+            font-size: 13px;
+            color: #4B5563;
+            line-height: 1.5;
+        }
+        
+        strong {
+            color: #111827;
+            font-weight: 600;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .slide {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="header">
+            <div class="logo">
+                <span class="logo-mind">mind</span><span class="logo-pick">Pick</span>
+            </div>
+            <div class="tagline">The Knowledge Monetization Layer for the AI Age</div>
+        </div>
+        
+        <div class="content">
+            <div class="section problem">
+                <div class="section-title">The Problem</div>
+                <div class="section-content">
+                    <strong>"Can I pick your brain?"</strong> messages create constant context switching and unpaid labor. Scheduling calls introduces friction, and whatever gets shared is lost in a one-off conversation. Experts need a professional, scalable way to say yes—without calls, back-and-forth, or awkward payment asks.
+                </div>
+            </div>
+            
+            <div class="section solution">
+                <div class="section-title">The Solution</div>
+                <div class="section-content">
+                    <strong>Async, paid video Q&A platform.</strong> Askers pay upfront, record or write their question, and experts reply with a short video or voice note within a stated SLA—no meetings required. Payments authorized at submit, captured on delivery. Experts own their content in a private, searchable knowledge base, creating reusable leverage instead of disposable calls.
+                </div>
+            </div>
+            
+            <div class="section ai-flywheel">
+                <div class="section-title">The AI Flywheel: Why We Win</div>
+                <div class="section-content">
+                    <div class="grid-4">
+                        <div class="flywheel-item">
+                            <div class="flywheel-label">AI-Assisted Answering</div>
+                            <div class="flywheel-text">
+                                Surfaces relevant past answers and notes to draft first-pass outlines—experts respond <span class="highlight">3x faster</span> with higher consistency
+                            </div>
+                        </div>
+                        <div class="flywheel-item">
+                            <div class="flywheel-label">Autonomous Content Marketing</div>
+                            <div class="flywheel-text">
+                                Every answer becomes <span class="highlight">50+ marketing assets</span> (tweets, LinkedIn posts, blogs) linking back—turning delivery into distribution
+                            </div>
+                        </div>
+                        <div class="flywheel-item">
+                            <div class="flywheel-label">Knowledge Graph Moat</div>
+                            <div class="flywheel-text">
+                                Proprietary expert-knowledge graph learns "who knows what" and how topics connect—compounds over time, difficult to replicate
+                            </div>
+                        </div>
+                        <div class="flywheel-item">
+                            <div class="flywheel-label">Product-Led Virality</div>
+                            <div class="flywheel-text">
+                                "Powered by mindPick" on public answers converts askers to experts in one click at moment of value
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section market">
+                <div class="section-title">Market Opportunity</div>
+                <div class="section-content">
+                    <strong>Beachhead:</strong> Tech operators, GTM leaders (ex-Atlassian PLG teams), top-tier consultants, creator-educators with meaningful inbound on X/LinkedIn/YouTube
+                    <br><br>
+                    <strong>Vision for TAM:</strong> Multi-billion dollar market spanning expert advice, coaching, and knowledge transfer—shifting from synchronous calls to scalable, AI-amplified async expertise
+                </div>
+            </div>
+            
+            <div class="section traction">
+                <div class="section-title">Traction & GTM</div>
+                <div class="section-content">
+                    <ul>
+                        <li><strong>Private beta</strong> live with curated cohort; paid Q&A flow shipping</li>
+                        <li><strong>GTM:</strong> Direct outreach to high-intent experts, newsletter placements (Lenny's, Not Boring), SEO targeting</li>
+                        <li><strong>Growth loop:</strong> Repurposed answer content + "Powered by mindPick" → askers become experts</li>
+                        <li><strong>Activation:</strong> Expert playbooks, link-in-bio kits, templates to drive D7 activation</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="section vision">
+                <div class="section-title">The Vision</div>
+                <div class="section-content">
+                    <strong>Building the monetization and data layer for human expertise</strong>—where expert knowledge flows asynchronously, AI handles retrieval, drafting, and distribution, and the right answer from the right person is always one link away.
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

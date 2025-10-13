@@ -1,76 +1,22 @@
+// admin/src/pages/FeedbackDashboard.jsx - PLATFORM-AWARE VERSION
+// Desktop: Compact one-liner rows
+// Mobile: Full card layout
+// All functionality preserved: API calls, Jira, updates, delete, etc.
+
 import React, { useState, useEffect } from 'react';
-
-// Mock UI Components
-const Card = ({ children, padding = 'default' }) => (
-  <div className={`bg-white rounded-lg shadow ${padding === 'none' ? '' : 'p-6'}`}>
-    {children}
-  </div>
-);
-
-const Button = ({ children, variant = 'primary', size = 'md', fullWidth, disabled, onClick }) => {
-  const baseClasses = 'font-medium rounded-lg transition-colors';
-  const sizeClasses = size === 'sm' ? 'px-3 py-1.5 text-sm' : 'px-4 py-2';
-  const variantClasses = {
-    primary: 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50',
-    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
-    danger: 'bg-red-600 text-white hover:bg-red-700'
-  };
-  
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`${baseClasses} ${sizeClasses} ${variantClasses[variant]} ${fullWidth ? 'w-full' : ''}`}
-    >
-      {children}
-    </button>
-  );
-};
-
-const Input = ({ placeholder, value, onChange }) => (
-  <input
-    type="text"
-    placeholder={placeholder}
-    value={value}
-    onChange={onChange}
-    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none"
-  />
-);
-
-const Select = ({ value, onChange, options, className = '' }) => (
-  <select
-    value={value}
-    onChange={onChange}
-    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none ${className}`}
-  >
-    {options.map(opt => (
-      <option key={opt.value} value={opt.value}>{opt.label}</option>
-    ))}
-  </select>
-);
-
-const StatCard = ({ label, value, icon }) => (
-  <div className="bg-white rounded-lg shadow p-4">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-gray-600">{label}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-      </div>
-      <div>{icon}</div>
-    </div>
-  </div>
-);
-
-const EmptyState = ({ title, description }) => (
-  <div className="text-center py-12">
-    <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-    <p className="text-gray-600">{description}</p>
-  </div>
-);
-
-const Spinner = ({ size = 'md' }) => (
-  <div className={`animate-spin rounded-full border-4 border-gray-200 border-t-indigo-600 ${size === 'lg' ? 'w-12 h-12' : 'w-6 h-6'}`} />
-);
+import { 
+  Card, 
+  Button, 
+  Badge,
+  Input,
+  Select,
+  Modal,
+  SectionHeader,
+  EmptyState,
+  Spinner,
+  StatCard
+} from '../components/ui';
+import { useToast } from '../components/Toast';
 
 // Constants
 const FEEDBACK_TYPES = {
@@ -86,6 +32,8 @@ const STATUS_CONFIG = {
   in_progress: { label: 'In Progress', color: 'info' },
   resolved: { label: 'Resolved', color: 'success' },
   archived: { label: 'Archived', color: 'default' },
+  duplicate: { label: 'Duplicate', color: 'default' },
+  wont_fix: { label: "Won't Fix", color: 'default' },
 };
 
 const PRIORITY_CONFIG = {
@@ -93,6 +41,13 @@ const PRIORITY_CONFIG = {
   high: { label: 'High', color: 'warning' },
   medium: { label: 'Medium', color: 'info' },
   low: { label: 'Low', color: 'default' },
+};
+
+const JOURNEY_STAGES = {
+  awareness: { label: 'Awareness', icon: '🔍' },
+  consideration: { label: 'Consideration', icon: '🤔' },
+  conversion: { label: 'Conversion', icon: '💳' },
+  retention: { label: 'Retention', icon: '🔄' },
 };
 
 // ============================================================================
@@ -199,7 +154,7 @@ function FeedbackRowDesktop({ feedback, onSelect, isSelected }) {
 }
 
 // ============================================================================
-// MOBILE CARD VIEW
+// MOBILE CARD VIEW (Original)
 // ============================================================================
 function FeedbackCardMobile({ feedback, onSelect, isSelected }) {
   const typeConfig = FEEDBACK_TYPES[feedback.type] || FEEDBACK_TYPES.other;
@@ -215,6 +170,7 @@ function FeedbackCardMobile({ feedback, onSelect, isSelected }) {
         ${isSelected ? 'bg-indigo-50 border-indigo-200' : ''}
       `}
     >
+      {/* Mobile & Tablet: Card Layout */}
       <div className="space-y-3">
         {/* Row 1: Type, Status, Priority */}
         <div className="flex items-start gap-3">
@@ -242,6 +198,12 @@ function FeedbackCardMobile({ feedback, onSelect, isSelected }) {
             `}>
               {priorityConfig.label}
             </span>
+
+            {feedback.journey_stage && (
+              <span className="px-2 py-1 bg-gray-100 rounded text-[10px] font-medium">
+                {JOURNEY_STAGES[feedback.journey_stage]?.icon} {JOURNEY_STAGES[feedback.journey_stage]?.label}
+              </span>
+            )}
           </div>
         </div>
 
@@ -285,6 +247,10 @@ function FeedbackCardMobile({ feedback, onSelect, isSelected }) {
                 {feedback.jira_ticket_key}
               </span>
             )}
+            
+            {feedback.device_type === 'mobile' && <span title="Mobile">📱</span>}
+            {feedback.device_type === 'desktop' && <span title="Desktop">💻</span>}
+            {feedback.device_type === 'tablet' && <span title="Tablet">📱</span>}
           </div>
 
           <span className="text-[11px]">
@@ -307,95 +273,345 @@ function FeedbackCardMobile({ feedback, onSelect, isSelected }) {
 }
 
 // ============================================================================
-// MAIN DASHBOARD
+// DETAIL PANEL (Original - No Changes)
+// ============================================================================
+function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onReload, onDelete }) {
+  const toast = useToast();
+  const [comment, setComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  if (!feedback) return null;
+
+  const typeConfig = FEEDBACK_TYPES[feedback.type] || FEEDBACK_TYPES.other;
+
+  const handleAddComment = async () => {
+    if (!comment.trim()) return;
+    
+    setIsSubmittingComment(true);
+    try {
+      const res = await fetch('/api/feedback/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          feedback_id: feedback.id,
+          comment: comment.trim(),
+          is_internal: true
+        })
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Failed to add comment' }));
+        throw new Error(error.error || 'Failed to add comment');
+      }
+
+      setComment('');
+      toast.success('Note added successfully');
+      
+      if (onReload) {
+        onReload();
+      }
+      
+    } catch (error) {
+      console.error('Add comment error:', error);
+      toast.error(error.message || 'Failed to add note');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 sm:right-0 sm:left-auto h-full w-full sm:w-[500px] bg-white border-l border-gray-200 shadow-2xl z-50 overflow-y-auto">
+      {/* Header */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900">
+            Feedback #{feedback.id.slice(0, 8)}
+          </h3>
+          <p className="text-xs text-gray-500">
+            {new Date(feedback.created_at).toLocaleString()}
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 sm:p-6 space-y-6">
+        {/* Type & Status */}
+        <div>
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <span className="text-3xl">{typeConfig.icon}</span>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={FEEDBACK_TYPES[feedback.type]?.color}>
+                {typeConfig.label}
+              </Badge>
+              <Badge variant={PRIORITY_CONFIG[feedback.priority]?.color}>
+                {PRIORITY_CONFIG[feedback.priority]?.label}
+              </Badge>
+              <Badge variant={STATUS_CONFIG[feedback.status]?.color}>
+                {STATUS_CONFIG[feedback.status]?.label}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* User info */}
+        {(feedback.email || feedback.user_id) && (
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-2">User</h4>
+            {feedback.email && (
+              <p className="text-sm text-gray-900 break-words">
+                📧 {feedback.email}
+                {feedback.wants_followup && (
+                  <span className="text-xs text-green-600 ml-2">
+                    ✓ Wants follow-up
+                  </span>
+                )}
+              </p>
+            )}
+            {feedback.user_id && (
+              <p className="text-sm text-gray-600">
+                User ID: {feedback.user_id}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Message */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Message</h4>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <p className="text-sm text-gray-900 whitespace-pre-wrap break-words">
+              {feedback.message}
+            </p>
+          </div>
+        </div>
+
+        {/* Bug-specific fields */}
+        {feedback.type === 'bug' && (feedback.expected_behavior || feedback.actual_behavior) && (
+          <div className="border-l-4 border-red-500 pl-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-2">Bug Details</h4>
+            {feedback.expected_behavior && (
+              <div className="mb-2">
+                <p className="text-xs font-semibold text-gray-600">Expected:</p>
+                <p className="text-sm text-gray-900">{feedback.expected_behavior}</p>
+              </div>
+            )}
+            {feedback.actual_behavior && (
+              <div className="mb-2">
+                <p className="text-xs font-semibold text-gray-600">Actual:</p>
+                <p className="text-sm text-gray-900">{feedback.actual_behavior}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Context */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Context</h4>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between gap-2">
+              <span className="text-gray-600 flex-shrink-0">Page:</span>
+              <span className="text-gray-900 font-mono text-xs break-all text-right">
+                {feedback.page_url}
+              </span>
+            </div>
+            {feedback.device_type && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Device:</span>
+                <span className="text-gray-900">{feedback.device_type}</span>
+              </div>
+            )}
+            {feedback.journey_stage && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Journey:</span>
+                <span className="text-gray-900">
+                  {JOURNEY_STAGES[feedback.journey_stage]?.label}
+                </span>
+              </div>
+            )}
+            {feedback.rating && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Rating:</span>
+                <span className="text-yellow-500">{'⭐'.repeat(feedback.rating)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Attachments */}
+        {feedback.attachments && feedback.attachments.length > 0 && (
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              Attachments ({feedback.attachments.length})
+            </h4>
+            <div className="space-y-2">
+              {feedback.attachments.map(att => (
+                <a
+                  key={att.id}
+                  href={att.storage_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <span className="text-sm truncate flex-1">{att.file_name}</span>
+                  <span className="text-xs text-gray-500 flex-shrink-0">
+                    {(att.file_size / 1024).toFixed(0)} KB
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Internal Comments */}
+        {feedback.comments && feedback.comments.length > 0 && (
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              Internal Notes ({feedback.comments.length})
+            </h4>
+            <div className="space-y-2">
+              {feedback.comments.map(comment => (
+                <div key={comment.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <p className="text-sm text-gray-900 break-words">{comment.comment}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {comment.admin_name} • {new Date(comment.created_at).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Add comment */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Add Internal Note</h4>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition resize-none text-sm"
+            rows="3"
+            placeholder="Add a note for your team..."
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleAddComment}
+            disabled={!comment.trim() || isSubmittingComment}
+            className="mt-2"
+          >
+            {isSubmittingComment ? 'Adding...' : 'Add Note'}
+          </Button>
+        </div>
+
+        {/* Actions */}
+        <div className="space-y-2 pt-4 border-t border-gray-200">
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={() => onCreateJira(feedback)}
+            disabled={!!feedback.jira_ticket_key}
+          >
+            {feedback.jira_ticket_key ? (
+              <>🎫 Jira: {feedback.jira_ticket_key}</>
+            ) : (
+              <>🎫 Create Jira Ticket</>
+            )}
+          </Button>
+          
+          {feedback.email && (
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => window.location.href = `mailto:${feedback.email}`}
+            >
+              ✉️ Email User
+            </Button>
+          )}
+          
+          <div className="grid grid-cols-2 gap-2">
+            <Select
+              value={feedback.status}
+              onChange={(e) => onUpdate({ status: e.target.value })}
+              options={Object.entries(STATUS_CONFIG).map(([key, config]) => ({
+                value: key,
+                label: config.label
+              }))}
+            />
+            <Select
+              value={feedback.priority}
+              onChange={(e) => onUpdate({ priority: e.target.value })}
+              options={Object.entries(PRIORITY_CONFIG).map(([key, config]) => ({
+                value: key,
+                label: config.label
+              }))}
+            />
+          </div>
+
+          {/* Delete Button */}
+          <div className="pt-4 border-t border-gray-200">
+            <Button
+              variant="danger"
+              fullWidth
+              onClick={() => onDelete(feedback)}
+            >
+              🗑️ Delete Feedback
+            </Button>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              This will permanently archive this feedback
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// MAIN DASHBOARD (Platform-Aware with All Original Functionality)
 // ============================================================================
 export default function FeedbackDashboard() {
+  const toast = useToast();
+  
+  // Platform detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  const [feedback, setFeedback] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [detailData, setDetailData] = useState(null);
+  
+  // Delete state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [feedbackToDelete, setFeedbackToDelete] = useState(null);
+  
   const [filters, setFilters] = useState({
     page: 1,
     limit: 10,
     type: '',
     status: '',
     priority: '',
+    journey_stage: '',
     search: '',
+    date_from: '',
+    date_to: '',
+    sort_by: 'created_at',
+    sort_order: 'desc',
   });
-
-  // Mock feedback data
-  const [feedback] = useState([
-    {
-      id: '1',
-      type: 'bug',
-      message: 'Login button not responding after clicking multiple times. Need to refresh the page to make it work.',
-      status: 'new',
-      priority: 'high',
-      email: 'user@example.com',
-      rating: 2,
-      attachment_count: 2,
-      comment_count: 1,
-      jira_ticket_key: 'MIND-123',
-      created_at: new Date().toISOString()
-    },
-    {
-      id: '2',
-      type: 'feature',
-      message: 'Would love to see a dark mode option for the dashboard. My eyes hurt after long sessions.',
-      status: 'in_progress',
-      priority: 'medium',
-      email: 'designer@example.com',
-      rating: 4,
-      attachment_count: 0,
-      comment_count: 3,
-      jira_ticket_key: null,
-      created_at: new Date(Date.now() - 86400000).toISOString()
-    },
-    {
-      id: '3',
-      type: 'feedback',
-      message: 'The new UI is amazing! Love the clean design and smooth animations.',
-      status: 'resolved',
-      priority: 'low',
-      email: null,
-      rating: 5,
-      attachment_count: 1,
-      comment_count: 0,
-      jira_ticket_key: null,
-      created_at: new Date(Date.now() - 172800000).toISOString()
-    },
-    {
-      id: '4',
-      type: 'question',
-      message: 'How do I export my data as CSV? Cannot find the option anywhere in the settings.',
-      status: 'new',
-      priority: 'medium',
-      email: 'analyst@example.com',
-      rating: 3,
-      attachment_count: 0,
-      comment_count: 0,
-      jira_ticket_key: null,
-      created_at: new Date(Date.now() - 259200000).toISOString()
-    },
-    {
-      id: '5',
-      type: 'bug',
-      message: 'Payment page crashes on mobile Safari when I try to submit card details.',
-      status: 'new',
-      priority: 'critical',
-      email: 'mobile.user@example.com',
-      rating: 1,
-      attachment_count: 3,
-      comment_count: 5,
-      jira_ticket_key: 'MIND-124',
-      created_at: new Date(Date.now() - 3600000).toISOString()
-    }
-  ]);
-
-  const stats = {
-    total: feedback.length,
-    avgRating: 3.8,
-    pending: 3,
-    avgResponseTime: '2.3h'
-  };
+  
+  const [stats, setStats] = useState({
+    total: 0,
+    avgRating: 0,
+    pending: 0,
+    avgResponseTime: 0,
+  });
 
   // Handle window resize
   useEffect(() => {
@@ -406,6 +622,172 @@ export default function FeedbackDashboard() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Load feedback when filters change
+  useEffect(() => {
+    loadFeedback();
+  }, [filters.page, filters.limit, filters.type, filters.status, filters.priority, filters.journey_stage, filters.search]);
+
+  useEffect(() => {
+    if (selectedFeedback) {
+      loadFeedbackDetail(selectedFeedback.id);
+    } else {
+      setDetailData(null);
+    }
+  }, [selectedFeedback]);
+
+  const loadFeedback = async () => {
+    try {
+      setLoading(true);
+      
+      const queryParams = new URLSearchParams(
+        Object.entries(filters).filter(([_, v]) => v !== '')
+      );
+      
+      const res = await fetch(`/api/feedback?${queryParams}`, {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Failed to fetch feedback');
+      
+      const data = await res.json();
+      setFeedback(data.feedback || []);
+      
+      setStats({
+        total: data.pagination?.total || 0,
+        avgRating: calculateAvgRating(data.feedback),
+        pending: data.feedback?.filter(f => f.status === 'new').length || 0,
+        avgResponseTime: '2.3h',
+      });
+      
+    } catch (error) {
+      console.error('Load feedback error:', error);
+      toast.error('Failed to load feedback');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFeedbackDetail = async (id) => {
+    try {
+      const res = await fetch(`/api/feedback/${id}`, {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Failed to fetch detail');
+      
+      const data = await res.json();
+      setDetailData(data);
+      
+    } catch (error) {
+      console.error('Load detail error:', error);
+      toast.error('Failed to load feedback detail');
+    }
+  };
+
+  const updateFeedback = async (id, updates) => {
+    try {
+      const res = await fetch(`/api/feedback/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updates),
+      });
+      
+      if (!res.ok) throw new Error('Failed to update');
+      
+      toast.success('Feedback updated');
+      loadFeedback();
+      if (selectedFeedback?.id === id) {
+        loadFeedbackDetail(id);
+      }
+      
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error('Failed to update feedback');
+    }
+  };
+
+  // Delete handlers
+  const deleteFeedback = async (id) => {
+    try {
+      const res = await fetch(`/api/feedback/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (!res.ok) throw new Error('Failed to delete');
+      
+      toast.success('Feedback deleted successfully');
+      
+      setSelectedFeedback(null);
+      setDetailData(null);
+      loadFeedback();
+      setShowDeleteConfirm(false);
+      setFeedbackToDelete(null);
+      
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete feedback');
+    }
+  };
+
+  const handleDeleteClick = (feedback) => {
+    setFeedbackToDelete(feedback);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (feedbackToDelete) {
+      deleteFeedback(feedbackToDelete.id);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setFeedbackToDelete(null);
+  };
+
+  const createJiraTicket = async (feedback) => {
+    if (feedback.jira_ticket_key) {
+      window.open(feedback.jira_ticket_url, '_blank');
+      return;
+    }
+
+    const loadingId = toast.info('Creating Jira ticket...', 0);
+    
+    try {
+      const res = await fetch(`/api/feedback/jira?id=${feedback.id}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Failed to create ticket' }));
+        throw new Error(error.error || 'Failed to create Jira ticket');
+      }
+
+      const data = await res.json();
+      
+      toast.dismiss(loadingId);
+      toast.success(`Jira ticket ${data.jira_ticket.key} created!`);
+      
+      loadFeedback();
+      loadFeedbackDetail(feedback.id);
+      
+    } catch (error) {
+      console.error('Jira error:', error);
+      toast.dismiss(loadingId);
+      toast.error(error.message);
+    }
+  };
+
+  const calculateAvgRating = (items) => {
+    const rated = items.filter(f => f.rating);
+    if (rated.length === 0) return 0;
+    const sum = rated.reduce((acc, f) => acc + f.rating, 0);
+    return (sum / rated.length).toFixed(1);
+  };
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
@@ -418,354 +800,336 @@ export default function FeedbackDashboard() {
       type: '',
       status: '',
       priority: '',
+      journey_stage: '',
       search: '',
+      date_from: '',
+      date_to: '',
+      sort_by: 'created_at',
+      sort_order: 'desc',
     });
   };
 
+  if (loading && feedback.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Feedback Dashboard</h1>
-            <p className="text-gray-600">User feedback, bug reports, and feature requests</p>
-          </div>
-          <Button variant="secondary" size="sm">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <SectionHeader
+        title="Feedback Dashboard"
+        description="User feedback, bug reports, and feature requests"
+        action={
+          <Button variant="secondary" onClick={loadFeedback} size="sm">
             🔄 Refresh
           </Button>
-        </div>
+        }
+      />
 
-        {/* KPI Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Total Feedback"
-            value={stats.total}
-            icon={<span className="text-2xl">📝</span>}
-          />
-          <StatCard
-            label="Avg Rating"
-            value={`${stats.avgRating}★`}
-            icon={<span className="text-2xl">⭐</span>}
-          />
-          <StatCard
-            label="Pending"
-            value={stats.pending}
-            icon={<span className="text-2xl">⏳</span>}
-          />
-          <StatCard
-            label="Avg Response"
-            value={stats.avgResponseTime}
-            icon={<span className="text-2xl">⚡</span>}
-          />
-        </div>
-
-        {/* Filters */}
-        <Card>
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-              <Input
-                placeholder="Search..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-              />
-              <Select
-                value={filters.type}
-                onChange={(e) => handleFilterChange('type', e.target.value)}
-                options={[
-                  { value: '', label: 'All Types' },
-                  ...Object.entries(FEEDBACK_TYPES).map(([key, config]) => ({
-                    value: key,
-                    label: `${config.icon} ${config.label}`
-                  }))
-                ]}
-              />
-              <Select
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
-                options={[
-                  { value: '', label: 'All Status' },
-                  ...Object.entries(STATUS_CONFIG).map(([key, config]) => ({
-                    value: key,
-                    label: config.label
-                  }))
-                ]}
-              />
-              <Select
-                value={filters.priority}
-                onChange={(e) => handleFilterChange('priority', e.target.value)}
-                options={[
-                  { value: '', label: 'All Priority' },
-                  ...Object.entries(PRIORITY_CONFIG).map(([key, config]) => ({
-                    value: key,
-                    label: config.label
-                  }))
-                ]}
-              />
-              <div className="sm:col-span-2 lg:col-span-2">
-                <Button variant="secondary" onClick={clearFilters} fullWidth>
-                  Clear Filters
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Feedback List - Platform Aware */}
-        <Card padding="none">
-          {/* Desktop: Table Header */}
-          {!isMobile && (
-            <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              <div className="col-span-1 text-center">Type</div>
-              <div className="col-span-2">Status/Priority</div>
-              <div className="col-span-5">Message</div>
-              <div className="col-span-3">Details</div>
-              <div className="col-span-1 text-right">Date</div>
-            </div>
-          )}
-
-          {/* Feedback Items */}
-          <div>
-            {feedback.length > 0 ? (
-              feedback.map(item => (
-                isMobile ? (
-                  <FeedbackCardMobile
-                    key={item.id}
-                    feedback={item}
-                    onSelect={setSelectedFeedback}
-                    isSelected={selectedFeedback?.id === item.id}
-                  />
-                ) : (
-                  <FeedbackRowDesktop
-                    key={item.id}
-                    feedback={item}
-                    onSelect={setSelectedFeedback}
-                    isSelected={selectedFeedback?.id === item.id}
-                  />
-                )
-              ))
-            ) : (
-              <div className="p-8">
-                <EmptyState
-                  title="No feedback found"
-                  description="Try adjusting your filters or wait for new feedback to arrive"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Pagination Footer */}
-          {feedback.length > 0 && (
-            <div className="px-4 py-4 bg-gray-50 border-t border-gray-200">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-700">
-                  Showing <span className="font-semibold">1</span> to{' '}
-                  <span className="font-semibold">{feedback.length}</span> of{' '}
-                  <span className="font-semibold">{stats.total}</span> results
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button variant="secondary" size="sm" disabled>
-                    ← Prev
-                  </Button>
-                  <span className="text-sm text-gray-600">Page 1</span>
-                  <Button variant="secondary" size="sm" disabled>
-                    Next →
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Platform Indicator */}
-        <div className="text-center text-sm text-gray-500">
-          Currently viewing: <span className="font-semibold">{isMobile ? 'Mobile' : 'Desktop'}</span> layout
-          <br />
-          <span className="text-xs">Resize your window to see the responsive design in action</span>
-        </div>
+      {/* KPI Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard
+          label="Total Feedback"
+          value={stats.total}
+          icon={<span className="text-2xl">📝</span>}
+        />
+        <StatCard
+          label="Avg Rating"
+          value={`${stats.avgRating}★`}
+          icon={<span className="text-2xl">⭐</span>}
+        />
+        <StatCard
+          label="Pending"
+          value={stats.pending}
+          icon={<span className="text-2xl">⏳</span>}
+        />
+        <StatCard
+          label="Avg Response"
+          value={stats.avgResponseTime}
+          icon={<span className="text-2xl">⚡</span>}
+        />
       </div>
 
-      {/* Detail Panel - Slide Out */}
-      {selectedFeedback && (
-        <div className="fixed inset-0 sm:right-0 sm:left-auto h-full w-full sm:w-[500px] bg-white border-l border-gray-200 shadow-2xl z-50 overflow-y-auto">
-          {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900">
-                Feedback #{selectedFeedback.id.slice(0, 8)}
-              </h3>
-              <p className="text-xs text-gray-500">
-                {new Date(selectedFeedback.created_at).toLocaleString()}
-              </p>
-            </div>
-            <button
-              onClick={() => setSelectedFeedback(null)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+      {/* Filters */}
+      <Card>
+        <div className="space-y-3">
+          {/* Filter Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <Input
+              placeholder="Search..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+            />
+            <Select
+              value={filters.type}
+              onChange={(e) => handleFilterChange('type', e.target.value)}
+              options={[
+                { value: '', label: 'All Types' },
+                ...Object.entries(FEEDBACK_TYPES).map(([key, config]) => ({
+                  value: key,
+                  label: `${config.icon} ${config.label}`
+                }))
+              ]}
+            />
+            <Select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              options={[
+                { value: '', label: 'All Status' },
+                ...Object.entries(STATUS_CONFIG).map(([key, config]) => ({
+                  value: key,
+                  label: config.label
+                }))
+              ]}
+            />
+            <Select
+              value={filters.priority}
+              onChange={(e) => handleFilterChange('priority', e.target.value)}
+              options={[
+                { value: '', label: 'All Priority' },
+                ...Object.entries(PRIORITY_CONFIG).map(([key, config]) => ({
+                  value: key,
+                  label: config.label
+                }))
+              ]}
+            />
+            <Select
+              value={filters.journey_stage}
+              onChange={(e) => handleFilterChange('journey_stage', e.target.value)}
+              options={[
+                { value: '', label: 'All Journeys' },
+                ...Object.entries(JOURNEY_STAGES).map(([key, config]) => ({
+                  value: key,
+                  label: `${config.icon} ${config.label}`
+                }))
+              ]}
+            />
+            <Button variant="secondary" onClick={clearFilters} fullWidth>
+              Clear
+            </Button>
           </div>
 
-          {/* Content */}
-          <div className="p-4 sm:p-6 space-y-6">
-            {/* Type & Status */}
-            <div>
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="text-3xl">{FEEDBACK_TYPES[selectedFeedback.type]?.icon}</span>
-                <div className="flex flex-wrap gap-2">
-                  <span className={`
-                    px-2 py-1 rounded text-xs font-semibold uppercase
-                    ${STATUS_CONFIG[selectedFeedback.status]?.color === 'warning' ? 'bg-amber-100 text-amber-700' : ''}
-                    ${STATUS_CONFIG[selectedFeedback.status]?.color === 'info' ? 'bg-blue-100 text-blue-700' : ''}
-                    ${STATUS_CONFIG[selectedFeedback.status]?.color === 'success' ? 'bg-green-100 text-green-700' : ''}
-                    ${STATUS_CONFIG[selectedFeedback.status]?.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
-                  `}>
-                    {STATUS_CONFIG[selectedFeedback.status]?.label}
-                  </span>
-                  <span className={`
-                    px-2 py-1 rounded text-xs font-semibold uppercase
-                    ${PRIORITY_CONFIG[selectedFeedback.priority]?.color === 'danger' ? 'bg-red-100 text-red-700' : ''}
-                    ${PRIORITY_CONFIG[selectedFeedback.priority]?.color === 'warning' ? 'bg-orange-100 text-orange-700' : ''}
-                    ${PRIORITY_CONFIG[selectedFeedback.priority]?.color === 'info' ? 'bg-yellow-100 text-yellow-700' : ''}
-                    ${PRIORITY_CONFIG[selectedFeedback.priority]?.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
-                  `}>
-                    {PRIORITY_CONFIG[selectedFeedback.priority]?.label}
-                  </span>
-                  <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-semibold uppercase">
-                    {FEEDBACK_TYPES[selectedFeedback.type]?.label}
-                  </span>
-                </div>
-              </div>
+          {/* Items per page selector */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-gray-200">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Show:</span>
+              <Select
+                value={filters.limit.toString()}
+                onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
+                options={[
+                  { value: '10', label: '10' },
+                  { value: '20', label: '20' },
+                  { value: '50', label: '50' },
+                  { value: '100', label: '100' },
+                ]}
+                className="w-20"
+              />
+              <span className="text-sm text-gray-600">items</span>
             </div>
-
-            {/* User info */}
-            {selectedFeedback.email && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">User</h4>
-                <p className="text-sm text-gray-900 break-words">
-                  📧 {selectedFeedback.email}
-                </p>
-              </div>
-            )}
-
-            {/* Message */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">Message</h4>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <p className="text-sm text-gray-900 whitespace-pre-wrap break-words">
-                  {selectedFeedback.message}
-                </p>
-              </div>
-            </div>
-
-            {/* Rating */}
-            {selectedFeedback.rating && (
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Rating</h4>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{'⭐'.repeat(selectedFeedback.rating)}</span>
-                  <span className="text-sm text-gray-600">
-                    {selectedFeedback.rating} out of 5
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Attachments */}
-            {selectedFeedback.attachment_count > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  Attachments ({selectedFeedback.attachment_count})
-                </h4>
-                <div className="space-y-2">
-                  {Array.from({ length: selectedFeedback.attachment_count }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <span className="text-sm truncate flex-1">attachment-{i + 1}.png</span>
-                      <span className="text-xs text-gray-500 flex-shrink-0">2.5 MB</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Comments */}
-            {selectedFeedback.comment_count > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  Internal Notes ({selectedFeedback.comment_count})
-                </h4>
-                <div className="space-y-2">
-                  {Array.from({ length: selectedFeedback.comment_count }).map((_, i) => (
-                    <div key={i} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <p className="text-sm text-gray-900 break-words">Sample comment {i + 1}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Admin • {new Date().toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="space-y-2 pt-4 border-t border-gray-200">
-              {selectedFeedback.jira_ticket_key ? (
-                <Button variant="primary" fullWidth>
-                  🎫 Jira: {selectedFeedback.jira_ticket_key}
-                </Button>
-              ) : (
-                <Button variant="primary" fullWidth>
-                  🎫 Create Jira Ticket
-                </Button>
-              )}
-              
-              {selectedFeedback.email && (
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  onClick={() => window.location.href = `mailto:${selectedFeedback.email}`}
-                >
-                  ✉️ Email User
-                </Button>
-              )}
-              
-              <div className="grid grid-cols-2 gap-2">
-                <Select
-                  value={selectedFeedback.status}
-                  onChange={(e) => {
-                    setSelectedFeedback({...selectedFeedback, status: e.target.value});
-                  }}
-                  options={Object.entries(STATUS_CONFIG).map(([key, config]) => ({
-                    value: key,
-                    label: config.label
-                  }))}
-                />
-                <Select
-                  value={selectedFeedback.priority}
-                  onChange={(e) => {
-                    setSelectedFeedback({...selectedFeedback, priority: e.target.value});
-                  }}
-                  options={Object.entries(PRIORITY_CONFIG).map(([key, config]) => ({
-                    value: key,
-                    label: config.label
-                  }))}
-                />
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <Button variant="danger" fullWidth>
-                  🗑️ Delete Feedback
-                </Button>
-              </div>
+            
+            <div className="text-sm text-gray-600">
+              Sorted by: <span className="font-semibold">Most Recent</span>
             </div>
           </div>
         </div>
+      </Card>
+
+      {/* Feedback List - Platform Aware */}
+      <Card padding="none">
+        {/* Desktop: Table Header */}
+        {!isMobile && (
+          <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            <div className="col-span-1 text-center">Type</div>
+            <div className="col-span-2">Status/Priority</div>
+            <div className="col-span-5">Message</div>
+            <div className="col-span-3">Details</div>
+            <div className="col-span-1 text-right">Date</div>
+          </div>
+        )}
+
+        {/* List Body */}
+        <div>
+          {feedback.length > 0 ? (
+            feedback.map(item => (
+              isMobile ? (
+                <FeedbackCardMobile
+                  key={item.id}
+                  feedback={item}
+                  onSelect={setSelectedFeedback}
+                  isSelected={selectedFeedback?.id === item.id}
+                />
+              ) : (
+                <FeedbackRowDesktop
+                  key={item.id}
+                  feedback={item}
+                  onSelect={setSelectedFeedback}
+                  isSelected={selectedFeedback?.id === item.id}
+                />
+              )
+            ))
+          ) : (
+            <div className="p-8">
+              <EmptyState
+                title="No feedback found"
+                description="Try adjusting your filters or wait for new feedback to arrive"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Pagination Footer */}
+        {feedback.length > 0 && (
+          <div className="px-4 py-4 bg-gray-50 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              {/* Info */}
+              <div className="text-sm text-gray-700 text-center sm:text-left">
+                Showing <span className="font-semibold">{(filters.page - 1) * filters.limit + 1}</span> to{' '}
+                <span className="font-semibold">
+                  {Math.min(filters.page * filters.limit, stats.total)}
+                </span> of{' '}
+                <span className="font-semibold">{stats.total}</span> results
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  disabled={filters.page === 1}
+                  onClick={() => handleFilterChange('page', filters.page - 1)}
+                >
+                  ← Prev
+                </Button>
+                
+                {/* Page numbers - hide on very small screens */}
+                <div className="hidden sm:flex items-center gap-1">
+                  {(() => {
+                    const totalPages = Math.ceil(stats.total / filters.limit);
+                    const currentPage = filters.page;
+                    const pageNumbers = [];
+                    
+                    if (currentPage > 2) {
+                      pageNumbers.push(
+                        <button
+                          key={1}
+                          onClick={() => handleFilterChange('page', 1)}
+                          className="px-3 py-1 text-sm rounded hover:bg-gray-200 transition-colors"
+                        >
+                          1
+                        </button>
+                      );
+                      if (currentPage > 3) {
+                        pageNumbers.push(<span key="ellipsis1" className="px-2 text-gray-500">...</span>);
+                      }
+                    }
+                    
+                    for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages, currentPage + 1); i++) {
+                      pageNumbers.push(
+                        <button
+                          key={i}
+                          onClick={() => handleFilterChange('page', i)}
+                          className={`px-3 py-1 text-sm rounded transition-colors ${
+                            i === currentPage
+                              ? 'bg-indigo-600 text-white font-semibold'
+                              : 'hover:bg-gray-200'
+                          }`}
+                        >
+                          {i}
+                        </button>
+                      );
+                    }
+                    
+                    if (currentPage < totalPages - 1) {
+                      if (currentPage < totalPages - 2) {
+                        pageNumbers.push(<span key="ellipsis2" className="px-2 text-gray-500">...</span>);
+                      }
+                      pageNumbers.push(
+                        <button
+                          key={totalPages}
+                          onClick={() => handleFilterChange('page', totalPages)}
+                          className="px-3 py-1 text-sm rounded hover:bg-gray-200 transition-colors"
+                        >
+                          {totalPages}
+                        </button>
+                      );
+                    }
+                    
+                    return pageNumbers;
+                  })()}
+                </div>
+
+                {/* Mobile: Show current page */}
+                <span className="sm:hidden text-sm text-gray-600">
+                  Page {filters.page}
+                </span>
+                
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  disabled={feedback.length < filters.limit}
+                  onClick={() => handleFilterChange('page', filters.page + 1)}
+                >
+                  Next →
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Detail Panel */}
+      {selectedFeedback && detailData && (
+        <FeedbackDetailPanel
+          feedback={{ ...selectedFeedback, ...detailData.feedback, ...detailData }}
+          onClose={() => setSelectedFeedback(null)}
+          onUpdate={(updates) => updateFeedback(selectedFeedback.id, updates)}
+          onCreateJira={createJiraTicket}
+          onReload={() => loadFeedbackDetail(selectedFeedback.id)}
+          onDelete={handleDeleteClick}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && feedbackToDelete && (
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={handleDeleteCancel}
+          title="Delete Feedback?"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800 font-medium mb-2">
+                ⚠️ This action cannot be undone
+              </p>
+              <p className="text-sm text-red-700">
+                This will permanently archive the feedback item:
+              </p>
+              <p className="text-sm text-gray-900 mt-2 p-2 bg-white rounded border border-red-200 break-words">
+                "{feedbackToDelete.message}"
+              </p>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="secondary"
+                onClick={handleDeleteCancel}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteConfirm}
+              >
+                Yes, Delete
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
