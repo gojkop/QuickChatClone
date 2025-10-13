@@ -358,40 +358,24 @@ export function useAnswerUpload() {
           : null,
       };
 
-      console.log('Sending answer to Xano:', payload);
+      console.log('Sending to /api/answer/submit endpoint:', payload);
 
-      // TEMPORARY FIX: Call Xano directly using apiClient to bypass 404 issue
-      // TODO: Debug why /api/answer/submit returns 404 on Vercel
-      const response = await apiClient.post('/answer', payload);
+      // Call consolidated endpoint that creates answer + sends email
+      const response = await fetch('/api/answer/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('qc_token')}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-      console.log('✅ Answer created in Xano:', response.data);
-
-      // Trigger email notification via separate endpoint
-      // Pass question data from answer response (if embedded)
-      try {
-        console.log('📧 Triggering answer notification email...');
-
-        const questionData = response.data.question || response.data._question;
-
-        await fetch('/api/send-answer-notification', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('qc_token')}`,
-          },
-          body: JSON.stringify({
-            question_id: questionId,
-            answer_id: response.data.id,
-            user_id: userId,
-            question_data: questionData, // Pass embedded question data
-          }),
-        });
-        console.log('✅ Email notification triggered');
-      } catch (emailError) {
-        console.warn('⚠️ Email notification failed (non-blocking):', emailError.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit answer');
       }
 
-      const responseData = response;
+      const responseData = await response.json();
 
       console.log('✅ Answer submitted successfully:', responseData.data);
 
