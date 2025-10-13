@@ -4,13 +4,18 @@ Complete reference for all Xano endpoints used in QuickChat application.
 
 ## Overview
 
-QuickChat uses two Xano API groups:
+QuickChat uses three Xano API groups:
 
-1. **Main API** (`api:3B14WLbJ`) - Authentication, users, questions, answers
+1. **Authentication API** (`api:3B14WLbJ`) - Private, authenticated endpoints
    - Base URL: `https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ`
+   - Endpoints: /answer, /me/*, /expert/*, /media_asset, /question/hidden, /upload/*
 
-2. **Media/Public API** (`api:BQW1GS7L`) - Media assets, public profiles, feedback
+2. **Public API** (`api:BQW1GS7L`) - Public, unauthenticated endpoints
    - Base URL: `https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L`
+   - Endpoints: /question, /public/*, /auth/linkedin/*, /internal/*, /feedback, /review/*
+
+3. **Google OAuth API** (`api:[oauth-group]`) - Google authentication
+   - Endpoints: /oauth/google/*
 
 ---
 
@@ -21,7 +26,7 @@ QuickChat uses two Xano API groups:
 #### `GET /oauth/google/init`
 Initialize Google OAuth flow.
 
-**API Group:** Main API
+**API Group:** Google OAuth API
 **Authentication:** None (public)
 **Response:**
 ```json
@@ -33,7 +38,7 @@ Initialize Google OAuth flow.
 #### `GET /oauth/google/continue`
 Complete Google OAuth flow and create/login user.
 
-**API Group:** Main API
+**API Group:** Google OAuth API
 **Parameters:**
 - `code` (query) - OAuth authorization code from Google
 
@@ -51,7 +56,7 @@ Complete Google OAuth flow and create/login user.
 #### `POST /auth/linkedin/create_user`
 Create or update user from LinkedIn OAuth data.
 
-**API Group:** Media/Public API
+**API Group:** Public API
 **Authentication:** Internal API key
 **Headers:**
 ```
@@ -91,7 +96,7 @@ Content-Type: application/json
 ### `POST /me/bootstrap`
 Bootstrap user data after authentication.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required (Bearer token)
 **Response:**
 ```json
@@ -115,7 +120,7 @@ Bootstrap user data after authentication.
 ### `GET /me/profile`
 Get current user's profile information.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Response:**
 ```json
@@ -139,7 +144,7 @@ Get current user's profile information.
 ### `PUT /me/profile`
 Update current user's profile.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Request Body:**
 ```json
@@ -162,7 +167,7 @@ Update current user's profile.
 ### `GET /me/questions`
 Get questions for authenticated user (expert's question queue).
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Query Parameters:**
 - `status` (optional) - Filter by status: 'paid', 'answered', 'draft'
@@ -193,7 +198,7 @@ Get questions for authenticated user (expert's question queue).
 ### `GET /public/profile`
 Get public expert profile by handle.
 
-**API Group:** Media/Public API
+**API Group:** Public API
 **Authentication:** None (public)
 **Query Parameters:**
 - `handle` (required) - Expert's unique handle
@@ -229,7 +234,7 @@ Get public expert profile by handle.
 ### `POST /expert/profile/availability`
 Toggle expert's accepting_questions status.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Request Body:**
 ```json
@@ -249,7 +254,7 @@ Toggle expert's accepting_questions status.
 ### `POST /upload/profile-picture`
 Upload expert profile picture.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Request Body:**
 ```json
@@ -274,7 +279,7 @@ Upload expert profile picture.
 ### `POST /question`
 Create new question record in database.
 
-**API Group:** Media/Public API
+**API Group:** Public API
 **Authentication:** None (public - payment creates question)
 **Request Body:**
 ```json
@@ -312,7 +317,7 @@ Create new question record in database.
 ### `GET /question/{id}`
 Get question details by ID.
 
-**API Group:** Media/Public API
+**API Group:** Public API
 **Authentication:** Required (expert must own the question)
 **URL Parameters:**
 - `id` - Question ID
@@ -340,7 +345,7 @@ Get question details by ID.
 ### `POST /question/hidden`
 Toggle question hidden status.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Request Body:**
 ```json
@@ -365,7 +370,7 @@ Toggle question hidden status.
 ### `POST /answer`
 Create answer record in database.
 
-**API Group:** Media/Public API
+**API Group:** Authentication API
 **Authentication:** Required (expert)
 **Request Body:**
 ```json
@@ -399,14 +404,15 @@ Create answer record in database.
 ```
 
 **Notes:**
-- Called by `/api/answer/submit` endpoint (Vercel proxy)
+- Called by `/api/answers/create` endpoint (Vercel consolidated proxy)
 - Email notification sent to asker after answer creation
-- May include embedded question object to avoid extra fetch
+- Response includes embedded question object to avoid extra fetch
+- Frontend also uses direct call to Xano with workaround email endpoint
 
 ### `GET /answer`
 Get answer for a specific question.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Query Parameters:**
 - `question_id` (required) - Question ID
@@ -431,7 +437,7 @@ Get answer for a specific question.
 ### `POST /media_asset`
 Create media asset record.
 
-**API Group:** Media/Public API
+**API Group:** Authentication API (for authenticated users) or Public API (for questions)
 **Authentication:** Optional (required for answer media)
 **Request Body:**
 ```json
@@ -472,7 +478,7 @@ Create media asset record.
 ### `GET /media_asset`
 List media assets with filtering.
 
-**API Group:** Media/Public API
+**API Group:** Authentication API
 **Authentication:** Required (internal operations)
 **Query Parameters:**
 - `owner_type` (optional) - Filter by owner type
@@ -496,7 +502,7 @@ List media assets with filtering.
 ### `GET /media_asset/{id}`
 Get single media asset by ID.
 
-**API Group:** Media/Public API
+**API Group:** Authentication API
 **Authentication:** Required
 **URL Parameters:**
 - `id` - Media asset ID
@@ -519,7 +525,7 @@ Get single media asset by ID.
 ### `DELETE /media_asset/{id}`
 Delete media asset record.
 
-**API Group:** Media/Public API
+**API Group:** Authentication API
 **Authentication:** Required
 **URL Parameters:**
 - `id` - Media asset ID
@@ -542,7 +548,7 @@ Delete media asset record.
 ### `GET /internal/user/{user_id}/email`
 Get user email and name (internal use only).
 
-**API Group:** Media/Public API
+**API Group:** Public API
 **Authentication:** Internal API key (query param)
 **URL Parameters:**
 - `user_id` - User ID
@@ -578,7 +584,7 @@ Get user email and name (internal use only).
 ### `GET /marketing/campaigns`
 Get all marketing campaigns.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Response:**
 ```json
@@ -597,7 +603,7 @@ Get all marketing campaigns.
 ### `POST /marketing/campaigns`
 Create new marketing campaign.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Request Body:**
 ```json
@@ -621,7 +627,7 @@ Create new marketing campaign.
 ### `GET /marketing/traffic-sources`
 Get traffic source analytics.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Response:**
 ```json
@@ -637,7 +643,7 @@ Get traffic source analytics.
 ### `GET /marketing/share-templates`
 Get social media share templates.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Response:**
 ```json
@@ -653,7 +659,7 @@ Get social media share templates.
 ### `GET /marketing/insights`
 Get marketing insights and analytics.
 
-**API Group:** Main API
+**API Group:** Authentication API
 **Authentication:** Required
 **Response:**
 ```json
@@ -812,7 +818,7 @@ XANO_MEDIA_BASE_URL=https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L
 XANO_INTERNAL_API_KEY=your_internal_api_key
 
 # OAuth Configuration
-XANO_GOOGLE_AUTH_BASE_URL=https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ
+XANO_GOOGLE_AUTH_BASE_URL=https://xlho-4syv-navp.n7e.xano.io/api:[oauth-group-id]
 CLIENT_PUBLIC_ORIGIN=https://mindpick.me
 
 # Google OAuth
@@ -844,25 +850,34 @@ VITE_CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
 
 ## API Groups Breakdown
 
-### Main API (api:3B14WLbJ)
-- User authentication
-- Profile management
-- Question queue
-- Answer retrieval
-- Marketing endpoints
+### Authentication API (api:3B14WLbJ)
+- User profile management (`/me/*`)
+- Expert profile operations (`/expert/*`)
+- Answer submission and retrieval (`/answer`)
+- Media asset management (`/media_asset`, `/upload/*`)
+- Question queue and management (`/me/questions`, `/question/hidden`)
+- Marketing endpoints (`/marketing/*`)
+- Requires authentication (Bearer token)
 
-### Media/Public API (api:BQW1GS7L)
-- Question creation
-- Answer submission
-- Media asset management
-- Public profile lookup
-- Internal user data endpoint
+### Public API (api:BQW1GS7L)
+- Question creation (`/question`)
+- Public profile lookup (`/public/*`)
+- LinkedIn OAuth (`/auth/linkedin/*`)
+- Internal user data endpoint (`/internal/*`)
+- Feedback and reviews (`/feedback`, `/review/*`)
+- Allows unauthenticated access for specific endpoints
 
-**Why Two Groups?**
-- Separation of concerns
-- Different authentication requirements
-- Allows public access to specific endpoints
-- Internal operations isolated from public API
+### Google OAuth API (api:[oauth-group])
+- Google OAuth initialization (`/oauth/google/init`)
+- Google OAuth callback (`/oauth/google/continue`)
+- Handles Google authentication flow
+
+**Why Three Groups?**
+- Separation of authentication concerns
+- Different access control requirements
+- Allows public access to question submission
+- OAuth isolated from main API operations
+- Internal operations accessible with API key
 
 ---
 
@@ -880,12 +895,12 @@ VITE_CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
 ### Submitting an Answer
 1. Expert records answer in frontend
 2. Segments uploaded progressively to Cloudflare
-3. Frontend calls `/api/answer/submit` (Vercel)
-4. Vercel creates media_asset record
-5. Vercel calls Xano `POST /answer`
-6. Vercel fetches question details (if not embedded)
-7. Vercel fetches expert name from internal endpoint
-8. Vercel sends email notification to asker
+3. Frontend calls `/api/answers/create` (Vercel consolidated endpoint)
+4. Vercel creates media_asset record in Authentication API
+5. Vercel calls Xano `POST /answer` (Authentication API)
+6. Xano returns answer with embedded question data
+7. Vercel fetches expert name from `/internal/user/{id}/email` (Public API)
+8. Vercel sends email notification to asker via ZeptoMail
 9. Returns answer data to frontend
 
 ### User Sign-In
@@ -903,10 +918,20 @@ VITE_CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
 
 ## Changelog
 
-### 2025-10-13
+### 2025-10-13 (Updated)
+- ✅ Corrected API group classifications based on actual Xano configuration
+- ✅ Added Google OAuth API as third API group
+- ✅ Updated all endpoint references to correct API groups
+- ✅ Authentication API (`api:3B14WLbJ`): `/answer`, `/me/*`, `/expert/*`, `/media_asset`, `/question/hidden`, `/upload/*`
+- ✅ Public API (`api:BQW1GS7L`): `/question`, `/public/*`, `/auth/linkedin/*`, `/internal/*`, `/feedback`, `/review/*`
+- ✅ Google OAuth API: `/oauth/google/*`
+- ✅ Updated consolidated answer endpoint documentation (`/api/answers/create`)
+- ✅ Documented ZeptoMail email notification integration
+
+### 2025-10-13 (Initial)
 - ✅ Documented all Xano endpoints
 - ✅ Added internal user data endpoint
-- ✅ Documented two API groups
+- ✅ Documented API groups structure
 - ✅ Added database table schemas
 - ✅ Added common patterns and examples
 - ✅ Added security notes
