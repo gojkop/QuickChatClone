@@ -1,5 +1,5 @@
-// admin/src/components/Layout.jsx - With real-time badge counts
-import React, { useState, useEffect } from 'react';
+// admin/src/components/Layout.jsx - With auth-aware badge polling
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 // Icons (same as before)
@@ -171,23 +171,35 @@ export default function Layout({ me, onLogout, children }) {
     experts: 0,
   });
 
-  // Fetch badge counts on mount and periodically
-  useEffect(() => {
-    fetchBadgeCounts();
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchBadgeCounts, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  // Use ref to track interval and auth failures
+  const intervalRef = useRef(null);
+  const authFailuresRef = useRef(0);
 
+  // Fetch badge counts with auth awareness
   async function fetchBadgeCounts() {
     try {
       // Fetch in parallel for speed
       const [flagsRes, feedbackRes] = await Promise.all([
-        fetch('/api/flags', { credentials: 'include' }).catch(() => null),
-        fetch('/api/feedback?status=new&limit=1', { credentials: 'include' }).catch(() => null)
+        fetch('/api/flags', { credentials: 'include' }),
+        fetch('/api/feedback?status=new&limit=1', { credentials: 'include' })
       ]);
+
+      // Check for auth failures
+      if (flagsRes.status === 401 || feedbackRes.status === 401) {
+        authFailuresRef.current += 1;
+        console.log('[badges] Auth failed, stopping polling');
+        
+        // Stop polling after first 401
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        
+        return;
+      }
+
+      // Reset failure count on success
+      authFailuresRef.current = 0;
 
       const newBadges = { ...badges };
 
@@ -209,8 +221,33 @@ export default function Layout({ me, onLogout, children }) {
       }
     } catch (error) {
       console.error('[badges] Failed to fetch counts:', error);
+      authFailuresRef.current += 1;
+      
+      // Stop polling after 3 consecutive errors
+      if (authFailuresRef.current >= 3 && intervalRef.current) {
+        console.log('[badges] Too many errors, stopping polling');
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     }
   }
+
+  // Setup polling with auth awareness
+  useEffect(() => {
+    // Initial fetch
+    fetchBadgeCounts();
+    
+    // Poll every 60 seconds (increased from 30 to reduce load)
+    intervalRef.current = setInterval(fetchBadgeCounts, 60000);
+    
+    // Cleanup on unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []); // Empty deps - only run once on mount
 
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', Icon: Icons.BarChart },
