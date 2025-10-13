@@ -2,6 +2,8 @@
 // Test endpoint to verify ZeptoMail is working
 import { sendEmail, sendNewQuestionNotification } from './lib/zeptomail.js';
 
+// Note: Using EU endpoint - https://api.zeptomail.eu/v1.1/email
+
 export default async function handler(req, res) {
   try {
     // Check if environment variables are set
