@@ -101,17 +101,24 @@ export default async function handler(req, res) {
 
       // Fetch user email from secure internal Xano endpoint
       const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
+      const internalEndpoint = `${process.env.XANO_BASE_URL}/internal/user/${userId}/email?x_api_key=${XANO_INTERNAL_API_KEY}`;
 
-      fetch(`${process.env.XANO_BASE_URL}/internal/user/${userId}/email?x_api_key=${XANO_INTERNAL_API_KEY}`)
+      console.log('📧 Internal endpoint URL:', internalEndpoint.replace(XANO_INTERNAL_API_KEY, 'API_KEY_HIDDEN'));
+      console.log('📧 API key configured:', XANO_INTERNAL_API_KEY ? 'YES' : 'NO');
+
+      fetch(internalEndpoint)
         .then(async (userResponse) => {
+          console.log('📧 Response status from internal endpoint:', userResponse.status);
+
           if (!userResponse.ok) {
             console.error('❌ Failed to fetch user email:', userResponse.status);
             const errorText = await userResponse.text();
             console.error('❌ Error details:', errorText);
-            return;
+            return null;
           }
 
           const userData = await userResponse.json();
+          console.log('📧 User data received:', JSON.stringify(userData));
           const expertEmail = userData.email;
 
           console.log('📧 Expert email found:', expertEmail);
@@ -128,10 +135,18 @@ export default async function handler(req, res) {
             });
           } else {
             console.warn('⚠️ User data has no email field');
+            return null;
           }
         })
-        .then(() => console.log('✅ Expert notification sent successfully'))
-        .catch((err) => console.error('❌ Failed to send expert notification:', err.message));
+        .then((result) => {
+          if (result) {
+            console.log('✅ Expert notification sent successfully');
+          }
+        })
+        .catch((err) => {
+          console.error('❌ Error in email notification flow:', err);
+          console.error('❌ Error stack:', err.stack);
+        });
     } else {
       console.warn('⚠️ No user_id found in expert profile - skipping notification');
     }
