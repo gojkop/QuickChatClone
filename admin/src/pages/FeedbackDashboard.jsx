@@ -1,5 +1,5 @@
-// admin/src/pages/FeedbackDashboard.jsx - IMPROVED VERSION
-// Features: 10 items default, proper pagination, clear column layout, delete functionality
+// admin/src/pages/FeedbackDashboard.jsx - MOBILE-RESPONSIVE VERSION
+// Fixed: Mobile layout, removed polling, proper pagination
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -49,9 +49,9 @@ const JOURNEY_STAGES = {
 };
 
 // ============================================================================
-// FEEDBACK ROW WITH CLEAR COLUMNS
+// MOBILE-RESPONSIVE FEEDBACK CARD
 // ============================================================================
-function FeedbackRow({ feedback, onSelect, isSelected }) {
+function FeedbackCard({ feedback, onSelect, isSelected }) {
   const typeConfig = FEEDBACK_TYPES[feedback.type] || FEEDBACK_TYPES.other;
   const statusConfig = STATUS_CONFIG[feedback.status];
   const priorityConfig = PRIORITY_CONFIG[feedback.priority];
@@ -60,65 +60,95 @@ function FeedbackRow({ feedback, onSelect, isSelected }) {
     <div 
       onClick={() => onSelect(feedback)}
       className={`
-        group relative grid grid-cols-12 gap-4 items-center px-4 py-3
-        border-b border-gray-100 cursor-pointer transition-all
+        relative p-4 border-b border-gray-100 cursor-pointer transition-all
         hover:bg-gray-50
         ${isSelected ? 'bg-indigo-50 border-indigo-200' : ''}
       `}
     >
-      {/* Type Column (1 col) */}
-      <div className="col-span-1 flex justify-center">
-        <span className="text-2xl" title={typeConfig.label}>
-          {typeConfig.icon}
-        </span>
-      </div>
-
-      {/* Status Column (2 cols) */}
-      <div className="col-span-2 flex flex-col gap-1">
-        <span className={`
-          px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wide text-center
-          ${statusConfig.color === 'warning' ? 'bg-amber-100 text-amber-700' : ''}
-          ${statusConfig.color === 'info' ? 'bg-blue-100 text-blue-700' : ''}
-          ${statusConfig.color === 'success' ? 'bg-green-100 text-green-700' : ''}
-          ${statusConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
-        `}>
-          {statusConfig.label}
-        </span>
-        
-        <span className={`
-          px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wide text-center
-          ${priorityConfig.color === 'danger' ? 'bg-red-100 text-red-700' : ''}
-          ${priorityConfig.color === 'warning' ? 'bg-orange-100 text-orange-700' : ''}
-          ${priorityConfig.color === 'info' ? 'bg-yellow-100 text-yellow-700' : ''}
-          ${priorityConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
-        `}>
-          {priorityConfig.label}
-        </span>
-      </div>
-
-      {/* Message Column (6 cols) */}
-      <div className="col-span-6">
-        <p className="text-sm text-gray-900 line-clamp-2 font-medium">
-          {feedback.message}
-        </p>
-        {feedback.email && (
-          <p className="text-xs text-indigo-600 mt-1 truncate">
-            📧 {feedback.email}
-          </p>
-        )}
-      </div>
-
-      {/* Metadata Column (3 cols) */}
-      <div className="col-span-3 flex flex-col gap-1 text-xs text-gray-600">
-        {/* Row 1: Journey + Date */}
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1">
-            {feedback.journey_stage && JOURNEY_STAGES[feedback.journey_stage]?.icon}
-            <span className="hidden lg:inline text-[11px]">
-              {feedback.journey_stage && JOURNEY_STAGES[feedback.journey_stage]?.label}
-            </span>
+      {/* Mobile & Tablet: Card Layout */}
+      <div className="space-y-3">
+        {/* Row 1: Type, Status, Priority */}
+        <div className="flex items-start gap-3">
+          <span className="text-2xl flex-shrink-0" title={typeConfig.label}>
+            {typeConfig.icon}
           </span>
-          <span className="text-[11px] text-gray-500">
+          
+          <div className="flex flex-wrap gap-2 flex-1">
+            <span className={`
+              px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wide
+              ${statusConfig.color === 'warning' ? 'bg-amber-100 text-amber-700' : ''}
+              ${statusConfig.color === 'info' ? 'bg-blue-100 text-blue-700' : ''}
+              ${statusConfig.color === 'success' ? 'bg-green-100 text-green-700' : ''}
+              ${statusConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
+            `}>
+              {statusConfig.label}
+            </span>
+            
+            <span className={`
+              px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wide
+              ${priorityConfig.color === 'danger' ? 'bg-red-100 text-red-700' : ''}
+              ${priorityConfig.color === 'warning' ? 'bg-orange-100 text-orange-700' : ''}
+              ${priorityConfig.color === 'info' ? 'bg-yellow-100 text-yellow-700' : ''}
+              ${priorityConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
+            `}>
+              {priorityConfig.label}
+            </span>
+
+            {feedback.journey_stage && (
+              <span className="px-2 py-1 bg-gray-100 rounded text-[10px] font-medium">
+                {JOURNEY_STAGES[feedback.journey_stage]?.icon} {JOURNEY_STAGES[feedback.journey_stage]?.label}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2: Message */}
+        <div>
+          <p className="text-sm text-gray-900 line-clamp-2 font-medium">
+            {feedback.message}
+          </p>
+        </div>
+
+        {/* Row 3: Email if present */}
+        {feedback.email && (
+          <div className="text-xs text-indigo-600">
+            📧 {feedback.email}
+          </div>
+        )}
+
+        {/* Row 4: Metadata */}
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center gap-2">
+            {feedback.rating && (
+              <span title={`Rating: ${feedback.rating}/5`}>
+                {'⭐'.repeat(feedback.rating)}
+              </span>
+            )}
+            
+            {feedback.attachment_count > 0 && (
+              <span title={`${feedback.attachment_count} attachments`}>
+                📎 {feedback.attachment_count}
+              </span>
+            )}
+
+            {feedback.comment_count > 0 && (
+              <span title={`${feedback.comment_count} comments`}>
+                💬 {feedback.comment_count}
+              </span>
+            )}
+
+            {feedback.jira_ticket_key && (
+              <span className="text-purple-600 font-mono text-[10px]" title="Jira ticket">
+                {feedback.jira_ticket_key}
+              </span>
+            )}
+            
+            {feedback.device_type === 'mobile' && <span title="Mobile">📱</span>}
+            {feedback.device_type === 'desktop' && <span title="Desktop">💻</span>}
+            {feedback.device_type === 'tablet' && <span title="Tablet">📱</span>}
+          </div>
+
+          <span className="text-[11px]">
             {new Date(feedback.created_at).toLocaleDateString('en-US', { 
               month: 'short', 
               day: 'numeric',
@@ -126,37 +156,6 @@ function FeedbackRow({ feedback, onSelect, isSelected }) {
               minute: '2-digit'
             })}
           </span>
-        </div>
-
-        {/* Row 2: Icons */}
-        <div className="flex items-center gap-2">
-          {feedback.rating && (
-            <span title={`Rating: ${feedback.rating}/5`}>
-              {'⭐'.repeat(feedback.rating)}
-            </span>
-          )}
-          
-          {feedback.attachment_count > 0 && (
-            <span title={`${feedback.attachment_count} attachments`}>
-              📎 {feedback.attachment_count}
-            </span>
-          )}
-
-          {feedback.comment_count > 0 && (
-            <span title={`${feedback.comment_count} comments`}>
-              💬 {feedback.comment_count}
-            </span>
-          )}
-
-          {feedback.jira_ticket_key && (
-            <span className="text-purple-600 font-mono text-[10px]" title="Jira ticket">
-              {feedback.jira_ticket_key}
-            </span>
-          )}
-          
-          {feedback.device_type === 'mobile' && <span title="Mobile">📱</span>}
-          {feedback.device_type === 'desktop' && <span title="Desktop">💻</span>}
-          {feedback.device_type === 'tablet' && <span title="Tablet">📱</span>}
         </div>
       </div>
 
@@ -169,7 +168,7 @@ function FeedbackRow({ feedback, onSelect, isSelected }) {
 }
 
 // ============================================================================
-// DETAIL PANEL (Same as before with delete)
+// DETAIL PANEL (Same as before)
 // ============================================================================
 function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onReload, onDelete }) {
   const toast = useToast();
@@ -217,9 +216,9 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
   };
 
   return (
-    <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] bg-white border-l border-gray-200 shadow-2xl z-50 overflow-y-auto">
+    <div className="fixed inset-0 sm:right-0 sm:left-auto h-full w-full sm:w-[500px] bg-white border-l border-gray-200 shadow-2xl z-50 overflow-y-auto">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between">
         <div>
           <h3 className="text-lg font-bold text-gray-900">
             Feedback #{feedback.id.slice(0, 8)}
@@ -239,19 +238,19 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
       </div>
 
       {/* Content */}
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6">
         {/* Type & Status */}
         <div>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
             <span className="text-3xl">{typeConfig.icon}</span>
-            <div>
+            <div className="flex flex-wrap gap-2">
               <Badge variant={FEEDBACK_TYPES[feedback.type]?.color}>
                 {typeConfig.label}
               </Badge>
-              <Badge variant={PRIORITY_CONFIG[feedback.priority]?.color} className="ml-2">
+              <Badge variant={PRIORITY_CONFIG[feedback.priority]?.color}>
                 {PRIORITY_CONFIG[feedback.priority]?.label}
               </Badge>
-              <Badge variant={STATUS_CONFIG[feedback.status]?.color} className="ml-2">
+              <Badge variant={STATUS_CONFIG[feedback.status]?.color}>
                 {STATUS_CONFIG[feedback.status]?.label}
               </Badge>
             </div>
@@ -263,7 +262,7 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="text-sm font-semibold text-gray-700 mb-2">User</h4>
             {feedback.email && (
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-gray-900 break-words">
                 📧 {feedback.email}
                 {feedback.wants_followup && (
                   <span className="text-xs text-green-600 ml-2">
@@ -284,7 +283,7 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">Message</h4>
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <p className="text-sm text-gray-900 whitespace-pre-wrap">
+            <p className="text-sm text-gray-900 whitespace-pre-wrap break-words">
               {feedback.message}
             </p>
           </div>
@@ -313,9 +312,9 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">Context</h4>
           <div className="space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Page:</span>
-              <span className="text-gray-900 font-mono text-xs truncate max-w-[300px]">
+            <div className="flex justify-between gap-2">
+              <span className="text-gray-600 flex-shrink-0">Page:</span>
+              <span className="text-gray-900 font-mono text-xs break-all text-right">
                 {feedback.page_url}
               </span>
             </div>
@@ -358,7 +357,7 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
                   className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <span className="text-sm truncate flex-1">{att.file_name}</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 flex-shrink-0">
                     {(att.file_size / 1024).toFixed(0)} KB
                   </span>
                 </a>
@@ -376,7 +375,7 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
             <div className="space-y-2">
               {feedback.comments.map(comment => (
                 <div key={comment.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  <p className="text-sm text-gray-900">{comment.comment}</p>
+                  <p className="text-sm text-gray-900 break-words">{comment.comment}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     {comment.admin_name} • {new Date(comment.created_at).toLocaleString()}
                   </p>
@@ -471,7 +470,7 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onRelo
 }
 
 // ============================================================================
-// MAIN DASHBOARD
+// MAIN DASHBOARD (Fixed: No polling, better mobile UX)
 // ============================================================================
 export default function FeedbackDashboard() {
   const toast = useToast();
@@ -487,7 +486,7 @@ export default function FeedbackDashboard() {
   
   const [filters, setFilters] = useState({
     page: 1,
-    limit: 10, // Default to 10 items
+    limit: 10,
     type: '',
     status: '',
     priority: '',
@@ -506,9 +505,10 @@ export default function FeedbackDashboard() {
     avgResponseTime: 0,
   });
 
+  // FIXED: Load feedback only when filters change, NO polling
   useEffect(() => {
     loadFeedback();
-  }, [filters]);
+  }, [filters.page, filters.limit, filters.type, filters.status, filters.priority, filters.journey_stage, filters.search]);
 
   useEffect(() => {
     if (selectedFeedback) {
@@ -700,22 +700,20 @@ export default function FeedbackDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <SectionHeader
         title="Feedback Dashboard"
         description="User feedback, bug reports, and feature requests"
         action={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={loadFeedback}>
-              🔄 Refresh
-            </Button>
-          </div>
+          <Button variant="secondary" onClick={loadFeedback} size="sm">
+            🔄 Refresh
+          </Button>
         }
       />
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           label="Total Feedback"
           value={stats.total}
@@ -742,7 +740,7 @@ export default function FeedbackDashboard() {
       <Card>
         <div className="space-y-3">
           {/* Filter Controls */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <Input
               placeholder="Search..."
               value={filters.search}
@@ -798,7 +796,7 @@ export default function FeedbackDashboard() {
           </div>
 
           {/* Items per page selector */}
-          <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-gray-200">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Show:</span>
               <Select
@@ -812,31 +810,23 @@ export default function FeedbackDashboard() {
                 ]}
                 className="w-20"
               />
-              <span className="text-sm text-gray-600">items per page</span>
+              <span className="text-sm text-gray-600">items</span>
             </div>
             
             <div className="text-sm text-gray-600">
-              Sorted by: <span className="font-semibold">Most Recent First</span>
+              Sorted by: <span className="font-semibold">Most Recent</span>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Feedback Table with Clear Columns */}
+      {/* Feedback List - Mobile Responsive */}
       <Card padding="none">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b-2 border-gray-200 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-          <div className="col-span-1 text-center">Type</div>
-          <div className="col-span-2 text-center">Status</div>
-          <div className="col-span-6">Message</div>
-          <div className="col-span-3 text-center">Metadata</div>
-        </div>
-        
-        {/* Table Body */}
+        {/* List Body */}
         <div>
           {feedback.length > 0 ? (
             feedback.map(item => (
-              <FeedbackRow
+              <FeedbackCard
                 key={item.id}
                 feedback={item}
                 onSelect={setSelectedFeedback}
@@ -853,22 +843,20 @@ export default function FeedbackDashboard() {
           )}
         </div>
 
-        {/* Table Footer - Improved Pagination */}
+        {/* Pagination Footer */}
         {feedback.length > 0 && (
           <div className="px-4 py-4 bg-gray-50 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              {/* Left: Info */}
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-700">
-                  Showing <span className="font-semibold">{(filters.page - 1) * filters.limit + 1}</span> to{' '}
-                  <span className="font-semibold">
-                    {Math.min(filters.page * filters.limit, stats.total)}
-                  </span> of{' '}
-                  <span className="font-semibold">{stats.total}</span> results
-                </span>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              {/* Info */}
+              <div className="text-sm text-gray-700 text-center sm:text-left">
+                Showing <span className="font-semibold">{(filters.page - 1) * filters.limit + 1}</span> to{' '}
+                <span className="font-semibold">
+                  {Math.min(filters.page * filters.limit, stats.total)}
+                </span> of{' '}
+                <span className="font-semibold">{stats.total}</span> results
               </div>
 
-              {/* Right: Pagination Controls */}
+              {/* Pagination Controls */}
               <div className="flex items-center gap-2">
                 <Button 
                   variant="secondary" 
@@ -876,17 +864,16 @@ export default function FeedbackDashboard() {
                   disabled={filters.page === 1}
                   onClick={() => handleFilterChange('page', filters.page - 1)}
                 >
-                  ← Previous
+                  ← Prev
                 </Button>
                 
-                <div className="flex items-center gap-1">
-                  {/* Show page numbers */}
+                {/* Page numbers - hide on very small screens */}
+                <div className="hidden sm:flex items-center gap-1">
                   {(() => {
                     const totalPages = Math.ceil(stats.total / filters.limit);
                     const currentPage = filters.page;
                     const pageNumbers = [];
                     
-                    // Always show first page
                     if (currentPage > 2) {
                       pageNumbers.push(
                         <button
@@ -902,7 +889,6 @@ export default function FeedbackDashboard() {
                       }
                     }
                     
-                    // Show current page and neighbors
                     for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages, currentPage + 1); i++) {
                       pageNumbers.push(
                         <button
@@ -919,7 +905,6 @@ export default function FeedbackDashboard() {
                       );
                     }
                     
-                    // Always show last page
                     if (currentPage < totalPages - 1) {
                       if (currentPage < totalPages - 2) {
                         pageNumbers.push(<span key="ellipsis2" className="px-2 text-gray-500">...</span>);
@@ -938,6 +923,11 @@ export default function FeedbackDashboard() {
                     return pageNumbers;
                   })()}
                 </div>
+
+                {/* Mobile: Show current page */}
+                <span className="sm:hidden text-sm text-gray-600">
+                  Page {filters.page}
+                </span>
                 
                 <Button 
                   variant="secondary" 
@@ -981,7 +971,7 @@ export default function FeedbackDashboard() {
               <p className="text-sm text-red-700">
                 This will permanently archive the feedback item:
               </p>
-              <p className="text-sm text-gray-900 mt-2 p-2 bg-white rounded border border-red-200 truncate">
+              <p className="text-sm text-gray-900 mt-2 p-2 bg-white rounded border border-red-200 break-words">
                 "{feedbackToDelete.message}"
               </p>
             </div>
