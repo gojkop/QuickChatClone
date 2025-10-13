@@ -116,12 +116,25 @@ export function getNewQuestionTemplate(data) {
                 </td>
               </tr>
               
-              <!-- Primary CTA -->
+              <!-- ✅ TWO-BUTTON CTA -->
               <tr>
-                <td style="padding-top: 32px; text-align: center;">
-                  <a href="https://mindpick.me/expert/questions/${questionId}" style="display: inline-block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);">
-                    Answer Question →
-                  </a>
+                <td style="padding-top: 32px;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <!-- Answer Question Button (Primary) -->
+                      <td style="width: 50%; padding-right: 8px;">
+                        <a href="https://mindpick.me/expert#question-${questionId}" style="display: block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: 700; font-size: 16px; text-align: center; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);">
+                          Answer Question →
+                        </a>
+                      </td>
+                      <!-- View Dashboard Button (Secondary) -->
+                      <td style="width: 50%; padding-left: 8px;">
+                        <a href="https://mindpick.me/expert" style="display: block; background: white; color: #4F46E5; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: 700; font-size: 16px; text-align: center; border: 2px solid #4F46E5;">
+                          View Dashboard
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
               
@@ -142,7 +155,7 @@ export function getNewQuestionTemplate(data) {
               
               <!-- Footer -->
               <tr>
-                <td style="padding-top: 48px; text-align: center; border-top: 2px solid #F3F4F6;">
+                <td style="padding-top: 48px; text-align: center;">
                   <p style="font-size: 12px; color: #9CA3AF; margin: 24px 0 8px 0;">
                     Question #${questionId} • <a href="https://mindpick.me/faq" style="color: #4F46E5; text-decoration: none;">FAQ</a>
                   </p>
@@ -177,7 +190,8 @@ SLA: ${slaHours} hours
 
 EXPERT TIP: ${expertTip}
 
-Answer now: https://mindpick.me/expert/questions/${questionId}
+Answer now: https://mindpick.me/expert#question-${questionId}
+View dashboard: https://mindpick.me/expert
 
 SLA reminder: Responding within ${slaHours} hours maintains your rating and unlocks bonus visibility.
 
