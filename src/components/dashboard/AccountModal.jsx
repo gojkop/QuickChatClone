@@ -65,12 +65,35 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
     console.log('Initiating Stripe Connect flow...');
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (showDeleteConfirm) {
-      // TODO: API call to delete account
-      alert('Account deletion will be implemented soon.\n\nThis is a permanent action and will:\n- Delete all your data\n- Cancel your subscription\n- Remove your profile\n\nYou would need to confirm via email.');
-      console.log('Deleting account...');
-      setShowDeleteConfirm(false);
+      setIsSaving(true);
+      try {
+        // Call backend endpoint to delete account
+        const response = await fetch('/api/users/delete-account', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('qc_token')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete account');
+        }
+
+        // Clear authentication and redirect to home
+        localStorage.removeItem('qc_token');
+        alert('Your account has been permanently deleted.\n\nWe\'re sorry to see you go. You will be redirected to the home page.');
+        window.location.href = '/';
+      } catch (error) {
+        console.error('Failed to delete account:', error);
+        alert('Failed to delete account: ' + error.message + '\n\nPlease try again or contact support.');
+        setShowDeleteConfirm(false);
+      } finally {
+        setIsSaving(false);
+      }
     } else {
       setShowDeleteConfirm(true);
     }
@@ -322,13 +345,14 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
                   </div>
                   <button
                     onClick={handleDeleteAccount}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
+                    disabled={isSaving}
+                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed ${
                       showDeleteConfirm
                         ? 'bg-red-600 text-white hover:bg-red-700'
                         : 'bg-white border border-red-300 text-red-600 hover:bg-red-50'
                     }`}
                   >
-                    Delete Account
+                    {isSaving && showDeleteConfirm ? 'Deleting...' : 'Delete Account'}
                   </button>
                 </div>
               </div>
