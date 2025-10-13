@@ -11,6 +11,7 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
     postalCode: profile?.user?.zip || '',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!isOpen) return null;
@@ -67,7 +68,7 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
 
   const handleDeleteAccount = async () => {
     if (showDeleteConfirm) {
-      setIsSaving(true);
+      setIsDeleting(true);
       try {
         // Call backend endpoint to delete account
         const response = await fetch('/api/users/delete-account', {
@@ -92,7 +93,7 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
         alert('Failed to delete account: ' + error.message + '\n\nPlease try again or contact support.');
         setShowDeleteConfirm(false);
       } finally {
-        setIsSaving(false);
+        setIsDeleting(false);
       }
     } else {
       setShowDeleteConfirm(true);
@@ -345,14 +346,14 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
                   </div>
                   <button
                     onClick={handleDeleteAccount}
-                    disabled={isSaving}
+                    disabled={isDeleting}
                     className={`px-4 py-2 rounded-lg font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed ${
                       showDeleteConfirm
                         ? 'bg-red-600 text-white hover:bg-red-700'
                         : 'bg-white border border-red-300 text-red-600 hover:bg-red-50'
                     }`}
                   >
-                    {isSaving && showDeleteConfirm ? 'Deleting...' : 'Delete Account'}
+                    {isDeleting && showDeleteConfirm ? 'Deleting...' : 'Delete Account'}
                   </button>
                 </div>
               </div>
