@@ -1,5 +1,6 @@
 // api/oauth/linkedin/continue.js
 import axios from 'axios';
+import { sendSignInNotification } from '../lib/zeptomail.js';
 
 export default async function handler(req, res) {
   try {
@@ -136,6 +137,13 @@ export default async function handler(req, res) {
       res.setHeader("Set-Cookie", [
         `qc_session=${token}; HttpOnly; Secure; SameSite=None; Path=/; Domain=${COOKIE_DOMAIN}; Max-Age=${30*24*60*60}`
       ]);
+    }
+
+    // Send sign-in notification email (non-blocking)
+    if (userInfo.email) {
+      sendSignInNotification({ email: userInfo.email, name: userInfo.name })
+        .then(() => console.log('✅ Sign-in notification sent'))
+        .catch((err) => console.error('❌ Failed to send sign-in notification:', err.message));
     }
 
     return res.status(200).json({
