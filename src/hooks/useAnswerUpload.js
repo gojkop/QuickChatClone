@@ -358,25 +358,35 @@ export function useAnswerUpload() {
           : null,
       };
 
-      console.log('Sending to /api/answer/submit endpoint:', payload);
+      console.log('Sending answer to Xano:', payload);
 
-      // Use fetch to call our backend API (which will proxy to Xano and send emails)
-      const response = await fetch('/api/answer/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Include auth token from localStorage
-          'Authorization': `Bearer ${localStorage.getItem('qc_token')}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      // TEMPORARY FIX: Call Xano directly using apiClient to bypass 404 issue
+      // TODO: Debug why /api/answer/submit returns 404 on Vercel
+      const response = await apiClient.post('/answer', payload);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit answer');
+      console.log('✅ Answer created in Xano:', response.data);
+
+      // Trigger email notification via separate endpoint
+      try {
+        console.log('📧 Triggering answer notification email...');
+        await fetch('/api/send-answer-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('qc_token')}`,
+          },
+          body: JSON.stringify({
+            question_id: questionId,
+            answer_id: response.data.id,
+            user_id: userId,
+          }),
+        });
+        console.log('✅ Email notification triggered');
+      } catch (emailError) {
+        console.warn('⚠️ Email notification failed (non-blocking):', emailError.message);
       }
 
-      const responseData = await response.json();
+      const responseData = response;
 
       console.log('✅ Answer submitted successfully:', responseData.data);
 
