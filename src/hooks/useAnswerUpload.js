@@ -358,10 +358,10 @@ export function useAnswerUpload() {
           : null,
       };
 
-      console.log('Sending to /api/answer/submit endpoint:', payload);
+      console.log('Sending to /api/answer-submit endpoint:', payload);
 
       // Call consolidated endpoint that creates answer + sends email
-      const response = await fetch('/api/answer/submit', {
+      const response = await fetch('/api/answer-submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

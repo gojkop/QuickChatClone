@@ -1,8 +1,8 @@
-// api/answer/submit.js
+// api/answer-submit.js
 // Proxy endpoint for answer submission that sends email notifications
-// Last updated: 2025-10-13
-import { sendAnswerReceivedNotification } from '../lib/zeptomail.js';
-import { fetchUserData, getAskerName, getAskerEmail } from '../lib/user-data.js';
+// Moved to root level to avoid Vercel subdirectory routing issues
+import { sendAnswerReceivedNotification } from './lib/zeptomail.js';
+import { fetchUserData, getAskerName, getAskerEmail } from './lib/user-data.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
