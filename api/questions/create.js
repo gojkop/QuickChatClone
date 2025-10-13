@@ -123,17 +123,21 @@ export default async function handler(req, res) {
           if (expertEmail) {
             console.log('📧 Sending expert notification...');
 
-            // Send email asynchronously (don't await to avoid delaying response)
-            sendNewQuestionNotification({
-              expertEmail,
-              expertName,
-              questionTitle: title,
-              questionText: text,
-              askerEmail: payerEmail,
-              questionId,
-            })
-              .then(() => console.log('✅ Expert notification sent successfully'))
-              .catch((err) => console.error('❌ Failed to send notification:', err.message));
+            // Send email and await to ensure it completes
+            try {
+              await sendNewQuestionNotification({
+                expertEmail,
+                expertName,
+                questionTitle: title,
+                questionText: text,
+                askerEmail: payerEmail,
+                questionId,
+              });
+              console.log('✅ Expert notification sent successfully');
+            } catch (emailErr) {
+              console.error('❌ Failed to send notification:', emailErr.message);
+              console.error('❌ Email error stack:', emailErr.stack);
+            }
           }
         }
       } catch (err) {
