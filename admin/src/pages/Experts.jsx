@@ -1,5 +1,5 @@
-// admin/src/pages/Experts.jsx - With mobile action sheet
-import { useState } from 'react';
+// admin/src/pages/Experts.jsx - Platform-aware responsive design
+import { useState, useEffect } from 'react';
 
 // UI components (simplified inline versions)
 const Card = ({ children, padding = 'default', hover = false, className = '' }) => {
@@ -160,7 +160,7 @@ const initialExperts = [
 ];
 
 // ============================================================================
-// MOBILE ACTION SHEET
+// MOBILE ACTION SHEET (Unchanged)
 // ============================================================================
 function MobileActionSheet({ expert, isOpen, onClose, onAction }) {
   if (!isOpen || !expert) return null;
@@ -169,12 +169,12 @@ function MobileActionSheet({ expert, isOpen, onClose, onAction }) {
     <>
       {/* Backdrop */}
       <div 
-        className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-fadeIn"
+        className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-fadeIn"
         onClick={onClose}
       />
       
       {/* Action Sheet */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-50 animate-slideUp">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-50 animate-slideUp">
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-12 h-1 bg-gray-300 rounded-full" />
@@ -299,21 +299,22 @@ function MobileActionSheet({ expert, isOpen, onClose, onAction }) {
 }
 
 // ============================================================================
-// COMPACT EXPERT ROW (Updated)
+// DESKTOP ONE-LINER ROW
 // ============================================================================
-function CompactExpertRow({ expert, onAction, isSelected }) {
+function ExpertRowDesktop({ expert, onAction, isSelected }) {
+  const slaStatus = expert.sla_hours > expert.avg_response_hours;
+  
   return (
     <div 
       onClick={() => onAction('select', expert)}
       className={`
-        group relative flex items-center gap-3 px-4 py-3 
-        border-b border-gray-100 cursor-pointer transition-all
-        hover:bg-gray-50 active:bg-gray-100
+        relative grid grid-cols-12 gap-4 items-center px-4 py-3 border-b border-gray-100 
+        cursor-pointer transition-all hover:bg-gray-50
         ${isSelected ? 'bg-indigo-50 border-indigo-200' : ''}
       `}
     >
-      {/* Avatar & Basic Info */}
-      <div className="flex items-center gap-3 flex-shrink-0 min-w-0">
+      {/* Column 1-3: Avatar & Name (3 cols) */}
+      <div className="col-span-3 flex items-center gap-3 min-w-0">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center flex-shrink-0">
           <span className="text-sm font-bold text-indigo-700">
             {expert.name.split(' ').map(n => n[0]).join('')}
@@ -321,78 +322,156 @@ function CompactExpertRow({ expert, onAction, isSelected }) {
         </div>
         
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold text-gray-900 truncate">
-              {expert.name}
-            </p>
-            <Badge variant={expert.accepting_questions ? 'success' : 'default'}>
-              {expert.accepting_questions ? 'Available' : 'Away'}
-            </Badge>
-            <Badge variant={expert.stripe_connected ? 'success' : 'danger'}>
-              {expert.stripe_connected ? '✓ Stripe' : '✗ Stripe'}
-            </Badge>
-          </div>
+          <p className="text-sm font-semibold text-gray-900 truncate">
+            {expert.name}
+          </p>
           <p className="text-xs text-gray-500 truncate">{expert.specialty}</p>
         </div>
       </div>
 
-      {/* Key Metrics (Desktop only) */}
-      <div className="hidden lg:flex items-center gap-6 flex-shrink-0 text-sm">
-        <div className="text-center">
-          <p className="font-semibold text-gray-900">€{(expert.price_cents / 100).toFixed(0)}</p>
-          <p className="text-xs text-gray-500">Price</p>
-        </div>
-        <div className="text-center">
-          <p className="font-semibold text-gray-900">{expert.total_questions}</p>
-          <p className="text-xs text-gray-500">Questions</p>
-        </div>
-        <div className="text-center">
-          <p className="font-semibold text-gray-900">{expert.avg_response_hours}h</p>
-          <p className="text-xs text-gray-500">Avg Time</p>
-        </div>
-        <div className="text-center">
-          <p className="font-semibold text-gray-900">⭐ {expert.rating}</p>
-          <p className="text-xs text-gray-500">Rating</p>
-        </div>
-        <div className="text-center">
-          <p className={`font-semibold ${expert.sla_hours > expert.avg_response_hours ? 'text-green-600' : 'text-red-600'}`}>
-            {expert.sla_hours > expert.avg_response_hours ? '✓ OK' : '⚠ Risk'}
-          </p>
-          <p className="text-xs text-gray-500">SLA</p>
-        </div>
+      {/* Column 4-5: Status Badges (2 cols) */}
+      <div className="col-span-2 flex flex-wrap gap-1">
+        <Badge variant={expert.accepting_questions ? 'success' : 'default'}>
+          {expert.accepting_questions ? 'Available' : 'Away'}
+        </Badge>
+        <Badge variant={expert.stripe_connected ? 'success' : 'danger'}>
+          {expert.stripe_connected ? '✓ Stripe' : '✗ Stripe'}
+        </Badge>
       </div>
 
-      {/* Desktop Actions */}
-      <div className="hidden lg:flex items-center gap-2 flex-shrink-0 ml-auto">
+      {/* Column 6: Price (1 col) */}
+      <div className="col-span-1 text-center">
+        <p className="text-sm font-semibold text-gray-900">€{(expert.price_cents / 100).toFixed(0)}</p>
+      </div>
+
+      {/* Column 7: Questions (1 col) */}
+      <div className="col-span-1 text-center">
+        <p className="text-sm font-semibold text-gray-900">{expert.total_questions}</p>
+      </div>
+
+      {/* Column 8: Response Time (1 col) */}
+      <div className="col-span-1 text-center">
+        <p className="text-sm font-semibold text-gray-900">{expert.avg_response_hours}h</p>
+      </div>
+
+      {/* Column 9: Rating (1 col) */}
+      <div className="col-span-1 text-center">
+        <p className="text-sm font-semibold text-gray-900">⭐ {expert.rating}</p>
+      </div>
+
+      {/* Column 10: SLA Status (1 col) */}
+      <div className="col-span-1 text-center">
+        <span className={`text-xs font-semibold ${slaStatus ? 'text-green-600' : 'text-red-600'}`}>
+          {slaStatus ? '✓ OK' : '⚠ Risk'}
+        </span>
+      </div>
+
+      {/* Column 11-12: Actions (2 cols) */}
+      <div className="col-span-2 flex items-center gap-1 justify-end">
         <button 
           onClick={(e) => { e.stopPropagation(); onAction('toggle_availability', expert); }}
-          className="px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          className="px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded transition-colors"
+          title={expert.accepting_questions ? 'Set Away' : 'Set Available'}
         >
-          {expert.accepting_questions ? 'Set Away' : 'Set Available'}
+          {expert.accepting_questions ? '⏸️' : '▶️'}
         </button>
         
         <button 
           onClick={(e) => { e.stopPropagation(); onAction('message', expert); }}
-          className="px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          className="px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded transition-colors"
+          title="Send Message"
         >
-          Message
+          💬
         </button>
 
         {!expert.stripe_connected && (
           <button 
             onClick={(e) => { e.stopPropagation(); onAction('connect_stripe', expert); }}
-            className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors"
+            title="Connect Stripe"
           >
-            Connect Stripe
+            ⚠️
           </button>
         )}
       </div>
 
-      {/* Mobile: Chevron indicator */}
-      <div className="lg:hidden flex-shrink-0">
-        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
+      {/* Selection Indicator */}
+      {isSelected && (
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600" />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// MOBILE CARD VIEW
+// ============================================================================
+function ExpertCardMobile({ expert, onAction, isSelected }) {
+  const slaStatus = expert.sla_hours > expert.avg_response_hours;
+
+  return (
+    <div 
+      onClick={() => onAction('select', expert)}
+      className={`
+        relative p-4 border-b border-gray-100 cursor-pointer transition-all
+        hover:bg-gray-50 active:bg-gray-100
+        ${isSelected ? 'bg-indigo-50 border-indigo-200' : ''}
+      `}
+    >
+      <div className="space-y-3">
+        {/* Row 1: Avatar & Name */}
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center flex-shrink-0">
+            <span className="text-lg font-bold text-indigo-700">
+              {expert.name.split(' ').map(n => n[0]).join('')}
+            </span>
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900">
+              {expert.name}
+            </p>
+            <p className="text-xs text-gray-500">{expert.specialty}</p>
+          </div>
+
+          {/* Chevron */}
+          <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+
+        {/* Row 2: Status Badges */}
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={expert.accepting_questions ? 'success' : 'default'}>
+            {expert.accepting_questions ? 'Available' : 'Away'}
+          </Badge>
+          <Badge variant={expert.stripe_connected ? 'success' : 'danger'}>
+            {expert.stripe_connected ? '✓ Stripe Connected' : '✗ Stripe Not Connected'}
+          </Badge>
+          <Badge variant={slaStatus ? 'success' : 'warning'}>
+            SLA: {slaStatus ? 'OK' : 'At Risk'}
+          </Badge>
+        </div>
+
+        {/* Row 3: Key Metrics */}
+        <div className="grid grid-cols-4 gap-2 pt-2">
+          <div className="text-center">
+            <p className="text-sm font-semibold text-gray-900">€{(expert.price_cents / 100).toFixed(0)}</p>
+            <p className="text-xs text-gray-500">Price</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-gray-900">{expert.total_questions}</p>
+            <p className="text-xs text-gray-500">Questions</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-gray-900">{expert.avg_response_hours}h</p>
+            <p className="text-xs text-gray-500">Avg Time</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-gray-900">⭐ {expert.rating}</p>
+            <p className="text-xs text-gray-500">Rating</p>
+          </div>
+        </div>
       </div>
 
       {/* Selection Indicator */}
@@ -406,13 +485,24 @@ function CompactExpertRow({ expert, onAction, isSelected }) {
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-export default function ExpertsCompact() {
+export default function Experts() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [experts, setExperts] = useState(initialExperts);
   const [searchQuery, setSearchQuery] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
   const [stripeFilter, setStripeFilter] = useState('all');
   const [selectedExpert, setSelectedExpert] = useState(null);
   const [mobileActionSheet, setMobileActionSheet] = useState(null);
+
+  // Platform detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Filter experts
   const filteredExperts = experts.filter(expert => {
@@ -439,7 +529,7 @@ export default function ExpertsCompact() {
     if (action === 'select') {
       setSelectedExpert(expert);
       // On mobile, open action sheet
-      if (window.innerWidth < 1024) {
+      if (isMobile) {
         setMobileActionSheet(expert);
       }
       return;
@@ -525,12 +615,11 @@ export default function ExpertsCompact() {
 
       {/* Filters */}
       <Card>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Input
             placeholder="Search by name, email, or specialty..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="sm:col-span-1"
           />
           <Select
             value={availabilityFilter}
@@ -556,31 +645,41 @@ export default function ExpertsCompact() {
         </div>
       </Card>
 
-      {/* Compact Experts Table */}
+      {/* Platform-Aware Experts Table */}
       <Card padding="none">
-        {/* Table Header */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-          <div className="flex-shrink-0 w-64">Expert</div>
-          <div className="hidden lg:flex items-center gap-6 flex-shrink-0">
-            <div className="w-12 text-center">Price</div>
-            <div className="w-16 text-center">Questions</div>
-            <div className="w-16 text-center">Avg Time</div>
-            <div className="w-16 text-center">Rating</div>
-            <div className="w-12 text-center">SLA</div>
+        {/* Desktop: Table Header */}
+        {!isMobile && (
+          <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            <div className="col-span-3">Expert</div>
+            <div className="col-span-2">Status</div>
+            <div className="col-span-1 text-center">Price</div>
+            <div className="col-span-1 text-center">Questions</div>
+            <div className="col-span-1 text-center">Avg Time</div>
+            <div className="col-span-1 text-center">Rating</div>
+            <div className="col-span-1 text-center">SLA</div>
+            <div className="col-span-2 text-right">Actions</div>
           </div>
-          <div className="hidden lg:block ml-auto text-right w-64">Actions</div>
-        </div>
+        )}
         
         {/* Table Body */}
         <div>
           {filteredExperts.length > 0 ? (
             filteredExperts.map(expert => (
-              <CompactExpertRow
-                key={expert.id}
-                expert={expert}
-                onAction={handleAction}
-                isSelected={selectedExpert?.id === expert.id}
-              />
+              isMobile ? (
+                <ExpertCardMobile
+                  key={expert.id}
+                  expert={expert}
+                  onAction={handleAction}
+                  isSelected={selectedExpert?.id === expert.id}
+                />
+              ) : (
+                <ExpertRowDesktop
+                  key={expert.id}
+                  expert={expert}
+                  onAction={handleAction}
+                  isSelected={selectedExpert?.id === expert.id}
+                />
+              )
             ))
           ) : (
             <div className="p-8">
