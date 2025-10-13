@@ -3,12 +3,11 @@
 
 import { sql } from '../_lib/db.js';
 import { verifyAdminSession } from '../_lib/jwt.js';
-import { allowCors, ok, err } from '../_lib/respond.js';
+import { allowCors, ok, err, parseBody } from '../_lib/respond.js';
 
 export default async function handler(req, res) {
   if (allowCors(req, res)) return;
 
-  // Extract ID from URL path or query
   let feedbackId;
   if (req.query && req.query.id) {
     feedbackId = req.query.id;
@@ -21,7 +20,6 @@ export default async function handler(req, res) {
     return err(res, 400, 'Feedback ID required', {}, req);
   }
 
-  // Verify admin authentication
   const cookieHeader = req.headers.cookie || '';
   const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
   
@@ -36,7 +34,6 @@ export default async function handler(req, res) {
     return err(res, 401, 'Invalid or expired admin session', {}, req);
   }
 
-  // Route based on method
   switch (req.method) {
     case 'GET':
       return getFeedback(req, res, session, feedbackId);
@@ -49,85 +46,54 @@ export default async function handler(req, res) {
   }
 }
 
-// ============================================================================
-// GET SINGLE FEEDBACK (with all relations)
-// ============================================================================
-
 async function getFeedback(req, res, session, feedbackId) {
   try {
-    // Get main feedback data with tags
     const feedback = await sql`
-      SELECT 
-        f.*,
-        COALESCE(
-          json_agg(
-            DISTINCT jsonb_build_object(
-              'id', t.id,
-              'name', t.name,
-              'color', t.color
-            )
-          ) FILTER (WHERE t.id IS NOT NULL),
-          '[]'::json
-        ) as tags
-      FROM feedback f
-      LEFT JOIN feedback_tag_assignments fta ON f.id = fta.feedback_id
-      LEFT JOIN feedback_tags t ON fta.tag_id = t.id
-      WHERE f.id = ${feedbackId}
-        AND f.deleted_at IS NULL
-      GROUP BY f.id
+      SELECT f.* FROM feedback f
+      WHERE f.id = ${feedbackId} AND f.deleted_at IS NULL
     `;
 
     if (feedback.length === 0) {
       return err(res, 404, 'Feedback not found', {}, req);
     }
 
-    // Get attachments
+    const tags = await sql`
+      SELECT t.id, t.name, t.color
+      FROM feedback_tags t
+      JOIN feedback_tag_assignments fta ON fta.tag_id = t.id
+      WHERE fta.feedback_id = ${feedbackId}
+    `;
+
     const attachments = await sql`
-      SELECT *
-      FROM feedback_attachments
+      SELECT * FROM feedback_attachments
       WHERE feedback_id = ${feedbackId}
       ORDER BY uploaded_at DESC
     `;
 
-    // Get comments
     const comments = await sql`
-      SELECT 
-        fc.*,
-        au.name as admin_name
+      SELECT fc.*, au.name as admin_name
       FROM feedback_comments fc
       LEFT JOIN admin_users au ON fc.admin_user_id = au.id
       WHERE fc.feedback_id = ${feedbackId}
       ORDER BY fc.created_at DESC
     `;
 
-    // Get similar feedback
-    const similar = await sql`
-      SELECT 
-        f.id,
-        f.type,
-        f.message,
-        f.created_at,
-        f.status,
-        fs.similarity_score
-      FROM feedback_similarities fs
-      JOIN feedback f ON (
-        CASE 
-          WHEN fs.feedback_id_1 = ${feedbackId} THEN f.id = fs.feedback_id_2
-          ELSE f.id = fs.feedback_id_1
-        END
-      )
-      WHERE (fs.feedback_id_1 = ${feedbackId} OR fs.feedback_id_2 = ${feedbackId})
-        AND fs.similarity_score > 0.7
-        AND f.deleted_at IS NULL
-      ORDER BY fs.similarity_score DESC
-      LIMIT 5
-    `;
+    const similarQuery = 'SELECT f.id, f.type, f.message, f.created_at, f.status, fs.similarity_score ' +
+      'FROM feedback_similarities fs ' +
+      'JOIN feedback f ON (CASE WHEN fs.feedback_id_1 = $1 THEN f.id = fs.feedback_id_2 ELSE f.id = fs.feedback_id_1 END) ' +
+      'WHERE (fs.feedback_id_1 = $1 OR fs.feedback_id_2 = $1) AND fs.similarity_score > 0.7 AND f.deleted_at IS NULL ' +
+      'ORDER BY fs.similarity_score DESC LIMIT 5';
+    
+    const similar = await sql(similarQuery, [feedbackId]);
+
+    const result = feedback[0];
+    result.tags = tags;
 
     return ok(res, {
-      feedback: feedback[0],
-      attachments,
-      comments,
-      similar
+      feedback: result,
+      attachments: attachments,
+      comments: comments,
+      similar: similar
     }, req);
 
   } catch (e) {
@@ -136,24 +102,10 @@ async function getFeedback(req, res, session, feedbackId) {
   }
 }
 
-// ============================================================================
-// UPDATE FEEDBACK
-// ============================================================================
-
 async function updateFeedback(req, res, session, feedbackId) {
   try {
-    let body;
-    if (typeof req.body === 'string') {
-      try {
-        body = JSON.parse(req.body);
-      } catch (parseError) {
-        return err(res, 400, 'Invalid JSON body', {}, req);
-      }
-    } else {
-      body = req.body;
-    }
+    const body = parseBody(req);
 
-    // Check if feedback exists
     const existing = await sql`
       SELECT * FROM feedback WHERE id = ${feedbackId} AND deleted_at IS NULL
     `;
@@ -162,45 +114,44 @@ async function updateFeedback(req, res, session, feedbackId) {
       return err(res, 404, 'Feedback not found', {}, req);
     }
 
-    // Build update fields dynamically
     const allowedFields = [
       'status', 'priority', 'assigned_to', 'bug_severity', 
       'urgency_level', 'sentiment_score'
     ];
     
-    const updates = {};
-    for (const field of allowedFields) {
+    const updates = [];
+    const values = [feedbackId];
+    let paramIndex = 2;
+
+    for (let i = 0; i < allowedFields.length; i++) {
+      const field = allowedFields[i];
       if (body[field] !== undefined) {
-        updates[field] = body[field];
+        updates.push(field + ' = $' + paramIndex);
+        values.push(body[field]);
+        paramIndex = paramIndex + 1;
       }
     }
 
-    // Handle status transitions
     if (body.status) {
       if (body.status === 'resolved' && !existing[0].resolved_at) {
-        updates.resolved_at = new Date();
+        updates.push('resolved_at = NOW()');
       } else if (body.status === 'archived' && !existing[0].archived_at) {
-        updates.archived_at = new Date();
+        updates.push('archived_at = NOW()');
       }
     }
 
-    if (Object.keys(updates).length === 0) {
+    if (updates.length === 0) {
       return err(res, 400, 'No valid update fields provided', {}, req);
     }
 
-    // Build SET clause
-    const setClause = Object.keys(updates)
-      .map((key, i) => `${key} = $${i + 2}`)
-      .join(', ');
+    const updateQuery = 'UPDATE feedback SET ' + updates.join(', ') + ', updated_at = NOW() ' +
+      'WHERE id = $1 AND deleted_at IS NULL RETURNING *';
 
-    const values = [feedbackId, ...Object.values(updates)];
+    const updated = await sql(updateQuery, values);
 
-    const updated = await sql.unsafe(`
-      UPDATE feedback
-      SET ${setClause}, updated_at = NOW()
-      WHERE id = $1 AND deleted_at IS NULL
-      RETURNING *
-    `, values);
+    if (updated.length === 0) {
+      return err(res, 404, 'Feedback not found', {}, req);
+    }
 
     return ok(res, {
       feedback: updated[0],
@@ -213,15 +164,10 @@ async function updateFeedback(req, res, session, feedbackId) {
   }
 }
 
-// ============================================================================
-// DELETE FEEDBACK (Soft delete)
-// ============================================================================
-
 async function deleteFeedback(req, res, session, feedbackId) {
   try {
     const deleted = await sql`
-      UPDATE feedback
-      SET deleted_at = NOW()
+      UPDATE feedback SET deleted_at = NOW()
       WHERE id = ${feedbackId} AND deleted_at IS NULL
       RETURNING id
     `;
