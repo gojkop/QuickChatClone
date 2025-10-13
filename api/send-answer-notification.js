@@ -16,25 +16,25 @@ export default async function handler(req, res) {
     console.log('Answer ID:', answer_id);
     console.log('User ID:', user_id);
 
-    // Fetch question details
-    const questionResponse = await fetch(
-      `${process.env.XANO_BASE_URL}/question/${question_id}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(req.headers.authorization && {
-            Authorization: req.headers.authorization,
-          }),
-        },
+    // Fetch question details - try with internal API key
+    console.log('Fetching question from Xano...');
+    let questionData;
+    try {
+      const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
+      const questionUrl = `${process.env.XANO_BASE_URL}/question/${question_id}?x_api_key=${XANO_INTERNAL_API_KEY}`;
+
+      const response = await fetch(questionUrl);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
-    );
 
-    if (!questionResponse.ok) {
-      console.error('Failed to fetch question');
-      return res.status(400).json({ error: 'Question not found' });
+      questionData = await response.json();
+      console.log('✅ Question data retrieved:', questionData.title);
+    } catch (error) {
+      console.error('❌ Failed to fetch question:', error.message);
+      return res.status(400).json({ error: 'Question not found', details: error.message });
     }
-
-    const questionData = await questionResponse.json();
 
     // Fetch expert details
     const expertData = await fetchUserData(user_id);
