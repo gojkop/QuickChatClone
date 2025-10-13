@@ -1,5 +1,6 @@
 // admin/api/_lib/jira.js
-// Jira API client wrapper for ticket creation and sync
+// Complete Jira API client wrapper for ticket creation and sync
+// FIXED VERSION - Uses ADF format for descriptions
 
 const JIRA_CONFIG = {
   baseUrl: process.env.JIRA_BASE_URL || 'https://mindpick.atlassian.net',
@@ -44,52 +45,222 @@ function mapPriorityToJira(priority) {
 function buildJiraDescription(feedback) {
   const adminUrl = process.env.ADMIN_BASE_URL || 'https://admin.mindpick.me';
   
-  let description = `h3. Reported by\n`;
-  description += `*User:* ${feedback.email || 'Anonymous'}\n`;
-  description += `*Date:* ${new Date(feedback.created_at).toLocaleString()}\n`;
-  description += `*Feedback ID:* ${feedback.id}\n`;
-  description += `*Priority:* ${feedback.priority}\n\n`;
-  
-  description += `h3. User Message\n`;
-  description += `${feedback.message}\n\n`;
-  
-  description += `h3. Context\n`;
-  description += `* *Page:* ${feedback.page_url}\n`;
-  description += `* *Device:* ${feedback.device_type || 'unknown'}\n`;
-  description += `* *User Role:* ${feedback.user_role || 'guest'}\n`;
+  // Build ADF (Atlassian Document Format) content
+  const content = [
+    // Heading: Reported by
+    {
+      type: 'heading',
+      attrs: { level: 3 },
+      content: [{ type: 'text', text: 'Reported by' }]
+    },
+    // User details
+    {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'User: ', marks: [{ type: 'strong' }] },
+        { type: 'text', text: feedback.email || 'Anonymous' },
+        { type: 'hardBreak' },
+        { type: 'text', text: 'Date: ', marks: [{ type: 'strong' }] },
+        { type: 'text', text: new Date(feedback.created_at).toLocaleString() },
+        { type: 'hardBreak' },
+        { type: 'text', text: 'Feedback ID: ', marks: [{ type: 'strong' }] },
+        { type: 'text', text: feedback.id },
+        { type: 'hardBreak' },
+        { type: 'text', text: 'Priority: ', marks: [{ type: 'strong' }] },
+        { type: 'text', text: feedback.priority }
+      ]
+    },
+    // Heading: User Message
+    {
+      type: 'heading',
+      attrs: { level: 3 },
+      content: [{ type: 'text', text: 'User Message' }]
+    },
+    {
+      type: 'paragraph',
+      content: [{ type: 'text', text: feedback.message }]
+    },
+    // Heading: Context
+    {
+      type: 'heading',
+      attrs: { level: 3 },
+      content: [{ type: 'text', text: 'Context' }]
+    },
+    {
+      type: 'bulletList',
+      content: [
+        {
+          type: 'listItem',
+          content: [{
+            type: 'paragraph',
+            content: [
+              { type: 'text', text: 'Page: ', marks: [{ type: 'strong' }] },
+              { type: 'text', text: feedback.page_url }
+            ]
+          }]
+        },
+        {
+          type: 'listItem',
+          content: [{
+            type: 'paragraph',
+            content: [
+              { type: 'text', text: 'Device: ', marks: [{ type: 'strong' }] },
+              { type: 'text', text: feedback.device_type || 'unknown' }
+            ]
+          }]
+        },
+        {
+          type: 'listItem',
+          content: [{
+            type: 'paragraph',
+            content: [
+              { type: 'text', text: 'User Role: ', marks: [{ type: 'strong' }] },
+              { type: 'text', text: feedback.user_role || 'guest' }
+            ]
+          }]
+        }
+      ]
+    }
+  ];
+
+  // Add journey stage if present
   if (feedback.journey_stage) {
-    description += `* *Journey Stage:* ${feedback.journey_stage}\n`;
+    content[content.length - 1].content.push({
+      type: 'listItem',
+      content: [{
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Journey Stage: ', marks: [{ type: 'strong' }] },
+          { type: 'text', text: feedback.journey_stage }
+        ]
+      }]
+    });
   }
+
+  // Add rating if present
   if (feedback.rating) {
-    description += `* *Rating:* ${'⭐'.repeat(feedback.rating)}\n`;
+    content[content.length - 1].content.push({
+      type: 'listItem',
+      content: [{
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Rating: ', marks: [{ type: 'strong' }] },
+          { type: 'text', text: '⭐'.repeat(feedback.rating) }
+        ]
+      }]
+    });
   }
-  
+
+  // Add bug details if present
   if (feedback.expected_behavior || feedback.actual_behavior) {
-    description += `\nh3. Bug Details\n`;
+    content.push(
+      {
+        type: 'heading',
+        attrs: { level: 3 },
+        content: [{ type: 'text', text: 'Bug Details' }]
+      }
+    );
+    
     if (feedback.expected_behavior) {
-      description += `*Expected:* ${feedback.expected_behavior}\n`;
+      content.push({
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Expected: ', marks: [{ type: 'strong' }] },
+          { type: 'text', text: feedback.expected_behavior }
+        ]
+      });
     }
+    
     if (feedback.actual_behavior) {
-      description += `*Actual:* ${feedback.actual_behavior}\n`;
+      content.push({
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Actual: ', marks: [{ type: 'strong' }] },
+          { type: 'text', text: feedback.actual_behavior }
+        ]
+      });
     }
+    
     if (feedback.reproduction_steps) {
-      description += `*Steps:* ${feedback.reproduction_steps}\n`;
+      content.push({
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Steps: ', marks: [{ type: 'strong' }] },
+          { type: 'text', text: feedback.reproduction_steps }
+        ]
+      });
     }
   }
-  
+
+  // Add feature request details if present
   if (feedback.problem_statement) {
-    description += `\nh3. Feature Request Details\n`;
-    description += `*Problem:* ${feedback.problem_statement}\n`;
+    content.push(
+      {
+        type: 'heading',
+        attrs: { level: 3 },
+        content: [{ type: 'text', text: 'Feature Request Details' }]
+      },
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Problem: ', marks: [{ type: 'strong' }] },
+          { type: 'text', text: feedback.problem_statement }
+        ]
+      }
+    );
+    
     if (feedback.current_workaround) {
-      description += `*Workaround:* ${feedback.current_workaround}\n`;
+      content.push({
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Workaround: ', marks: [{ type: 'strong' }] },
+          { type: 'text', text: feedback.current_workaround }
+        ]
+      });
     }
   }
-  
-  description += `\n---\n`;
-  description += `*Link to feedback:* ${adminUrl}/feedback?id=${feedback.id}\n`;
-  description += `*Admin panel:* ${adminUrl}/feedback\n`;
-  
-  return description;
+
+  // Add separator and links
+  content.push(
+    {
+      type: 'rule'
+    },
+    {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Link to feedback: ', marks: [{ type: 'strong' }] },
+        { 
+          type: 'text', 
+          text: `${adminUrl}/feedback?id=${feedback.id}`,
+          marks: [{ 
+            type: 'link', 
+            attrs: { href: `${adminUrl}/feedback?id=${feedback.id}` } 
+          }]
+        }
+      ]
+    },
+    {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Admin panel: ', marks: [{ type: 'strong' }] },
+        { 
+          type: 'text', 
+          text: `${adminUrl}/feedback`,
+          marks: [{ 
+            type: 'link', 
+            attrs: { href: `${adminUrl}/feedback` } 
+          }]
+        }
+      ]
+    }
+  );
+
+  // Return ADF format (Atlassian Document Format)
+  return {
+    type: 'doc',
+    version: 1,
+    content: content
+  };
 }
 
 // ============================================================================
@@ -124,6 +295,8 @@ export async function createJiraTicket(feedback) {
     },
   };
 
+  console.log('[jira] Creating issue with data:', JSON.stringify(issueData, null, 2));
+
   // Create issue
   const createResponse = await fetch(`${JIRA_CONFIG.baseUrl}/rest/api/3/issue`, {
     method: 'POST',
@@ -134,12 +307,34 @@ export async function createJiraTicket(feedback) {
     body: JSON.stringify(issueData),
   });
 
+  console.log('[jira] Create response status:', createResponse.status);
+
   if (!createResponse.ok) {
-    const error = await createResponse.json().catch(() => ({}));
-    throw new Error(error.errorMessages?.[0] || 'Failed to create Jira ticket');
+    // Get detailed error
+    const errorText = await createResponse.text();
+    console.error('[jira] Full error response:', errorText);
+    
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch (e) {
+      console.error('[jira] Could not parse error as JSON');
+      throw new Error(`Jira API error (${createResponse.status}): ${errorText.substring(0, 500)}`);
+    }
+    
+    // Log detailed errors
+    console.error('[jira] Parsed error data:', JSON.stringify(errorData, null, 2));
+    
+    // Extract meaningful error message
+    const errorMessage = errorData.errorMessages?.[0] 
+      || JSON.stringify(errorData.errors)
+      || errorText.substring(0, 200);
+    
+    throw new Error(`Jira error: ${errorMessage}`);
   }
 
   const result = await createResponse.json();
+  console.log('[jira] Issue created successfully:', result.key);
   
   return {
     key: result.key,
@@ -180,9 +375,12 @@ export async function uploadAttachmentsToJira(issueKey, attachments) {
 
       if (uploadResponse.ok) {
         uploaded.push(attachment.id);
+        console.log('[jira] Attachment uploaded:', attachment.file_name);
+      } else {
+        console.error('[jira] Failed to upload attachment:', attachment.file_name);
       }
     } catch (error) {
-      console.error(`Failed to upload attachment ${attachment.id}:`, error);
+      console.error(`[jira] Failed to upload attachment ${attachment.id}:`, error);
     }
   }
 
@@ -216,6 +414,7 @@ export async function updateJiraTicket(issueKey, updates) {
           }),
         }
       );
+      console.log('[jira] Status transitioned:', updates.status);
     }
   }
 
@@ -244,7 +443,7 @@ export async function updateJiraTicket(issueKey, updates) {
     ];
   }
 
-  // Update fields
+  // Update priority
   if (updates.priority) {
     updateData.fields.priority = { name: mapPriorityToJira(updates.priority) };
   }
@@ -263,8 +462,12 @@ export async function updateJiraTicket(issueKey, updates) {
     );
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[jira] Update failed:', errorText);
       throw new Error('Failed to update Jira ticket');
     }
+    
+    console.log('[jira] Ticket updated successfully');
   }
 }
 
@@ -323,6 +526,10 @@ export async function getJiraTicket(issueKey) {
     url: `${JIRA_CONFIG.baseUrl}/browse/${data.key}`,
   };
 }
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
 
 export default {
   createJiraTicket,
