@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+// admin/src/components/Layout.jsx - With real-time badge counts
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-// Icons
+// Icons (same as before)
 const Icons = {
   Menu: () => (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -144,7 +145,7 @@ function MobileBottomNav({ badges = {} }) {
             >
               <div className="relative">
                 <ItemIcon active={active} />
-                {item.badge && item.badge > 0 && (
+                {item.badge != null && item.badge > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
@@ -163,14 +164,53 @@ function MobileBottomNav({ badges = {} }) {
 
 export default function Layout({ me, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Mock badges - will be replaced with real data
-  const badges = {
+  const [badges, setBadges] = useState({
     flags: 0,
-    feedback: 12, // This will come from API
-    moderation: 3,
-    experts: 2,
-  };
+    feedback: 0,
+    moderation: 0,
+    experts: 0,
+  });
+
+  // Fetch badge counts on mount and periodically
+  useEffect(() => {
+    fetchBadgeCounts();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchBadgeCounts, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  async function fetchBadgeCounts() {
+    try {
+      // Fetch in parallel for speed
+      const [flagsRes, feedbackRes] = await Promise.all([
+        fetch('/api/flags', { credentials: 'include' }).catch(() => null),
+        fetch('/api/feedback?status=new&limit=1', { credentials: 'include' }).catch(() => null)
+      ]);
+
+      const newBadges = { ...badges };
+
+      // Feature flags - count total flags (not just enabled)
+      if (flagsRes?.ok) {
+        const flagsData = await flagsRes.json();
+        newBadges.flags = flagsData.flags?.length || 0;
+      }
+
+      // Feedback - count pending/new items
+      if (feedbackRes?.ok) {
+        const feedbackData = await feedbackRes.json();
+        newBadges.feedback = feedbackData.pagination?.total || 0;
+      }
+
+      // Only update if counts changed (prevent unnecessary re-renders)
+      if (JSON.stringify(newBadges) !== JSON.stringify(badges)) {
+        setBadges(newBadges);
+      }
+    } catch (error) {
+      console.error('[badges] Failed to fetch counts:', error);
+    }
+  }
 
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', Icon: Icons.BarChart },
@@ -183,6 +223,8 @@ export default function Layout({ me, onLogout, children }) {
   ];
 
   const closeSidebar = () => setSidebarOpen(false);
+
+  const totalNotifications = badges.feedback + badges.moderation + badges.experts;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -208,7 +250,7 @@ export default function Layout({ me, onLogout, children }) {
         
         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
           <Icons.Bell />
-          {(badges.feedback + badges.moderation + badges.experts) > 0 && (
+          {totalNotifications > 0 && (
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
           )}
         </button>
@@ -255,7 +297,7 @@ export default function Layout({ me, onLogout, children }) {
               <p className="text-sm font-semibold text-gray-900 truncate">
                 {me?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
               </p>
-              <p className="text-xs text-gray-500">ID: {me?.admin_id}</p>
+              <p className="text-xs text-gray-500">ID: {me?.admin_id?.slice(0, 8)}</p>
             </div>
           </div>
           <button 
@@ -287,7 +329,7 @@ export default function Layout({ me, onLogout, children }) {
           <div className="flex items-center gap-3">
             <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
               <Icons.Bell />
-              {(badges.feedback + badges.moderation + badges.experts) > 0 && (
+              {totalNotifications > 0 && (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               )}
             </button>
