@@ -4,6 +4,7 @@
 import { getSignInTemplate } from './email-templates/sign-in.js';
 import { getNewQuestionTemplate } from './email-templates/new-question.js';
 import { getAnswerReceivedTemplate } from './email-templates/answer-received.js';
+import { getQuestionConfirmationTemplate } from './email-templates/question-confirmation.js';
 
 const ZEPTOMAIL_API_URL = 'https://api.zeptomail.eu/v1.1/email';
 
@@ -135,6 +136,30 @@ export async function sendNewQuestionNotification(data) {
 export async function sendAnswerReceivedNotification(data) {
   const { askerEmail, askerName } = data;
   const { subject, htmlBody, textBody } = getAnswerReceivedTemplate(data);
+
+  return sendEmail({
+    to: askerEmail,
+    toName: askerName,
+    subject,
+    htmlBody,
+    textBody,
+  });
+}
+
+/**
+ * Send question confirmation email to payer/asker
+ * @param {Object} data - Question data
+ * @param {string} data.askerEmail - Asker's email
+ * @param {string} data.askerName - Asker's name
+ * @param {string} data.expertName - Expert's name
+ * @param {string} data.questionTitle - Question title
+ * @param {string} data.questionText - Question text
+ * @param {number} data.questionId - Question ID
+ * @param {number} data.slaHours - SLA hours (optional)
+ */
+export async function sendQuestionConfirmationNotification(data) {
+  const { askerEmail, askerName } = data;
+  const { subject, htmlBody, textBody } = getQuestionConfirmationTemplate(data);
 
   return sendEmail({
     to: askerEmail,
