@@ -1,244 +1,522 @@
-# ZeptoMail Email Notifications - Implementation Guide
+# ZeptoMail Email Notifications - Implementation Documentation
 
 ## Overview
 
-ZeptoMail has been integrated into QuickChat to send transactional email notifications for three key events:
-1. **Sign In** - Welcome back notification when users sign in
+ZeptoMail has been successfully integrated into QuickChat to send transactional email notifications for three key events:
+1. **Sign In** - Welcome back notification when users sign in via OAuth
 2. **Create Question** - Notification to expert when a new question is received
 3. **Answer Question** - Notification to asker when their question is answered
 
-## Files Created/Modified
+**Status:** ✅ Fully implemented and tested
+**Region:** EU (https://api.zeptomail.eu)
 
-### New Files Created
+---
 
-1. **`/api/lib/zeptomail.js`** - ZeptoMail service module
-   - Core email sending functionality
-   - Three specialized notification functions:
-     - `sendSignInNotification(user)`
-     - `sendNewQuestionNotification(data)`
-     - `sendAnswerReceivedNotification(data)`
-   - Beautiful HTML email templates with responsive design
+## Architecture
 
-2. **`/api/answer/submit.js`** - Answer submission endpoint
-   - Proxies answer submission to Xano
-   - Fetches question and expert details
-   - Sends email notification to asker
-   - Non-blocking email sending
+### Directory Structure
 
-3. **`.env.local`** - Local environment variables
-   - `ZEPTOMAIL_TOKEN` - Your ZeptoMail API token
-   - `ZEPTOMAIL_FROM_EMAIL` - noreply@mindpick.me
-   - `ZEPTOMAIL_FROM_NAME` - mindPick.me Notification
+```
+/api
+  /lib
+    /email-templates          # Organized email templates
+      sign-in.js              # Sign-in notification template
+      new-question.js         # New question notification template
+      answer-received.js      # Answer received notification template
+    zeptomail.js              # Core ZeptoMail service (refactored)
 
-4. **`.gitignore`** - Protects sensitive credentials
-   - Ensures `.env.local` is never committed to git
+  /oauth
+    /google
+      continue.js             # Google OAuth + sign-in email
+    /linkedin
+      continue.js             # LinkedIn OAuth + sign-in email
 
-### Modified Files
+  /questions
+    create.js                 # Question creation + expert email
 
-1. **`/api/oauth/google/continue.js`**
-   - Added sign-in notification after successful Google OAuth
-   - Non-blocking email sending (doesn't delay response)
+  /answer
+    submit.js                 # Answer submission + asker email
 
-2. **`/api/oauth/linkedin/continue.js`**
-   - Added sign-in notification after successful LinkedIn OAuth
-   - Non-blocking email sending
+  test-email.js               # Test endpoint for email verification
+  diagnose-zeptomail.js       # Diagnostic endpoint for troubleshooting
+```
 
-3. **`/api/questions/create.js`**
-   - Added new question notification to expert
-   - Extracts expert email from profile data
-   - Non-blocking email sending
+### Key Components
 
-4. **`/src/hooks/useAnswerUpload.js`**
-   - Updated to call `/api/answer/submit` instead of Xano directly
-   - Ensures email notifications are sent when answers are submitted
+#### 1. **Email Templates** (`/api/lib/email-templates/`)
+Separated email templates for easy maintenance and customization:
+- **sign-in.js** - Welcome back email with security notice
+- **new-question.js** - Expert notification with question details
+- **answer-received.js** - Asker notification with answer link
+
+Each template exports a function that returns:
+```javascript
+{
+  subject: string,
+  htmlBody: string,
+  textBody: string
+}
+```
+
+#### 2. **ZeptoMail Service** (`/api/lib/zeptomail.js`)
+Core email service with clean, maintainable functions:
+- `sendEmail()` - Generic email sending function
+- `sendSignInNotification()` - Sign-in email wrapper
+- `sendNewQuestionNotification()` - Question email wrapper
+- `sendAnswerReceivedNotification()` - Answer email wrapper
+
+#### 3. **Integration Points**
+Email notifications are triggered at:
+- **OAuth callbacks** - Non-blocking after successful authentication
+- **Question creation** - Non-blocking after question is saved to Xano
+- **Answer submission** - Non-blocking after answer is saved to Xano
+
+---
 
 ## Configuration
 
 ### Environment Variables
 
-Add these to your **Vercel environment variables** (for production):
+Required environment variables (set in Vercel):
 
-```
-ZEPTOMAIL_TOKEN=Zoho-enczapikey yA6KbHtf6132yzhXEkFshJjZ8t1k//893nzi53uwfcAhK9e33aE5g0A9JtG9LzLejISF4PgAatwTIdi574tdL8JiMNUAKZTGTuv4P2uV48xh8ciEYNYjgZWuCrURGq9IdhIhCS44QvgnWA==
-ZEPTOMAIL_FROM_EMAIL=noreply@mindpick.me
-ZEPTOMAIL_FROM_NAME=mindPick.me Notification
-```
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `ZEPTOMAIL_TOKEN` | `Zoho-enczapikey yA6K...` | Full API token from ZeptoMail |
+| `ZEPTOMAIL_FROM_EMAIL` | `noreply@mindpick.me` | Verified sender email |
+| `ZEPTOMAIL_FROM_NAME` | `mindPick.me Notification` | Sender display name |
 
-### Local Development
+**Important Notes:**
+- The token must include the full `Zoho-enczapikey` prefix
+- Sender email must be verified in ZeptoMail dashboard
+- EU region endpoint is used: `https://api.zeptomail.eu/v1.1/email`
 
-For local development, the `.env.local` file has already been created with your credentials.
+### Vercel Setup
+
+1. Go to **Vercel Dashboard** → Your Project → **Settings** → **Environment Variables**
+2. Add the three variables above
+3. Select **All Environments** (Production, Preview, Development)
+4. Click **Save** and **Redeploy**
+
+---
 
 ## Email Templates
 
 ### 1. Sign-In Notification
-**Sent to:** User who signed in
-**Trigger:** OAuth success (Google or LinkedIn)
+
+**Triggered:** After successful Google or LinkedIn OAuth
+**Sent to:** User's email address
+**Subject:** "Welcome back to mindPick.me"
+
 **Content:**
-- Welcome message
-- Email and timestamp
-- Quick links to key features
-- Security notice
+- Welcome message with user's name
+- Email address and sign-in timestamp
+- Quick links to dashboard features
+- Security notice (if user didn't sign in)
+
+**Template:** `/api/lib/email-templates/sign-in.js`
+
+---
 
 ### 2. New Question Notification
-**Sent to:** Expert
-**Trigger:** New question created
+
+**Triggered:** When a new question is created
+**Sent to:** Expert's email address (from expert profile)
+**Subject:** "New Question Received on mindPick.me"
+
 **Content:**
 - Question title and description
-- Asker's email
-- Question ID
+- Asker's email address
+- Question ID and timestamp
 - Direct link to expert dashboard
 - SLA reminder
 
+**Template:** `/api/lib/email-templates/new-question.js`
+
+---
+
 ### 3. Answer Received Notification
-**Sent to:** Asker
-**Trigger:** Expert submits answer
+
+**Triggered:** When expert submits an answer
+**Sent to:** Asker's email address (payer_email from question)
+**Subject:** "Your Question Has Been Answered on mindPick.me"
+
 **Content:**
-- Expert name
+- Expert's name
 - Question title
 - Answer timestamp
 - Direct link to view answer
 - Feedback prompt
 
-## Email Features
+**Template:** `/api/lib/email-templates/answer-received.js`
 
-All emails include:
-- ✅ Responsive HTML design
-- ✅ Plain text fallback
-- ✅ Professional branding
-- ✅ Clear call-to-action buttons
-- ✅ Automatic timestamp
-- ✅ Security/informational notices
-
-## Implementation Details
-
-### Non-Blocking Email Sending
-
-All email notifications are sent asynchronously using `.then()/.catch()` to avoid blocking the API response:
-
-```javascript
-if (userEmail) {
-  sendSignInNotification({ email: userEmail, name: userName })
-    .then(() => console.log('✅ Sign-in notification sent'))
-    .catch((err) => console.error('❌ Failed to send sign-in notification:', err.message));
-}
-```
-
-This ensures:
-- Fast API responses
-- Email failures don't break the user flow
-- Errors are logged for debugging
-
-### Error Handling
-
-- Email failures are logged but don't throw errors
-- Failed emails won't prevent sign-ins, questions, or answers
-- All email errors are logged with descriptive messages
+---
 
 ## Testing
 
-### Local Testing
+### Test Endpoint
 
-1. Start the development server:
-   ```bash
-   npm run dev
-   ```
+Use the test endpoint to verify email configuration:
 
-2. Test each flow:
-   - **Sign In**: Sign in with Google or LinkedIn
-   - **Create Question**: Submit a question to an expert
-   - **Answer Question**: Submit an answer as an expert
-
-3. Check console logs for:
-   - `✅ Sign-in notification sent`
-   - `✅ Expert notification sent`
-   - `✅ Answer notification sent to asker`
-
-### Production Testing
-
-After deploying to Vercel:
-1. Add environment variables to Vercel
-2. Deploy and test each email flow
-3. Check Vercel function logs for email status
-4. Verify emails are received in inboxes
-
-## Deployment Checklist
-
-- [ ] Add `ZEPTOMAIL_TOKEN` to Vercel environment variables
-- [ ] Add `ZEPTOMAIL_FROM_EMAIL` to Vercel environment variables
-- [ ] Add `ZEPTOMAIL_FROM_NAME` to Vercel environment variables
-- [ ] Deploy to Vercel
-- [ ] Test sign-in flow
-- [ ] Test question creation flow
-- [ ] Test answer submission flow
-- [ ] Verify emails in inbox (check spam folder)
-
-## ZeptoMail API Details
-
-### API Endpoint
-```
-POST https://api.zeptomail.com/v1.1/email
+```bash
+https://your-domain.vercel.app/api/test-email?email=YOUR_EMAIL
 ```
 
-### Authentication
-```
-Authorization: Zoho-enczapikey <your-token>
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Test email sent successfully",
+  "config": {
+    "fromEmail": "noreply@mindpick.me",
+    "fromName": "mindPick.me Notification",
+    "toEmail": "your@email.com",
+    "type": "simple"
+  }
+}
 ```
 
-### Rate Limits
-- Free tier: 10,000 emails/month
-- Check your ZeptoMail dashboard for current usage
+### Diagnostic Endpoint
+
+Use the diagnostic endpoint for detailed troubleshooting:
+
+```bash
+https://your-domain.vercel.app/api/diagnose-zeptomail?email=YOUR_EMAIL
+```
+
+**Response includes:**
+- Environment variable status
+- Token validation
+- API connection test
+- Specific error suggestions
+
+### Manual Testing
+
+#### Test Sign-In Email:
+1. Sign out of your account
+2. Sign back in with Google or LinkedIn
+3. Check email inbox (and spam folder)
+4. Verify email is received within 30 seconds
+
+#### Test Question Email:
+1. Create a new question for an expert
+2. Check expert's email inbox
+3. Verify question details are correct
+4. Click dashboard link to verify it works
+
+#### Test Answer Email:
+1. Submit an answer as an expert
+2. Check asker's email inbox
+3. Verify answer notification is received
+4. Click view answer link to verify it works
+
+---
+
+## Monitoring
+
+### ZeptoMail Dashboard
+
+Monitor sent emails at: https://www.zoho.com/zeptomail/
+
+**Email Logs show:**
+- Sent emails count
+- Delivery status
+- Bounce/failure reasons
+- API usage statistics
+
+### Vercel Function Logs
+
+Check Vercel logs for email activity:
+
+1. Go to **Vercel Dashboard** → Your Project → **Logs** or **Functions**
+2. Filter by function: `/api/oauth/*/continue`, `/api/questions/create`, `/api/answer/submit`
+3. Look for log messages:
+   - `📧 Sending email via ZeptoMail to: [email]`
+   - `✅ Email sent successfully to: [email]`
+   - `❌ Failed to send email:` (with error details)
+
+### Console Logs
+
+Each email attempt logs:
+```
+📧 Sending email via ZeptoMail to: user@example.com
+📧 Subject: Welcome back to mindPick.me
+✅ Email sent successfully to: user@example.com
+```
+
+Or on failure:
+```
+❌ ZeptoMail API error: { code: 'TM_4001', message: 'Access Denied' }
+```
+
+---
 
 ## Troubleshooting
 
-### Emails Not Sending
-
-1. **Check environment variables**
-   ```bash
-   # Local
-   cat .env.local
-
-   # Production
-   vercel env ls
-   ```
-
-2. **Check Vercel function logs**
-   - Look for email-related errors
-   - Verify ZeptoMail API responses
-
-3. **Check ZeptoMail dashboard**
-   - View sent emails
-   - Check for API errors
-   - Verify sender address is active
-
 ### Common Issues
 
-**Issue:** "Email service not configured"
-**Solution:** Ensure `ZEPTOMAIL_TOKEN` is set in environment variables
+#### Issue: "Access Denied" (TM_4001)
 
-**Issue:** Emails in spam folder
-**Solution:** Verify domain DKIM/SPF records in ZeptoMail settings
+**Causes:**
+- Wrong API region (using .com instead of .eu)
+- Sender email not verified in ZeptoMail
+- Invalid or expired API token
+- Mail Agent is inactive
 
-**Issue:** Expert email not found
-**Solution:** Ensure expert profile includes email field in Xano
+**Solution:**
+1. Verify you're using EU endpoint: `https://api.zeptomail.eu`
+2. Check sender email is verified: ZeptoMail → Sender Addresses
+3. Verify API token: ZeptoMail → Mail Agents → Setup Info → API
+4. Check Mail Agent is active
 
-## Future Enhancements
+#### Issue: Emails Not Received
 
-Possible improvements:
-- [ ] Email templates with custom branding
-- [ ] Email preferences/unsubscribe functionality
-- [ ] Email analytics tracking
-- [ ] Additional notification types (reminders, updates, etc.)
-- [ ] Email queue for high-volume scenarios
-- [ ] A/B testing for email content
+**Check:**
+1. **Spam/Junk folder** - First emails often go to spam
+2. **ZeptoMail logs** - Verify email was actually sent
+3. **Vercel logs** - Check if send was triggered
+4. **Sender reputation** - New senders may have delivery delays
+
+#### Issue: "ZEPTOMAIL_TOKEN not set"
+
+**Solution:**
+1. Add environment variables to Vercel
+2. Redeploy after adding variables
+3. Verify variables are set for correct environment (Production/Preview)
+
+#### Issue: Wrong API Region Error
+
+**Symptom:** 403 or Access Denied errors
+**Solution:** Ensure code uses `https://api.zeptomail.eu` (not `.com`)
+
+---
+
+## Code Examples
+
+### Adding a New Email Template
+
+1. Create template file:
+```javascript
+// api/lib/email-templates/my-template.js
+export function getMyTemplate(data) {
+  const subject = 'My Subject';
+  const htmlBody = `<div>My HTML content with ${data.name}</div>`;
+  const textBody = `My plain text content with ${data.name}`;
+
+  return { subject, htmlBody, textBody };
+}
+```
+
+2. Add function to zeptomail.js:
+```javascript
+import { getMyTemplate } from './email-templates/my-template.js';
+
+export async function sendMyNotification(data) {
+  const { subject, htmlBody, textBody } = getMyTemplate(data);
+
+  return sendEmail({
+    to: data.email,
+    toName: data.name,
+    subject,
+    htmlBody,
+    textBody,
+  });
+}
+```
+
+3. Call from your API endpoint:
+```javascript
+import { sendMyNotification } from './lib/zeptomail.js';
+
+// Non-blocking email
+sendMyNotification(data)
+  .then(() => console.log('✅ Email sent'))
+  .catch(err => console.error('❌ Email failed:', err.message));
+```
+
+### Customizing Email Templates
+
+Edit template files in `/api/lib/email-templates/`:
+
+**Example:** Change sign-in email colors
+```javascript
+// api/lib/email-templates/sign-in.js
+// Change from blue (#3498db) to green (#10b981)
+<div style="border-left: 4px solid #10b981;">
+```
+
+**Best Practices:**
+- Keep inline styles for email compatibility
+- Test in multiple email clients
+- Maintain plain text version for accessibility
+- Keep HTML simple (avoid complex CSS)
+
+---
+
+## Performance
+
+### Email Sending Performance
+
+- **Non-blocking:** All emails sent asynchronously
+- **No user delay:** API responses not affected by email sending
+- **Timeout:** Emails timeout after 10 seconds
+- **Retry:** No automatic retry (failed emails are logged)
+
+### ZeptoMail Limits
+
+- **Free Tier:** 10,000 emails/month
+- **Rate Limits:** Check ZeptoMail dashboard for account limits
+- **Delivery Time:** Usually < 5 seconds
+
+---
+
+## Security
+
+### Token Security
+
+- ✅ Token stored in environment variables (not in code)
+- ✅ Token never exposed to frontend
+- ✅ Token not logged (only first 30 chars for debugging)
+- ✅ `.env.local` in `.gitignore`
+
+### Email Security
+
+- ✅ SPF/DKIM configured via ZeptoMail
+- ✅ HTTPS-only API communication
+- ✅ Sender email domain verified
+- ✅ No user input in sender fields
+
+---
+
+## Maintenance
+
+### Regular Checks
+
+**Monthly:**
+- Check email delivery rates in ZeptoMail dashboard
+- Review bounce/failure logs
+- Monitor quota usage
+
+**Quarterly:**
+- Review email content for accuracy
+- Test all email flows
+- Update templates if needed
+
+### Updating Templates
+
+1. Edit template in `/api/lib/email-templates/`
+2. Test locally with `/api/test-email`
+3. Deploy to Vercel
+4. Send test emails to verify changes
+
+---
+
+## API Reference
+
+### sendEmail(options)
+
+Core email sending function.
+
+**Parameters:**
+```javascript
+{
+  to: string,           // Recipient email
+  toName: string,       // Recipient name (optional)
+  subject: string,      // Email subject
+  htmlBody: string,     // HTML content
+  textBody: string      // Plain text content (optional)
+}
+```
+
+**Returns:** `Promise<Object>` - ZeptoMail API response
+
+### sendSignInNotification(user)
+
+Send sign-in notification.
+
+**Parameters:**
+```javascript
+{
+  email: string,        // User email
+  name: string          // User name
+}
+```
+
+### sendNewQuestionNotification(data)
+
+Send new question notification to expert.
+
+**Parameters:**
+```javascript
+{
+  expertEmail: string,
+  expertName: string,
+  questionTitle: string,
+  questionText: string,
+  askerEmail: string,
+  questionId: number
+}
+```
+
+### sendAnswerReceivedNotification(data)
+
+Send answer notification to asker.
+
+**Parameters:**
+```javascript
+{
+  askerEmail: string,
+  askerName: string,
+  expertName: string,
+  questionTitle: string,
+  questionId: number,
+  answerId: number
+}
+```
+
+---
 
 ## Support
 
-For ZeptoMail support:
-- Dashboard: https://www.zoho.com/zeptomail/
-- Documentation: https://www.zoho.com/zeptomail/help/
-- Support: Check ZeptoMail help center
+### ZeptoMail Resources
 
-For implementation questions, check:
-- Console logs for detailed error messages
-- Vercel function logs
-- ZeptoMail API logs in dashboard
+- **Dashboard:** https://www.zoho.com/zeptomail/
+- **Documentation:** https://www.zoho.com/zeptomail/help/
+- **Support:** Via ZeptoMail help center
+
+### Internal Documentation
+
+- **Main docs:** `docs/CLAUDE.md`
+- **Testing guide:** `TESTING-ZEPTOMAIL.md`
+- **Email templates:** `api/lib/email-templates/`
+
+---
+
+## Changelog
+
+### v1.0.0 (2025-10-13)
+- ✅ Initial implementation complete
+- ✅ Three email notifications working
+- ✅ EU region endpoint configured
+- ✅ Templates organized into separate files
+- ✅ Test and diagnostic endpoints added
+- ✅ Non-blocking email sending
+- ✅ Comprehensive error logging
+- ✅ Production tested and verified
+
+---
+
+## Summary
+
+✅ **Email notifications are fully operational**
+
+**Active Notifications:**
+1. Sign-in welcome email
+2. New question alert to experts
+3. Answer received notification to askers
+
+**Status:** Production-ready and tested
+**Region:** EU (api.zeptomail.eu)
+**Performance:** Non-blocking, < 5 second delivery
+**Monitoring:** ZeptoMail dashboard + Vercel logs
+
+For questions or issues, check the diagnostic endpoint first, then review Vercel function logs and ZeptoMail dashboard.
