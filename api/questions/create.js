@@ -95,7 +95,14 @@ export default async function handler(req, res) {
     const expertEmail = profileData.expert_profile?.email || profileData.email;
     const expertName = profileData.expert_profile?.name || profileData.name;
 
+    console.log('📧 Email notification check:');
+    console.log('  - expertEmail:', expertEmail || 'NOT FOUND');
+    console.log('  - expertName:', expertName || 'NOT FOUND');
+    console.log('  - profileData keys:', Object.keys(profileData));
+    console.log('  - expert_profile keys:', profileData.expert_profile ? Object.keys(profileData.expert_profile) : 'NO expert_profile');
+
     if (expertEmail) {
+      console.log('📧 Attempting to send expert notification...');
       sendNewQuestionNotification({
         expertEmail,
         expertName,
@@ -104,8 +111,11 @@ export default async function handler(req, res) {
         askerEmail: payerEmail,
         questionId,
       })
-        .then(() => console.log('✅ Expert notification sent'))
+        .then(() => console.log('✅ Expert notification sent to:', expertEmail))
         .catch((err) => console.error('❌ Failed to send expert notification:', err.message));
+    } else {
+      console.warn('⚠️ No expert email found - skipping notification');
+      console.warn('⚠️ Profile data structure:', JSON.stringify(profileData, null, 2));
     }
 
     // 3. Create media assets (try singular endpoint)
