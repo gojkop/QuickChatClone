@@ -92,30 +92,44 @@ export default async function handler(req, res) {
     console.log('✅ Question created with ID:', questionId);
 
     // Send email notification to expert (non-blocking)
-    const expertEmail = profileData.expert_profile?.email || profileData.email;
-    const expertName = profileData.expert_profile?.name || profileData.name;
+    // The email is in the user table, need to fetch it using user_id
+    const userId = profileData.expert_profile?.user_id;
+    const expertName = profileData.user?.name;
 
-    console.log('📧 Email notification check:');
-    console.log('  - expertEmail:', expertEmail || 'NOT FOUND');
-    console.log('  - expertName:', expertName || 'NOT FOUND');
-    console.log('  - profileData keys:', Object.keys(profileData));
-    console.log('  - expert_profile keys:', profileData.expert_profile ? Object.keys(profileData.expert_profile) : 'NO expert_profile');
+    if (userId) {
+      console.log('📧 Fetching expert email for user_id:', userId);
 
-    if (expertEmail) {
-      console.log('📧 Attempting to send expert notification...');
-      sendNewQuestionNotification({
-        expertEmail,
-        expertName,
-        questionTitle: title,
-        questionText: text,
-        askerEmail: payerEmail,
-        questionId,
-      })
-        .then(() => console.log('✅ Expert notification sent to:', expertEmail))
+      // Fetch user email from Xano
+      fetch(`${process.env.XANO_BASE_URL}/user/${userId}`)
+        .then(async (userResponse) => {
+          if (!userResponse.ok) {
+            console.error('❌ Failed to fetch user data:', userResponse.status);
+            return;
+          }
+
+          const userData = await userResponse.json();
+          const expertEmail = userData.email;
+
+          console.log('📧 Expert email found:', expertEmail);
+
+          if (expertEmail) {
+            console.log('📧 Sending expert notification...');
+            return sendNewQuestionNotification({
+              expertEmail,
+              expertName,
+              questionTitle: title,
+              questionText: text,
+              askerEmail: payerEmail,
+              questionId,
+            });
+          } else {
+            console.warn('⚠️ User data has no email field');
+          }
+        })
+        .then(() => console.log('✅ Expert notification sent successfully'))
         .catch((err) => console.error('❌ Failed to send expert notification:', err.message));
     } else {
-      console.warn('⚠️ No expert email found - skipping notification');
-      console.warn('⚠️ Profile data structure:', JSON.stringify(profileData, null, 2));
+      console.warn('⚠️ No user_id found in expert profile - skipping notification');
     }
 
     // 3. Create media assets (try singular endpoint)
