@@ -1,6 +1,5 @@
 // api/oauth/google/continue.js
 import axios from 'axios';
-import { sendSignInNotification } from '../lib/zeptomail.js';
 
 export default async function handler(req, res) {
   try {
@@ -64,7 +63,11 @@ export default async function handler(req, res) {
     const userName = r.data?.name;
 
     if (userEmail) {
-      sendSignInNotification({ email: userEmail, name: userName })
+      // Dynamic import to avoid module loading issues
+      import('../lib/zeptomail.js')
+        .then(({ sendSignInNotification }) => {
+          return sendSignInNotification({ email: userEmail, name: userName });
+        })
         .then(() => console.log('✅ Sign-in notification sent'))
         .catch((err) => console.error('❌ Failed to send sign-in notification:', err.message));
     }
