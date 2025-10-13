@@ -1,6 +1,7 @@
 // api/answer/submit.js
 // Proxy endpoint for answer submission that sends email notifications
 import { sendAnswerReceivedNotification } from '../lib/zeptomail.js';
+import { fetchUserData, getAskerName, getAskerEmail } from '../lib/user-data.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -88,41 +89,32 @@ export default async function handler(req, res) {
     }
 
     if (questionData) {
-      // 4. Fetch expert details to get expert name
-      const expertResponse = await fetch(
-        `${process.env.XANO_BASE_URL}/user/${user_id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(req.headers.authorization && {
-              Authorization: req.headers.authorization,
-            }),
-          },
-        }
-      );
+      // 4. Fetch expert details (the person who answered)
+      const expertData = await fetchUserData(user_id);
+      const expertName = expertData?.name || 'Your Expert';
 
-      let expertName = 'Your Expert';
-      if (expertResponse.ok) {
-        const expertData = await expertResponse.json();
-        expertName = expertData.name || expertData.fname || 'Your Expert';
-      }
-
-      // 5. Send email notification to asker (non-blocking)
-      const askerEmail = questionData.payer_email;
-      const askerName = questionData.payer_first_name || questionData.payer_email?.split('@')[0] || 'there';
+      // 5. Get asker details from question data
+      const askerEmail = getAskerEmail(questionData);
+      const askerName = getAskerName(questionData);
       const questionTitle = questionData.title;
 
       if (askerEmail) {
-        sendAnswerReceivedNotification({
-          askerEmail,
-          askerName,
-          expertName,
-          questionTitle,
-          questionId: question_id,
-          answerId: answerId,
-        })
-          .then(() => console.log('✅ Answer notification sent to asker'))
-          .catch((err) => console.error('❌ Failed to send answer notification:', err.message));
+        console.log('📧 Sending answer notification to asker:', askerEmail);
+
+        try {
+          await sendAnswerReceivedNotification({
+            askerEmail,
+            askerName,
+            expertName,
+            questionTitle,
+            questionId: question_id,
+            answerId: answerId,
+          });
+          console.log('✅ Answer notification sent to asker successfully');
+        } catch (emailErr) {
+          console.error('❌ Failed to send answer notification:', emailErr.message);
+          console.error('❌ Email error stack:', emailErr.stack);
+        }
       } else {
         console.warn('⚠️ No asker email found, skipping notification');
       }

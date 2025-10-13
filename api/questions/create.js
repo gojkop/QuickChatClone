@@ -1,4 +1,5 @@
 import { sendNewQuestionNotification } from '../lib/zeptomail.js';
+import { fetchUserData } from '../lib/user-data.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -91,31 +92,34 @@ export default async function handler(req, res) {
 
     console.log('✅ Question created with ID:', questionId);
 
-    // Send email notification to expert (non-blocking)
-    const expertEmail = profileData.expert_profile?.email || profileData.email;
-    const expertName = profileData.expert_profile?.name || profileData.name;
+    // Send email notification to expert
+    const userId = profileData.expert_profile?.user_id;
 
-    console.log('📧 Email notification check:');
-    console.log('  - expertEmail:', expertEmail || 'NOT FOUND');
-    console.log('  - expertName:', expertName || 'NOT FOUND');
-    console.log('  - profileData keys:', Object.keys(profileData));
-    console.log('  - expert_profile keys:', profileData.expert_profile ? Object.keys(profileData.expert_profile) : 'NO expert_profile');
+    if (userId) {
+      const expertData = await fetchUserData(userId);
 
-    if (expertEmail) {
-      console.log('📧 Attempting to send expert notification...');
-      sendNewQuestionNotification({
-        expertEmail,
-        expertName,
-        questionTitle: title,
-        questionText: text,
-        askerEmail: payerEmail,
-        questionId,
-      })
-        .then(() => console.log('✅ Expert notification sent to:', expertEmail))
-        .catch((err) => console.error('❌ Failed to send expert notification:', err.message));
+      if (expertData?.email) {
+        console.log('📧 Sending expert notification...');
+
+        try {
+          await sendNewQuestionNotification({
+            expertEmail: expertData.email,
+            expertName: expertData.name || 'Expert',
+            questionTitle: title,
+            questionText: text,
+            askerEmail: payerEmail,
+            questionId,
+          });
+          console.log('✅ Expert notification sent successfully');
+        } catch (emailErr) {
+          console.error('❌ Failed to send notification:', emailErr.message);
+          console.error('❌ Email error stack:', emailErr.stack);
+        }
+      } else {
+        console.warn('⚠️ Could not retrieve expert email - skipping notification');
+      }
     } else {
-      console.warn('⚠️ No expert email found - skipping notification');
-      console.warn('⚠️ Profile data structure:', JSON.stringify(profileData, null, 2));
+      console.warn('⚠️ No user_id found in expert profile - skipping notification');
     }
 
     // 3. Create media assets (try singular endpoint)
