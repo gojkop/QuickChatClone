@@ -1,5 +1,5 @@
 // src/components/common/FeedbackWidget.jsx
-// Compact, modern feedback widget with fixed email auto-fill
+// Fixed email auto-fill with multiple fallback strategies
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -55,9 +55,55 @@ function trackAction(action) {
   } catch {}
 }
 
+// NEW: Helper to extract email from various sources
+function extractUserEmail(user, isAuthenticated) {
+  if (!isAuthenticated) return '';
+  
+  // Try direct user object properties
+  if (user?.email) return user.email;
+  if (user?.email_address) return user.email_address;
+  if (user?.emailAddress) return user.emailAddress;
+  if (user?.user_email) return user.user_email;
+  
+  // Try nested OAuth objects (as shown in your JSON structure)
+  if (user?.google_oauth?.email) return user.google_oauth.email;
+  if (user?.linkedin_oauth?.email) return user.linkedin_oauth.email;
+  
+  // Try window-level profile data (fallback)
+  if (typeof window !== 'undefined') {
+    // Check if profile data is exposed globally
+    const profile = window.__profileData || window.profileData;
+    if (profile?.user?.email) return profile.user.email;
+    if (profile?.user?.google_oauth?.email) return profile.user.google_oauth.email;
+    if (profile?.user?.linkedin_oauth?.email) return profile.user.linkedin_oauth.email;
+  }
+  
+  console.warn('[FeedbackWidget] Could not extract email from any source');
+  return '';
+}
+
+// NEW: Helper to extract user ID from various sources
+function extractUserId(user, isAuthenticated) {
+  if (!isAuthenticated) return null;
+  
+  if (user?.id) return user.id;
+  if (user?.user_id) return user.user_id;
+  if (user?.userId) return user.userId;
+  
+  if (typeof window !== 'undefined') {
+    const profile = window.__profileData || window.profileData;
+    if (profile?.user?.id) return profile.user.id;
+  }
+  
+  return null;
+}
+
 function FeedbackWidget() {
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const authContext = useAuth();
+  
+  // Handle cases where useAuth might return null/undefined
+  const { user = null, isAuthenticated = false } = authContext || {};
   
   const [isOpen, setIsOpen] = useState(false);
   const [selectedType, setSelectedType] = useState('feedback');
@@ -100,30 +146,36 @@ function FeedbackWidget() {
     };
   }, []);
 
+  // FIXED: Enhanced email detection with multiple fallbacks
   useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log('[FeedbackWidget] User object:', JSON.stringify(user, null, 2));
-      console.log('[FeedbackWidget] User.email specifically:', user.email);
-      console.log('[FeedbackWidget] All user keys:', Object.keys(user));
+    console.group('[FeedbackWidget] Email Detection Debug');
+    console.log('isAuthenticated:', isAuthenticated);
+    console.log('user object:', user);
+    console.log('user type:', typeof user);
+    console.log('user keys:', user ? Object.keys(user) : 'N/A');
+    
+    if (isAuthenticated) {
+      const detectedEmail = extractUserEmail(user, isAuthenticated);
+      console.log('Detected email:', detectedEmail);
       
-      // Temporarily expose to window for debugging
-      if (typeof window !== 'undefined') {
-        window.__debugUser = user;
-        console.log('[FeedbackWidget] User object exposed as window.__debugUser');
-      }
-      
-      // Try to find email in common property names
-      const email = user.email || user.email_address || user.emailAddress || user.user_email;
-      
-      if (email) {
-        console.log('[FeedbackWidget] Setting email from user:', email);
-        setFormData(prev => ({ ...prev, email }));
+      if (detectedEmail) {
+        console.log('✅ Setting email:', detectedEmail);
+        setFormData(prev => ({ ...prev, email: detectedEmail }));
       } else {
-        console.warn('[FeedbackWidget] No email found in user object. User has these properties:', Object.keys(user));
+        console.warn('⚠️ No email found despite being authenticated');
+        console.log('Full user object:', JSON.stringify(user, null, 2));
+        
+        // Check window for debugging
+        if (typeof window !== 'undefined') {
+          console.log('window.__profileData:', window.__profileData);
+          console.log('window.profileData:', window.profileData);
+        }
       }
     } else {
-      console.log('[FeedbackWidget] User not authenticated or no user:', { isAuthenticated, hasUser: !!user });
+      console.log('User not authenticated, skipping email detection');
     }
+    
+    console.groupEnd();
   }, [isAuthenticated, user]);
 
   useEffect(() => {
@@ -135,10 +187,13 @@ function FeedbackWidget() {
     setTimeout(() => {
       setSelectedType('feedback');
       setSubmitted(false);
+      
+      // Preserve email on close if authenticated
+      const currentEmail = extractUserEmail(user, isAuthenticated);
       setFormData({
         message: '',
         rating: 0,
-        email: isAuthenticated && user?.email ? user.email : '',
+        email: currentEmail,
         wants_followup: false,
         expected_behavior: '',
         actual_behavior: '',
@@ -207,9 +262,9 @@ function FeedbackWidget() {
       return;
     }
 
-    console.log('[FeedbackWidget] Submitting with email:', formData.email);
-    console.log('[FeedbackWidget] User object:', user);
-    console.log('[FeedbackWidget] Is authenticated:', isAuthenticated);
+    console.log('[FeedbackWidget] Submitting feedback');
+    console.log('[FeedbackWidget] Form email:', formData.email);
+    console.log('[FeedbackWidget] Detected user email:', extractUserEmail(user, isAuthenticated));
 
     setIsSubmitting(true);
     trackAction('feedback_submit_started');
@@ -217,9 +272,12 @@ function FeedbackWidget() {
     try {
       const timeOnPage = Math.floor((Date.now() - startTimeRef.current) / 1000);
       
-      // Ensure email is included
-      const emailToSend = formData.email.trim() || (isAuthenticated && user?.email) || null;
-      console.log('[FeedbackWidget] Email to send:', emailToSend);
+      // Use form email if provided, otherwise try to extract from user
+      const emailToSend = formData.email.trim() || extractUserEmail(user, isAuthenticated) || null;
+      const userIdToSend = extractUserId(user, isAuthenticated);
+      
+      console.log('[FeedbackWidget] Final email to send:', emailToSend);
+      console.log('[FeedbackWidget] Final user_id to send:', userIdToSend);
       
       const payload = {
         type: selectedType,
@@ -234,11 +292,11 @@ function FeedbackWidget() {
         user_agent: navigator.userAgent,
         device_type: detectDeviceType(),
         viewport: { width: window.innerWidth, height: window.innerHeight },
-        user_id: user?.id || null,
-        user_role: user?.role || 'guest',
+        user_id: userIdToSend,
+        user_role: user?.role || (user?.expert_profile ? 'expert' : 'guest'),
         is_authenticated: isAuthenticated,
         account_age_days: user?.created_at ? 
-          Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : null,
+          Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24)) : null,
         journey_stage: detectJourneyStage(location.pathname, isAuthenticated),
         previous_actions: getPreviousActions(),
         time_on_page: timeOnPage,
@@ -262,6 +320,8 @@ function FeedbackWidget() {
         payload.attachments = await uploadAttachments(attachments);
       }
 
+      console.log('[FeedbackWidget] Final payload:', JSON.stringify(payload, null, 2));
+
       const response = await fetch(`${API_BASE}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -273,7 +333,7 @@ function FeedbackWidget() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('[FeedbackWidget] Error response:', errorData);
-        throw new Error('Failed to submit feedback');
+        throw new Error(errorData.message || 'Failed to submit feedback');
       }
 
       const result = await response.json();
@@ -288,12 +348,16 @@ function FeedbackWidget() {
 
     } catch (error) {
       console.error('Feedback submission failed:', error);
-      alert('Failed to submit feedback. Please try again.');
+      alert(`Failed to submit feedback: ${error.message}`);
       trackAction('feedback_submit_error');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Determine if email field should be editable
+  const hasDetectedEmail = Boolean(extractUserEmail(user, isAuthenticated));
+  const emailFieldReadOnly = isAuthenticated && hasDetectedEmail;
 
   return (
     <>
@@ -513,26 +577,27 @@ function FeedbackWidget() {
                   )}
                 </div>
 
-                {/* Email - Always visible */}
+                {/* Email - FIXED: Better handling */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Email {isAuthenticated ? '(auto-filled)' : '(optional)'}
+                    Email {hasDetectedEmail ? '(auto-filled)' : '(optional)'}
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-sm ${
-                      isAuthenticated 
+                      emailFieldReadOnly
                         ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-medium' 
                         : 'bg-white border-gray-300'
                     }`}
                     placeholder="your@email.com"
-                    readOnly={isAuthenticated}
+                    readOnly={emailFieldReadOnly}
                   />
-                  {isAuthenticated && !formData.email && (
-                    <p className="text-[10px] text-red-600 mt-1">
-                      ⚠️ Email not found in profile. Please add one manually or contact support.
+                  {isAuthenticated && !hasDetectedEmail && (
+                    <p className="text-[10px] text-amber-600 mt-1 flex items-start gap-1">
+                      <span>⚠️</span>
+                      <span>Email not detected. Please add manually or it will be saved as anonymous feedback.</span>
                     </p>
                   )}
                   {formData.email && (
