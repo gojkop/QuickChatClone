@@ -24,6 +24,7 @@ ZeptoMail has been successfully integrated into QuickChat to send transactional 
       new-question.js         # New question notification template
       answer-received.js      # Answer received notification template
     zeptomail.js              # Core ZeptoMail service (refactored)
+    user-data.js              # Modular user data fetching utilities
 
   /oauth
     /google
@@ -65,7 +66,13 @@ Core email service with clean, maintainable functions:
 - `sendNewQuestionNotification()` - Question email wrapper
 - `sendAnswerReceivedNotification()` - Answer email wrapper
 
-#### 3. **Integration Points**
+#### 3. **User Data Utilities** (`/api/lib/user-data.js`)
+Modular functions for fetching and processing user information:
+- `fetchUserData(userId)` - Fetch user email and name from internal Xano endpoint
+- `getAskerName(questionData)` - Construct full name from payer fields (first + last name)
+- `getAskerEmail(questionData)` - Extract asker email from question data
+
+#### 4. **Integration Points**
 Email notifications are triggered at:
 - **OAuth callbacks** - Non-blocking after successful authentication
 - **Question creation** - Non-blocking after question is saved to Xano
@@ -292,6 +299,48 @@ Or on failure:
 
 ## Code Examples
 
+### Using Modular User Data Functions
+
+The refactored code uses modular functions from `/api/lib/user-data.js` for cleaner, reusable user data handling:
+
+**Fetching Expert Data:**
+```javascript
+import { fetchUserData } from '../lib/user-data.js';
+
+// Fetch expert email and name
+const expertData = await fetchUserData(userId);
+
+if (expertData?.email) {
+  await sendNewQuestionNotification({
+    expertEmail: expertData.email,
+    expertName: expertData.name || 'Expert',
+    // ... other fields
+  });
+}
+```
+
+**Getting Asker Information:**
+```javascript
+import { getAskerName, getAskerEmail } from '../lib/user-data.js';
+
+// Extract asker data from question
+const askerEmail = getAskerEmail(questionData);
+const askerName = getAskerName(questionData);  // Handles first + last name
+
+await sendAnswerReceivedNotification({
+  askerEmail,
+  askerName,
+  // ... other fields
+});
+```
+
+**Benefits of Modular Approach:**
+- ✅ Single source of truth for user data fetching
+- ✅ Consistent error handling across endpoints
+- ✅ Easy to test and maintain
+- ✅ Reusable across multiple endpoints
+- ✅ Clear separation of concerns
+
 ### Adding a New Email Template
 
 1. Create template file:
@@ -412,6 +461,57 @@ Edit template files in `/api/lib/email-templates/`:
 
 ## API Reference
 
+### User Data Functions (`/api/lib/user-data.js`)
+
+#### fetchUserData(userId)
+
+Fetch user email and name from internal Xano endpoint.
+
+**Parameters:**
+```javascript
+userId: number  // User ID to fetch
+```
+
+**Returns:** `Promise<{email: string, name: string} | null>`
+
+**Example:**
+```javascript
+const userData = await fetchUserData(123);
+if (userData) {
+  console.log(userData.email, userData.name);
+}
+```
+
+#### getAskerName(questionData)
+
+Construct full name from question payer data.
+
+**Parameters:**
+```javascript
+questionData: Object  // Question object with payer fields
+```
+
+**Returns:** `string` - Full name (first + last) or fallback
+
+**Example:**
+```javascript
+const name = getAskerName(questionData);
+// Returns: "John Doe" or "John" or email username or "there"
+```
+
+#### getAskerEmail(questionData)
+
+Extract asker email from question data.
+
+**Parameters:**
+```javascript
+questionData: Object  // Question object
+```
+
+**Returns:** `string | null`
+
+### Email Functions (`/api/lib/zeptomail.js`)
+
 ### sendEmail(options)
 
 Core email sending function.
@@ -493,13 +593,22 @@ Send answer notification to asker.
 
 ## Changelog
 
+### v1.1.0 (2025-10-13)
+- ✅ Modular refactoring: Created `/api/lib/user-data.js`
+- ✅ Added `fetchUserData()` function for reusable user fetching
+- ✅ Added `getAskerName()` function for consistent name handling
+- ✅ Added `getAskerEmail()` function for cleaner email extraction
+- ✅ Refactored question and answer endpoints to use modular functions
+- ✅ Improved asker name to include full name (first + last)
+- ✅ Single source of truth for user data operations
+
 ### v1.0.0 (2025-10-13)
 - ✅ Initial implementation complete
 - ✅ Three email notifications working
 - ✅ EU region endpoint configured
 - ✅ Templates organized into separate files
 - ✅ Test and diagnostic endpoints added
-- ✅ Non-blocking email sending
+- ✅ Non-blocking email sending with await
 - ✅ Comprehensive error logging
 - ✅ Production tested and verified
 
