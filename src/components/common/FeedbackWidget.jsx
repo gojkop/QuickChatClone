@@ -66,7 +66,12 @@ function FeedbackWidget() {
     rating: 0,
     email: '',
     wants_followup: false,
+    expected_behavior: '',
+    actual_behavior: '',
+    problem_statement: '',
+    current_workaround: '',
   });
+  const [attachments, setAttachments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
@@ -115,8 +120,63 @@ function FeedbackWidget() {
         rating: 0,
         email: isAuthenticated && user?.email ? user.email : '',
         wants_followup: false,
+        expected_behavior: '',
+        actual_behavior: '',
+        problem_statement: '',
+        current_workaround: '',
       });
+      setAttachments([]);
     }, 300);
+  };
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File too large. Max size is 10MB.');
+        continue;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAttachments(prev => [...prev, {
+          file,
+          preview: reader.result,
+          name: file.name,
+          size: file.size,
+          type: file.type.startsWith('image/') ? 'screenshot' : 
+                 file.type.startsWith('video/') ? 'video' : 'document'
+        }]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadAttachments = async (files) => {
+    return files.map(file => ({
+      file_type: file.type,
+      file_name: file.name,
+      file_size: file.size,
+      mime_type: file.file.type,
+      storage_key: `feedback/${Date.now()}_${file.name}`,
+      storage_url: file.preview,
+    }));
+  };
+
+  const inferBugSeverity = (message) => {
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes('crash') || lowerMessage.includes('data loss') || lowerMessage.includes('payment')) {
+      return 'critical';
+    }
+    if (lowerMessage.includes('error') || lowerMessage.includes('broken') || lowerMessage.includes("can't")) {
+      return 'high';
+    }
+    return 'medium';
   };
 
   const handleSubmit = async (e) => {
@@ -155,10 +215,23 @@ function FeedbackWidget() {
         time_on_page: timeOnPage,
         scroll_depth: scrollDepthRef.current,
         interactions_count: interactionsRef.current,
+        ...(selectedType === 'bug' && {
+          expected_behavior: formData.expected_behavior.trim() || null,
+          actual_behavior: formData.actual_behavior.trim() || null,
+          bug_severity: inferBugSeverity(formData.message),
+        }),
+        ...(selectedType === 'feature' && {
+          problem_statement: formData.problem_statement.trim() || null,
+          current_workaround: formData.current_workaround.trim() || null,
+        }),
         analytics_consent: true,
         contact_consent: formData.wants_followup,
-        screenshot_consent: false,
+        screenshot_consent: attachments.length > 0,
       };
+
+      if (attachments.length > 0) {
+        payload.attachments = await uploadAttachments(attachments);
+      }
 
       const response = await fetch(`${API_BASE}/feedback`, {
         method: 'POST',
@@ -289,64 +362,144 @@ function FeedbackWidget() {
                 {/* Message */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Your feedback <span className="text-red-500">*</span>
+                    {selectedType === 'question' ? 'Your question' : 'Your feedback'} <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={formData.message}
                     onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition resize-none text-sm"
                     rows="3"
-                    placeholder="Tell us what you think..."
+                    placeholder={selectedType === 'question' ? 'Ask your question...' : 'Tell us what you think...'}
                     maxLength="2000"
                     required
                   />
                   <p className="text-[10px] text-gray-500 mt-1">{formData.message.length}/2000 (min 10)</p>
                 </div>
 
-                {/* Email */}
-                {!isAuthenticated && (
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                      Email (optional)
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-sm"
-                      placeholder="your@email.com"
-                    />
-                    {formData.email && (
-                      <label className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-600">
-                        <input
-                          type="checkbox"
-                          checked={formData.wants_followup}
-                          onChange={(e) => setFormData(prev => ({ ...prev, wants_followup: e.target.checked }))}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span>Get updates</span>
+                {/* Bug-specific fields */}
+                {selectedType === 'bug' && (
+                  <div className="space-y-2 border-l-2 border-red-500 pl-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-600 mb-1">
+                        Expected behavior
                       </label>
-                    )}
+                      <input
+                        type="text"
+                        value={formData.expected_behavior}
+                        onChange={(e) => setFormData(prev => ({ ...prev, expected_behavior: e.target.value }))}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500 focus:outline-none transition text-xs"
+                        placeholder="What should happen?"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-600 mb-1">
+                        Actual behavior
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.actual_behavior}
+                        onChange={(e) => setFormData(prev => ({ ...prev, actual_behavior: e.target.value }))}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500 focus:outline-none transition text-xs"
+                        placeholder="What actually happened?"
+                      />
+                    </div>
                   </div>
                 )}
 
-                {/* Authenticated user info */}
-                {isAuthenticated && formData.email && (
-                  <div className="bg-indigo-50 rounded-lg px-3 py-2 border border-indigo-100">
-                    <p className="text-xs text-indigo-900">
-                      ✓ Sending as <span className="font-semibold">{formData.email}</span>
-                    </p>
-                    <label className="flex items-center gap-1.5 mt-1 text-[10px] text-indigo-700">
+                {/* Feature-specific fields */}
+                {selectedType === 'feature' && (
+                  <div className="space-y-2 border-l-2 border-green-500 pl-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-600 mb-1">
+                        What problem does this solve?
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.problem_statement}
+                        onChange={(e) => setFormData(prev => ({ ...prev, problem_statement: e.target.value }))}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-500 focus:outline-none transition text-xs"
+                        placeholder="I'm trying to..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-600 mb-1">
+                        Current workaround (if any)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.current_workaround}
+                        onChange={(e) => setFormData(prev => ({ ...prev, current_workaround: e.target.value }))}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-500 focus:outline-none transition text-xs"
+                        placeholder="Currently I..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Attachments */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Attachments (optional)
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileUpload}
+                    accept="image/*,video/*"
+                    multiple
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-1.5 px-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-xs text-gray-600 hover:text-indigo-700 font-medium"
+                  >
+                    📎 Add screenshot or video
+                  </button>
+                  
+                  {attachments.length > 0 && (
+                    <div className="mt-1.5 space-y-1">
+                      {attachments.map((att, i) => (
+                        <div key={i} className="flex items-center gap-2 p-1.5 bg-gray-50 rounded text-xs">
+                          <span className="truncate flex-1">{att.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAttachment(i)}
+                            className="text-red-500 hover:text-red-700 text-[10px] font-medium"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Email - Always visible */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Email {isAuthenticated ? '(auto-filled)' : '(optional)'}
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-sm disabled:bg-gray-50 disabled:text-gray-600"
+                    placeholder="your@email.com"
+                    disabled={isAuthenticated}
+                  />
+                  {formData.email && (
+                    <label className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-600">
                       <input
                         type="checkbox"
                         checked={formData.wants_followup}
                         onChange={(e) => setFormData(prev => ({ ...prev, wants_followup: e.target.checked }))}
-                        className="rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                       />
                       <span>Get updates on this feedback</span>
                     </label>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Submit */}
                 <button
