@@ -99,11 +99,15 @@ export default async function handler(req, res) {
     if (userId) {
       console.log('📧 Fetching expert email for user_id:', userId);
 
-      // Fetch user email from Xano
-      fetch(`${process.env.XANO_BASE_URL}/user/${userId}`)
+      // Fetch user email from secure internal Xano endpoint
+      const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
+
+      fetch(`${process.env.XANO_BASE_URL}/internal/user/${userId}/email?x_api_key=${XANO_INTERNAL_API_KEY}`)
         .then(async (userResponse) => {
           if (!userResponse.ok) {
-            console.error('❌ Failed to fetch user data:', userResponse.status);
+            console.error('❌ Failed to fetch user email:', userResponse.status);
+            const errorText = await userResponse.text();
+            console.error('❌ Error details:', errorText);
             return;
           }
 
