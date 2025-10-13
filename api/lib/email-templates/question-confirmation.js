@@ -17,6 +17,7 @@ export function getQuestionConfirmationTemplate(data) {
   // 🎯 Get random WHILE YOU WAIT tip from category-specific pool
   const whileYouWaitTip = getWhileYouWaitTip(questionCategory);
 
+  // ✅ FIX: Use expert name in subject
   const subject = `Question submitted to ${expertName}`;
 
   const htmlBody = `
@@ -124,15 +125,15 @@ export function getQuestionConfirmationTemplate(data) {
               <!-- Primary CTA -->
               <tr>
                 <td style="padding-top: 32px; text-align: center;">
-                  <a href="https://mindpick.me/dashboard" style="display: inline-block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);">
-                    View in Dashboard →
+                  <a href="https://mindpick.me/questions/${questionId}" style="display: inline-block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3); transition: all 0.2s;">
+                    View Question →
                   </a>
                 </td>
               </tr>
               
               <!-- Footer -->
               <tr>
-                <td style="padding-top: 48px; text-align: center; border-top: 2px solid #F3F4F6;">
+                <td style="padding-top: 48px; text-align: center;">
                   <p style="font-size: 12px; color: #9CA3AF; margin: 24px 0 8px 0;">
                     Question #${questionId} • <a href="https://mindpick.me/faq" style="color: #4F46E5; text-decoration: none;">FAQ</a>
                   </p>
@@ -167,7 +168,7 @@ What happens next:
 
 WHILE YOU WAIT: ${whileYouWaitTip}
 
-View in dashboard: https://mindpick.me/dashboard
+View your question: https://mindpick.me/questions/${questionId}
 
 ---
 Question #${questionId}
