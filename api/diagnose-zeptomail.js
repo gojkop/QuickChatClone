@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     console.log('Test payload:', JSON.stringify(testPayload, null, 2));
     console.log('Authorization header preview:', ZEPTOMAIL_TOKEN.substring(0, 30) + '...');
 
-    const response = await fetch('https://api.zeptomail.com/v1.1/email', {
+    const response = await fetch('https://api.zeptomail.eu/v1.1/email', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',

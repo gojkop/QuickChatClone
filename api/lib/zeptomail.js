@@ -1,7 +1,7 @@
 // api/lib/zeptomail.js
 // ZeptoMail email service for transactional emails
 
-const ZEPTOMAIL_API_URL = 'https://api.zeptomail.com/v1.1/email';
+const ZEPTOMAIL_API_URL = 'https://api.zeptomail.eu/v1.1/email';
 
 /**
  * Send email via ZeptoMail API
