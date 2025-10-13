@@ -1,17 +1,6 @@
 // api/lib/email-templates/tip-bank.js
 // Complete tip bank with random selection for all email templates
 
-/**
- * HOW MANY TIPS DO YOU NEED?
- * 
- * Recommended per category:
- * - Minimum: 10 tips (provides 2+ months of variety for active users)
- * - Optimal: 15-20 tips (provides 4-6 months before repeats)
- * - Maximum: 30+ tips (diminishing returns, harder to maintain quality)
- * 
- * Start with 10-15 and expand based on usage patterns.
- */
-
 // ============================================================================
 // PRO TIPS - For Askers (Answer Received Email)
 // Purpose: Help users get maximum value from their answer
@@ -413,3 +402,37 @@ export const WHILE_YOU_WAIT = {
     "Our knowledge base complements personalized expert advice."
   ]
 };
+
+// ============================================================================
+// SELECTION FUNCTIONS
+// ============================================================================
+
+/**
+ * Get a random Pro Tip for askers
+ * @param {string} category - Question category (e.g., 'career_transition')
+ * @returns {string} - Random tip from that category
+ */
+export function getProTip(category = 'default') {
+  const tips = PRO_TIPS[category] || PRO_TIPS.default;
+  return tips[Math.floor(Math.random() * tips.length)];
+}
+
+/**
+ * Get a random Expert Tip for experts
+ * @param {string} category - Question category
+ * @returns {string} - Random tip from that category
+ */
+export function getExpertTip(category = 'default') {
+  const tips = EXPERT_TIPS[category] || EXPERT_TIPS.default;
+  return tips[Math.floor(Math.random() * tips.length)];
+}
+
+/**
+ * Get a random While You Wait tip for askers
+ * @param {string} category - Question category
+ * @returns {string} - Random tip from that category
+ */
+export function getWhileYouWaitTip(category = 'default') {
+  const tips = WHILE_YOU_WAIT[category] || WHILE_YOU_WAIT.default;
+  return tips[Math.floor(Math.random() * tips.length)];
+}
