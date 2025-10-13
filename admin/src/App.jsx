@@ -1,5 +1,4 @@
-// admin/src/App.jsx - Improved with better error handling and auto-login
-
+// admin/src/App.jsx - Complete version with improved auth and error handling
 import React, { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useToast } from './components/Toast';
@@ -194,14 +193,43 @@ export default function App() {
   // ========================================================================
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0f172a', color: '#e2e8f0' }}>
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'grid', 
+        placeItems: 'center', 
+        background: '#0f172a', 
+        color: '#e2e8f0' 
+      }}>
         <div style={{ textAlign: 'center', maxWidth: 760, padding: 24 }}>
-          <div style={{ fontSize: 12, opacity: 0.7, letterSpacing: 1.5, textTransform: 'uppercase' }}>mindPick</div>
-          <h1 style={{ fontSize: 28, margin: '10px 0 8px' }}>Loading Admin Console…</h1>
+          <div style={{ 
+            fontSize: 12, 
+            opacity: 0.7, 
+            letterSpacing: 1.5, 
+            textTransform: 'uppercase' 
+          }}>
+            mindPick
+          </div>
+          <h1 style={{ fontSize: 28, margin: '10px 0 8px' }}>
+            Loading Admin Console…
+          </h1>
           <div style={{ marginTop: 20 }}>
-            <div className="spinner"></div>
+            <div style={{
+              width: 40,
+              height: 40,
+              margin: '0 auto',
+              border: '4px solid #334155',
+              borderTop: '4px solid #4f46e5',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }}></div>
           </div>
         </div>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -211,20 +239,92 @@ export default function App() {
   // ========================================================================
   if (!me?.ok) {
     return (
-      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0f172a', color: '#e2e8f0' }}>
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'grid', 
+        placeItems: 'center', 
+        background: '#0f172a', 
+        color: '#e2e8f0' 
+      }}>
         <div style={{ width: '100%', maxWidth: 720, padding: 24 }}>
-          <div style={{ fontSize: 12, opacity: 0.7, letterSpacing: 1.5, textTransform: 'uppercase', textAlign: 'center' }}>mindPick</div>
-          <h1 style={{ fontSize: 36, margin: '12px 0 16px', textAlign: 'center' }}>Admin Console</h1>
+          <div style={{ 
+            fontSize: 12, 
+            opacity: 0.7, 
+            letterSpacing: 1.5, 
+            textTransform: 'uppercase', 
+            textAlign: 'center' 
+          }}>
+            mindPick
+          </div>
+          <h1 style={{ fontSize: 36, margin: '12px 0 16px', textAlign: 'center' }}>
+            Admin Console
+          </h1>
 
           {/* Error Display */}
           {error && (
-            <div style={{ background: '#ef4444', border: '1px solid #dc2626', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{error.title}</h3>
-              <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>{error.message}</p>
+            <div style={{ 
+              background: '#ef4444', 
+              border: '1px solid #dc2626', 
+              borderRadius: 12, 
+              padding: 16, 
+              marginBottom: 16 
+            }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+                {error.title}
+              </h3>
+              <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
+                {error.message}
+              </p>
               {error.hint && (
-                <p style={{ fontSize: 12, opacity: 0.8, marginBottom: 12 }}>💡 {error.hint}</p>
+                <p style={{ fontSize: 12, opacity: 0.8, marginBottom: 12 }}>
+                  💡 {error.hint}
+                </p>
               )}
-              <div style={{ display: 'flex', gap: 8 }}>
+              
+              {/* Special handling for token validation errors */}
+              {error.message?.includes('Token validation') && (
+                <div style={{ 
+                  background: '#7f1d1d', 
+                  borderRadius: 8, 
+                  padding: 12, 
+                  marginBottom: 12 
+                }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                    🔧 Quick Fix:
+                  </p>
+                  <p style={{ fontSize: 12, lineHeight: 1.5 }}>
+                    Your session token is from the old system. To fix this:
+                  </p>
+                  <ol style={{ 
+                    fontSize: 12, 
+                    lineHeight: 1.5, 
+                    marginLeft: 20, 
+                    marginTop: 8 
+                  }}>
+                    <li>Go to the main app and <strong>logout</strong></li>
+                    <li><strong>Login again</strong> to get a fresh token</li>
+                    <li>Return here - it will work automatically</li>
+                  </ol>
+                </div>
+              )}
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <a
+                  href="https://www.mindpick.me/logout"
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: '1px solid #fff',
+                    background: '#fff',
+                    color: '#ef4444',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textDecoration: 'none',
+                    display: 'inline-block'
+                  }}
+                >
+                  🔄 Go to Main App & Re-Login
+                </a>
                 <button
                   onClick={handleRetryAutoLogin}
                   style={{
@@ -237,7 +337,7 @@ export default function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  🔄 Retry Auto-Login
+                  Retry
                 </button>
                 <button
                   onClick={() => setManualLoginMode(true)}
@@ -245,13 +345,13 @@ export default function App() {
                     padding: '8px 16px',
                     borderRadius: 8,
                     border: '1px solid #fff',
-                    background: '#fff',
-                    color: '#ef4444',
+                    background: 'transparent',
+                    color: '#fff',
                     fontWeight: 600,
                     cursor: 'pointer'
                   }}
                 >
-                  Enter Token Manually
+                  Manual Login
                 </button>
               </div>
             </div>
@@ -259,8 +359,16 @@ export default function App() {
 
           {/* Login Instructions */}
           {!manualLoginMode && !error && (
-            <div style={{ background: '#111827', border: '1px solid #374151', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>✨ Automatic Login</h3>
+            <div style={{ 
+              background: '#111827', 
+              border: '1px solid #374151', 
+              borderRadius: 12, 
+              padding: 16, 
+              marginBottom: 16 
+            }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+                ✨ Automatic Login
+              </h3>
               <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 12 }}>
                 The admin console will automatically log you in if you're signed in to the main app.
               </p>
@@ -299,8 +407,15 @@ export default function App() {
 
           {/* Manual Login Form */}
           {manualLoginMode && (
-            <div style={{ background: '#111827', border: '1px solid #374151', borderRadius: 12, padding: 16 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>🔑 Manual Login</h3>
+            <div style={{ 
+              background: '#111827', 
+              border: '1px solid #374151', 
+              borderRadius: 12, 
+              padding: 16 
+            }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+                🔑 Manual Login
+              </h3>
               <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 12 }}>
                 Paste your authentication token from the main app.
               </p>
@@ -352,6 +467,24 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {/* Debug Help */}
+          <div style={{ 
+            marginTop: 16, 
+            fontSize: 12, 
+            opacity: 0.7, 
+            textAlign: 'center' 
+          }}>
+            Having issues? Check the{' '}
+            <a 
+              href="/api/debug-migration" 
+              target="_blank"
+              style={{ color: '#4f46e5', textDecoration: 'underline' }}
+            >
+              debug endpoint
+            </a>
+            {' '}for detailed diagnostics
+          </div>
         </div>
       </div>
     );
