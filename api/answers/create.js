@@ -31,6 +31,8 @@ export default async function handler(req, res) {
     };
 
     console.log('Creating answer in Xano...');
+    console.log('Using URL:', `${process.env.XANO_BASE_URL}/answer`);
+    console.log('Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
 
     const answerResponse = await fetch(
       `${process.env.XANO_BASE_URL}/answer`,
