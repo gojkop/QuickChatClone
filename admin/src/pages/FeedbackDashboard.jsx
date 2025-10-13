@@ -1,5 +1,5 @@
-// admin/src/pages/FeedbackDashboard.jsx
-// Main feedback dashboard with filters, table, and detail panel - FIXED
+// admin/src/pages/FeedbackDashboard.jsx - UPDATED VERSION
+// Compact design with fixed internal notes functionality
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -17,10 +17,7 @@ import {
 import { useToast } from '../components/Toast';
 import { TrendLineChart, DonutChart } from '../components/charts';
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
+// Constants remain the same...
 const FEEDBACK_TYPES = {
   bug: { label: 'Bug', color: 'danger', icon: '🐛' },
   feature: { label: 'Feature', color: 'success', icon: '💡' },
@@ -53,10 +50,9 @@ const JOURNEY_STAGES = {
 };
 
 // ============================================================================
-// FEEDBACK ROW COMPONENT
+// COMPACT FEEDBACK ROW (Updated)
 // ============================================================================
-
-function FeedbackRow({ feedback, onSelect, isSelected }) {
+function CompactFeedbackRow({ feedback, onSelect, isSelected }) {
   const typeConfig = FEEDBACK_TYPES[feedback.type] || FEEDBACK_TYPES.other;
   const statusConfig = STATUS_CONFIG[feedback.status];
   const priorityConfig = PRIORITY_CONFIG[feedback.priority];
@@ -65,94 +61,119 @@ function FeedbackRow({ feedback, onSelect, isSelected }) {
     <div 
       onClick={() => onSelect(feedback)}
       className={`
-        p-4 border rounded-lg cursor-pointer transition-all
-        ${isSelected 
-          ? 'border-indigo-500 bg-indigo-50' 
-          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-        }
+        group relative flex items-center gap-3 px-4 py-2.5 
+        border-b border-gray-100 cursor-pointer transition-all
+        hover:bg-gray-50
+        ${isSelected ? 'bg-indigo-50 border-indigo-200' : ''}
       `}
     >
-      <div className="flex items-start gap-3">
-        {/* Icon */}
-        <span className="text-2xl flex-shrink-0">{typeConfig.icon}</span>
+      {/* Left: Icon & Badges */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className="text-lg">{typeConfig.icon}</span>
         
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <Badge variant={statusConfig.color}>
-              {statusConfig.label}
-            </Badge>
-            <Badge variant={priorityConfig.color}>
-              {priorityConfig.label}
-            </Badge>
-            <Badge variant={typeConfig.color}>
-              {typeConfig.label}
-            </Badge>
-            
-            {feedback.journey_stage && (
-              <span className="text-xs text-gray-500">
-                {JOURNEY_STAGES[feedback.journey_stage]?.icon} {JOURNEY_STAGES[feedback.journey_stage]?.label}
-              </span>
-            )}
-          </div>
-
-          {/* Message preview */}
-          <p className="text-sm text-gray-900 line-clamp-2 mb-2">
-            {feedback.message}
-          </p>
-
-          {/* Metadata */}
-          <div className="flex items-center gap-4 text-xs text-gray-500">
-            <span>
-              {new Date(feedback.created_at).toLocaleDateString()}
-            </span>
-            <span>
-              {feedback.page_url.split('?')[0].substring(0, 30)}...
-            </span>
-            {feedback.email && (
-              <span className="text-indigo-600">
-                📧 {feedback.email}
-              </span>
-            )}
-            {feedback.attachment_count > 0 && (
-              <span>
-                📎 {feedback.attachment_count}
-              </span>
-            )}
-            {feedback.comment_count > 0 && (
-              <span>
-                💬 {feedback.comment_count}
-              </span>
-            )}
-            {feedback.jira_ticket_key && (
-              <span className="text-purple-600">
-                🎫 {feedback.jira_ticket_key}
-              </span>
-            )}
-          </div>
+        <div className="flex items-center gap-1">
+          <span className={`
+            px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide
+            ${statusConfig.color === 'warning' ? 'bg-amber-100 text-amber-700' : ''}
+            ${statusConfig.color === 'info' ? 'bg-blue-100 text-blue-700' : ''}
+            ${statusConfig.color === 'success' ? 'bg-green-100 text-green-700' : ''}
+            ${statusConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
+          `}>
+            {statusConfig.label}
+          </span>
+          
+          <span className={`
+            px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide
+            ${priorityConfig.color === 'danger' ? 'bg-red-100 text-red-700' : ''}
+            ${priorityConfig.color === 'warning' ? 'bg-orange-100 text-orange-700' : ''}
+            ${priorityConfig.color === 'info' ? 'bg-yellow-100 text-yellow-700' : ''}
+            ${priorityConfig.color === 'default' ? 'bg-gray-100 text-gray-700' : ''}
+          `}>
+            {priorityConfig.label}
+          </span>
         </div>
-
-        {/* Selection indicator */}
-        {isSelected && (
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Center: Message (truncated) */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-gray-900 truncate font-medium">
+          {feedback.message}
+        </p>
+      </div>
+
+      {/* Right: Metadata Icons */}
+      <div className="flex items-center gap-3 flex-shrink-0 text-xs text-gray-500">
+        {/* Journey Stage */}
+        {feedback.journey_stage && (
+          <span className="hidden sm:inline" title={feedback.journey_stage}>
+            {JOURNEY_STAGES[feedback.journey_stage]?.icon}
+          </span>
+        )}
+
+        {/* Rating */}
+        {feedback.rating && (
+          <span className="hidden md:inline">
+            {'⭐'.repeat(feedback.rating)}
+          </span>
+        )}
+
+        {/* Email indicator */}
+        {feedback.email && (
+          <span className="text-indigo-600" title={feedback.email}>
+            📧
+          </span>
+        )}
+
+        {/* Attachments */}
+        {feedback.attachment_count > 0 && (
+          <span title={`${feedback.attachment_count} attachments`}>
+            📎 {feedback.attachment_count}
+          </span>
+        )}
+
+        {/* Comments */}
+        {feedback.comment_count > 0 && (
+          <span title={`${feedback.comment_count} comments`}>
+            💬 {feedback.comment_count}
+          </span>
+        )}
+
+        {/* Jira */}
+        {feedback.jira_ticket_key && (
+          <span className="text-purple-600 font-mono text-[10px]" title="Jira ticket">
+            {feedback.jira_ticket_key}
+          </span>
+        )}
+
+        {/* Date */}
+        <span className="hidden lg:inline whitespace-nowrap">
+          {new Date(feedback.created_at).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+          })}
+        </span>
+
+        {/* Device */}
+        <span className="hidden xl:inline" title={feedback.device_type}>
+          {feedback.device_type === 'mobile' && '📱'}
+          {feedback.device_type === 'desktop' && '💻'}
+          {feedback.device_type === 'tablet' && '📱'}
+        </span>
+      </div>
+
+      {/* Selection Indicator */}
+      {isSelected && (
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600" />
+      )}
     </div>
   );
 }
 
 // ============================================================================
-// DETAIL PANEL COMPONENT
+// DETAIL PANEL (Updated with fixed comment handler)
 // ============================================================================
-
-function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira }) {
+function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira, onReload }) {
+  const toast = useToast();
   const [comment, setComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
@@ -160,13 +181,40 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira }) {
 
   const typeConfig = FEEDBACK_TYPES[feedback.type] || FEEDBACK_TYPES.other;
 
+  // FIXED: Add comment with proper API call
   const handleAddComment = async () => {
     if (!comment.trim()) return;
     
     setIsSubmittingComment(true);
     try {
-      // Add comment logic here
+      const res = await fetch('/api/feedback/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          feedback_id: feedback.id,
+          comment: comment.trim(),
+          is_internal: true
+        })
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Failed to add comment' }));
+        throw new Error(error.error || 'Failed to add comment');
+      }
+
+      // Clear input and show success
       setComment('');
+      toast.success('Note added successfully');
+      
+      // Reload feedback detail to show new comment
+      if (onReload) {
+        onReload();
+      }
+      
+    } catch (error) {
+      console.error('Add comment error:', error);
+      toast.error(error.message || 'Failed to add note');
     } finally {
       setIsSubmittingComment(false);
     }
@@ -233,11 +281,6 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira }) {
                 User ID: {feedback.user_id}
               </p>
             )}
-            {feedback.is_authenticated && (
-              <p className="text-xs text-gray-500 mt-1">
-                {feedback.user_role} • Account age: {feedback.account_age_days || 0} days
-              </p>
-            )}
           </div>
         )}
 
@@ -267,12 +310,6 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira }) {
                 <p className="text-sm text-gray-900">{feedback.actual_behavior}</p>
               </div>
             )}
-            {feedback.reproduction_steps && (
-              <div>
-                <p className="text-xs font-semibold text-gray-600">Steps:</p>
-                <p className="text-sm text-gray-900">{feedback.reproduction_steps}</p>
-              </div>
-            )}
           </div>
         )}
 
@@ -282,7 +319,9 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira }) {
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">Page:</span>
-              <span className="text-gray-900 font-mono text-xs">{feedback.page_url}</span>
+              <span className="text-gray-900 font-mono text-xs truncate max-w-[300px]">
+                {feedback.page_url}
+              </span>
             </div>
             {feedback.device_type && (
               <div className="flex justify-between">
@@ -306,27 +345,6 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira }) {
             )}
           </div>
         </div>
-
-        {/* Tags */}
-        {feedback.tags && feedback.tags.length > 0 && (
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">Tags</h4>
-            <div className="flex flex-wrap gap-2">
-              {feedback.tags.map(tag => (
-                <span
-                  key={tag.id}
-                  className="px-2 py-1 rounded-full text-xs font-medium"
-                  style={{
-                    backgroundColor: `${tag.color}20`,
-                    color: tag.color
-                  }}
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Attachments */}
         {feedback.attachments && feedback.attachments.length > 0 && (
@@ -372,7 +390,7 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira }) {
           </div>
         )}
 
-        {/* Add comment */}
+        {/* Add comment - FIXED */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">Add Internal Note</h4>
           <textarea
@@ -443,19 +461,16 @@ function FeedbackDetailPanel({ feedback, onClose, onUpdate, onCreateJira }) {
 }
 
 // ============================================================================
-// MAIN DASHBOARD COMPONENT
+// MAIN DASHBOARD (Updated with compact rows)
 // ============================================================================
-
 export default function FeedbackDashboard() {
   const toast = useToast();
   
-  // State
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [detailData, setDetailData] = useState(null);
   
-  // Filters
   const [filters, setFilters] = useState({
     page: 1,
     limit: 20,
@@ -468,7 +483,6 @@ export default function FeedbackDashboard() {
     date_to: '',
   });
   
-  // Stats
   const [stats, setStats] = useState({
     total: 0,
     avgRating: 0,
@@ -476,12 +490,10 @@ export default function FeedbackDashboard() {
     avgResponseTime: 0,
   });
 
-  // Load feedback on mount and filter change
   useEffect(() => {
     loadFeedback();
   }, [filters]);
 
-  // Load detail when feedback is selected
   useEffect(() => {
     if (selectedFeedback) {
       loadFeedbackDetail(selectedFeedback.id);
@@ -489,10 +501,6 @@ export default function FeedbackDashboard() {
       setDetailData(null);
     }
   }, [selectedFeedback]);
-
-  // ============================================================================
-  // API CALLS
-  // ============================================================================
 
   const loadFeedback = async () => {
     try {
@@ -511,12 +519,11 @@ export default function FeedbackDashboard() {
       const data = await res.json();
       setFeedback(data.feedback || []);
       
-      // Calculate stats
       setStats({
         total: data.pagination?.total || 0,
         avgRating: calculateAvgRating(data.feedback),
         pending: data.feedback?.filter(f => f.status === 'new').length || 0,
-        avgResponseTime: '2.3h', // TODO: Calculate from data
+        avgResponseTime: '2.3h',
       });
       
     } catch (error) {
@@ -567,9 +574,39 @@ export default function FeedbackDashboard() {
     }
   };
 
-  // ============================================================================
-  // HELPERS
-  // ============================================================================
+  const createJiraTicket = async (feedback) => {
+    if (feedback.jira_ticket_key) {
+      window.open(feedback.jira_ticket_url, '_blank');
+      return;
+    }
+
+    const loadingId = toast.info('Creating Jira ticket...', 0);
+    
+    try {
+      const res = await fetch(`/api/feedback/jira?id=${feedback.id}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Failed to create ticket' }));
+        throw new Error(error.error || 'Failed to create Jira ticket');
+      }
+
+      const data = await res.json();
+      
+      toast.dismiss(loadingId);
+      toast.success(`Jira ticket ${data.jira_ticket.key} created!`);
+      
+      loadFeedback();
+      loadFeedbackDetail(feedback.id);
+      
+    } catch (error) {
+      console.error('Jira error:', error);
+      toast.dismiss(loadingId);
+      toast.error(error.message);
+    }
+  };
 
   const calculateAvgRating = (items) => {
     const rated = items.filter(f => f.rating);
@@ -596,10 +633,6 @@ export default function FeedbackDashboard() {
     });
   };
 
-  // ============================================================================
-  // RENDER
-  // ============================================================================
-
   if (loading && feedback.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -618,9 +651,6 @@ export default function FeedbackDashboard() {
           <div className="flex gap-2">
             <Button variant="secondary" onClick={loadFeedback}>
               🔄 Refresh
-            </Button>
-            <Button variant="secondary">
-              📊 Export CSV
             </Button>
           </div>
         }
@@ -708,18 +738,20 @@ export default function FeedbackDashboard() {
         </div>
       </Card>
 
-      {/* Feedback List */}
+      {/* Compact Feedback Table */}
       <Card padding="none">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">
-            Feedback ({feedback.length})
-          </h2>
+        {/* Table Header */}
+        <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+          <div className="flex-shrink-0 w-32">Type & Status</div>
+          <div className="flex-1">Message</div>
+          <div className="flex-shrink-0 w-48 text-right">Metadata</div>
         </div>
         
-        <div className="p-6 space-y-3">
+        {/* Table Body */}
+        <div>
           {feedback.length > 0 ? (
             feedback.map(item => (
-              <FeedbackRow
+              <CompactFeedbackRow
                 key={item.id}
                 feedback={item}
                 onSelect={setSelectedFeedback}
@@ -727,12 +759,39 @@ export default function FeedbackDashboard() {
               />
             ))
           ) : (
-            <EmptyState
-              title="No feedback found"
-              description="Try adjusting your filters"
-            />
+            <div className="p-8">
+              <EmptyState
+                title="No feedback found"
+                description="Try adjusting your filters"
+              />
+            </div>
           )}
         </div>
+
+        {/* Table Footer */}
+        {feedback.length > 0 && (
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-sm text-gray-600">
+            <span>Showing {feedback.length} of {stats.total} feedback items</span>
+            <div className="flex gap-2">
+              <Button 
+                variant="secondary" 
+                size="sm"
+                disabled={filters.page === 1}
+                onClick={() => handleFilterChange('page', filters.page - 1)}
+              >
+                Previous
+              </Button>
+              <Button 
+                variant="secondary" 
+                size="sm"
+                disabled={feedback.length < filters.limit}
+                onClick={() => handleFilterChange('page', filters.page + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Detail Panel */}
@@ -741,10 +800,8 @@ export default function FeedbackDashboard() {
           feedback={{ ...selectedFeedback, ...detailData.feedback, ...detailData }}
           onClose={() => setSelectedFeedback(null)}
           onUpdate={(updates) => updateFeedback(selectedFeedback.id, updates)}
-          onCreateJira={(feedback) => {
-            // TODO: Implement Jira creation
-            toast.info('Jira integration coming soon');
-          }}
+          onCreateJira={createJiraTicket}
+          onReload={() => loadFeedbackDetail(selectedFeedback.id)}
         />
       )}
     </div>
