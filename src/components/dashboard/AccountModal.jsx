@@ -347,7 +347,7 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
                   <button
                     onClick={handleDeleteAccount}
                     disabled={isDeleting}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`min-w-[140px] px-4 py-2 rounded-lg font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed ${
                       showDeleteConfirm
                         ? 'bg-red-600 text-white hover:bg-red-700'
                         : 'bg-white border border-red-300 text-red-600 hover:bg-red-50'
