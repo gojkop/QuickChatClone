@@ -2,6 +2,29 @@
 // Complete tip bank with random selection for all email templates
 
 // ============================================================================
+// WELCOME TIPS - For New Experts (Sign-in Email)
+// Purpose: Help new experts get started and set up their profile
+// ============================================================================
+
+export const WELCOME_TIPS = [
+  "Complete profiles receive 3x more questions. Take 5 minutes to add your bio, expertise, and set your rate.",
+  "Your first impression matters—upload a professional photo and write a compelling bio that shows your unique expertise.",
+  "Set a competitive rate based on your experience level. Most experts start at $25-75 per question.",
+  "Choose a response time (SLA) you can consistently meet. Reliability builds your reputation faster than speed.",
+  "Enable email notifications so you never miss a paid question from someone who needs your help.",
+  "Your handle creates your unique mindPick URL—choose something professional and memorable.",
+  "Add specific expertise tags so askers can find you when they need exactly what you know.",
+  "Consider donating a percentage to charity—87% of users say it makes them more likely to ask you.",
+  "The experts who succeed answer their first question within 24 hours of profile completion.",
+  "Start with a lower rate to get your first 5-10 questions, then gradually increase as you build reviews.",
+  "Video answers typically earn 40% more than audio-only. Consider enabling video if you're comfortable.",
+  "Your profile is your storefront—think about what would make you trust an expert enough to pay them.",
+  "Most successful experts on mindPick respond to questions within their SLA 95%+ of the time.",
+  "Share your mindPick profile on LinkedIn and Twitter—many experts get their first questions from their network.",
+  "Be authentic in your answers. People pay for genuine expertise and honest perspectives, not generic advice."
+];
+
+// ============================================================================
 // PRO TIPS - For Askers (Answer Received Email)
 // Purpose: Help users get maximum value from their answer
 // ============================================================================
@@ -435,4 +458,12 @@ export function getExpertTip(category = 'default') {
 export function getWhileYouWaitTip(category = 'default') {
   const tips = WHILE_YOU_WAIT[category] || WHILE_YOU_WAIT.default;
   return tips[Math.floor(Math.random() * tips.length)];
+}
+
+/**
+ * Get a random Welcome tip for new experts
+ * @returns {string} - Random welcome tip
+ */
+export function getWelcomeTip() {
+  return WELCOME_TIPS[Math.floor(Math.random() * WELCOME_TIPS.length)];
 }
