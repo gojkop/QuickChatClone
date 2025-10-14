@@ -129,7 +129,7 @@ export function getSignInTemplate(user) {
                     <tr>
                       <!-- Complete Profile Button (Primary) -->
                       <td style="width: 50%; padding-right: 8px;">
-                        <a href="https://mindpick.me/profile/setup" style="display: block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: 700; font-size: 16px; text-align: center; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);">
+                        <a href="https://mindpick.me/expert#profile-settings" style="display: block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: 700; font-size: 16px; text-align: center; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);">
                           Complete Your Profile →
                         </a>
                       </td>
@@ -166,7 +166,7 @@ export function getSignInTemplate(user) {
               <tr>
                 <td style="padding-top: 48px; text-align: center; border-top: 2px solid #F3F4F6;">
                   <p style="font-size: 12px; color: #9CA3AF; margin: 24px 0 8px 0;">
-                    Questions? Check our <a href="https://mindpick.me/faq" style="color: #4F46E5; text-decoration: none;">FAQ</a> or reply to this email
+                    Questions? Check our <a href="https://mindpick.me/faq" style="color: #4F46E5; text-decoration: none;">FAQ</a>
                   </p>
                   <p style="font-size: 11px; color: #D1D5DB; margin: 0 0 4px 0;">
                     Signed in at ${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })} • Wasn't you? <a href="https://mindpick.me/security" style="color: #6B7280; text-decoration: none;">Secure your account</a>
