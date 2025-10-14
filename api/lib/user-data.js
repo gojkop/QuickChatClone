@@ -8,43 +8,82 @@
  */
 export async function fetchUserData(userId) {
   if (!userId) {
-    console.warn('⚠️ No user_id provided to fetchUserData');
+    console.warn('⚠️ [fetchUserData] No user_id provided');
     return null;
   }
 
   const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
-  
-  // ✅ FIX: Use Public API base URL for internal endpoints
-  // Internal endpoints are in api:BQW1GS7L (Public API), not api:3B14WLbJ (Auth API)
   const XANO_PUBLIC_BASE_URL = process.env.XANO_PUBLIC_BASE_URL || 
                                  'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
 
+  console.log('📧 [fetchUserData] Starting fetch for user_id:', userId);
+  console.log('📧 [fetchUserData] Environment check:', {
+    hasApiKey: !!XANO_INTERNAL_API_KEY,
+    apiKeyLength: XANO_INTERNAL_API_KEY?.length || 0,
+    baseUrl: XANO_PUBLIC_BASE_URL
+  });
+
   if (!XANO_INTERNAL_API_KEY) {
-    console.error('❌ XANO_INTERNAL_API_KEY not configured');
+    console.error('❌ [fetchUserData] XANO_INTERNAL_API_KEY not configured in Vercel');
+    console.error('❌ [fetchUserData] Set it with: vercel env add XANO_INTERNAL_API_KEY');
     return null;
   }
 
   const internalEndpoint = `${XANO_PUBLIC_BASE_URL}/internal/user/${userId}/email?x_api_key=${XANO_INTERNAL_API_KEY}`;
+  
+  // Don't log the full URL with API key - security risk
+  console.log('📧 [fetchUserData] Calling endpoint:', `${XANO_PUBLIC_BASE_URL}/internal/user/${userId}/email`);
 
   try {
-    console.log('📧 Fetching user data for user_id:', userId);
     const response = await fetch(internalEndpoint);
+
+    console.log('📧 [fetchUserData] Response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Failed to fetch user data:', response.status, errorText);
+      console.error('❌ [fetchUserData] HTTP', response.status, 'error');
+      console.error('❌ [fetchUserData] Response body:', errorText.substring(0, 500));
+      
+      if (response.status === 401) {
+        console.error('❌ [fetchUserData] 401 Unauthorized - API key is invalid or missing');
+        console.error('❌ [fetchUserData] Check XANO_INTERNAL_API_KEY in Vercel matches Xano');
+      } else if (response.status === 404) {
+        console.error('❌ [fetchUserData] 404 Not Found - Endpoint or user does not exist');
+        console.error('❌ [fetchUserData] Check Xano has /internal/user/{id}/email endpoint');
+      } else if (response.status === 500) {
+        console.error('❌ [fetchUserData] 500 Server Error - Xano endpoint logic error');
+        console.error('❌ [fetchUserData] Check Xano endpoint function stack');
+      }
+      
       return null;
     }
 
-    const userData = await response.json();
-    console.log('✅ User data retrieved:', { email: userData.email, name: userData.name });
+    const responseData = await response.json();
+    
+    // ✅ FIX: Xano wraps response in "result" object
+    const userData = responseData.result || responseData;
+    
+    console.log('✅ [fetchUserData] Success! User data retrieved:', {
+      hasEmail: !!userData.email,
+      hasName: !!userData.name,
+      email: userData.email || 'NO EMAIL',
+      name: userData.name || 'NO NAME'
+    });
+
+    if (!userData.email) {
+      console.warn('⚠️ [fetchUserData] User data has no email field');
+      console.warn('⚠️ [fetchUserData] User data keys:', Object.keys(userData));
+      console.warn('⚠️ [fetchUserData] Full response:', JSON.stringify(responseData, null, 2));
+    }
 
     return {
       email: userData.email || null,
       name: userData.name || null,
     };
   } catch (err) {
-    console.error('❌ Error fetching user data:', err.message);
+    console.error('❌ [fetchUserData] Exception thrown:', err.name);
+    console.error('❌ [fetchUserData] Error message:', err.message);
+    console.error('❌ [fetchUserData] Stack trace:', err.stack);
     return null;
   }
 }
