@@ -181,7 +181,8 @@ export default async function handler(req, res) {
     if (userInfo.email && isFirstTime) {
       console.log('📧 First-time user detected, sending welcome email...');
       // Dynamic import to avoid module loading issues
-      import('../lib/zeptomail.js')
+      // Note: path is relative to /api/oauth/linkedin/, so ../../lib goes to /api/lib
+      import('../../lib/zeptomail.js')
         .then(({ sendSignInNotification }) => {
           return sendSignInNotification({ email: userInfo.email, name: userInfo.name });
         })
