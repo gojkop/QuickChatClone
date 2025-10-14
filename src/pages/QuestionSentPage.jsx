@@ -120,7 +120,7 @@ function QuestionSentPage() {
                   </p>
                   <div className="flex items-center gap-2">
                     <Link
-                      to={`/review/${reviewToken}`}
+                      to={`/r/${reviewToken}`}
                       className="flex-1 bg-white border border-indigo-200 text-indigo-600 font-semibold py-3 px-4 rounded-lg hover:bg-indigo-50 transition text-sm truncate text-center"
                     >
                       View Question & Answer
