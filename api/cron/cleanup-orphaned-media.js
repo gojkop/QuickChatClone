@@ -102,11 +102,21 @@ export default async function handler(req, res) {
     // PART 1: Clean up orphaned media_assets
     // ============================================================
     console.log('📦 PART 1: Cleaning up orphaned media assets...');
+    console.log('This runs in two directions:');
+    console.log('  1A. Check DB → Cloudflare: Validate DB records and delete orphaned ones');
+    console.log('  1B. Check Cloudflare → DB: Find files not in DB and delete them');
+    console.log('');
+
+    let mediaDeletedCount = 0;
+    let mediaErrorCount = 0;
+
+    // ============================================================
+    // PART 1A: Database → Cloudflare (validate DB records)
+    // ============================================================
+    console.log('📋 Part 1A: Checking database records for orphaned media...');
 
     // Calculate cutoff time (48 hours ago)
     const cutoffDate = new Date(Date.now() - (48 * 60 * 60 * 1000));
-    let mediaDeletedCount = 0;
-    let mediaErrorCount = 0;
 
     // Filter for orphaned media (older than 48 hours, not associated with questions/answers)
     for (const media of allMedia) {
@@ -203,7 +213,149 @@ export default async function handler(req, res) {
       }
     }
 
-    console.log('Part 1 complete:', { deleted: mediaDeletedCount, errors: mediaErrorCount });
+    console.log('Part 1A complete:', { deleted: mediaDeletedCount, errors: mediaErrorCount });
+    console.log('');
+
+    // ============================================================
+    // PART 1B: Cloudflare → Database (find files not in DB)
+    // ============================================================
+    console.log('☁️  Part 1B: Checking Cloudflare for files not in database...');
+
+    let cloudflareOrphanedCount = 0;
+
+    // Build sets of known asset_ids from database
+    const knownStreamAssets = new Set();
+    const knownR2AudioAssets = new Set();
+
+    for (const media of allMedia) {
+      if (media.asset_id) {
+        if (media.provider === 'cloudflare_stream') {
+          knownStreamAssets.add(media.asset_id);
+        } else if (media.provider === 'cloudflare_r2') {
+          knownR2AudioAssets.add(media.asset_id);
+        }
+      }
+    }
+
+    console.log(`Database has ${knownStreamAssets.size} Stream videos and ${knownR2AudioAssets.size} R2 audio files`);
+
+    // Check Cloudflare Stream for orphaned videos
+    console.log('📡 Listing all videos in Cloudflare Stream...');
+    try {
+      const streamListUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream?per_page=1000`;
+
+      const streamListResponse = await fetch(streamListUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+        },
+      });
+
+      if (streamListResponse.ok) {
+        const streamData = await streamListResponse.json();
+        const streamVideos = streamData.result || [];
+
+        console.log(`Found ${streamVideos.length} videos in Cloudflare Stream`);
+
+        for (const video of streamVideos) {
+          const videoUid = video.uid;
+
+          // Skip if this video exists in database
+          if (knownStreamAssets.has(videoUid)) {
+            continue;
+          }
+
+          // This video is not in database - delete it
+          console.log(`Deleting orphaned Stream video not in DB: ${videoUid}`);
+
+          try {
+            const deleteUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${videoUid}`;
+            const deleteResponse = await fetch(deleteUrl, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+              },
+            });
+
+            if (deleteResponse.ok) {
+              cloudflareOrphanedCount++;
+              console.log(`✅ Deleted orphaned Stream video: ${videoUid}`);
+            } else {
+              console.warn(`⚠️  Failed to delete Stream video ${videoUid}:`, await deleteResponse.text());
+              mediaErrorCount++;
+            }
+          } catch (deleteError) {
+            console.error(`❌ Error deleting Stream video ${videoUid}:`, deleteError.message);
+            mediaErrorCount++;
+          }
+        }
+      } else {
+        console.warn('⚠️  Failed to list Stream videos:', await streamListResponse.text());
+      }
+    } catch (streamError) {
+      console.error('❌ Error listing Stream videos:', streamError.message);
+      mediaErrorCount++;
+    }
+
+    // Check R2 for orphaned audio files
+    console.log('📡 Listing all audio files in R2...');
+    try {
+      const audioListCommand = new ListObjectsV2Command({
+        Bucket: CLOUDFLARE_R2_BUCKET,
+        Prefix: 'audio/',
+      });
+
+      const audioR2Response = await r2Client.send(audioListCommand);
+      const audioFiles = audioR2Response.Contents || [];
+
+      console.log(`Found ${audioFiles.length} audio files in R2`);
+
+      for (const file of audioFiles) {
+        const key = file.Key;
+
+        // Skip the audio/ folder itself
+        if (key === 'audio/' || key === 'audio') {
+          continue;
+        }
+
+        // Extract the key as the asset_id (it's stored as the full path in media_assets)
+        const assetId = key;
+
+        // Skip if this file exists in database
+        if (knownR2AudioAssets.has(assetId)) {
+          continue;
+        }
+
+        // This audio file is not in database - delete it
+        console.log(`Deleting orphaned R2 audio not in DB: ${key}`);
+
+        try {
+          await r2Client.send(
+            new DeleteObjectCommand({
+              Bucket: CLOUDFLARE_R2_BUCKET,
+              Key: key,
+            })
+          );
+          cloudflareOrphanedCount++;
+          console.log(`✅ Deleted orphaned R2 audio: ${key}`);
+        } catch (deleteError) {
+          console.error(`❌ Error deleting R2 audio ${key}:`, deleteError.message);
+          mediaErrorCount++;
+        }
+      }
+    } catch (r2Error) {
+      console.error('❌ Error listing R2 audio files:', r2Error.message);
+      mediaErrorCount++;
+    }
+
+    console.log('Part 1B complete:', { deletedFromCloudflare: cloudflareOrphanedCount });
+    console.log('');
+    console.log('Part 1 TOTAL:', {
+      deletedFromDB: mediaDeletedCount,
+      deletedFromCloudflare: cloudflareOrphanedCount,
+      total: mediaDeletedCount + cloudflareOrphanedCount,
+      errors: mediaErrorCount
+    });
     console.log('');
 
     // ============================================================
@@ -426,11 +578,17 @@ export default async function handler(req, res) {
     // ============================================================
     // Summary and notifications
     // ============================================================
-    const totalDeleted = mediaDeletedCount + profileDeletedCount + attachmentDeletedCount;
+    const totalMediaDeleted = mediaDeletedCount + cloudflareOrphanedCount;
+    const totalDeleted = totalMediaDeleted + profileDeletedCount + attachmentDeletedCount;
     const totalErrors = mediaErrorCount + profileErrorCount + attachmentErrorCount;
 
     console.log('🎉 All cleanup complete:', {
-      mediaAssets: { deleted: mediaDeletedCount, errors: mediaErrorCount },
+      mediaAssets: {
+        deletedFromDB: mediaDeletedCount,
+        deletedFromCloudflare: cloudflareOrphanedCount,
+        total: totalMediaDeleted,
+        errors: mediaErrorCount
+      },
       profilePictures: { deleted: profileDeletedCount, errors: profileErrorCount },
       attachments: { deleted: attachmentDeletedCount, errors: attachmentErrorCount },
       totals: { deleted: totalDeleted, errors: totalErrors }
@@ -442,7 +600,12 @@ export default async function handler(req, res) {
       await sendFailureNotification(
         new Error(`High error rate during cleanup: ${totalErrors} errors, ${totalDeleted} deleted`),
         {
-          mediaAssets: { deleted: mediaDeletedCount, errors: mediaErrorCount },
+          mediaAssets: {
+            deletedFromDB: mediaDeletedCount,
+            deletedFromCloudflare: cloudflareOrphanedCount,
+            total: totalMediaDeleted,
+            errors: mediaErrorCount
+          },
           profilePictures: { deleted: profileDeletedCount, errors: profileErrorCount },
           attachments: { deleted: attachmentDeletedCount, errors: attachmentErrorCount },
           totals: { deleted: totalDeleted, errors: totalErrors },
@@ -454,7 +617,9 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       mediaAssets: {
-        deleted: mediaDeletedCount,
+        deletedFromDB: mediaDeletedCount,
+        deletedFromCloudflare: cloudflareOrphanedCount,
+        total: totalMediaDeleted,
         errors: mediaErrorCount,
       },
       profilePictures: {
@@ -469,7 +634,7 @@ export default async function handler(req, res) {
         deleted: totalDeleted,
         errors: totalErrors,
       },
-      message: `Cleaned up ${totalDeleted} orphaned items (${mediaDeletedCount} media assets, ${profileDeletedCount} profile pictures, ${attachmentDeletedCount} attachments)`,
+      message: `Cleaned up ${totalDeleted} orphaned items (${totalMediaDeleted} media assets: ${mediaDeletedCount} from DB + ${cloudflareOrphanedCount} from Cloudflare, ${profileDeletedCount} profile pictures, ${attachmentDeletedCount} attachments)`,
     });
 
   } catch (error) {

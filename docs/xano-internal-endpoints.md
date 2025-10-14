@@ -75,11 +75,9 @@ Delete a media asset record from the database.
 
 The unified cleanup script `/api/cron/cleanup-orphaned-media.js` runs daily at 3:00 AM UTC and performs two cleanup operations:
 
-**Part 1: Media Assets**
-- Fetches all records from `media_assets` table
-- Checks if media is older than 48 hours
-- Verifies if parent question/answer still exists
-- Deletes orphaned media from Cloudflare (Stream/R2) and Xano
+**Part 1: Media Assets (Bidirectional Check)**
+- **Part 1A (DB → Cloudflare):** Validates database records, checks if media is older than 48 hours, verifies parent exists, deletes orphaned media from Cloudflare and Xano
+- **Part 1B (Cloudflare → DB):** Lists all Cloudflare files (Stream videos, R2 audio), compares against database, deletes files not in database
 
 **Part 2: Profile Pictures**
 - Lists all files in R2 under `profiles/` prefix

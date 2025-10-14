@@ -418,13 +418,24 @@ QuickChat implements a comprehensive automated cleanup system to remove orphaned
 The cleanup script runs in three parts:
 
 #### Part 1: Media Assets (Videos & Audio)
+
+**This runs in two directions to catch all orphaned media:**
+
+**Part 1A - Database → Cloudflare (validate DB records):**
 - Fetches all records from `media_assets` table
 - Checks if media is older than 48 hours (grace period for uploads)
 - Verifies if parent question/answer still exists
 - Deletes orphaned media from:
   - Cloudflare Stream (videos)
-  - Cloudflare R2 (audio)
+  - Cloudflare R2 (audio in `audio/` folder)
   - Xano database (`media_assets` table)
+
+**Part 1B - Cloudflare → Database (find files not in DB):**
+- Lists all videos in Cloudflare Stream
+- Lists all audio files in R2 `audio/` folder
+- Compares against `media_assets` table
+- Deletes files from Cloudflare that don't exist in database
+- **Catches uploads that succeeded but never created DB records**
 
 #### Part 2: Profile Pictures
 - Lists all files in R2 under `profiles/` prefix
@@ -492,7 +503,9 @@ curl -X POST https://quickchat-dev.vercel.app/api/cron/cleanup-orphaned-media \
 {
   "success": true,
   "mediaAssets": {
-    "deleted": 0,
+    "deletedFromDB": 0,
+    "deletedFromCloudflare": 0,
+    "total": 0,
     "errors": 0
   },
   "profilePictures": {
@@ -507,7 +520,7 @@ curl -X POST https://quickchat-dev.vercel.app/api/cron/cleanup-orphaned-media \
     "deleted": 0,
     "errors": 0
   },
-  "message": "Cleaned up 0 orphaned items (0 media assets, 0 profile pictures, 0 attachments)"
+  "message": "Cleaned up 0 orphaned items (0 media assets: 0 from DB + 0 from Cloudflare, 0 profile pictures, 0 attachments)"
 }
 ```
 
@@ -521,6 +534,8 @@ Check cleanup logs in Vercel dashboard:
 Logs include:
 - 🧹 Starting cleanup
 - 📦 Part 1: Media assets cleanup
+  - 📋 Part 1A: Database → Cloudflare validation
+  - ☁️  Part 1B: Cloudflare → Database comparison
 - 🖼️ Part 2: Profile pictures cleanup
 - 📎 Part 3: Attachments cleanup
 - 🎉 Summary with totals
