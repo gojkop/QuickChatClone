@@ -31,20 +31,42 @@ export default async function handler(req, res) {
     });
 
     console.log('Xano response status:', r.status);
-    console.log('Xano response data:', r.data);
+    console.log('Xano response data:', JSON.stringify(r.data, null, 2));
 
     if (r.status !== 200) {
-      console.error('Xano init error:', r.data);
+      console.error('❌ Xano init error:', r.data);
       return res.status(r.status).json(r.data || { message: "OAuth init failed" });
     }
 
-    const authUrl = r.data?.authUrl || r.data?.url || r.data;
-    
-    if (!authUrl) {
-      console.error('No authUrl returned from Xano');
-      return res.status(500).json({ message: "No authUrl from Xano" });
+    // Handle different possible response formats
+    let responseData = r.data;
+
+    // Check if data is wrapped
+    if (r.data?.data) {
+      console.log('Response wrapped in "data" key');
+      responseData = r.data.data;
+    } else if (r.data?.result) {
+      console.log('Response wrapped in "result" key');
+      responseData = r.data.result;
     }
 
+    // Handle multiple possible key names for auth URL
+    const authUrl = responseData?.authUrl || responseData?.url || (typeof responseData === 'string' ? responseData : null);
+
+    if (!authUrl) {
+      console.error('❌ No authUrl returned from Xano. Full response:', JSON.stringify(r.data, null, 2));
+      console.error('Response keys:', Object.keys(r.data || {}));
+      return res.status(500).json({
+        message: "No authUrl from Xano",
+        debug: {
+          hasData: !!r.data,
+          keys: Object.keys(r.data || {}),
+          dataType: typeof r.data
+        }
+      });
+    }
+
+    console.log('✅ Auth URL received successfully');
     return res.status(200).json({ authUrl });
   } catch (e) {
     console.error("OAuth init error:", e.response?.data || e.message);
