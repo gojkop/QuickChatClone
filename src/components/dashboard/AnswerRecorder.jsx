@@ -1,5 +1,5 @@
 // src/components/dashboard/AnswerRecorder.jsx
-// MOBILE FIX: Removed internal sticky footer (now handled by parent modal)
+// COMPLETE WORKING VERSION with mobile fixes
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
@@ -469,7 +469,7 @@ function AnswerRecorder({ question, onReady, onCancel, expert }) {
           </span>
         </div>
 
-        <div className="bg-white rounded-lg p-2 sm:p-3 space-y-2">
+        <div className="bg-white rounded-lg p-2 sm:p-3 space-y-2 max-w-full">
           {segments.map((segment, index) => {
             const uploadStatus = segmentUpload.segments[index];
             const isUploading = uploadStatus?.uploading;
@@ -593,69 +593,344 @@ function AnswerRecorder({ question, onReady, onCancel, expert }) {
     );
   };
 
-// src/components/dashboard/AnswerReviewModal.jsx
-// FEE DISCLOSURE UPDATE: Added platform fee note
+  const renderRecorder = () => {
+    if (recordingState === 'idle') {
+      return (
+        <div className="space-y-4 max-w-full">
+          <ExistingSegmentsDisplay />
 
-// In the existing AnswerReviewModal.jsx file, update the "Earnings Info" section:
+          {totalDuration < MAX_RECORDING_SECONDS && (
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 max-w-full">
+              <div className="text-center mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 flex items-center justify-center gap-2">
+                  {segments.length === 0 ? 'Record Your Answer' : 'Add Another Recording'}
+                  <HelpButton position="bottom">
+                    <strong>Recording Options:</strong>
+                    <ul className="mt-2 space-y-1.5 text-left text-xs">
+                      <li><strong>Video:</strong> Best for personal, face-to-face answers</li>
+                      <li><strong>Audio:</strong> Perfect for quick explanations</li>
+                      <li><strong>Screen + Voice:</strong> Ideal for walkthroughs & demos with your microphone audio</li>
+                      <li className="pt-1 border-t border-gray-200 mt-2"><em>You can record multiple segments and arrange them in any order</em></li>
+                    </ul>
+                  </HelpButton>
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {formatTime(MAX_RECORDING_SECONDS - totalDuration)} remaining
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-full">
+                <button
+                  onClick={() => startNewSegment('video')}
+                  className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group touch-manipulation min-h-[60px]"
+                >
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
+                      <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="font-semibold text-gray-900 mb-1">Video</div>
+                    <div className="text-xs text-gray-500">
+                      Show your face or demonstrate visually
+                    </div>
+                  </div>
+                </button>
 
-// FIND THIS SECTION (around line 180):
-/*
-<div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-lg p-4">
-  <div className="flex items-center justify-between">
-    <div>
-      <div className="text-xs sm:text-sm text-gray-600 mb-1">You'll earn from this answer:</div>
-      <div className="text-xl sm:text-2xl font-black text-indigo-600">
-        {formatPrice(question.price_cents, question.currency)}
-      </div>
-    </div>
-    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-indigo-100 flex items-center justify-center">
-      <svg className="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    </div>
-  </div>
-</div>
-*/
+                <button
+                  onClick={() => startNewSegment('audio')}
+                  className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group touch-manipulation min-h-[60px]"
+                >
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
+                      <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="font-semibold text-gray-900 mb-1">Audio</div>
+                    <div className="text-xs text-gray-500">
+                      Voice-only explanation
+                    </div>
+                  </div>
+                </button>
 
-// REPLACE WITH:
-/*
-<div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-lg p-4">
-  <div className="flex items-center justify-between mb-2">
-    <div>
-      <div className="text-xs sm:text-sm text-gray-600 mb-1">You'll earn from this answer:</div>
-      <div className="text-xl sm:text-2xl font-black text-indigo-600">
-        {formatPrice(question.price_cents, question.currency)}
-      </div>
-    </div>
-    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-indigo-100 flex items-center justify-center">
-      <svg className="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    </div>
-  </div>
-  <p className="text-[10px] sm:text-xs text-indigo-700 leading-tight">
-    * Platform and payment processing fees apply
-  </p>
-</div>
-*/
+                {isScreenRecordingAvailable && (
+                  <button
+                    onClick={() => startNewSegment('screen')}
+                    className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group sm:col-span-2 touch-manipulation min-h-[60px]"
+                  >
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
+                        <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="text-left flex-1 min-w-0">
+                      <div className="font-semibold text-gray-900 mb-1">Screen + Voice</div>
+                      <div className="text-xs text-gray-500">
+                        Record your screen with microphone narration
+                      </div>
+                    </div>
+                  </button>
+                )}
+              </div>
 
-// KEY CHANGES:
-// 1. Added mb-2 to the flex container (was nothing)
-// 2. Added fee disclaimer paragraph below the earnings display
-// 3. Small responsive text sizing (text-[10px] sm:text-xs)
+              {!isScreenRecordingAvailable && (
+                <div className="mt-4 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg max-w-full">
+                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-blue-900 mb-1">
+                      Screen recording available on desktop
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Use our desktop site to record your screen with voice narration
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (recordingState === 'asking') {
+      return (
+        <div className="space-y-4 max-w-full">
+          <ExistingSegmentsDisplay />
+          <div className="text-center p-12 border-2 border-dashed border-gray-300 rounded-xl">
+            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-gray-600">Requesting permissions...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (recordingState === 'denied') {
+      return (
+        <div className="space-y-4 max-w-full">
+          <ExistingSegmentsDisplay />
+          <div className="text-center p-6 sm:p-8 border-2 border-amber-400 rounded-xl bg-amber-50">
+            <svg className="w-12 h-12 text-amber-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="font-semibold text-amber-800 mb-2">Permission needed</p>
+            <p className="text-sm text-amber-700 mb-4">Please allow camera/microphone access when prompted by your browser</p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <button 
+                onClick={discardSegment} 
+                className="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition touch-manipulation min-h-[44px]"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => initiatePreview(currentSegment.mode, facingMode)} 
+                className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition touch-manipulation min-h-[44px]"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (recordingState === 'preview') {
+      return (
+        <div className="space-y-4 max-w-full">
+          <ExistingSegmentsDisplay />
+          <div className="border-2 border-gray-300 rounded-xl overflow-hidden max-w-full">
+            {currentSegment.mode !== 'audio' ? (
+              <div className="relative">
+                <video ref={videoRef} className="w-full bg-gray-900 aspect-video object-cover max-h-[60vh]" autoPlay muted playsInline />
+                
+                {currentSegment.mode === 'video' && isMobileDevice && (
+                  <button
+                    onClick={flipCamera}
+                    disabled={isFlipping}
+                    className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-w-[48px] min-h-[48px] flex items-center justify-center"
+                    title={`Switch to ${facingMode === 'user' ? 'back' : 'front'} camera`}
+                  >
+                    {isFlipping ? (
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+                
+                {currentSegment.mode === 'video' && isMobileDevice && (
+                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold rounded-full">
+                    {facingMode === 'user' ? '📷 Front' : '📷 Back'}
+                  </div>
+                )}
+
+                {countdown !== null && (
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-7xl sm:text-8xl font-black text-white mb-4 animate-bounce">
+                        {countdown}
+                      </div>
+                      <div className="text-white text-lg sm:text-xl font-semibold">
+                        Get ready...
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                <div className="text-center">
+                  <svg className="w-16 h-16 text-white mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                  <p className="text-white font-semibold">Audio Ready</p>
+                  <p className="text-gray-400 text-sm mt-1">Your microphone is active</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="p-4 bg-white flex flex-col sm:flex-row gap-3">
+              <button 
+                onClick={discardSegment} 
+                className="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition touch-manipulation min-h-[44px] order-2 sm:order-1"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={startRecordingWithCountdown} 
+                disabled={countdown !== null}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition disabled:opacity-50 touch-manipulation min-h-[44px] order-1 sm:order-2 flex-1 sm:flex-initial"
+              >
+                <div className="w-3 h-3 rounded-full bg-white"></div>
+                <span>Start Recording</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (recordingState === 'recording') {
+      return (
+        <div className="space-y-4 max-w-full">
+          <ExistingSegmentsDisplay />
+          <div className="border-2 border-red-500 rounded-xl overflow-hidden bg-red-50 max-w-full">
+            {currentSegment.mode !== 'audio' ? (
+              <video ref={videoRef} className="w-full bg-gray-900 aspect-video object-cover max-h-[60vh]" autoPlay muted playsInline />
+            ) : (
+              <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-full bg-red-600 mx-auto mb-4 animate-pulse"></div>
+                  <p className="text-white font-semibold text-lg">Recording Audio...</p>
+                  <p className="text-gray-400 text-sm mt-1">Speak clearly into your microphone</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="p-4 sm:p-6 text-center">
+              <div className="inline-flex items-center gap-3 mb-4">
+                <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
+                <span className="text-red-700 font-bold text-base sm:text-lg">Recording in progress...</span>
+              </div>
+              <div className="text-4xl sm:text-5xl font-black text-red-600 mb-4" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {formatTime(timer)}
+              </div>
+              <button 
+                onClick={stopRecording} 
+                className="px-6 sm:px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition touch-manipulation min-h-[44px]"
+              >
+                Stop Recording
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (recordingState === 'review') {
+      return (
+        <div className="space-y-4 max-w-full">
+          <ExistingSegmentsDisplay />
+          <div className="border-2 border-green-500 rounded-xl overflow-hidden max-w-full">
+            {currentSegment.mode !== 'audio' ? (
+              <video 
+                ref={reviewVideoRef} 
+                key={currentSegment.blobUrl}
+                src={currentSegment.blobUrl} 
+                className="w-full aspect-video bg-black max-h-[60vh] object-contain" 
+                controls 
+                playsInline 
+                preload="metadata"
+              />
+            ) : (
+              <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                <audio 
+                  src={currentSegment.blobUrl}
+                  key={currentSegment.blobUrl}
+                  controls 
+                  className="w-full max-w-md px-4" 
+                  preload="metadata" 
+                />
+              </div>
+            )}
+            
+            <div className="p-4 bg-green-50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-green-700">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="font-semibold text-sm sm:text-base flex items-center gap-1">
+                    {getSegmentIcon(currentSegment.mode)}
+                    <span>{getSegmentLabel(currentSegment.mode)} · {formatTime(currentSegment.duration)}</span>
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs sm:text-sm text-green-800 mb-3 text-center">
+                Happy with this recording? Save it to include in your answer.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button 
+                  onClick={discardSegment} 
+                  className="px-4 py-2 text-gray-700 font-semibold hover:bg-white rounded-lg transition touch-manipulation min-h-[44px] order-2 sm:order-1"
+                >
+                  🗑️ Delete & Record Again
+                </button>
+                <button 
+                  onClick={saveSegment} 
+                  className="px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition touch-manipulation min-h-[44px] order-1 sm:order-2 flex-1 sm:flex-initial"
+                >
+                  ✅ Save Recording
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   const canSubmit = 
     !segmentUpload.hasUploading &&
     !attachmentUpload.uploads.some(u => u.uploading);
 
   return (
-    // REMOVED WRAPPER DIV - parent modal handles scrolling
     <>
-      {/* SLA Countdown */}
       <SLACountdown question={question} expert={expert} className="rounded-lg mb-4 sm:mb-6" />
       
-      <div className="space-y-6 max-w-full overflow-hidden">{/* ADDED max-w-full overflow-hidden */}
-        {/* Recording Section */}
+      <div className="space-y-6 max-w-full overflow-hidden">
         <div>
           <label className="flex items-center text-sm font-semibold text-gray-900 mb-2">
             <span>Record Your Answer</span>
@@ -673,7 +948,6 @@ function AnswerRecorder({ question, onReady, onCancel, expert }) {
           {renderRecorder()}
         </div>
 
-        {/* Text Section */}
         <div>
           <label htmlFor="answer-text" className="flex items-center text-sm font-semibold text-gray-900 mb-2">
             <span>Written Summary or Notes</span>
@@ -694,7 +968,6 @@ function AnswerRecorder({ question, onReady, onCancel, expert }) {
           <div className="text-right text-xs text-gray-500 mt-1">{text.length} / 5000</div>
         </div>
 
-        {/* Attachments */}
         <div>
           <label className="flex items-center text-sm font-semibold text-gray-900 mb-2">
             <span>Attach Supporting Files</span>
@@ -750,7 +1023,6 @@ function AnswerRecorder({ question, onReady, onCancel, expert }) {
           )}
         </div>
 
-        {/* Answer Quality Indicator */}
         <AnswerQualityIndicator
           answerData={{
             recordingSegments: segments,
@@ -761,7 +1033,6 @@ function AnswerRecorder({ question, onReady, onCancel, expert }) {
           question={question}
         />
 
-        {/* Footer - PARENT MODAL NOW HANDLES STICKINESS */}
         <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200 pb-safe">
           <button
             onClick={onCancel}
