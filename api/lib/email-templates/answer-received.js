@@ -9,6 +9,7 @@ export function getAnswerReceivedTemplate(data) {
     expertName, 
     questionTitle, 
     questionId,
+    reviewToken, // ✅ Review token for direct access link
     answeredAt,
     questionCategory = 'default' // Category for tip selection
   } = data;
@@ -120,7 +121,7 @@ export function getAnswerReceivedTemplate(data) {
               <!-- Primary CTA -->
               <tr>
                 <td style="padding-top: 32px; text-align: center;">
-                  <a href="https://mindpick.me/questions/${questionId}" style="display: inline-block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3); transition: all 0.2s;">
+                  <a href="https://mindpick.me/r/${reviewToken || questionId}" style="display: inline-block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3); transition: all 0.2s;">
                     View Answer Now →
                   </a>
                 </td>
@@ -148,7 +149,7 @@ export function getAnswerReceivedTemplate(data) {
                           </tr>
                           <tr>
                             <td style="padding: 8px 0; font-size: 14px; color: #4B5563;">
-                              <span style="color: #10B981; margin-right: 8px;">✓</span> Share with your network
+                              <span style="color: #10B981; margin-right: 8px;">✓</span> Download media & files
                             </td>
                           </tr>
                         </table>
@@ -186,14 +187,14 @@ Hi ${askerName || 'there'},
 ${expertName} has shared their expert insight on your question: "${questionTitle}"
 
 View your personalized answer now:
-https://mindpick.me/questions/${questionId}
+https://mindpick.me/r/${reviewToken || questionId}
 
 PRO TIP: ${proTip}
 
 After viewing, you can:
 ✓ Rate the answer quality
 ✓ Ask a follow-up question
-✓ Share with your network
+✓ Download media & files
 
 ---
 Question #${questionId}
