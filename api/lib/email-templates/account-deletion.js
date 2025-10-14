@@ -143,7 +143,7 @@ export function getAccountDeletionTemplate(data) {
                         <p style="font-size: 13px; color: #6B7280; margin: 0 0 16px 0; line-height: 1.5;">
                           We'd love to know what we could have done better. Your feedback helps us improve mindPick for everyone.
                         </p>
-                        <a href="https://mindpick.me/feedback/deletion?email=${encodeURIComponent(email)}" style="display: inline-block; background: white; color: #4F46E5; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 13px; border: 2px solid #C7D2FE;">
+                        <a href="https://mindpick.me/?feedback=deletion&email=${encodeURIComponent(email)}" style="display: inline-block; background: white; color: #4F46E5; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 13px; border: 2px solid #C7D2FE;">
                           Share Feedback (2 min)
                         </a>
                       </td>
@@ -197,7 +197,7 @@ This deletion complies with GDPR Article 17 (Right to Erasure).
 Privacy Policy: https://mindpick.me/privacy
 
 HELP US IMPROVE (optional):
-Share why you're leaving: https://mindpick.me/feedback/deletion?email=${encodeURIComponent(email)}
+Share why you're leaving: https://mindpick.me/?feedback=deletion&email=${encodeURIComponent(email)}
 
 Thank you for being part of the mindPick community.
 
