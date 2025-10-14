@@ -12,7 +12,9 @@ export default async function handler(req, res) {
     const CLIENT_PUBLIC_ORIGIN = process.env.CLIENT_PUBLIC_ORIGIN;
     const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID;
     const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET;
-    const XANO_BASE_URL = process.env.XANO_BASE_URL;
+    // IMPORTANT: /auth/linkedin/create_user must be in the Public API group (api:BQW1GS7L)
+    // Use XANO_PUBLIC_API_URL (e.g., https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L)
+    const XANO_PUBLIC_API_URL = process.env.XANO_PUBLIC_API_URL;
     const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN;
 
     // Check if environment variables are set
@@ -26,9 +28,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: "LinkedIn configuration error" });
     }
 
-    if (!XANO_BASE_URL) {
-      console.error('XANO_BASE_URL not set');
-      return res.status(500).json({ message: "Xano configuration error" });
+    if (!XANO_PUBLIC_API_URL) {
+      console.error('XANO_PUBLIC_API_URL not set');
+      return res.status(500).json({ message: "Xano Public API URL not configured" });
     }
 
     // Use /auth/callback as redirect URI
@@ -99,8 +101,12 @@ export default async function handler(req, res) {
     console.log('📡 Creating/updating user in Xano...');
     const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
 
+    const xanoEndpoint = `${XANO_PUBLIC_API_URL}/auth/linkedin/create_user`;
+    console.log('📡 Xano endpoint URL:', xanoEndpoint);
+    console.log('📡 XANO_PUBLIC_API_URL:', XANO_PUBLIC_API_URL);
+
     const xanoResponse = await axios.post(
-      `${XANO_BASE_URL}/auth/linkedin/create_user`,
+      xanoEndpoint,
       {
         x_api_key: XANO_INTERNAL_API_KEY,  // Send in body instead of header
         linkedin_id: userInfo.sub,

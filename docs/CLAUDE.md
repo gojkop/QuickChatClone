@@ -337,7 +337,9 @@ Handle gracefully in UI, never expose raw errors to users.
 ### Environment Variables
 
 **Backend (Vercel):**
-- `XANO_BASE_URL` - Xano API base URL
+- `XANO_BASE_URL` - Xano API base URL (Authentication API group)
+- `XANO_PUBLIC_API_URL` - Xano Public API URL (for LinkedIn OAuth: `https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L`)
+- `XANO_INTERNAL_API_KEY` - Internal API key for secure Xano calls
 - `LLM_PROVIDER` - AI provider (gemini, openai, anthropic, groq)
 - `GOOGLE_AI_API_KEY` - Gemini API key
 - `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account ID
@@ -439,7 +441,7 @@ Use presigned URLs for private access.
   - `XANO_AUTH_BASE_URL` or `XANO_GOOGLE_AUTH_BASE_URL`
 - **LinkedIn OAuth:**
   - `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`
-  - `XANO_BASE_URL` (for user creation endpoint)
+  - `XANO_PUBLIC_API_URL` (Public API group: `https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L`)
   - `XANO_INTERNAL_API_KEY` (for secure Xano API calls)
 - **Common:**
   - `CLIENT_PUBLIC_ORIGIN` (e.g., https://mindpick.me for OAuth redirect URI)
