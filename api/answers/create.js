@@ -1,206 +1,246 @@
-// api/lib/email-templates/answer-received.js
-// Email template for answer received notification with dynamic tips
+// api/answers/create.js
+// Consolidated endpoint for answer creation + email notification
+import { sendAnswerReceivedNotification } from '../lib/zeptomail.js';
+import { fetchUserData, getAskerName, getAskerEmail } from '../lib/user-data.js';
 
-import { getProTip } from './tip-bank.js';
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-export function getAnswerReceivedTemplate(data) {
-  const { 
-    askerName, 
-    expertName, 
-    questionTitle, 
-    questionId,
-    reviewToken, // ✅ Review token for direct access link
-    answeredAt,
-    questionCategory = 'default' // Category for tip selection
-  } = data;
+  try {
+    const {
+      question_id,
+      user_id,
+      text_response,
+      media_asset_id,
+      attachments,
+    } = req.body;
 
-  // 🎯 Get random PRO TIP from category-specific pool
-  const proTip = getProTip(questionCategory);
+    console.log('=== ANSWER CREATION ===');
+    console.log('Question ID:', question_id);
+    console.log('User ID:', user_id);
 
-  const subject = `${expertName} answered your question`;
+    // 1. Create answer record in Xano
+    const answerPayload = {
+      question_id,
+      user_id,
+      text_response: text_response || null,
+      media_asset_id: media_asset_id || null,
+      attachments: attachments || null,
+    };
 
-  const htmlBody = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    </head>
-    <body style="margin: 0; padding: 0; background-color: #F9FAFB;">
-      <!-- Preheader -->
-      <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0; max-width: 0; opacity: 0; overflow: hidden;">
-        ${expertName} answered your question about "${questionTitle}". View their insight now.
-      </div>
+    console.log('Creating answer in Xano...');
+    console.log('Using URL:', `${process.env.XANO_BASE_URL}/answer`);
+    console.log('Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+
+    const answerResponse = await fetch(
+      `${process.env.XANO_BASE_URL}/answer`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Pass through authorization if present
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
+          }),
+        },
+        body: JSON.stringify(answerPayload),
+      }
+    );
+
+    console.log('Answer response status:', answerResponse.status);
+
+    if (!answerResponse.ok) {
+      const errorText = await answerResponse.text();
+      console.error('Xano answer creation failed:', errorText);
       
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #F9FAFB; padding: 40px 20px;">
-        <tr>
-          <td align="center">
-            <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-              
-              <!-- Logo -->
-              <tr>
-                <td style="padding: 32px 0 24px 0;">
-                  <div style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">
-                    <span style="color: #1F2937;">mind</span><span style="color: #4F46E5;">Pick</span>
-                  </div>
-                </td>
-              </tr>
-              
-              <!-- Hero Section -->
-              <tr>
-                <td>
-                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
-                    <tr>
-                      <td style="padding: 40px 32px; text-align: center;">
-                        <!-- Success Icon -->
-                        <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border-radius: 50%; margin: 0 auto 24px; line-height: 64px; font-size: 32px;">
-                          ✓
-                        </div>
-                        <h1 style="color: white; font-size: 32px; font-weight: 800; line-height: 1.2; margin: 0 0 12px 0;">
-                          Your answer is ready
-                        </h1>
-                        <p style="color: rgba(255,255,255,0.95); font-size: 18px; margin: 0;">
-                          ${expertName} just shared their expert insight
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              
-              <!-- Main Content Card -->
-              <tr>
-                <td style="padding-top: 32px;">
-                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                    <tr>
-                      <td style="padding: 32px;">
-                        
-                        <!-- Your Question -->
-                        <div style="background: #F9FAFB; border-left: 3px solid #7C3AED; padding: 16px 20px; border-radius: 8px; margin-bottom: 24px;">
-                          <p style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #7C3AED; margin: 0 0 8px 0;">
-                            Your Question
-                          </p>
-                          <p style="font-size: 16px; font-weight: 600; color: #111827; margin: 0;">
-                            ${questionTitle || 'Your question'}
-                          </p>
-                        </div>
-                        
-                        <!-- Key Details -->
-                        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 28px;">
-                          <tr>
-                            <td style="padding: 10px 0; border-bottom: 1px solid #F3F4F6;">
-                              <span style="font-size: 14px; color: #6B7280;">Answered by</span>
-                              <div style="font-size: 16px; font-weight: 600; color: #111827; margin-top: 4px;">${expertName}</div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 10px 0;">
-                              <span style="font-size: 14px; color: #6B7280;">Response time</span>
-                              <div style="font-size: 16px; font-weight: 600; color: #10B981; margin-top: 4px;">Within SLA ✓</div>
-                            </td>
-                          </tr>
-                        </table>
-                        
-                        <!-- 🎯 DYNAMIC PRO TIP -->
-                        <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-radius: 8px; padding: 16px 20px; margin-bottom: 28px;">
-                          <p style="font-size: 13px; font-weight: 700; color: #92400E; margin: 0 0 6px 0;">
-                            💡 PRO TIP
-                          </p>
-                          <p style="font-size: 14px; color: #78350F; margin: 0; line-height: 1.5;">
-                            ${proTip}
-                          </p>
-                        </div>
-                        
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              
-              <!-- Primary CTA -->
-              <tr>
-                <td style="padding-top: 32px; text-align: center;">
-                  <a href="https://mindpick.me/r/${reviewToken || questionId}" style="display: inline-block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3); transition: all 0.2s;">
-                    View Answer Now →
-                  </a>
-                </td>
-              </tr>
-              
-              <!-- What's Next -->
-              <tr>
-                <td style="padding-top: 32px;">
-                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                    <tr>
-                      <td style="padding: 24px; background: #F9FAFB; border-radius: 8px; border: 1px solid #E5E7EB;">
-                        <p style="font-size: 14px; font-weight: 600; color: #111827; margin: 0 0 12px 0;">
-                          After viewing, you can:
-                        </p>
-                        <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #4B5563;">
-                              <span style="color: #10B981; margin-right: 8px;">✓</span> Rate the answer quality
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #4B5563;">
-                              <span style="color: #10B981; margin-right: 8px;">✓</span> Ask a follow-up question
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #4B5563;">
-                              <span style="color: #10B981; margin-right: 8px;">✓</span> Download media & files
-                            </td>
-                          </tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              
-              <!-- Footer -->
-              <tr>
-                <td style="padding-top: 48px; text-align: center; border-top: 2px solid #F3F4F6;">
-                  <p style="font-size: 12px; color: #9CA3AF; margin: 24px 0 8px 0;">
-                    Question #${questionId} • <a href="https://mindpick.me/faq" style="color: #4F46E5; text-decoration: none;">FAQ</a>
-                  </p>
-                  <p style="font-size: 12px; color: #9CA3AF; margin: 0;">
-                    © 2025 mindPick • Amsterdam, NL
-                  </p>
-                </td>
-              </tr>
-              
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `;
+      // Try to parse error as JSON, fallback to text
+      let errorMessage = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorText;
+      } catch (e) {
+        // Not JSON, use text as is
+      }
+      
+      return res.status(answerResponse.status).json({
+        success: false,
+        error: errorMessage,
+      });
+    }
 
-  const textBody = `
-${expertName} answered your question
+    const answer = await answerResponse.json();
+    const answerId = answer.id;
+    console.log('✅ Answer created:', answerId);
 
-Hi ${askerName || 'there'},
+    // 2. Extract question data from answer response (embedded by Xano)
+    const questionData = answer.question || answer._question;
 
-${expertName} has shared their expert insight on your question: "${questionTitle}"
+    if (questionData) {
+      console.log('📧 Question data retrieved:', {
+        id: questionData.id,
+        title: questionData.title,
+        payer_email: questionData.payer_email,
+        payer_first_name: questionData.payer_first_name,
+        payer_last_name: questionData.payer_last_name,
+        has_playback_token: !!questionData.playback_token_hash
+        // ✅ NOT logging actual token value to protect privacy
+      });
 
-View your personalized answer now:
-https://mindpick.me/r/${reviewToken || questionId}
+      // ✅ Extract review token for email link (not exposed to expert)
+      const reviewToken = questionData.playback_token_hash;
+      
+      if (!reviewToken) {
+        console.warn('⚠️ Question does not have playback_token_hash - cannot send email link');
+      }
 
-PRO TIP: ${proTip}
+      // 3. Fetch expert details (the person who answered)
+      const expertData = await fetchUserData(user_id);
+      const expertName = expertData?.name || 'Your Expert';
+      console.log('📧 Expert name:', expertName);
 
-After viewing, you can:
-✓ Rate the answer quality
-✓ Ask a follow-up question
-✓ Download media & files
+      // 4. Get asker details from question data
+      const askerEmail = getAskerEmail(questionData);
+      const askerName = getAskerName(questionData);
+      const questionTitle = questionData.title;
 
----
-Question #${questionId}
-FAQ: https://mindpick.me/faq
-© 2025 mindPick • Amsterdam, NL
-  `;
+      console.log('📧 Asker details extracted:', { 
+        askerEmail, 
+        askerName, 
+        questionTitle
+        // ✅ NOT logging reviewToken to protect privacy
+      });
 
-  return { subject, htmlBody, textBody };
+      // 5. Send email notification to asker
+      if (askerEmail) {
+        console.log('📧 Sending answer notification to asker:', askerEmail);
+
+        try {
+          await sendAnswerReceivedNotification({
+            askerEmail,
+            askerName,
+            expertName,
+            questionTitle,
+            questionId: question_id,
+            reviewToken: reviewToken, // ✅ Pass review token for /r/{token} link
+            answerId: answerId,
+          });
+          console.log('✅ Answer notification sent to asker successfully');
+        } catch (emailErr) {
+          console.error('❌ Failed to send answer notification:', emailErr.message);
+          console.error('❌ Email error stack:', emailErr.stack);
+          // Don't fail the request if email fails
+        }
+      } else {
+        console.warn('⚠️ No asker email found, skipping notification');
+      }
+    } else {
+      console.warn('⚠️ Could not retrieve question details from answer response');
+      console.warn('⚠️ Answer response keys:', Object.keys(answer));
+      
+      // Fallback: Fetch question directly if not embedded
+      try {
+        console.log('🔄 Attempting to fetch question directly from Xano...');
+        
+        const questionResponse = await fetch(
+          `${process.env.XANO_BASE_URL}/question/${question_id}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              ...(req.headers.authorization && {
+                Authorization: req.headers.authorization,
+              }),
+            },
+          }
+        );
+
+        if (questionResponse.ok) {
+          const fetchedQuestionData = await questionResponse.json();
+          console.log('✅ Question fetched directly:', {
+            id: fetchedQuestionData.id,
+            has_token: !!fetchedQuestionData.playback_token_hash
+            // ✅ NOT logging actual token value to protect privacy
+          });
+
+          // Extract data for email
+          const reviewToken = fetchedQuestionData.playback_token_hash;
+          const expertData = await fetchUserData(user_id);
+          const expertName = expertData?.name || 'Your Expert';
+          const askerEmail = getAskerEmail(fetchedQuestionData);
+          const askerName = getAskerName(fetchedQuestionData);
+          const questionTitle = fetchedQuestionData.title;
+
+          if (askerEmail) {
+            console.log('📧 Sending answer notification (from direct fetch)...');
+            
+            try {
+              await sendAnswerReceivedNotification({
+                askerEmail,
+                askerName,
+                expertName,
+                questionTitle,
+                questionId: question_id,
+                reviewToken: reviewToken, // ✅ Pass review token
+                answerId: answerId,
+              });
+              console.log('✅ Answer notification sent successfully (fallback path)');
+            } catch (emailErr) {
+              console.error('❌ Failed to send answer notification (fallback):', emailErr.message);
+            }
+          }
+        } else {
+          console.error('❌ Failed to fetch question directly:', questionResponse.status);
+        }
+      } catch (fallbackErr) {
+        console.error('❌ Fallback question fetch failed:', fallbackErr.message);
+      }
+    }
+
+    // 6. Return success response (sanitize sensitive data)
+    try {
+      // ✅ Remove review token from response to protect asker privacy
+      const sanitizedAnswer = JSON.parse(JSON.stringify(answer)); // Deep clone
+      
+      // Remove review token from embedded question data (if present)
+      if (sanitizedAnswer.question?.playback_token_hash) {
+        delete sanitizedAnswer.question.playback_token_hash;
+      }
+      if (sanitizedAnswer._question?.playback_token_hash) {
+        delete sanitizedAnswer._question.playback_token_hash;
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: sanitizedAnswer,
+      });
+    } catch (sanitizeError) {
+      console.error('❌ Error sanitizing response:', sanitizeError);
+      // Fallback: return without sanitization if it fails
+      return res.status(200).json({
+        success: true,
+        data: {
+          id: answer.id,
+          question_id: answer.question_id,
+          user_id: answer.user_id,
+          created_at: answer.created_at,
+        },
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Answer creation error:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error details:', {
+      name: error.name,
+      message: error.message,
+      cause: error.cause
+    });
+
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to create answer',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
+  }
 }
