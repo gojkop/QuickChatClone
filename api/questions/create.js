@@ -122,35 +122,60 @@ export default async function handler(req, res) {
     console.log('✅ Playback token hash:', playbackTokenHash);
 
     // Send email notifications to both expert and payer/asker
-    const userId = profileData.expert_profile?.user_id;
+    // ✅ Extract user_id from multiple possible locations in response
+    const userId = profileData.expert_profile?.user_id || 
+                   profileData.user_id || 
+                   profileData.expert_profile?._user?.id ||
+                   profileData._user?.id;
+    
     const expertProfileName = profileData.expert_profile?.name || profileData.name || 'Expert';
+
+    console.log('🔍 Expert user lookup:', {
+      userId,
+      hasExpertProfile: !!profileData.expert_profile,
+      profileDataKeys: Object.keys(profileData),
+      expertProfileKeys: profileData.expert_profile ? Object.keys(profileData.expert_profile) : null
+    });
 
     // 1. Send notification to expert
     if (userId) {
-      const expertData = await fetchUserData(userId);
+      console.log('📧 Fetching expert user data for user_id:', userId);
+      
+      try {
+        const expertData = await fetchUserData(userId);
+        console.log('📧 Expert data retrieved:', {
+          hasEmail: !!expertData?.email,
+          email: expertData?.email,
+          name: expertData?.name
+        });
 
-      if (expertData?.email) {
-        console.log('📧 Sending expert notification...');
+        if (expertData?.email) {
+          console.log('📧 Sending expert notification to:', expertData.email);
 
-        try {
-          await sendNewQuestionNotification({
-            expertEmail: expertData.email,
-            expertName: expertData.name || 'Expert',
-            questionTitle: title,
-            questionText: text,
-            askerEmail: payerEmail,
-            questionId,
-          });
-          console.log('✅ Expert notification sent successfully');
-        } catch (emailErr) {
-          console.error('❌ Failed to send expert notification:', emailErr.message);
-          console.error('❌ Email error stack:', emailErr.stack);
+          try {
+            await sendNewQuestionNotification({
+              expertEmail: expertData.email,
+              expertName: expertData.name || 'Expert',
+              questionTitle: title,
+              questionText: text,
+              askerEmail: payerEmail,
+              questionId,
+            });
+            console.log('✅ Expert notification sent successfully');
+          } catch (emailErr) {
+            console.error('❌ Failed to send expert notification:', emailErr.message);
+            console.error('❌ Email error stack:', emailErr.stack);
+          }
+        } else {
+          console.warn('⚠️ Expert data has no email - skipping expert notification');
         }
-      } else {
-        console.warn('⚠️ Could not retrieve expert email - skipping expert notification');
+      } catch (fetchErr) {
+        console.error('❌ Failed to fetch expert user data:', fetchErr.message);
+        console.error('❌ Fetch error stack:', fetchErr.stack);
       }
     } else {
       console.warn('⚠️ No user_id found in expert profile - skipping expert notification');
+      console.warn('⚠️ Profile data structure:', JSON.stringify(profileData, null, 2));
     }
 
     // 2. Send confirmation to payer/asker
