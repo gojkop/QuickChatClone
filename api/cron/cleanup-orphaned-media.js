@@ -1,7 +1,9 @@
 // api/cron/cleanup-orphaned-media.js
-// Runs daily to clean up uploads not associated with any question or answer
+// Runs daily to clean up orphaned media:
+// 1. Media assets not associated with any question or answer
+// 2. Profile pictures not referenced in any expert_profile
 
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { sendEmail } from '../lib/zeptomail.js';
 import { getCronFailureTemplate } from '../lib/email-templates/cron-failure.js';
 
@@ -46,9 +48,26 @@ export default async function handler(req, res) {
   const CLOUDFLARE_R2_ACCESS_KEY = process.env.CLOUDFLARE_R2_ACCESS_KEY;
   const CLOUDFLARE_R2_SECRET_KEY = process.env.CLOUDFLARE_R2_SECRET_KEY;
   const CLOUDFLARE_R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET;
+  const CLOUDFLARE_R2_PUBLIC_URL = process.env.CLOUDFLARE_R2_PUBLIC_URL;
 
   try {
-    console.log('Starting orphaned media cleanup...');
+    console.log('🧹 Starting comprehensive orphaned media cleanup...');
+    console.log('');
+
+    // Initialize R2 client for deletions
+    const r2Client = new S3Client({
+      region: 'auto',
+      endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: CLOUDFLARE_R2_ACCESS_KEY,
+        secretAccessKey: CLOUDFLARE_R2_SECRET_KEY,
+      },
+    });
+
+    // ============================================================
+    // PART 1: Clean up orphaned media_assets
+    // ============================================================
+    console.log('📦 PART 1: Cleaning up orphaned media assets...');
 
     // Calculate cutoff time (48 hours ago)
     const cutoffDate = new Date(Date.now() - (48 * 60 * 60 * 1000));
@@ -56,12 +75,12 @@ export default async function handler(req, res) {
     // Get all media_assets from Xano via internal endpoint
     // Note: Uses Public API group endpoint that accepts internal API key
     const XANO_PUBLIC_API_URL = process.env.XANO_PUBLIC_API_URL;
-    const internalEndpoint = `${XANO_PUBLIC_API_URL}/internal/media_assets`;
+    const internalEndpoint = `${XANO_PUBLIC_API_URL}/internal/media`;
 
     console.log('📡 Fetching media assets from:', internalEndpoint);
     console.log('📡 Using API Key:', XANO_INTERNAL_API_KEY ? 'Present' : 'Missing');
 
-    const mediaResponse = await fetch(`${internalEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}`, {
+    const mediaResponse = await fetch(`${internalEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}&type=assets`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -77,18 +96,8 @@ export default async function handler(req, res) {
     }
 
     const allMedia = await mediaResponse.json();
-    let deletedCount = 0;
-    let errorCount = 0;
-
-    // Initialize R2 client for deletions
-    const r2Client = new S3Client({
-      region: 'auto',
-      endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: CLOUDFLARE_R2_ACCESS_KEY,
-        secretAccessKey: CLOUDFLARE_R2_SECRET_KEY,
-      },
-    });
+    let mediaDeletedCount = 0;
+    let mediaErrorCount = 0;
 
     // Filter for orphaned media (older than 48 hours, not associated with questions/answers)
     for (const media of allMedia) {
@@ -172,39 +181,166 @@ export default async function handler(req, res) {
         });
 
         if (xanoDeleteResponse.ok) {
-          deletedCount++;
+          mediaDeletedCount++;
           console.log(`✅ Deleted from Xano database: ${media.id}`);
         } else {
           console.warn(`⚠️  Failed to delete from Xano: ${media.id}`);
-          errorCount++;
+          mediaErrorCount++;
         }
 
       } catch (deleteError) {
         console.error(`❌ Error deleting media ${media.id}:`, deleteError);
-        errorCount++;
+        mediaErrorCount++;
       }
     }
 
-    console.log('Cleanup complete:', { deletedCount, errorCount });
+    console.log('Part 1 complete:', { deleted: mediaDeletedCount, errors: mediaErrorCount });
+    console.log('');
+
+    // ============================================================
+    // PART 2: Clean up orphaned profile pictures
+    // ============================================================
+    console.log('🖼️  PART 2: Cleaning up orphaned profile pictures...');
+
+    let profileDeletedCount = 0;
+    let profileErrorCount = 0;
+    let profileSkippedCount = 0;
+
+    // Step 1: List all profile pictures in R2
+    console.log('📡 Listing profile pictures in R2...');
+
+    const listCommand = new ListObjectsV2Command({
+      Bucket: CLOUDFLARE_R2_BUCKET,
+      Prefix: 'profiles/',
+    });
+
+    const r2Response = await r2Client.send(listCommand);
+    const r2Files = r2Response.Contents || [];
+
+    console.log(`Found ${r2Files.length} profile pictures in R2`);
+
+    if (r2Files.length > 0) {
+      // Step 2: Get all avatar URLs from Xano
+      console.log('📡 Fetching avatar URLs from Xano...');
+
+      const avatarsResponse = await fetch(`${internalEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}&type=avatars`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!avatarsResponse.ok) {
+        const errorText = await avatarsResponse.text();
+        console.error('❌ Failed to fetch avatar URLs:', errorText);
+        throw new Error(`Failed to fetch avatar URLs from Xano: ${avatarsResponse.status}`);
+      }
+
+      const avatarRecords = await avatarsResponse.json();
+      console.log(`Found ${avatarRecords.length} avatar URLs in Xano`);
+
+      // Step 3: Build set of active files
+      const activeFiles = new Set();
+
+      for (const record of avatarRecords) {
+        if (record.avatar_url && record.avatar_url.includes('/profiles/')) {
+          // Extract the path after the domain
+          // URL: https://pub-xxx.r2.dev/profiles/123456-abc.webp
+          // Want: profiles/123456-abc.webp
+          const urlParts = record.avatar_url.split('/profiles/');
+          if (urlParts.length === 2) {
+            const fileName = `profiles/${urlParts[1]}`;
+            activeFiles.add(fileName);
+          }
+        }
+      }
+
+      console.log(`Extracted ${activeFiles.size} active profile picture paths`);
+
+      // Step 4: Compare and delete orphaned profile pictures
+      for (const file of r2Files) {
+        const key = file.Key;
+
+        // Skip if this file is referenced in Xano
+        if (activeFiles.has(key)) {
+          profileSkippedCount++;
+          continue;
+        }
+
+        // Skip the profiles/ folder itself
+        if (key === 'profiles/' || key === 'profiles') {
+          profileSkippedCount++;
+          continue;
+        }
+
+        // This file is orphaned - delete it
+        console.log(`Deleting orphaned profile picture: ${key}`);
+
+        try {
+          await r2Client.send(
+            new DeleteObjectCommand({
+              Bucket: CLOUDFLARE_R2_BUCKET,
+              Key: key,
+            })
+          );
+          profileDeletedCount++;
+          console.log(`✅ Deleted: ${key}`);
+        } catch (deleteError) {
+          console.error(`❌ Error deleting ${key}:`, deleteError.message);
+          profileErrorCount++;
+        }
+      }
+    }
+
+    console.log('Part 2 complete:', {
+      total: r2Files.length,
+      deleted: profileDeletedCount,
+      skipped: profileSkippedCount,
+      errors: profileErrorCount
+    });
+    console.log('');
+
+    // ============================================================
+    // Summary and notifications
+    // ============================================================
+    const totalDeleted = mediaDeletedCount + profileDeletedCount;
+    const totalErrors = mediaErrorCount + profileErrorCount;
+
+    console.log('🎉 All cleanup complete:', {
+      mediaAssets: { deleted: mediaDeletedCount, errors: mediaErrorCount },
+      profilePictures: { deleted: profileDeletedCount, errors: profileErrorCount },
+      totals: { deleted: totalDeleted, errors: totalErrors }
+    });
 
     // Send warning email if there were significant errors
-    if (errorCount > 0 && errorCount >= deletedCount * 0.5) {
+    if (totalErrors > 0 && totalErrors >= totalDeleted * 0.5) {
       // More than 50% error rate is concerning
       await sendFailureNotification(
-        new Error(`High error rate during cleanup: ${errorCount} errors, ${deletedCount} deleted`),
+        new Error(`High error rate during cleanup: ${totalErrors} errors, ${totalDeleted} deleted`),
         {
-          deletedCount,
-          errorCount,
-          errorRate: `${Math.round((errorCount / (deletedCount + errorCount)) * 100)}%`,
+          mediaAssets: { deleted: mediaDeletedCount, errors: mediaErrorCount },
+          profilePictures: { deleted: profileDeletedCount, errors: profileErrorCount },
+          totals: { deleted: totalDeleted, errors: totalErrors },
+          errorRate: `${Math.round((totalErrors / (totalDeleted + totalErrors)) * 100)}%`,
         }
       );
     }
 
     return res.status(200).json({
       success: true,
-      deleted: deletedCount,
-      errors: errorCount,
-      message: `Cleaned up ${deletedCount} orphaned media assets`,
+      mediaAssets: {
+        deleted: mediaDeletedCount,
+        errors: mediaErrorCount,
+      },
+      profilePictures: {
+        deleted: profileDeletedCount,
+        errors: profileErrorCount,
+      },
+      totals: {
+        deleted: totalDeleted,
+        errors: totalErrors,
+      },
+      message: `Cleaned up ${totalDeleted} orphaned items (${mediaDeletedCount} media assets, ${profileDeletedCount} profile pictures)`,
     });
 
   } catch (error) {
