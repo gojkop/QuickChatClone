@@ -82,19 +82,28 @@ export default async function handler(req, res) {
       ]);
     }
 
-    // Send sign-in notification email (non-blocking)
+    // Send sign-in notification email (non-blocking) - only on first signup
     const userEmail = responseData?.email;
     const userName = responseData?.name;
     const firstTime = responseData?.first_time;
 
-    if (userEmail) {
+    console.log('📧 Email check - email:', userEmail, 'first_time:', firstTime, 'type:', typeof firstTime);
+
+    // Handle both boolean true and string "true"
+    const isFirstTime = firstTime === true || firstTime === 'true' || firstTime === 1;
+
+    if (userEmail && isFirstTime) {
+      console.log('📧 First-time user detected, sending welcome email...');
       // Dynamic import to avoid module loading issues
-      import('../lib/zeptomail.js')
+      // Note: path is relative to /api/oauth/google/, so ../../lib goes to /api/lib
+      import('../../lib/zeptomail.js')
         .then(({ sendSignInNotification }) => {
           return sendSignInNotification({ email: userEmail, name: userName });
         })
         .then(() => console.log('✅ Sign-in notification sent'))
         .catch((err) => console.error('❌ Failed to send sign-in notification:', err.message));
+    } else if (userEmail) {
+      console.log('🔄 Returning user, skipping welcome email (first_time:', firstTime, ')');
     }
 
     return res.status(200).json({
