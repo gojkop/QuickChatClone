@@ -269,38 +269,44 @@ function AskQuestionPage() {
           {/* First Time User Tips */}
           <FirstTimeUserTips />
 
-          {/* What Happens Next Info Card */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-5 sm:p-6 mb-8">
-            <h3 className="font-bold text-indigo-900 mb-4 text-base sm:text-lg flex items-center gap-2">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              <span>What happens next?</span>
-            </h3>
-            <div className="space-y-3">
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">1</div>
-                <div className="flex-1 pt-1">
-                  <div className="text-sm sm:text-base font-semibold text-indigo-900">Record your question</div>
-                  <div className="text-xs sm:text-sm text-indigo-700">Up to 90 seconds of video, audio, or screen recording</div>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">2</div>
-                <div className="flex-1 pt-1">
-                  <div className="text-sm sm:text-base font-semibold text-indigo-900">Review and pay</div>
-                  <div className="text-xs sm:text-sm text-indigo-700">One-time payment of {formatPrice(expert.price_cents, expert.currency)}</div>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">3</div>
-                <div className="flex-1 pt-1">
-                  <div className="text-sm sm:text-base font-semibold text-indigo-900">Get your answer</div>
-                  <div className="text-xs sm:text-sm text-indigo-700">Receive the expert's response within {expert.sla_hours} hours via email</div>
-                </div>
-              </div>
-            </div>
-          </div>
+{/* How It Works Info Card - Redesigned */}
+<div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-5 sm:p-6 mb-8">
+  <h3 className="font-bold text-indigo-900 mb-4 text-base sm:text-lg flex items-center gap-2">
+    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>How it works</span>
+  </h3>
+  <div className="space-y-3">
+    <div className="flex gap-3">
+      <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+        <span className="text-lg">🎥</span>
+      </div>
+      <div className="flex-1 pt-1">
+        <div className="text-sm sm:text-base font-semibold text-indigo-900">Record your question</div>
+        <div className="text-xs sm:text-sm text-indigo-700">Up to 90 seconds total (video, audio, or screen)</div>
+      </div>
+    </div>
+    <div className="flex gap-3">
+      <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+        <span className="text-lg">💳</span>
+      </div>
+      <div className="flex-1 pt-1">
+        <div className="text-sm sm:text-base font-semibold text-indigo-900">Pay {formatPrice(expert.price_cents, expert.currency)}</div>
+        <div className="text-xs sm:text-sm text-indigo-700">One-time secure payment via Stripe</div>
+      </div>
+    </div>
+    <div className="flex gap-3">
+      <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+        <span className="text-lg">📧</span>
+      </div>
+      <div className="flex-1 pt-1">
+        <div className="text-sm sm:text-base font-semibold text-indigo-900">Get your answer</div>
+        <div className="text-xs sm:text-sm text-indigo-700">Expert responds within {expert.sla_hours} hours via email</div>
+      </div>
+    </div>
+  </div>
+</div>
 
           {/* Question Composer */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 md:p-8">
