@@ -55,6 +55,9 @@ export default async function handler(req, res) {
 
     // Get all media_assets from Xano older than 48 hours
     // Note: media_asset endpoint requires internal API key for authentication
+    console.log('📡 Fetching media assets from:', `${XANO_BASE_URL}/media_asset`);
+    console.log('📡 Using API Key:', XANO_INTERNAL_API_KEY ? 'Present' : 'Missing');
+
     const mediaResponse = await fetch(`${XANO_BASE_URL}/media_asset`, {
       method: 'GET',
       headers: {
@@ -63,8 +66,12 @@ export default async function handler(req, res) {
       },
     });
 
+    console.log('📡 Xano response status:', mediaResponse.status);
+
     if (!mediaResponse.ok) {
-      throw new Error('Failed to fetch media assets from Xano');
+      const errorText = await mediaResponse.text();
+      console.error('❌ Xano error response:', errorText);
+      throw new Error(`Failed to fetch media assets from Xano: ${mediaResponse.status} - ${errorText}`);
     }
 
     const allMedia = await mediaResponse.json();
