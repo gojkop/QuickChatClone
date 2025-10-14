@@ -14,6 +14,11 @@ QuickChat is a video-based Q&A platform connecting askers with experts. Users re
 - Media: Cloudflare Stream (video) + Cloudflare R2 (audio/files)
 - AI: Google Gemini (free tier), multi-provider LLM service architecture
 
+## Documentation & Resources
+
+- **Documentation:** In the `docs` folder you will find documentation
+- **Screenshots:** Screenshots can be found at `/Users/gojkop/Desktop/Screenshots` for troubleshooting
+
 ## Commands
 
 ### Development

@@ -37,19 +37,43 @@ export default async function handler(req, res) {
     });
 
     console.log('Xano continue response status:', r.status);
+    console.log('Xano continue response data:', JSON.stringify(r.data, null, 2));
 
     if (r.status !== 200) {
       console.error('Xano continue error:', r.data);
       return res.status(r.status).json(r.data || { message: "OAuth continue failed" });
     }
 
-    const token = r.data?.token || r.data?.authToken || r.data?.auth_token;
-    if (!token) {
-      console.error('No token in Xano response:', r.data);
-      return res.status(500).json({ message: "No token from Xano continue" });
+    // Handle different possible response formats from Xano
+    // New format: { token: "...", name: "...", email: "...", first_time: true/false }
+    // Old formats: { authToken: "..." } or { auth_token: "..." }
+    // Wrapped formats: { data: { token: "..." } } or { result: { token: "..." } }
+    let responseData = r.data;
+
+    // Check if data is wrapped
+    if (r.data?.data) {
+      console.log('Response wrapped in "data" key');
+      responseData = r.data.data;
+    } else if (r.data?.result) {
+      console.log('Response wrapped in "result" key');
+      responseData = r.data.result;
     }
 
-    console.log('Token received successfully');
+    const token = responseData?.token || responseData?.authToken || responseData?.auth_token;
+    if (!token) {
+      console.error('❌ No token in Xano response. Full response:', JSON.stringify(r.data, null, 2));
+      console.error('Response keys:', Object.keys(r.data || {}));
+      return res.status(500).json({
+        message: "No token from Xano continue",
+        debug: {
+          hasData: !!r.data,
+          keys: Object.keys(r.data || {}),
+          dataType: typeof r.data
+        }
+      });
+    }
+
+    console.log('✅ Token received successfully');
 
     // Optional: Set cookie for future cookie-based auth
     if (COOKIE_DOMAIN) {
@@ -59,8 +83,9 @@ export default async function handler(req, res) {
     }
 
     // Send sign-in notification email (non-blocking)
-    const userEmail = r.data?.email;
-    const userName = r.data?.name;
+    const userEmail = responseData?.email;
+    const userName = responseData?.name;
+    const firstTime = responseData?.first_time;
 
     if (userEmail) {
       // Dynamic import to avoid module loading issues
@@ -74,8 +99,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       token,
-      name: r.data?.name,
-      email: r.data?.email
+      name: responseData?.name,
+      email: responseData?.email,
+      first_time: firstTime
     });
   } catch (e) {
     console.error("OAuth continue error:", e.response?.data || e.message);
