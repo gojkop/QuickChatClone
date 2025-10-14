@@ -12,7 +12,9 @@ export default async function handler(req, res) {
     const CLIENT_PUBLIC_ORIGIN = process.env.CLIENT_PUBLIC_ORIGIN;
     const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID;
     const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET;
-    const XANO_BASE_URL = process.env.XANO_BASE_URL;
+    // IMPORTANT: /auth/linkedin/create_user must be in the Public API group (api:BQW1GS7L)
+    // Use XANO_PUBLIC_API_URL (e.g., https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L)
+    const XANO_PUBLIC_API_URL = process.env.XANO_PUBLIC_API_URL;
     const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN;
 
     // Check if environment variables are set
@@ -26,19 +28,19 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: "LinkedIn configuration error" });
     }
 
-    if (!XANO_BASE_URL) {
-      console.error('XANO_BASE_URL not set');
-      return res.status(500).json({ message: "Xano configuration error" });
+    if (!XANO_PUBLIC_API_URL) {
+      console.error('XANO_PUBLIC_API_URL not set');
+      return res.status(500).json({ message: "Xano Public API URL not configured" });
     }
 
     // Use /auth/callback as redirect URI
     const redirect_uri = `${CLIENT_PUBLIC_ORIGIN}/auth/callback`;
 
-    console.log('LinkedIn OAuth continue - code:', code?.substring(0, 10) + '...');
-    console.log('LinkedIn OAuth continue - redirect_uri:', redirect_uri);
+    console.log('📡 LinkedIn OAuth continue - code:', code?.substring(0, 10) + '...');
+    console.log('📡 LinkedIn OAuth continue - redirect_uri:', redirect_uri);
 
     // Step 1: Exchange code for access token with LinkedIn
-    console.log('Exchanging code for LinkedIn access token...');
+    console.log('📡 Exchanging code for LinkedIn access token...');
     const tokenResponse = await axios.post(
       'https://www.linkedin.com/oauth/v2/accessToken',
       new URLSearchParams({
@@ -57,7 +59,7 @@ export default async function handler(req, res) {
     );
 
     if (tokenResponse.status !== 200) {
-      console.error('LinkedIn token exchange failed:', tokenResponse.data);
+      console.error('❌ LinkedIn token exchange failed:', tokenResponse.data);
       return res.status(tokenResponse.status).json({
         message: "LinkedIn token exchange failed",
         error: tokenResponse.data
@@ -66,14 +68,14 @@ export default async function handler(req, res) {
 
     const access_token = tokenResponse.data.access_token;
     if (!access_token) {
-      console.error('No access_token in LinkedIn response:', tokenResponse.data);
+      console.error('❌ No access_token in LinkedIn response:', tokenResponse.data);
       return res.status(500).json({ message: "No access token from LinkedIn" });
     }
 
-    console.log('LinkedIn access token received');
+    console.log('✅ LinkedIn access token received');
 
     // Step 2: Get user info from LinkedIn
-    console.log('Fetching user info from LinkedIn...');
+    console.log('📡 Fetching user info from LinkedIn...');
     const userInfoResponse = await axios.get(
       'https://api.linkedin.com/v2/userinfo',
       {
@@ -85,7 +87,7 @@ export default async function handler(req, res) {
     );
 
     if (userInfoResponse.status !== 200) {
-      console.error('LinkedIn userinfo failed:', userInfoResponse.data);
+      console.error('❌ LinkedIn userinfo failed:', userInfoResponse.data);
       return res.status(userInfoResponse.status).json({
         message: "LinkedIn userinfo failed",
         error: userInfoResponse.data
@@ -93,14 +95,18 @@ export default async function handler(req, res) {
     }
 
     const userInfo = userInfoResponse.data;
-    console.log('LinkedIn user info received:', userInfo.email);
+    console.log('✅ LinkedIn user info received:', userInfo.email);
 
     // Step 3: Create/update user in Xano and get auth token
-    console.log('Creating/updating user in Xano...');
+    console.log('📡 Creating/updating user in Xano...');
     const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
 
+    const xanoEndpoint = `${XANO_PUBLIC_API_URL}/auth/linkedin/create_user`;
+    console.log('📡 Xano endpoint URL:', xanoEndpoint);
+    console.log('📡 XANO_PUBLIC_API_URL:', XANO_PUBLIC_API_URL);
+
     const xanoResponse = await axios.post(
-      `${XANO_BASE_URL}/auth/linkedin/create_user`,
+      xanoEndpoint,
       {
         x_api_key: XANO_INTERNAL_API_KEY,  // Send in body instead of header
         linkedin_id: userInfo.sub,
@@ -115,21 +121,47 @@ export default async function handler(req, res) {
       }
     );
 
+    console.log('Xano user creation response status:', xanoResponse.status);
+    console.log('Xano user creation response data:', JSON.stringify(xanoResponse.data, null, 2));
+
     if (xanoResponse.status !== 200) {
-      console.error('Xano user creation failed:', xanoResponse.data);
+      console.error('❌ Xano user creation failed:', xanoResponse.data);
       return res.status(xanoResponse.status).json({
         message: "Failed to create user in Xano",
         error: xanoResponse.data
       });
     }
 
-    const token = xanoResponse.data?.token || xanoResponse.data?.authToken;
-    if (!token) {
-      console.error('No token in Xano response:', xanoResponse.data);
-      return res.status(500).json({ message: "No auth token from Xano" });
+    // Handle different possible response formats from Xano
+    // New format: { token: "...", name: "...", email: "...", first_time: true/false }
+    // Old formats: { authToken: "..." } or { auth_token: "..." }
+    // Wrapped formats: { data: { token: "..." } } or { result: { token: "..." } }
+    let responseData = xanoResponse.data;
+
+    // Check if data is wrapped
+    if (xanoResponse.data?.data) {
+      console.log('Response wrapped in "data" key');
+      responseData = xanoResponse.data.data;
+    } else if (xanoResponse.data?.result) {
+      console.log('Response wrapped in "result" key');
+      responseData = xanoResponse.data.result;
     }
 
-    console.log('User created and token received successfully');
+    const token = responseData?.token || responseData?.authToken || responseData?.auth_token;
+    if (!token) {
+      console.error('❌ No token in Xano response. Full response:', JSON.stringify(xanoResponse.data, null, 2));
+      console.error('Response keys:', Object.keys(xanoResponse.data || {}));
+      return res.status(500).json({
+        message: "No auth token from Xano",
+        debug: {
+          hasData: !!xanoResponse.data,
+          keys: Object.keys(xanoResponse.data || {}),
+          dataType: typeof xanoResponse.data
+        }
+      });
+    }
+
+    console.log('✅ User created and token received successfully');
 
     // Optional: Set cookie for future cookie-based auth
     if (COOKIE_DOMAIN) {
@@ -151,10 +183,11 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       token,
-      email: userInfo.email,
-      name: userInfo.name,
+      email: responseData?.email || userInfo.email,
+      name: responseData?.name || userInfo.name,
       firstName: userInfo.given_name,
-      lastName: userInfo.family_name
+      lastName: userInfo.family_name,
+      first_time: responseData?.first_time
     });
   } catch (e) {
     console.error("LinkedIn OAuth continue error:", e.response?.data || e.message);
