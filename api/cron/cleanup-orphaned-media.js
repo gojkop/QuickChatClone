@@ -2,6 +2,7 @@
 // Runs daily to clean up orphaned media:
 // 1. Media assets not associated with any question or answer
 // 2. Profile pictures not referenced in any expert_profile
+// 3. Attachments not referenced in any answer
 
 import { S3Client, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { sendEmail } from '../lib/zeptomail.js';
@@ -91,8 +92,10 @@ export default async function handler(req, res) {
     const mediaData = await mediaResponse.json();
     const allMedia = mediaData.media || [];
     const allAvatars = mediaData.avatars || [];
+    const allQuestionAttachments = mediaData.question_attachments || [];
+    const allAnswerAttachments = mediaData.answer_attachments || [];
 
-    console.log(`Found ${allMedia.length} media assets and ${allAvatars.length} avatar URLs`);
+    console.log(`Found ${allMedia.length} media assets, ${allAvatars.length} avatar URLs, ${allQuestionAttachments.length} question attachments, and ${allAnswerAttachments.length} answer attachments`);
     console.log('');
 
     // ============================================================
@@ -290,14 +293,146 @@ export default async function handler(req, res) {
     console.log('');
 
     // ============================================================
+    // PART 3: Clean up orphaned attachments
+    // ============================================================
+    console.log('📎 PART 3: Cleaning up orphaned attachments...');
+
+    let attachmentDeletedCount = 0;
+    let attachmentErrorCount = 0;
+    let attachmentSkippedCount = 0;
+
+    // Step 1: List all attachments in R2
+    console.log('📡 Listing attachments in R2...');
+
+    const attachmentListCommand = new ListObjectsV2Command({
+      Bucket: CLOUDFLARE_R2_BUCKET,
+      Prefix: 'question-attachments/',
+    });
+
+    const attachmentR2Response = await r2Client.send(attachmentListCommand);
+    const attachmentR2Files = attachmentR2Response.Contents || [];
+
+    console.log(`Found ${attachmentR2Files.length} attachment files in R2`);
+
+    if (attachmentR2Files.length > 0) {
+      // Step 2: Build set of active attachment files from question and answer records
+      console.log(`Processing ${allQuestionAttachments.length} question attachments and ${allAnswerAttachments.length} answer attachments from Xano...`);
+
+      const activeAttachmentFiles = new Set();
+
+      // Process question attachments
+      for (const record of allQuestionAttachments) {
+        if (record.attachments) {
+          try {
+            // Parse the JSON string to get attachment array
+            const attachmentsArray = typeof record.attachments === 'string'
+              ? JSON.parse(record.attachments)
+              : record.attachments;
+
+            if (Array.isArray(attachmentsArray)) {
+              for (const attachment of attachmentsArray) {
+                if (attachment.url && attachment.url.includes('/question-attachments/')) {
+                  // Extract the path after the domain
+                  // URL: https://pub-xxx.r2.dev/question-attachments/123-file.pdf
+                  // Want: question-attachments/123-file.pdf
+                  const urlParts = attachment.url.split('/question-attachments/');
+                  if (urlParts.length === 2) {
+                    const fileName = `question-attachments/${urlParts[1]}`;
+                    activeAttachmentFiles.add(fileName);
+                  }
+                }
+              }
+            }
+          } catch (parseError) {
+            console.warn(`⚠️  Failed to parse question attachments JSON:`, parseError.message);
+          }
+        }
+      }
+
+      // Process answer attachments
+      for (const record of allAnswerAttachments) {
+        if (record.attachments) {
+          try {
+            // Parse the JSON string to get attachment array
+            const attachmentsArray = typeof record.attachments === 'string'
+              ? JSON.parse(record.attachments)
+              : record.attachments;
+
+            if (Array.isArray(attachmentsArray)) {
+              for (const attachment of attachmentsArray) {
+                if (attachment.url && attachment.url.includes('/question-attachments/')) {
+                  // Extract the path after the domain
+                  // URL: https://pub-xxx.r2.dev/question-attachments/123-file.pdf
+                  // Want: question-attachments/123-file.pdf
+                  const urlParts = attachment.url.split('/question-attachments/');
+                  if (urlParts.length === 2) {
+                    const fileName = `question-attachments/${urlParts[1]}`;
+                    activeAttachmentFiles.add(fileName);
+                  }
+                }
+              }
+            }
+          } catch (parseError) {
+            console.warn(`⚠️  Failed to parse answer attachments JSON:`, parseError.message);
+          }
+        }
+      }
+
+      console.log(`Extracted ${activeAttachmentFiles.size} active attachment paths (from both questions and answers)`);
+
+      // Step 3: Compare and delete orphaned attachment files
+      for (const file of attachmentR2Files) {
+        const key = file.Key;
+
+        // Skip if this file is referenced in Xano
+        if (activeAttachmentFiles.has(key)) {
+          attachmentSkippedCount++;
+          continue;
+        }
+
+        // Skip the question-attachments/ folder itself
+        if (key === 'question-attachments/' || key === 'question-attachments') {
+          attachmentSkippedCount++;
+          continue;
+        }
+
+        // This file is orphaned - delete it
+        console.log(`Deleting orphaned attachment: ${key}`);
+
+        try {
+          await r2Client.send(
+            new DeleteObjectCommand({
+              Bucket: CLOUDFLARE_R2_BUCKET,
+              Key: key,
+            })
+          );
+          attachmentDeletedCount++;
+          console.log(`✅ Deleted: ${key}`);
+        } catch (deleteError) {
+          console.error(`❌ Error deleting ${key}:`, deleteError.message);
+          attachmentErrorCount++;
+        }
+      }
+    }
+
+    console.log('Part 3 complete:', {
+      total: attachmentR2Files.length,
+      deleted: attachmentDeletedCount,
+      skipped: attachmentSkippedCount,
+      errors: attachmentErrorCount
+    });
+    console.log('');
+
+    // ============================================================
     // Summary and notifications
     // ============================================================
-    const totalDeleted = mediaDeletedCount + profileDeletedCount;
-    const totalErrors = mediaErrorCount + profileErrorCount;
+    const totalDeleted = mediaDeletedCount + profileDeletedCount + attachmentDeletedCount;
+    const totalErrors = mediaErrorCount + profileErrorCount + attachmentErrorCount;
 
     console.log('🎉 All cleanup complete:', {
       mediaAssets: { deleted: mediaDeletedCount, errors: mediaErrorCount },
       profilePictures: { deleted: profileDeletedCount, errors: profileErrorCount },
+      attachments: { deleted: attachmentDeletedCount, errors: attachmentErrorCount },
       totals: { deleted: totalDeleted, errors: totalErrors }
     });
 
@@ -309,6 +444,7 @@ export default async function handler(req, res) {
         {
           mediaAssets: { deleted: mediaDeletedCount, errors: mediaErrorCount },
           profilePictures: { deleted: profileDeletedCount, errors: profileErrorCount },
+          attachments: { deleted: attachmentDeletedCount, errors: attachmentErrorCount },
           totals: { deleted: totalDeleted, errors: totalErrors },
           errorRate: `${Math.round((totalErrors / (totalDeleted + totalErrors)) * 100)}%`,
         }
@@ -325,11 +461,15 @@ export default async function handler(req, res) {
         deleted: profileDeletedCount,
         errors: profileErrorCount,
       },
+      attachments: {
+        deleted: attachmentDeletedCount,
+        errors: attachmentErrorCount,
+      },
       totals: {
         deleted: totalDeleted,
         errors: totalErrors,
       },
-      message: `Cleaned up ${totalDeleted} orphaned items (${mediaDeletedCount} media assets, ${profileDeletedCount} profile pictures)`,
+      message: `Cleaned up ${totalDeleted} orphaned items (${mediaDeletedCount} media assets, ${profileDeletedCount} profile pictures, ${attachmentDeletedCount} attachments)`,
     });
 
   } catch (error) {

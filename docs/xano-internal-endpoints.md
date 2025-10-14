@@ -36,6 +36,16 @@ Unified endpoint to fetch all media records for cleanup operations. Returns both
     {
       "avatar_url": "https://pub-xxx.r2.dev/profiles/123456-abc.webp"
     }
+  ],
+  "question_attachments": [
+    {
+      "attachments": "[{\"url\":\"https://pub-xxx.r2.dev/question-attachments/123.pdf\",\"name\":\"file.pdf\"}]"
+    }
+  ],
+  "answer_attachments": [
+    {
+      "attachments": "[{\"url\":\"https://pub-xxx.r2.dev/question-attachments/456.pdf\",\"name\":\"answer.pdf\"}]"
+    }
   ]
 }
 ```
@@ -77,6 +87,13 @@ The unified cleanup script `/api/cron/cleanup-orphaned-media.js` runs daily at 3
 - Compares files against active URLs
 - Deletes orphaned profile pictures from R2
 
+**Part 3: Question/Answer Attachments**
+- Lists all files in R2 under `question-attachments/` prefix
+- Fetches all attachments JSON from both `question` and `answer` tables
+- Parses JSON arrays to extract attachment URLs from both sources
+- Compares files against active attachments
+- Deletes orphaned attachment files from R2
+
 **Notification:** Sends email to admin if error rate exceeds 50%
 
 ## Xano Implementation Guide
@@ -100,12 +117,16 @@ The unified cleanup script `/api/cron/cleanup-orphaned-media.js` runs daily at 3
 3. **Query Records**
    - Variable `all_media`: Query all records from `media_assets` table
    - Variable `all_avatars`: Query all records from `expert_profile` table where `avatar_url IS NOT NULL`
+   - Variable `all_question_attachments`: Query all records from `question` table where `attachments IS NOT NULL`
+   - Variable `all_answer_attachments`: Query all records from `answer` table where `attachments IS NOT NULL`
 
 4. **Return Combined Response**
    ```javascript
    return {
      media: all_media,
-     avatars: all_avatars
+     avatars: all_avatars,
+     question_attachments: all_question_attachments,
+     answer_attachments: all_answer_attachments
    }
    ```
 
