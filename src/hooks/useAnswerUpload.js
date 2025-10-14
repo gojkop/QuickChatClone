@@ -242,9 +242,6 @@ export function useAnswerUpload() {
    */
   const submitAnswer = useCallback(async (answerData, questionId, userId) => {
     console.log('🚀 Starting answer submission for question:', questionId);
-    console.log('📦 Answer data received:', answerData);
-    console.log('📎 Answer data files:', answerData.files);
-    console.log('📎 Answer data attachments:', answerData.attachments);
 
     if (!userId) {
       throw new Error('userId is required for answer submission');
@@ -327,7 +324,7 @@ export function useAnswerUpload() {
       const filesToProcess = answerData.files || answerData.attachments || [];
 
       if (filesToProcess.length > 0) {
-        console.log('📎 Processing attachments...', filesToProcess);
+        console.log('📎 Processing', filesToProcess.length, 'attachments...');
 
         // Separate already-uploaded from files that need uploading
         const alreadyUploaded = [];
@@ -345,16 +342,13 @@ export function useAnswerUpload() {
               type: item.type,
               name: item.name,  // Include name for compatibility
             });
-            console.log('✅ Using pre-uploaded attachment:', item.name || item.filename);
           } else if (item instanceof File || item instanceof Blob) {
             // Actual file that needs uploading
             needsUpload.push(item);
           } else {
-            console.warn('⚠️ Invalid attachment item (not File/Blob and not uploaded):', item);
+            console.warn('⚠️ Invalid attachment item:', item);
           }
         }
-
-        console.log(`📎 Found ${alreadyUploaded.length} pre-uploaded, ${needsUpload.length} need upload`);
 
         // Use pre-uploaded attachments
         attachmentResults = [...alreadyUploaded];
@@ -375,8 +369,6 @@ export function useAnswerUpload() {
       }));
 
       console.log('💾 Creating answer record...');
-      console.log('📎 attachmentResults before payload:', attachmentResults);
-      console.log('📎 attachmentResults.length:', attachmentResults.length);
 
       // ✅ FIXED: Always include all fields explicitly
       // ✅ Send attachments as array (backend will stringify) - matches question creation pattern
@@ -387,10 +379,6 @@ export function useAnswerUpload() {
         media_asset_id: mediaAssetId || null,
         attachments: attachmentResults.length > 0 ? attachmentResults : null,
       };
-
-      console.log('📤 Payload being sent to /api/answers/create:', payload);
-      console.log('📎 Attachments in payload:', payload.attachments);
-      console.log('📎 Attachments count:', attachmentResults.length, 'items');
 
       // Call consolidated endpoint that creates answer + sends email
       const response = await fetch('/api/answers/create', {
@@ -409,7 +397,7 @@ export function useAnswerUpload() {
 
       const responseData = await response.json();
 
-      console.log('✅ Answer submitted successfully:', responseData.data);
+      console.log('✅ Answer submitted successfully');
 
       setUploadState({
         uploading: false,

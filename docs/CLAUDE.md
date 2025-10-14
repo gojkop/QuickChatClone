@@ -308,6 +308,33 @@ const result = await callLLM(prompt, {
 
 ## Important Patterns
 
+### Attachment Upload Validation
+
+When handling pre-uploaded attachments (files uploaded before form submission), validate using the `url` property, not `uid`:
+
+```javascript
+// ✅ Correct - checks for url property
+if (item.url && typeof item.url === 'string') {
+  // Already uploaded attachment
+  alreadyUploaded.push({
+    uid: item.uid,  // May be undefined, that's OK
+    url: item.url,
+    filename: item.filename || item.name,
+    size: item.size,
+    type: item.type,
+  });
+}
+
+// ❌ Incorrect - requires both uid and url
+if (item.uid && item.url) {
+  // This will reject valid attachments!
+}
+```
+
+**Why:** The `/api/media/upload-attachment` endpoint returns `{name, url, type, size}` without a `uid` property. Requiring `uid` causes valid uploaded attachments to be rejected during form submission.
+
+**Applies to:** Questions and Answers with file attachments (PDFs, images, documents).
+
 ### API Client Usage
 
 Always use the configured axios client from `src/api/index.js`:

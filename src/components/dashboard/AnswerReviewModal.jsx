@@ -33,24 +33,11 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
 
     try {
       console.log('📝 Submitting answer for question:', question.id);
-      console.log('📦 Full answerData object:', answerData);
-      console.log('📎 answerData.attachments:', answerData.attachments);
-      console.log('📎 answerData.files:', answerData.files);
-      console.log('Answer data summary:', {
-        hasMedia: !!answerData.mediaBlob,
-        hasText: !!answerData.text,
-        hasRecordingSegments: (answerData.recordingSegments || []).length > 0,
-        hasAttachments: (answerData.attachments || []).length > 0,
-        hasFiles: (answerData.files || []).length > 0,
-        recordingMode: answerData.recordingMode,
-        recordingDuration: answerData.recordingDuration,
-        userId,
-      });
 
       // Submit answer (uploads media + attachments + creates DB record)
       const result = await answerUpload.submitAnswer(answerData, question.id, userId);
-      
-      console.log('✅ Answer submitted successfully:', result);
+
+      console.log('✅ Answer submitted successfully');
       
       // Store result for success modal
       setSubmittedAnswer(result);

@@ -8,9 +8,6 @@ import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
 const MAX_RECORDING_SECONDS = 900; // 15 minutes for answers
 
 function AnswerRecorder({ question, onReady, onCancel }) {
-  // 🚨 DEPLOYMENT CHECK - This log fires when component loads
-  console.log('🚨🚨🚨 AnswerRecorder component loaded - NEW CODE IS RUNNING! 🚨🚨🚨');
-
   const [text, setText] = useState('');
 
   // Segment-based recording state
@@ -329,13 +326,9 @@ function AnswerRecorder({ question, onReady, onCancel }) {
 
   // ⭐ UPDATED: No concatenation - just pass references
   const handleProceedToReview = async () => {
-    console.log('🔍 AnswerRecorder: attachmentUpload.uploads:', attachmentUpload.uploads);
-
     const attachmentResults = (attachmentUpload.uploads || [])
       .filter(u => u && u.result)
       .map(u => u.result);
-
-    console.log('🔍 AnswerRecorder: Filtered attachments:', attachmentResults);
 
     const data = {
       text: text || '',
@@ -350,7 +343,6 @@ function AnswerRecorder({ question, onReady, onCancel }) {
       segmentCount: data.recordingSegments.length,
       attachmentCount: data.attachments.length,
     });
-    console.log('📦 Full data object:', data);
 
     onReady(data);
   };
