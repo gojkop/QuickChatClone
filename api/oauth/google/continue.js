@@ -98,10 +98,17 @@ export default async function handler(req, res) {
       // Note: path is relative to /api/oauth/google/, so ../../lib goes to /api/lib
       import('../../lib/zeptomail.js')
         .then(({ sendSignInNotification }) => {
+          console.log('📧 ZeptoMail module loaded, calling sendSignInNotification...');
           return sendSignInNotification({ email: userEmail, name: userName });
         })
-        .then(() => console.log('✅ Sign-in notification sent'))
-        .catch((err) => console.error('❌ Failed to send sign-in notification:', err.message));
+        .then(() => {
+          console.log('✅ Sign-in notification sent successfully');
+        })
+        .catch((err) => {
+          console.error('❌ Failed to send sign-in notification:', err);
+          console.error('❌ Error message:', err.message);
+          console.error('❌ Error stack:', err.stack);
+        });
     } else if (userEmail) {
       console.log('🔄 Returning user, skipping welcome email (first_time:', firstTime, ')');
     }
