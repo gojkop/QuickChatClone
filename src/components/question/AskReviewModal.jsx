@@ -113,9 +113,9 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                   <div className="font-semibold text-gray-900 text-base">{questionData.title}</div>
                 </div>
 
-                {/* Recording Card - Changed from green to orange/amber */}
+                {/* Recording Card - Only icon colored */}
                 {hasRecording && (
-                  <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
                         <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,10 +123,10 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm font-bold text-orange-900 mb-1">
+                        <div className="text-sm font-bold text-gray-900 mb-1">
                           {recordingSegments.length} Recording{recordingSegments.length > 1 ? 's' : ''} Attached
                         </div>
-                        <div className="text-xs text-orange-700">
+                        <div className="text-xs text-gray-700">
                           Total length: {formatTime(totalDuration)}
                         </div>
                       </div>
@@ -134,9 +134,9 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                   </div>
                 )}
 
-                {/* Context Card - Properly truncated */}
+                {/* Context Card - Only icon colored */}
                 {hasContext ? (
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,8 +144,8 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-blue-900 mb-1">Written Details Added</div>
-                        <div className="text-xs text-blue-700 line-clamp-2 break-words">{questionData.text}</div>
+                        <div className="text-sm font-bold text-gray-900 mb-1">Written Details Added</div>
+                        <div className="text-xs text-gray-700 line-clamp-2 break-words">{questionData.text}</div>
                       </div>
                     </div>
                   </div>
@@ -155,9 +155,9 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                   </div>
                 )}
 
-                {/* Files Card */}
+                {/* Files Card - Only icon colored */}
                 {hasAttachments ? (
-                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
                         <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,12 +165,12 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm font-bold text-purple-900 mb-2">
+                        <div className="text-sm font-bold text-gray-900 mb-2">
                           {attachments.length} File{attachments.length > 1 ? 's' : ''} Attached
                         </div>
                         <div className="space-y-1">
                           {attachments.map((file, idx) => (
-                            <div key={idx} className="text-xs text-purple-700 truncate">
+                            <div key={idx} className="text-xs text-gray-700 truncate">
                               📎 {file.name}
                             </div>
                           ))}
