@@ -121,7 +121,7 @@ export function getAnswerReceivedTemplate(data) {
               <!-- Primary CTA -->
               <tr>
                 <td style="padding-top: 32px; text-align: center;">
-                  <a href="https://mindpick.me/r/${reviewToken || questionId}" style="display: inline-block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3); transition: all 0.2s;">
+                  <a href="https://mindpick.me/r/${reviewToken}" style="display: inline-block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3); transition: all 0.2s;">
                     View Answer Now →
                   </a>
                 </td>
@@ -187,7 +187,7 @@ Hi ${askerName || 'there'},
 ${expertName} has shared their expert insight on your question: "${questionTitle}"
 
 View your personalized answer now:
-https://mindpick.me/r/${reviewToken || questionId}
+https://mindpick.me/r/${reviewToken}
 
 PRO TIP: ${proTip}
 
