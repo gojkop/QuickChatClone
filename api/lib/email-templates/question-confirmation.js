@@ -9,7 +9,8 @@ export function getQuestionConfirmationTemplate(data) {
     questionTitle, 
     questionText, 
     expertName, 
-    questionId, 
+    questionId,
+    reviewToken, // ✅ NEW: Review token for direct access link
     slaHours = 48,
     questionCategory = 'default' // Category for tip selection
   } = data;
@@ -17,7 +18,6 @@ export function getQuestionConfirmationTemplate(data) {
   // 🎯 Get random WHILE YOU WAIT tip from category-specific pool
   const whileYouWaitTip = getWhileYouWaitTip(questionCategory);
 
-  // ✅ FIX: Use expert name in subject
   const subject = `Question submitted to ${expertName}`;
 
   const htmlBody = `
@@ -122,12 +122,29 @@ export function getQuestionConfirmationTemplate(data) {
                 </td>
               </tr>
               
-              <!-- Primary CTA -->
+              <!-- ✅ PRIMARY CTA - View Question & Answer Link -->
               <tr>
-                <td style="padding-top: 32px; text-align: center;">
-                  <a href="https://mindpick.me/questions/${questionId}" style="display: inline-block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3); transition: all 0.2s;">
-                    View Question →
-                  </a>
+                <td style="padding-top: 32px;">
+                  ${reviewToken ? `
+                  <div style="background: #EEF2FF; border: 2px solid #C7D2FE; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+                    <p style="font-size: 13px; font-weight: 600; color: #4338CA; margin: 0 0 12px 0; text-align: center;">
+                      🔗 YOUR QUESTION & ANSWER PAGE
+                    </p>
+                    <p style="font-size: 13px; color: #4338CA; margin: 0 0 12px 0; text-align: center;">
+                      Bookmark this link to view your question and answer once it's ready:
+                    </p>
+                    <a href="https://mindpick.me/r/${reviewToken}" style="display: block; background: #4F46E5; color: white; text-decoration: none; padding: 16px 24px; border-radius: 10px; font-weight: 700; font-size: 15px; text-align: center; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+                      View Question & Answer →
+                    </a>
+                    <p style="font-size: 11px; color: #6366F1; margin: 12px 0 0 0; text-align: center;">
+                      You'll receive another email when the answer is ready
+                    </p>
+                  </div>
+                  ` : `
+                  <p style="text-align: center; font-size: 14px; color: #6B7280; margin-bottom: 16px;">
+                    You'll receive an email with a link to view the answer once it's ready
+                  </p>
+                  `}
                 </td>
               </tr>
               
@@ -168,7 +185,10 @@ What happens next:
 
 WHILE YOU WAIT: ${whileYouWaitTip}
 
-View your question: https://mindpick.me/questions/${questionId}
+${reviewToken ? `View your question & answer page:
+https://mindpick.me/r/${reviewToken}
+
+(Bookmark this link - you'll receive another email when the answer is ready)` : 'You\'ll receive an email with a link to view the answer once it\'s ready'}
 
 ---
 Question #${questionId}

@@ -24,7 +24,6 @@ export default async function handler(req, res) {
     // 1. Get expert profile
     console.log('Fetching expert profile...');
     
-    // ✅ FIX: Use Public API base URL for public endpoints
     const XANO_PUBLIC_BASE_URL = process.env.XANO_PUBLIC_BASE_URL || 
                                    'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
     
@@ -68,6 +67,7 @@ export default async function handler(req, res) {
       title: title,
       text: text || null,
       attachments: attachments && attachments.length > 0 ? JSON.stringify(attachments) : null,
+      // Note: Xano auto-generates playback_token_hash, don't send review_token
     };
 
     console.log('Question payload:', JSON.stringify(questionPayload, null, 2));
@@ -91,10 +91,35 @@ export default async function handler(req, res) {
       throw new Error(`Xano returned ${questionResponse.status}: ${responseText}`);
     }
 
-    const question = JSON.parse(responseText);
+    // 🔍 Debug: Check what Xano actually returned
+    let xanoResponse;
+    try {
+      xanoResponse = JSON.parse(responseText);
+      console.log('📦 Parsed Xano response:', JSON.stringify(xanoResponse, null, 2));
+      console.log('📦 Response keys:', Object.keys(xanoResponse));
+    } catch (parseError) {
+      console.error('❌ Failed to parse Xano response:', parseError);
+      throw new Error('Invalid response from database');
+    }
+
+    // ✅ Handle nested response structure from Xano
+    // Xano returns: { "question": {...}, "playback_token_hash": "..." }
+    const question = xanoResponse.question || xanoResponse;
+    const playbackTokenHash = xanoResponse.playback_token_hash;
+    
+    console.log('📦 Extracted question object:', JSON.stringify(question, null, 2));
+
+    // ⚠️ CRITICAL: Check if Xano returned the question ID
     const questionId = question.id;
+    
+    if (!questionId) {
+      console.error('❌ CRITICAL: No question ID in Xano response!');
+      console.error('Full response:', xanoResponse);
+      throw new Error('Database did not return question ID. Check Xano endpoint configuration.');
+    }
 
     console.log('✅ Question created with ID:', questionId);
+    console.log('✅ Playback token hash:', playbackTokenHash);
 
     // Send email notifications to both expert and payer/asker
     const userId = profileData.expert_profile?.user_id;
@@ -132,7 +157,6 @@ export default async function handler(req, res) {
     if (payerEmail) {
       console.log('📧 Sending asker confirmation...');
 
-      // Construct asker name from payerFirstName and payerLastName
       const askerName = [payerFirstName, payerLastName].filter(Boolean).join(' ') ||
                         getAskerName(question) ||
                         payerEmail.split('@')[0];
@@ -145,6 +169,7 @@ export default async function handler(req, res) {
           questionTitle: title,
           questionText: text,
           questionId,
+          reviewToken: playbackTokenHash, // ✅ Include review token for email link
           slaHours: slaHours,
         });
         console.log('✅ Asker confirmation sent successfully');
@@ -163,7 +188,7 @@ export default async function handler(req, res) {
       for (let i = 0; i < recordingSegments.length; i++) {
         const segment = recordingSegments[i];
         
-        // ⭐ FIX: Extract status string from the status object
+        // Extract status string from the status object
         let statusString = 'ready';
         if (segment.status && typeof segment.status === 'object') {
           statusString = segment.status.state || 'ready';
@@ -171,7 +196,7 @@ export default async function handler(req, res) {
           statusString = segment.status;
         }
         
-        // ⭐ FIX: Ensure duration_sec is a number, not a string
+        // Ensure duration_sec is a number
         const durationSec = parseInt(segment.duration) || 0;
         
         const mediaAssetPayload = {
@@ -191,7 +216,6 @@ export default async function handler(req, res) {
 
         console.log(`Creating media asset ${i}:`, mediaAssetPayload);
 
-        // ✅ FIX: Use Public API for media_asset creation during question submission
         const mediaResponse = await fetch(
           `${XANO_PUBLIC_BASE_URL}/media_asset`,
           {
@@ -212,13 +236,20 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({
+    // ✅ Return complete response structure
+    const responseData = {
       success: true,
       data: {
-        questionId,
+        questionId: questionId,
+        review_token: playbackTokenHash,  // ✅ Use Xano's playback_token_hash
         mediaAssetsCreated: recordingSegments?.length || 0,
+        question: question,  // ✅ Include full question object for debugging
       },
-    });
+    };
+
+    console.log('✅ Final response data:', JSON.stringify(responseData, null, 2));
+
+    return res.status(200).json(responseData);
 
   } catch (error) {
     console.error('Question creation error:', error);
