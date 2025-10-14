@@ -1,4 +1,4 @@
-// src/components/question/QuestionComposer.jsx - COMPLETE FIXED VERSION
+// src/components/question/QuestionComposer.jsx - UPDATED VERSION
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
@@ -41,6 +41,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
   const liveStreamRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const segmentStartTimeRef = useRef(0);
+  const audioContextRef = useRef(null);
 
   const isScreenRecordingAvailable = typeof navigator !== 'undefined' && 
     navigator.mediaDevices && 
@@ -75,16 +76,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
         currentSegment?.mode !== 'audio' && 
         reviewVideoRef.current) {
       
-      // Set src explicitly (in case React didn't catch the change)
       reviewVideoRef.current.src = currentSegment.blobUrl;
-      
-      // Force load the video
       reviewVideoRef.current.load();
       
-      // Optional: Add error handling
       reviewVideoRef.current.onerror = (e) => {
         console.error('Video load error:', e);
-        // Try reloading once
         setTimeout(() => {
           if (reviewVideoRef.current) {
             reviewVideoRef.current.load();
@@ -140,6 +136,13 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       liveStreamRef.current.getTracks().forEach(track => track.stop());
       liveStreamRef.current = null;
     }
+    
+    // Cleanup audio context if exists
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
@@ -186,25 +189,48 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       let stream;
       
       if (mode === 'screen' || mode === 'screen-camera') {
+        // Get display stream with audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({ 
           video: true,
           audio: true 
         });
         
-        if (mode === 'screen-camera') {
-          try {
-            const cameraStream = await navigator.mediaDevices.getUserMedia({ 
-              video: { facingMode: desiredFacingMode },
-              audio: true 
-            });
-            stream = displayStream;
-          } catch (e) {
-            console.warn('Camera failed, using screen only:', e);
-            stream = displayStream;
-          }
-        } else {
-          stream = displayStream;
+        // Get microphone audio
+        const micStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: true,
+          video: false 
+        });
+        
+        // Create audio context to mix both audio sources
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioContextRef.current = audioContext;
+        
+        const destination = audioContext.createMediaStreamDestination();
+        
+        // Add system audio if available
+        const systemAudioTracks = displayStream.getAudioTracks();
+        if (systemAudioTracks.length > 0) {
+          const systemSource = audioContext.createMediaStreamSource(
+            new MediaStream(systemAudioTracks)
+          );
+          systemSource.connect(destination);
         }
+        
+        // Add microphone audio
+        const micSource = audioContext.createMediaStreamSource(micStream);
+        micSource.connect(destination);
+        
+        // Combine video from display with mixed audio
+        const combinedStream = new MediaStream([
+          ...displayStream.getVideoTracks(),
+          ...destination.stream.getAudioTracks()
+        ]);
+        
+        stream = combinedStream;
+        
+        // Stop the original mic stream tracks (we're using the audio context version)
+        micStream.getTracks().forEach(track => track.stop());
+        
       } else {
         const constraints = mode === 'video' 
           ? { audio: true, video: { facingMode: desiredFacingMode } }
@@ -343,7 +369,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       
       setSegments(prev => [...prev, segmentData]);
       
-      // Upload immediately in background
       try {
         await segmentUpload.uploadSegment(
           currentSegment.blob,
@@ -426,14 +451,37 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
     onReady(data);
   };
 
+  // Modern SVG Icon Components
   const getSegmentIcon = (mode) => {
-    const icons = {
-      video: '📹',
-      audio: '🎤',
-      screen: '💻',
-      'screen-camera': '💻'
-    };
-    return icons[mode] || '🎬';
+    const iconProps = "w-4 h-4 text-indigo-600";
+    
+    switch(mode) {
+      case 'video':
+        return (
+          <svg className={iconProps} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        );
+      case 'audio':
+        return (
+          <svg className={iconProps} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+        );
+      case 'screen':
+      case 'screen-camera':
+        return (
+          <svg className={iconProps} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        );
+      default:
+        return (
+          <svg className={iconProps} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        );
+    }
   };
 
   const getSegmentLabel = (mode) => {
@@ -483,7 +531,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs sm:text-sm font-semibold text-gray-900 flex items-center gap-1">
-                      <span>{getSegmentIcon(segment.mode)}</span>
+                      {getSegmentIcon(segment.mode)}
                       <span>{getSegmentLabel(segment.mode)}</span>
                       <span className="text-gray-500">· {formatTime(segment.duration)}</span>
                     </div>
@@ -616,7 +664,9 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                 >
                   <div className="flex-shrink-0">
                     <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
-                      <span className="text-2xl">📹</span>
+                      <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
                     </div>
                   </div>
                   <div className="text-left flex-1">
@@ -633,7 +683,9 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                 >
                   <div className="flex-shrink-0">
                     <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
-                      <span className="text-2xl">🎤</span>
+                      <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
                     </div>
                   </div>
                   <div className="text-left flex-1">
@@ -651,13 +703,15 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                   >
                     <div className="flex-shrink-0">
                       <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
-                        <span className="text-2xl">💻</span>
+                        <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
                       </div>
                     </div>
                     <div className="text-left flex-1">
-                      <div className="font-semibold text-gray-900 mb-1">Record Screen</div>
+                      <div className="font-semibold text-gray-900 mb-1">Record Screen + Voice</div>
                       <div className="text-xs text-gray-500">
-                        Demonstrate a problem or show what you're seeing
+                        Capture your screen with microphone audio
                       </div>
                     </div>
                   </button>
@@ -872,8 +926,9 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="font-semibold text-sm sm:text-base">
-                    {getSegmentIcon(currentSegment.mode)} {getSegmentLabel(currentSegment.mode)} · {formatTime(currentSegment.duration)}
+                  <span className="font-semibold text-sm sm:text-base flex items-center gap-1">
+                    {getSegmentIcon(currentSegment.mode)}
+                    <span>{getSegmentLabel(currentSegment.mode)} · {formatTime(currentSegment.duration)}</span>
                   </span>
                 </div>
               </div>
