@@ -620,21 +620,24 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 )}
 
                 {/* Add padding at bottom for mobile to ensure last content is visible */}
-                <div className="h-20 sm:h-0"></div>
+                <div className="h-4 sm:h-0"></div>
+
+                {/* Answer Button - Now inside scrollable content (not sticky) */}
+                {isPending && (
+                  <div className="pt-4">
+                    <button
+                      onClick={handleStartAnswer}
+                      className="w-full py-3 sm:py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 touch-manipulation min-h-[48px] sm:min-h-[52px]"
+                    >
+                      Answer This Question →
+                    </button>
+                  </div>
+                )}
+
+                {/* Extra padding at bottom for mobile scroll comfort */}
+                <div className="h-20 sm:h-4"></div>
               </div>
             </div>
-
-            {/* MOBILE FIX: Sticky Footer for CTA - properly positioned from start */}
-            {isPending && (
-              <div className="flex-shrink-0 bg-white border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sm:rounded-b-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
-                <button
-                  onClick={handleStartAnswer}
-                  className="w-full py-3 sm:py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 touch-manipulation min-h-[48px] sm:min-h-[52px]"
-                >
-                  Answer This Question →
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -699,4 +702,4 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   );
 }
 
-export default QuestionDetailModal; 
+export default QuestionDetailModal;
