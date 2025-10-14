@@ -1,16 +1,27 @@
 // src/components/dashboard/QuestionDetailModal.jsx
+// FULLY UPDATED - With Progress Stepper and all Phase 1-3 optimizations
+
 import React, { useState, useEffect } from 'react';
 import apiClient from '@/api';
 import AnswerRecorder from './AnswerRecorder';
 import AnswerReviewModal from './AnswerReviewModal';
+import QuestionContextBanner from './QuestionContextBanner';
+import ProgressStepper from '@/components/common/ProgressStepper';
 
-function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmitted }) {
+const ANSWER_STEPS = [
+  { id: 1, name: 'Review', icon: '📋', description: 'Understand question' },
+  { id: 2, name: 'Record', icon: '🎥', description: 'Create your answer' },
+  { id: 3, name: 'Submit', icon: '✅', description: 'Review & send' }
+];
+
+function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmitted, expertProfile }) {
   const [showAnswerRecorder, setShowAnswerRecorder] = useState(false);
   const [answerData, setAnswerData] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showAnswerSection, setShowAnswerSection] = useState(false);
   const [answerDetails, setAnswerDetails] = useState(null);
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const isPending = question?.status === 'paid' && !question?.answered_at;
   const isAnswered = question?.status === 'answered' || question?.status === 'closed' || !!question?.answered_at;
@@ -22,23 +33,37 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
     } else {
       setAnswerDetails(null);
     }
+    
+    // Reset to step 1 when modal opens
+    if (isOpen) {
+      setCurrentStep(1);
+      setShowAnswerRecorder(false);
+      setShowReviewModal(false);
+    }
   }, [isOpen, isAnswered, question?.id]);
+
+  // Update step based on current state
+  useEffect(() => {
+    if (showReviewModal) {
+      setCurrentStep(3);
+    } else if (showAnswerRecorder) {
+      setCurrentStep(2);
+    } else {
+      setCurrentStep(1);
+    }
+  }, [showAnswerRecorder, showReviewModal]);
 
   const fetchAnswerDetails = async () => {
     try {
       setIsLoadingAnswer(true);
-      // API endpoint: GET /answer with question_id parameter
       const response = await apiClient.get('/answer', {
         params: { question_id: question.id }
       });
       
       const rawData = response.data;
-      console.log('📦 Answer details:', rawData);
-      
       const answerData = rawData.answer;
       const mediaAsset = rawData.media_asset;
       
-      // Transform answer data to match expected structure
       const transformedAnswer = {
         id: answerData.id,
         created_at: answerData.created_at,
@@ -48,26 +73,19 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
         feedback_text: answerData.feedback_text || '',
         allow_testimonial: answerData.allow_testimonial || false,
         feedback_at: answerData.feedback_at,
-        // Handle media assets from the media_asset object
         media_assets: (() => {
-          if (!mediaAsset) {
-            return [];
-          }
+          if (!mediaAsset) return [];
           
-          // Check if this is a multi-segment recording
           if (mediaAsset.metadata?.type === 'multi-segment' && mediaAsset.metadata?.segments) {
             return mediaAsset.metadata.segments.map(segment => ({
               id: segment.uid,
               url: segment.playback_url,
               duration_sec: segment.duration,
               segment_index: segment.segment_index,
-              metadata: {
-                mode: segment.mode
-              }
+              metadata: { mode: segment.mode }
             }));
           }
           
-          // Otherwise return the main asset as a single item
           return [{
             id: mediaAsset.id,
             url: mediaAsset.url,
@@ -76,7 +94,6 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
             metadata: mediaAsset.metadata
           }];
         })(),
-        // Parse attachments if they exist
         attachments: (() => {
           try {
             if (answerData.attachments && typeof answerData.attachments === 'string' && answerData.attachments.trim()) {
@@ -130,28 +147,30 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
 
   const handleStartAnswer = () => {
     setShowAnswerRecorder(true);
+    setCurrentStep(2);
   };
 
   const handleRecorderReady = (data) => {
-    console.log('✅ Answer data from recorder:', data);
     setAnswerData(data);
     setShowReviewModal(true);
+    setCurrentStep(3);
   };
 
   const handleRecorderCancel = () => {
     setShowAnswerRecorder(false);
+    setCurrentStep(1);
   };
 
   const handleEdit = () => {
     setShowReviewModal(false);
+    setCurrentStep(2);
   };
 
   const handleSubmitSuccess = (result) => {
-    console.log('✅ Answer submitted successfully:', result);
-    
     setShowReviewModal(false);
     setShowAnswerRecorder(false);
     setAnswerData(null);
+    setCurrentStep(1);
     
     if (onAnswerSubmitted) {
       onAnswerSubmitted(question.id);
@@ -189,34 +208,46 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-gray-900">Question Details</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  {isPending && 'Pending your answer'}
-                  {isAnswered && answerDetails && `Answered ${formatDate(answerDetails.sent_at || answerDetails.created_at)}`}
-                  {isAnswered && !answerDetails && !isLoadingAnswer && 'Answered'}
-                </p>
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 rounded-t-2xl z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex-1 min-w-0 mr-4">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Question Details</h2>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                    {isPending && 'Pending your answer'}
+                    {isAnswered && answerDetails && `Answered ${formatDate(answerDetails.sent_at || answerDetails.created_at)}`}
+                    {isAnswered && !answerDetails && !isLoadingAnswer && 'Answered'}
+                  </p>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+                >
+                  <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
-              >
-                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              
+              {/* Progress Stepper - Only show for pending questions */}
+              {isPending && (
+                <ProgressStepper currentStep={currentStep} steps={ANSWER_STEPS} />
+              )}
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              
+              {/* Question Context Banner - Only for pending */}
+              {isPending && (
+                <QuestionContextBanner question={question} expert={expertProfile} />
+              )}
               
               {/* CSAT Score - Show at top for answered questions */}
               {isAnswered && answerDetails?.rating > 0 && (
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 sm:p-5">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                       </svg>
                     </div>
@@ -226,7 +257,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                         {[1, 2, 3, 4, 5].map((star) => (
                           <svg
                             key={star}
-                            className={`w-5 h-5 ${
+                            className={`w-4 h-4 sm:w-5 sm:h-5 ${
                               star <= answerDetails.rating
                                 ? 'text-amber-400 fill-current'
                                 : 'text-gray-300'
@@ -249,7 +280,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                       </div>
                       {answerDetails.feedback_text && (
                         <div className="bg-white rounded-lg p-3 mt-3">
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                          <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap">
                             "{answerDetails.feedback_text}"
                           </p>
                           {answerDetails.allow_testimonial && (
@@ -289,17 +320,17 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               )}
               
               {/* Question Info */}
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-5">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{question.title}</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">{question.title}</h3>
                     {question.text && (
-                      <p className="text-gray-700 whitespace-pre-wrap">{question.text}</p>
+                      <p className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap">{question.text}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-4 text-sm">
+                <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm">
                   <div className="flex items-center gap-2">
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -326,7 +357,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               {/* Question Media Assets */}
               {mediaSegments.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-gray-900">Question Media</h4>
+                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Question Media</h4>
                   {mediaSegments
                     .sort((a, b) => a.segment_index - b.segment_index)
                     .map((segment, index) => {
@@ -398,16 +429,16 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 
                 return (
                   <div className="space-y-2">
-                    <h4 className="font-semibold text-gray-900">Question Attachments</h4>
+                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Question Attachments</h4>
                     {attachments.map((file, index) => (
                       <a
                         key={index}
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
+                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-xs sm:text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
                       >
-                        <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                         </svg>
                         <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
@@ -425,16 +456,16 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                   <button
                     onClick={() => setShowAnswerSection(!showAnswerSection)}
-                    className="w-full bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-indigo-100 px-5 py-4 flex items-center justify-between hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 group"
+                    className="w-full bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-indigo-100 px-4 sm:px-5 py-4 flex items-center justify-between hover:from-indigo-100 hover:to-violet-100 transition-all duration-200 group touch-manipulation min-h-[60px]"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
                       <div className="text-left">
-                        <h4 className="text-gray-900 font-bold text-base">Your Answer</h4>
+                        <h4 className="text-gray-900 font-bold text-sm sm:text-base">Your Answer</h4>
                         {!showAnswerSection && answerDetails.media_assets?.length > 0 && (
                           <p className="text-gray-600 text-xs sm:text-sm">
                             {answerDetails.media_assets.length} {answerDetails.media_assets.length === 1 ? 'media file' : 'media files'}
@@ -453,7 +484,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                   </button>
 
                   <div className={`transition-all duration-300 ease-in-out ${showAnswerSection ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-                    <div className="p-5 space-y-4">
+                    <div className="p-4 sm:p-5 space-y-4">
                       {/* Text Response */}
                       {answerDetails.text && (
                         <div className="bg-gray-50 rounded-xl p-4">
@@ -525,12 +556,12 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                               href={file.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
+                              className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-xs sm:text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
                             >
-                              <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                               </svg>
-                              <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
+                              <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
                               <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                               </svg>
@@ -555,9 +586,9 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               {isPending && (
                 <button
                   onClick={handleStartAnswer}
-                  className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300"
+                  className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 touch-manipulation min-h-[52px]"
                 >
-                  Answer This Question
+                  Answer This Question →
                 </button>
               )}
 
@@ -595,24 +626,30 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
               
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Answer Question</h2>
-                  <p className="text-sm text-gray-600 mt-1">Record your answer with video, audio, or screen recording</p>
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 rounded-t-2xl z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Answer Question</h2>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Record your answer with video, audio, or screen recording</p>
+                  </div>
+                  <button
+                    onClick={handleRecorderCancel}
+                    className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  >
+                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-                <button
-                  onClick={handleRecorderCancel}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition"
-                >
-                  <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                
+                {/* Progress Stepper */}
+                <ProgressStepper currentStep={currentStep} steps={ANSWER_STEPS} />
               </div>
 
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <AnswerRecorder
                   question={question}
+                  expert={expertProfile}
                   onReady={handleRecorderReady}
                   onCancel={handleRecorderCancel}
                 />
