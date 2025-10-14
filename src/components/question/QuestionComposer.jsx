@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } f
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
 import { InlineAICoach } from './InlineAICoach';
-import HelpButton from './HelpButton';
+import HelpButton from '@/components/common/HelpButton';
 
 const MAX_RECORDING_SECONDS = 90;
 
