@@ -166,7 +166,7 @@ export function getSignInTemplate(user) {
               <tr>
                 <td style="padding-top: 48px; text-align: center; border-top: 2px solid #F3F4F6;">
                   <p style="font-size: 12px; color: #9CA3AF; margin: 24px 0 8px 0;">
-                    Questions? Check our <a href="https://mindpick.me/faq" style="color: #4F46E5; text-decoration: none;">FAQ</a> or reply to this email
+                    Questions? Check our <a href="https://mindpick.me/faq" style="color: #4F46E5; text-decoration: none;">FAQ</a>
                   </p>
                   <p style="font-size: 11px; color: #D1D5DB; margin: 0 0 4px 0;">
                     Signed in at ${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })} • Wasn't you? <a href="https://mindpick.me/security" style="color: #6B7280; text-decoration: none;">Secure your account</a>
