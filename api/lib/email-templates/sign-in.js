@@ -129,7 +129,7 @@ export function getSignInTemplate(user) {
                     <tr>
                       <!-- Complete Profile Button (Primary) -->
                       <td style="width: 50%; padding-right: 8px;">
-                        <a href="https://mindpick.me/profile/setup" style="display: block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: 700; font-size: 16px; text-align: center; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);">
+                        <a href="https://mindpick.me/expert#profile-settings" style="display: block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: 700; font-size: 16px; text-align: center; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);">
                           Complete Your Profile →
                         </a>
                       </td>
