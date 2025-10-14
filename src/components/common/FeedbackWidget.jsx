@@ -1,5 +1,5 @@
 // src/components/common/FeedbackWidget.jsx
-// Final version with email auto-fill working perfectly
+// Updated to support auto-opening from deletion email link
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -55,17 +55,11 @@ function trackAction(action) {
   } catch {}
 }
 
-// Extract email from user object or nested OAuth
 function extractUserEmail(user) {
   if (!user) return '';
-  
-  // Direct properties
   if (user.email) return user.email;
-  
-  // OAuth nested objects
   if (user.google_oauth?.email) return user.google_oauth.email;
   if (user.linkedin_oauth?.email) return user.linkedin_oauth.email;
-  
   return '';
 }
 
@@ -99,6 +93,34 @@ function FeedbackWidget() {
   const scrollDepthRef = useRef(0);
   const interactionsRef = useRef(0);
 
+  // NEW: Check URL parameters on mount for auto-opening from deletion email
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const feedbackType = params.get('feedback');
+    const emailParam = params.get('email');
+    
+    if (feedbackType === 'deletion') {
+      console.log('[FeedbackWidget] Auto-opening from deletion email');
+      setIsOpen(true);
+      setSelectedType('feedback');
+      
+      // Pre-fill email if provided in URL
+      if (emailParam) {
+        setFormData(prev => ({ 
+          ...prev, 
+          email: decodeURIComponent(emailParam),
+          // Optional: pre-fill a message template
+          message: "I'd like to share why I deleted my account:\n\n"
+        }));
+      }
+      
+      trackAction('feedback_widget_opened_from_deletion_email');
+      
+      // Clean up URL to remove params (optional, keeps URL clean)
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   useEffect(() => {
     startTimeRef.current = Date.now();
     const handleScroll = () => {
@@ -119,11 +141,10 @@ function FeedbackWidget() {
     };
   }, []);
 
-  // Auto-fill email when user data is available
   useEffect(() => {
     if (isAuthenticated && user) {
       const email = extractUserEmail(user);
-      if (email) {
+      if (email && !formData.email) {
         console.log('[FeedbackWidget] ✅ Email detected:', email);
         setFormData(prev => ({ ...prev, email }));
       }
