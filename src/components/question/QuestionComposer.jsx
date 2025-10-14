@@ -79,7 +79,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       }
     };
   }, []);
-
+    useEffect(() => {
+     if (recordingState === 'review' && currentSegment?.mode !== 'audio' && reviewVideoRef.current) {
+       reviewVideoRef.current.load();
+      }
+    }, [recordingState, currentSegment?.blobUrl]);
   useImperativeHandle(ref, () => ({
     getQuestionData: () => ({
       title,
