@@ -87,7 +87,12 @@ export default async function handler(req, res) {
     const userName = responseData?.name;
     const firstTime = responseData?.first_time;
 
-    if (userEmail && firstTime === true) {
+    console.log('📧 Email check - email:', userEmail, 'first_time:', firstTime, 'type:', typeof firstTime);
+
+    // Handle both boolean true and string "true"
+    const isFirstTime = firstTime === true || firstTime === 'true' || firstTime === 1;
+
+    if (userEmail && isFirstTime) {
       console.log('📧 First-time user detected, sending welcome email...');
       // Dynamic import to avoid module loading issues
       import('../lib/zeptomail.js')
@@ -97,7 +102,7 @@ export default async function handler(req, res) {
         .then(() => console.log('✅ Sign-in notification sent'))
         .catch((err) => console.error('❌ Failed to send sign-in notification:', err.message));
     } else if (userEmail) {
-      console.log('🔄 Returning user, skipping welcome email');
+      console.log('🔄 Returning user, skipping welcome email (first_time:', firstTime, ')');
     }
 
     return res.status(200).json({
