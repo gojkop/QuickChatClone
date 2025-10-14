@@ -1,4 +1,4 @@
-// src/components/question/QuestionComposer.jsx - IMPROVED VERSION
+// src/components/question/QuestionComposer.jsx - COMPLETE FIXED VERSION
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
@@ -68,6 +68,32 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
     }
   }, [recordingState, currentSegment?.mode]);
 
+  // Force video to load when entering review state with proper timing
+  useEffect(() => {
+    if (recordingState === 'review' && 
+        currentSegment?.blobUrl && 
+        currentSegment?.mode !== 'audio' && 
+        reviewVideoRef.current) {
+      
+      // Set src explicitly (in case React didn't catch the change)
+      reviewVideoRef.current.src = currentSegment.blobUrl;
+      
+      // Force load the video
+      reviewVideoRef.current.load();
+      
+      // Optional: Add error handling
+      reviewVideoRef.current.onerror = (e) => {
+        console.error('Video load error:', e);
+        // Try reloading once
+        setTimeout(() => {
+          if (reviewVideoRef.current) {
+            reviewVideoRef.current.load();
+          }
+        }, 100);
+      };
+    }
+  }, [recordingState, currentSegment?.blobUrl, currentSegment?.mode]);
+
   useEffect(() => {
     return () => {
       cleanupStream();
@@ -79,11 +105,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       }
     };
   }, []);
-    useEffect(() => {
-     if (recordingState === 'review' && currentSegment?.mode !== 'audio' && reviewVideoRef.current) {
-       reviewVideoRef.current.load();
-      }
-    }, [recordingState, currentSegment?.blobUrl]);
+
   useImperativeHandle(ref, () => ({
     getQuestionData: () => ({
       title,
@@ -823,10 +845,24 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           <ExistingSegmentsDisplay />
           <div className="border-2 border-green-500 rounded-xl overflow-hidden">
             {currentSegment.mode !== 'audio' ? (
-              <video ref={reviewVideoRef} src={currentSegment.blobUrl} className="w-full aspect-video bg-black max-h-[60vh] object-contain" controls playsInline preload="auto" />
+              <video 
+                ref={reviewVideoRef} 
+                key={currentSegment.blobUrl}
+                src={currentSegment.blobUrl} 
+                className="w-full aspect-video bg-black max-h-[60vh] object-contain" 
+                controls 
+                playsInline 
+                preload="metadata"
+              />
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
-                <audio src={currentSegment.blobUrl} controls className="w-full max-w-md px-4" preload="auto" />
+                <audio 
+                  src={currentSegment.blobUrl}
+                  key={currentSegment.blobUrl}
+                  controls 
+                  className="w-full max-w-md px-4" 
+                  preload="metadata" 
+                />
               </div>
             )}
             
