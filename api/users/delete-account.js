@@ -38,14 +38,42 @@ export default async function handler(req, res) {
     }
 
     const profile = await profileResponse.json();
+    
+    // Debug: Log full profile structure
+    console.log('📋 Profile response structure:', JSON.stringify(profile, null, 2));
+    
     const userId = profile.id;
-    const userEmail = profile.email;
+    let userEmail = profile.email;  // Use let so we can reassign if needed
     const userName = profile.name;
     const expertProfileId = profile.expert_profile?.id;
 
     console.log('User ID:', userId);
-    console.log('Expert Profile ID:', expertProfileId);
     console.log('User Email:', userEmail);
+    console.log('User Name:', userName);
+    console.log('Expert Profile ID:', expertProfileId);
+    
+    // Validate email exists
+    if (!userEmail) {
+      console.error('❌ No email found in profile.email');
+      console.error('   Profile keys:', Object.keys(profile));
+      console.error('   Looking for alternative email fields...');
+      
+      // Try alternative fields
+      const alternativeEmail = profile.user?.email || profile.data?.email || profile.email_address;
+      if (alternativeEmail) {
+        console.log('✅ Found email in alternative field:', alternativeEmail);
+        userEmail = alternativeEmail;
+      } else {
+        return res.status(500).json({ 
+          error: 'User email not found in profile',
+          debug: { 
+            profileKeys: Object.keys(profile),
+            hasNestedUser: !!profile.user,
+            hasNestedData: !!profile.data
+          }
+        });
+      }
+    }
 
     // Determine user type
     const userType = expertProfileId ? 'expert' : 'asker';
