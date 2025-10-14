@@ -8,6 +8,9 @@ import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
 const MAX_RECORDING_SECONDS = 900; // 15 minutes for answers
 
 function AnswerRecorder({ question, onReady, onCancel }) {
+  // 🚨 DEPLOYMENT CHECK - This log fires when component loads
+  console.log('🚨🚨🚨 AnswerRecorder component loaded - NEW CODE IS RUNNING! 🚨🚨🚨');
+
   const [text, setText] = useState('');
 
   // Segment-based recording state
