@@ -165,12 +165,10 @@ export default async function handler(req, res) {
           }
         }
 
-        // 2. Delete from Xano database
-        const xanoDeleteResponse = await fetch(`${XANO_BASE_URL}/media_asset/${media.id}`, {
+        // 2. Delete from Xano database via internal endpoint
+        const xanoDeleteEndpoint = `${XANO_PUBLIC_API_URL}/internal/media_asset`;
+        const xanoDeleteResponse = await fetch(`${xanoDeleteEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}&media_asset_id=${media.id}`, {
           method: 'DELETE',
-          headers: {
-            'X-API-Key': XANO_INTERNAL_API_KEY,
-          },
         });
 
         if (xanoDeleteResponse.ok) {
