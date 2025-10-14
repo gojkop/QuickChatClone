@@ -1,68 +1,155 @@
 // src/components/dashboard/SLACountdown.jsx
+// MOBILE OPTIMIZED: Compressed design that's still informative
+
 import React, { useState, useEffect } from 'react';
 
-const calculateSLARemaining = (createdAt, slaHours) => {
-  const created = new Date(createdAt);
-  const deadline = new Date(created.getTime() + slaHours * 60 * 60 * 1000);
-  const now = new Date();
-  const remaining = deadline - now;
-  
-  if (remaining <= 0) return 0;
-  
-  return Math.ceil(remaining / (1000 * 60 * 60)); // Return hours
-};
-
-const formatTimeRemaining = (hours) => {
-  if (hours <= 0) return 'Overdue!';
-  if (hours < 1) return 'Less than 1 hour';
-  if (hours === 1) return '1 hour left';
-  if (hours < 24) return `${hours} hours left`;
-  
-  const days = Math.floor(hours / 24);
-  const remainingHours = hours % 24;
-  
-  if (remainingHours === 0) {
-    return days === 1 ? '1 day left' : `${days} days left`;
-  }
-  
-  return `${days}d ${remainingHours}h left`;
-};
-
 function SLACountdown({ question, expert, className = '' }) {
-  const [timeRemaining, setTimeRemaining] = useState(
-    calculateSLARemaining(question.created_at, expert?.sla_hours || question.sla_hours_snapshot)
-  );
-  
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [status, setStatus] = useState('normal'); // 'normal', 'warning', 'urgent', 'overdue'
+
   useEffect(() => {
+    const calculateTimeLeft = () => {
+      if (!question?.created_at || !question?.sla_hours_snapshot) {
+        return null;
+      }
+
+      const createdAt = new Date(question.created_at);
+      const slaHours = question.sla_hours_snapshot;
+      const deadline = new Date(createdAt.getTime() + slaHours * 60 * 60 * 1000);
+      const now = new Date();
+      const diff = deadline - now;
+
+      if (diff <= 0) {
+        setStatus('overdue');
+        return { hours: 0, minutes: 0, isOverdue: true };
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      // Set status based on time remaining
+      const percentRemaining = (diff / (slaHours * 60 * 60 * 1000)) * 100;
+      if (percentRemaining <= 10) {
+        setStatus('urgent');
+      } else if (percentRemaining <= 25) {
+        setStatus('warning');
+      } else {
+        setStatus('normal');
+      }
+
+      return { hours, minutes, isOverdue: false };
+    };
+
+    setTimeLeft(calculateTimeLeft());
     const interval = setInterval(() => {
-      setTimeRemaining(
-        calculateSLARemaining(question.created_at, expert?.sla_hours || question.sla_hours_snapshot)
-      );
+      setTimeLeft(calculateTimeLeft());
     }, 60000); // Update every minute
-    
+
     return () => clearInterval(interval);
-  }, [question.created_at, expert?.sla_hours, question.sla_hours_snapshot]);
-  
-  const urgency = timeRemaining <= 0 ? 'overdue' : 
-                  timeRemaining < 6 ? 'urgent' : 
-                  timeRemaining < 24 ? 'normal' : 
-                  'comfortable';
-  
+  }, [question]);
+
+  if (!timeLeft) return null;
+
+  const statusConfig = {
+    normal: {
+      bg: 'from-blue-50 to-indigo-50',
+      border: 'border-blue-200',
+      icon: '⏰',
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      textColor: 'text-blue-900',
+      timeColor: 'text-blue-700'
+    },
+    warning: {
+      bg: 'from-amber-50 to-orange-50',
+      border: 'border-amber-200',
+      icon: '⚠️',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+      textColor: 'text-amber-900',
+      timeColor: 'text-amber-700'
+    },
+    urgent: {
+      bg: 'from-red-50 to-rose-50',
+      border: 'border-red-200',
+      icon: '🚨',
+      iconBg: 'bg-red-100',
+      iconColor: 'text-red-600',
+      textColor: 'text-red-900',
+      timeColor: 'text-red-700'
+    },
+    overdue: {
+      bg: 'from-red-100 to-rose-100',
+      border: 'border-red-300',
+      icon: '⏱️',
+      iconBg: 'bg-red-200',
+      iconColor: 'text-red-700',
+      textColor: 'text-red-900',
+      timeColor: 'text-red-800'
+    }
+  };
+
+  const config = statusConfig[status];
+
   return (
-    <div className={`py-2.5 sm:py-3 px-4 text-center text-xs sm:text-sm font-bold transition-colors ${
-      urgency === 'overdue' ? 'bg-red-100 text-red-900 animate-pulse' :
-      urgency === 'urgent' ? 'bg-orange-100 text-orange-900' :
-      urgency === 'normal' ? 'bg-amber-100 text-amber-900' :
-      'bg-blue-100 text-blue-900'
-    } ${className}`}>
-      <div className="flex items-center justify-center gap-2">
-        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>
-          {urgency === 'overdue' ? '⚠️ ' : ''}
-          Answer due: {formatTimeRemaining(timeRemaining)}
-        </span>
+    <div className={`bg-gradient-to-r ${config.bg} border ${config.border} rounded-lg overflow-hidden ${className}`}>
+      {/* Mobile-optimized layout */}
+      <div className="p-3 sm:p-4">
+        <div className="flex items-center gap-3">
+          {/* Icon - smaller on mobile */}
+          <div className={`w-10 h-10 sm:w-12 sm:h-12 ${config.iconBg} rounded-full flex items-center justify-center flex-shrink-0`}>
+            <span className="text-xl sm:text-2xl">{config.icon}</span>
+          </div>
+
+          {/* Content - compact on mobile */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2 mb-1">
+              <h4 className={`text-xs sm:text-sm font-bold ${config.textColor}`}>
+                {timeLeft.isOverdue ? 'SLA Overdue' : 'Answer Due'}
+              </h4>
+              {!timeLeft.isOverdue && (
+                <span className={`text-xs ${config.timeColor} font-semibold`}>
+                  in {timeLeft.hours}h {timeLeft.minutes}m
+                </span>
+              )}
+            </div>
+            
+            <p className={`text-xs ${config.timeColor} leading-snug`}>
+              {timeLeft.isOverdue ? (
+                'Please respond as soon as possible'
+              ) : status === 'urgent' ? (
+                'Urgent: Less than 10% time remaining'
+              ) : status === 'warning' ? (
+                'Respond soon to meet your SLA commitment'
+              ) : (
+                `${question.sla_hours_snapshot}h SLA commitment`
+              )}
+            </p>
+          </div>
+
+          {/* Progress indicator - only on desktop */}
+          {!timeLeft.isOverdue && (
+            <div className="hidden sm:flex flex-col items-end gap-1">
+              <div className="w-16 h-2 bg-white rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-1000 ${
+                    status === 'urgent' ? 'bg-red-600' :
+                    status === 'warning' ? 'bg-amber-500' :
+                    'bg-blue-500'
+                  }`}
+                  style={{
+                    width: `${Math.max(0, Math.min(100, 
+                      ((timeLeft.hours * 60 + timeLeft.minutes) / (question.sla_hours_snapshot * 60)) * 100
+                    ))}%`
+                  }}
+                />
+              </div>
+              <span className={`text-[10px] font-semibold ${config.timeColor}`}>
+                {Math.floor(((timeLeft.hours * 60 + timeLeft.minutes) / (question.sla_hours_snapshot * 60)) * 100)}%
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
