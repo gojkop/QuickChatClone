@@ -1,9 +1,17 @@
-// src/pages/AskQuestionPage.jsx - Modified with Optional AI Coach
-
+// src/pages/AskQuestionPage.jsx - IMPROVED VERSION
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import QuestionComposer from '@/components/question/QuestionComposer';
 import AskReviewModal from '@/components/question/AskReviewModal';
+import ProgressStepper from '@/components/common/ProgressStepper';
+import FirstTimeUserTips from '@/components/common/FirstTimeUserTips';
+
+const formatPrice = (cents, currency = 'USD') => {
+  const symbols = { USD: '$', EUR: '€', GBP: '£' };
+  const symbol = symbols[currency] || '$';
+  const amount = (cents || 0) / 100;
+  return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
+};
 
 function AskQuestionPage() {
   const [expert, setExpert] = useState(null);
@@ -79,19 +87,16 @@ function AskQuestionPage() {
     fetchExpertProfile();
   }, [location.search, navigate]);
 
-  // Handle continue to review
   const handleContinueToReview = async () => {
     if (composerRef.current) {
       const data = await composerRef.current.validateAndGetData();
       if (data) {
-        console.log('Question data:', data);
         setQuestionData(data);
         setShowReviewModal(true);
       }
     }
   };
 
-  // Handle proceed to payment
   const handleProceedToPayment = async (askerInfo) => {
     try {
       console.log("Starting question submission...");
@@ -159,7 +164,6 @@ function AskQuestionPage() {
         const expertName = expert.name || expert.user?.name || expert.handle;
         const questionId = result.data?.questionId || result.data?.id;
         
-        // Try multiple possible field names for the review token
         const reviewToken = result.data?.reviewToken || 
                            result.data?.review_token || 
                            result.data?.token ||
@@ -170,23 +174,19 @@ function AskQuestionPage() {
         console.log('🔍 Review token found:', reviewToken);
         console.log('🔍 Question ID:', questionId);
         
-        // Build the query string with review_token
         const params = new URLSearchParams({
           question_id: questionId,
           expert: expert.handle,
           expertName: expertName,
         });
         
-        // Only add review_token if it exists
         if (reviewToken) {
           params.append('review_token', reviewToken);
           console.log('✅ Added review_token to URL params');
         } else {
-          console.warn('⚠️ No review_token found in response. Check backend API response.');
-          console.warn('⚠️ Available fields in result.data:', Object.keys(result.data || {}));
+          console.warn('⚠️ No review_token found in response.');
         }
         
-        // Always include dev_mode for testing
         params.append('dev_mode', 'true');
         
         const navigationUrl = `/question-sent?${params.toString()}`;
@@ -228,10 +228,16 @@ function AskQuestionPage() {
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
             <div className="text-center">
+              <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
               <h2 className="text-2xl font-bold text-gray-900 mb-3">Error</h2>
               <p className="text-gray-600 mb-6">{error}</p>
-              <a href="/" className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300">
-                Back to home
+              <a 
+                href="/" 
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300"
+              >
+                Back to Home
               </a>
             </div>
           </div>
@@ -242,23 +248,62 @@ function AskQuestionPage() {
 
   return (
     <>
-      <main className="container mx-auto px-4 py-20 pt-32 sm:pt-40">
-        <div className="max-w-2xl mx-auto">
+      <main className="container mx-auto px-4 py-12 sm:py-20 pt-24 sm:pt-32">
+        <div className="max-w-4xl mx-auto">
+          {/* Progress Stepper */}
+          <ProgressStepper currentStep={1} />
+
           {/* Header */}
-          <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+          <div className="text-center mb-8 sm:mb-10">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mb-3">
               Ask{' '}
               <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
                 {expert.name || expert.user?.name || expert.handle}
               </span>
             </h1>
-            <p className="text-gray-600">
-              Compose your question below. They will respond within {expert.sla_hours} hours.
+            <p className="text-sm sm:text-base text-gray-600">
+              They will respond within <strong>{expert.sla_hours} hours</strong>
             </p>
           </div>
 
+          {/* First Time User Tips */}
+          <FirstTimeUserTips />
+
+          {/* What Happens Next Info Card */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-5 sm:p-6 mb-8">
+            <h3 className="font-bold text-indigo-900 mb-4 text-base sm:text-lg flex items-center gap-2">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <span>What happens next?</span>
+            </h3>
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">1</div>
+                <div className="flex-1 pt-1">
+                  <div className="text-sm sm:text-base font-semibold text-indigo-900">Record your question</div>
+                  <div className="text-xs sm:text-sm text-indigo-700">Up to 90 seconds of video, audio, or screen recording</div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">2</div>
+                <div className="flex-1 pt-1">
+                  <div className="text-sm sm:text-base font-semibold text-indigo-900">Review and pay</div>
+                  <div className="text-xs sm:text-sm text-indigo-700">One-time payment of {formatPrice(expert.price_cents, expert.currency)}</div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">3</div>
+                <div className="flex-1 pt-1">
+                  <div className="text-sm sm:text-base font-semibold text-indigo-900">Get your answer</div>
+                  <div className="text-xs sm:text-sm text-indigo-700">Receive the expert's response within {expert.sla_hours} hours via email</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Question Composer */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 md:p-8">
             <QuestionComposer 
               ref={composerRef} 
               hideButton={true}
@@ -275,10 +320,20 @@ function AskQuestionPage() {
           <div className="mt-6">
             <button 
               onClick={handleContinueToReview} 
-              className="w-full text-lg font-bold py-4 px-4 rounded-xl text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-lg transition-all"
+              className="w-full text-base sm:text-lg font-bold py-4 px-6 rounded-xl text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] touch-manipulation min-h-[52px]"
             >
-              Continue to Review
+              Continue to Review →
             </button>
+          </div>
+
+          {/* Help Text */}
+          <div className="mt-6 text-center text-xs sm:text-sm text-gray-500">
+            <p>
+              Questions? Check our{' '}
+              <a href="/faq" className="text-indigo-600 hover:text-indigo-700 font-semibold">
+                Help Center
+              </a>
+            </p>
           </div>
         </div>
       </main>

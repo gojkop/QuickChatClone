@@ -1,8 +1,9 @@
-// src/components/question/QuestionComposer.jsx
+// src/components/question/QuestionComposer.jsx - IMPROVED VERSION
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
 import { InlineAICoach } from './InlineAICoach';
+import HelpButton from './HelpButton';
 
 const MAX_RECORDING_SECONDS = 90;
 
@@ -10,12 +11,14 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
   // Form state
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
+  const [titleError, setTitleError] = useState('');
 
   // Segment-based recording state
   const [segments, setSegments] = useState([]);
   const [currentSegment, setCurrentSegment] = useState(null);
   const [recordingState, setRecordingState] = useState('idle');
   const [timer, setTimer] = useState(0);
+  const [countdown, setCountdown] = useState(null);
   
   // Camera switching state
   const [facingMode, setFacingMode] = useState('user');
@@ -47,6 +50,15 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
     (navigator.maxTouchPoints > 2)
   );
+
+  // Real-time validation
+  useEffect(() => {
+    if (title.length > 0 && title.length < 5) {
+      setTitleError('Title should be at least 5 characters');
+    } else {
+      setTitleError('');
+    }
+  }, [title]);
 
   useEffect(() => {
     if (videoRef.current && liveStreamRef.current && 
@@ -127,7 +139,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
   const startNewSegment = async (mode) => {
     const remainingTime = MAX_RECORDING_SECONDS - totalDuration;
     if (remainingTime <= 0) {
-      alert('You have used all 90 seconds. Please remove a segment to add more.');
+      alert('You have used all 90 seconds. Please remove a recording to add more.');
       return;
     }
     
@@ -181,6 +193,20 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       console.error("Permission Error:", error);
       setRecordingState('denied');
     }
+  };
+
+  const startRecordingWithCountdown = () => {
+    setCountdown(3);
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          startRecording();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const startRecording = () => {
@@ -291,7 +317,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       
       setSegments(prev => [...prev, segmentData]);
       
-      // Upload immediately in background WITH DURATION
+      // Upload immediately in background
       try {
         await segmentUpload.uploadSegment(
           currentSegment.blob,
@@ -299,7 +325,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           segments.length,
           currentSegment.duration
         );
-        console.log('Segment uploaded successfully with duration:', currentSegment.duration);
       } catch (error) {
         console.error('Segment upload failed:', error);
       }
@@ -349,10 +374,8 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
     setSegments(newSegments);
   };
 
-  // 🆕 Handle AI Coach suggestions
   const handleApplyAISuggestions = (suggestions) => {
     if (suggestions.additionalContext) {
-      // Append to existing text
       setText(prev => (prev + suggestions.additionalContext).trim());
     }
   };
@@ -379,12 +402,12 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
 
   const getSegmentIcon = (mode) => {
     const icons = {
-      video: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />,
-      audio: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />,
-      screen: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />,
-      'screen-camera': <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      video: '📹',
+      audio: '🎤',
+      screen: '💻',
+      'screen-camera': '💻'
     };
-    return <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">{icons[mode]}</svg>;
+    return icons[mode] || '🎬';
   };
 
   const getSegmentLabel = (mode) => {
@@ -406,20 +429,20 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
     if (segments.length === 0) return null;
 
     return (
-      <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 mb-4">
+      <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 sm:p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
             </svg>
-            <span className="text-sm font-bold text-indigo-900">Your Segments</span>
+            <span className="text-sm font-bold text-indigo-900">Your Recordings</span>
           </div>
           <span className="text-xs font-semibold text-indigo-700 bg-white px-2 py-1 rounded">
             {formatTime(totalDuration)} / {formatTime(MAX_RECORDING_SECONDS)}
           </span>
         </div>
 
-        <div className="bg-white rounded-lg p-3 space-y-2">
+        <div className="bg-white rounded-lg p-2 sm:p-3 space-y-2">
           {segments.map((segment, index) => {
             const uploadStatus = segmentUpload.segments[index];
             const isUploading = uploadStatus?.uploading;
@@ -427,14 +450,15 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
             const isUploaded = uploadStatus?.result;
 
             return (
-              <div key={segment.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+              <div key={segment.id} className="flex items-center gap-2 p-2 sm:p-3 bg-gray-50 rounded border border-gray-200">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+                  <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs sm:text-sm font-bold">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-gray-900 flex items-center gap-1">
-                      {getSegmentLabel(segment.mode)}
+                    <div className="text-xs sm:text-sm font-semibold text-gray-900 flex items-center gap-1">
+                      <span>{getSegmentIcon(segment.mode)}</span>
+                      <span>{getSegmentLabel(segment.mode)}</span>
                       <span className="text-gray-500">· {formatTime(segment.duration)}</span>
                     </div>
                     <div className="text-xs mt-0.5">
@@ -446,18 +470,18 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                       )}
                       {hasError && (
                         <span className="text-red-600 flex items-center gap-1">
-                          ❌ Upload failed
+                          ❌ Failed
                           <button
                             onClick={() => segmentUpload.retrySegment(uploadStatus.id)}
-                            className="text-indigo-600 hover:underline"
+                            className="text-indigo-600 hover:underline font-semibold"
                           >
                             Retry
                           </button>
                         </span>
                       )}
                       {isUploaded && (
-                        <span className="text-green-600 flex items-center gap-1">
-                          ✅ Uploaded
+                        <span className="text-green-600 flex items-center gap-1 font-semibold">
+                          ✅ Ready
                         </span>
                       )}
                     </div>
@@ -468,10 +492,10 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                   {index > 0 && (
                     <button
                       onClick={() => moveSegmentUp(index)}
-                      className="p-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
+                      className="p-2 sm:p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                       title="Move up"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
                       </svg>
                     </button>
@@ -479,10 +503,10 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                   {index < segments.length - 1 && (
                     <button
                       onClick={() => moveSegmentDown(index)}
-                      className="p-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
+                      className="p-2 sm:p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                       title="Move down"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
@@ -496,29 +520,33 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                       elem.controls = true;
                       if (segment.mode !== 'audio') {
                         elem.style.width = '100%';
-                        elem.style.maxHeight = '400px';
+                        elem.style.maxHeight = '70vh';
+                        elem.style.objectFit = 'contain';
                       }
                       const modal = document.createElement('div');
-                      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80';
+                      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90';
                       modal.onclick = () => modal.remove();
-                      modal.appendChild(elem);
+                      const container = document.createElement('div');
+                      container.className = 'max-w-4xl w-full';
+                      container.appendChild(elem);
+                      modal.appendChild(container);
                       document.body.appendChild(modal);
                       elem.play();
                     }}
-                    className="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition"
+                    className="p-2 sm:p-2.5 text-indigo-600 hover:bg-indigo-50 rounded transition touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                     title="Preview"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </button>
                   <button
                     onClick={() => removeSegment(segment.id)}
-                    className="p-1 text-red-600 hover:bg-red-50 rounded transition"
+                    className="p-2 sm:p-2.5 text-red-600 hover:bg-red-50 rounded transition touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                     title="Delete"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
@@ -532,7 +560,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span>Segments are uploading in the background. You can continue when all are uploaded.</span>
+          <span>Your recordings are uploading automatically in the background</span>
         </div>
       </div>
     );
@@ -545,52 +573,67 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           <ExistingSegmentsDisplay />
 
           {totalDuration < MAX_RECORDING_SECONDS && (
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6">
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6">
               <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {segments.length === 0 ? 'Record Your Question' : 'Add Another Segment'}
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                  {segments.length === 0 ? 'Record your question' : 'Add another recording'}
                 </h3>
                 <p className="text-sm text-gray-600">
                   {formatTime(MAX_RECORDING_SECONDS - totalDuration)} remaining
                 </p>
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   onClick={() => startNewSegment('video')}
-                  className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group"
+                  className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group touch-manipulation min-h-[60px]"
                 >
-                  <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
-                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
+                      <span className="text-2xl">📹</span>
+                    </div>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">Video</span>
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900 mb-1">Record Video</div>
+                    <div className="text-xs text-gray-500">
+                      Show your face or what you're working on
+                    </div>
+                  </div>
                 </button>
 
                 <button
                   onClick={() => startNewSegment('audio')}
-                  className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group"
+                  className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group touch-manipulation min-h-[60px]"
                 >
-                  <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
-                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
+                      <span className="text-2xl">🎤</span>
+                    </div>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">Audio</span>
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900 mb-1">Record Audio</div>
+                    <div className="text-xs text-gray-500">
+                      Voice-only recording
+                    </div>
+                  </div>
                 </button>
 
                 {isScreenRecordingAvailable && (
                   <button
                     onClick={() => startNewSegment('screen')}
-                    className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group"
+                    className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition group sm:col-span-2 touch-manipulation min-h-[60px]"
                   >
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
-                      <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition">
+                        <span className="text-2xl">💻</span>
+                      </div>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">Screen</span>
+                    <div className="text-left flex-1">
+                      <div className="font-semibold text-gray-900 mb-1">Record Screen</div>
+                      <div className="text-xs text-gray-500">
+                        Demonstrate a problem or show what you're seeing
+                      </div>
+                    </div>
                   </button>
                 )}
               </div>
@@ -605,7 +648,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                       Screen recording available on desktop
                     </p>
                     <p className="text-xs text-blue-700">
-                      Use our desktop site to record your screen along with video and audio
+                      Use our desktop site to record your screen
                     </p>
                   </div>
                 </div>
@@ -622,7 +665,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           <ExistingSegmentsDisplay />
           <div className="text-center p-12 border-2 border-dashed border-gray-300 rounded-xl">
             <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-gray-600">Requesting permissions...</p>
+            <p className="text-gray-600">Getting ready...</p>
           </div>
         </div>
       );
@@ -632,17 +675,23 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       return (
         <div className="space-y-4">
           <ExistingSegmentsDisplay />
-          <div className="text-center p-8 border-2 border-amber-400 rounded-xl bg-amber-50">
+          <div className="text-center p-6 sm:p-8 border-2 border-amber-400 rounded-xl bg-amber-50">
             <svg className="w-12 h-12 text-amber-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <p className="font-semibold text-amber-800 mb-2">Permission denied</p>
-            <p className="text-sm text-amber-700 mb-4">Please allow access when prompted</p>
-            <div className="flex gap-2 justify-center">
-              <button onClick={discardSegment} className="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition">
+            <p className="font-semibold text-amber-800 mb-2">Permission needed</p>
+            <p className="text-sm text-amber-700 mb-4">Please allow camera/microphone access when prompted</p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <button 
+                onClick={discardSegment} 
+                className="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition touch-manipulation min-h-[44px]"
+              >
                 Cancel
               </button>
-              <button onClick={() => initiatePreview(currentSegment.mode, facingMode)} className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition">
+              <button 
+                onClick={() => initiatePreview(currentSegment.mode, facingMode)} 
+                className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition touch-manipulation min-h-[44px]"
+              >
                 Try Again
               </button>
             </div>
@@ -658,13 +707,13 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           <div className="border-2 border-gray-300 rounded-xl overflow-hidden">
             {currentSegment.mode !== 'audio' ? (
               <div className="relative">
-                <video ref={videoRef} className="w-full bg-gray-900 aspect-video" autoPlay muted playsInline />
+                <video ref={videoRef} className="w-full bg-gray-900 aspect-video object-cover max-h-[60vh]" autoPlay muted playsInline />
                 
                 {currentSegment.mode === 'video' && isMobileDevice && (
                   <button
                     onClick={flipCamera}
                     disabled={isFlipping}
-                    className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-w-[48px] min-h-[48px] flex items-center justify-center"
                     title={`Switch to ${facingMode === 'user' ? 'back' : 'front'} camera`}
                   >
                     {isFlipping ? (
@@ -679,7 +728,20 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                 
                 {currentSegment.mode === 'video' && isMobileDevice && (
                   <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold rounded-full">
-                    {facingMode === 'user' ? '📷 Front Camera' : '📷 Back Camera'}
+                    {facingMode === 'user' ? '📷 Front' : '📷 Back'}
+                  </div>
+                )}
+
+                {countdown !== null && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-8xl font-black text-white mb-4 animate-bounce">
+                        {countdown}
+                      </div>
+                      <div className="text-white text-xl font-semibold">
+                        Get ready...
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -694,11 +756,18 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
               </div>
             )}
             
-            <div className="p-4 bg-white flex flex-col sm:flex-row gap-3 sm:justify-between">
-              <button onClick={discardSegment} className="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">
+            <div className="p-4 bg-white flex flex-col sm:flex-row gap-3">
+              <button 
+                onClick={discardSegment} 
+                className="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition touch-manipulation min-h-[44px] order-2 sm:order-1"
+              >
                 Cancel
               </button>
-              <button onClick={startRecording} className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition">
+              <button 
+                onClick={startRecordingWithCountdown} 
+                disabled={countdown !== null}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition disabled:opacity-50 touch-manipulation min-h-[44px] order-1 sm:order-2 flex-1 sm:flex-initial"
+              >
                 <div className="w-3 h-3 rounded-full bg-white"></div>
                 <span>Start Recording</span>
               </button>
@@ -714,7 +783,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           <ExistingSegmentsDisplay />
           <div className="border-2 border-red-500 rounded-xl overflow-hidden bg-red-50">
             {currentSegment.mode !== 'audio' ? (
-              <video ref={videoRef} className="w-full bg-gray-900 aspect-video" autoPlay muted playsInline />
+              <video ref={videoRef} className="w-full bg-gray-900 aspect-video object-cover max-h-[60vh]" autoPlay muted playsInline />
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                 <div className="text-center">
@@ -724,15 +793,18 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
               </div>
             )}
             
-            <div className="p-6 text-center">
+            <div className="p-4 sm:p-6 text-center">
               <div className="inline-flex items-center gap-3 mb-4">
                 <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
-                <span className="text-red-700 font-bold text-lg">Recording Segment {segments.length + 1}...</span>
+                <span className="text-red-700 font-bold text-base sm:text-lg">Recording...</span>
               </div>
-              <div className="text-4xl font-black text-red-600 mb-4" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <div className="text-4xl sm:text-5xl font-black text-red-600 mb-4" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {formatTime(timer)}
               </div>
-              <button onClick={stopRecording} className="px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition">
+              <button 
+                onClick={stopRecording} 
+                className="px-6 sm:px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition touch-manipulation min-h-[44px]"
+              >
                 Stop Recording
               </button>
             </div>
@@ -747,26 +819,39 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           <ExistingSegmentsDisplay />
           <div className="border-2 border-green-500 rounded-xl overflow-hidden">
             {currentSegment.mode !== 'audio' ? (
-              <video ref={reviewVideoRef} src={currentSegment.blobUrl} className="w-full aspect-video bg-black" controls playsInline preload="auto" />
+              <video ref={reviewVideoRef} src={currentSegment.blobUrl} className="w-full aspect-video bg-black max-h-[60vh] object-contain" controls playsInline preload="auto" />
             ) : (
               <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                 <audio src={currentSegment.blobUrl} controls className="w-full max-w-md px-4" preload="auto" />
               </div>
             )}
             
-            <div className="p-4 bg-green-50 flex flex-col sm:flex-row gap-3 sm:justify-between">
-              <div className="flex items-center gap-2 text-green-700 justify-center sm:justify-start">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="font-semibold">{getSegmentLabel(currentSegment.mode)} · {formatTime(currentSegment.duration)}</span>
+            <div className="p-4 bg-green-50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-green-700">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="font-semibold text-sm sm:text-base">
+                    {getSegmentIcon(currentSegment.mode)} {getSegmentLabel(currentSegment.mode)} · {formatTime(currentSegment.duration)}
+                  </span>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button onClick={discardSegment} className="flex-1 sm:flex-none px-4 py-2 text-gray-700 font-semibold hover:bg-white rounded-lg transition">
-                  Discard
+              <p className="text-xs sm:text-sm text-green-800 mb-3 text-center">
+                Happy with this recording? It will be added to your question.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button 
+                  onClick={discardSegment} 
+                  className="px-4 py-2 text-gray-700 font-semibold hover:bg-white rounded-lg transition touch-manipulation min-h-[44px] order-2 sm:order-1"
+                >
+                  🗑️ Delete & Record Again
                 </button>
-                <button onClick={saveSegment} className="flex-1 sm:flex-none px-6 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition">
-                  Add Segment
+                <button 
+                  onClick={saveSegment} 
+                  className="px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition touch-manipulation min-h-[44px] order-1 sm:order-2 flex-1 sm:flex-initial"
+                >
+                  ✅ Save This Recording
                 </button>
               </div>
             </div>
@@ -779,43 +864,61 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
   };
 
   const canProceed = 
-    title.trim().length > 0 &&
+    title.trim().length >= 5 &&
     !segmentUpload.hasUploading &&
     !attachmentUpload.uploads.some(u => u.uploading);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
-        <label htmlFor="question-title" className="block text-sm font-semibold text-gray-900 mb-2">
-          Question Title
+        <label htmlFor="question-title" className="flex items-center text-sm font-semibold text-gray-900 mb-2">
+          <span>Question Title</span>
+          <HelpButton>
+            Keep it clear and specific. Good example: "Review my landing page copy for a SaaS product"
+          </HelpButton>
         </label>
         <input
           type="text"
           id="question-title"
           value={title}
           onChange={e => setTitle(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-base"
           placeholder="e.g., Review my landing page copy"
         />
+        {titleError && (
+          <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            {titleError}
+          </div>
+        )}
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Record Your Question
+        <label className="flex items-center text-sm font-semibold text-gray-900 mb-2">
+          <span>Record Your Question</span>
           <span className="text-gray-500 font-normal ml-2">(Total: max 90s)</span>
+          <HelpButton>
+            You can record multiple segments (video, audio, or screen). Use video to show, audio to explain, or screen to demonstrate a problem.
+          </HelpButton>
         </label>
         {renderRecorder()}
       </div>
 
       <div>
-        <label htmlFor="question-text" className="block text-sm font-semibold text-gray-900 mb-2">
-          Additional Context <span className="text-gray-500 font-normal">(Optional)</span>
+        <label htmlFor="question-text" className="flex items-center text-sm font-semibold text-gray-900 mb-2">
+          <span>Add More Detail</span>
+          <span className="text-gray-500 font-normal ml-2">(Optional)</span>
+          <HelpButton>
+            Add written context, links, background info, or anything else that helps the expert understand your question better.
+          </HelpButton>
         </label>
         <textarea
           id="question-text"
           value={text}
           onChange={e => setText(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-base"
           rows="4"
           maxLength="5000"
           placeholder="Add any written context, links, or details..."
@@ -824,13 +927,17 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Attach Files <span className="text-gray-500 font-normal">(Optional, max 3)</span>
+        <label className="flex items-center text-sm font-semibold text-gray-900 mb-2">
+          <span>Add Supporting Documents</span>
+          <span className="text-gray-500 font-normal ml-2">(Optional, max 3)</span>
+          <HelpButton>
+            Attach PDFs, images, documents, or any files that provide additional context for your question.
+          </HelpButton>
         </label>
         <input
           type="file"
           id="file-upload"
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition"
+          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition file:touch-manipulation file:min-h-[44px]"
           multiple
           onChange={handleFileChange}
           disabled={attachmentUpload.uploads.length >= 3}
@@ -838,9 +945,9 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
         {attachmentUpload.uploads.length > 0 && (
           <ul className="mt-3 space-y-2">
             {attachmentUpload.uploads.map((upload) => (
-              <li key={upload.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+              <li key={upload.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-700 truncate flex-1">{upload.file.name}</span>
-                <div className="flex items-center gap-2 ml-3">
+                <div className="flex items-center gap-2 ml-3 flex-shrink-0">
                   {upload.uploading && (
                     <span className="text-xs text-indigo-600 flex items-center gap-1">
                       <div className="w-3 h-3 border border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -852,18 +959,18 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                       <span className="text-xs text-red-600">Failed</span>
                       <button
                         onClick={() => attachmentUpload.retryUpload(upload.id)}
-                        className="text-xs text-indigo-600 hover:underline"
+                        className="text-xs text-indigo-600 hover:underline font-semibold touch-manipulation min-h-[32px] px-2"
                       >
                         Retry
                       </button>
                     </>
                   )}
                   {upload.result && (
-                    <span className="text-xs text-green-600">✅ Uploaded</span>
+                    <span className="text-xs text-green-600 font-semibold">✅ Ready</span>
                   )}
                   <button
                     onClick={() => attachmentUpload.removeUpload(upload.id)}
-                    className="ml-2 text-red-500 hover:text-red-700 font-semibold text-sm"
+                    className="ml-2 text-red-500 hover:text-red-700 font-semibold text-sm touch-manipulation min-h-[32px] px-2"
                   >
                     Remove
                   </button>
@@ -874,7 +981,6 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
         )}
       </div>
 
-      {/* 🆕 AI COACH - At the end as final polish step */}
       {expertId && expertProfile && title.trim() && (
         <div className="pt-4 border-t-2 border-gray-200">
           <InlineAICoach
@@ -894,13 +1000,15 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           <button
             onClick={handleProceedToReview}
             disabled={!canProceed}
-            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-none touch-manipulation min-h-[52px]"
           >
             {!title.trim() 
               ? 'Enter a title to continue' 
+              : title.length < 5
+              ? 'Title too short (min 5 characters)'
               : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
               ? 'Uploading...'
-              : 'Continue to Review'}
+              : 'Review & Pay →'}
           </button>
           
           {(segmentUpload.segments.length > 0 || attachmentUpload.uploads.length > 0) && (
@@ -911,8 +1019,11 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
                   Uploading in background...
                 </span>
               ) : (
-                <span className="text-green-600">
-                  ✅ All content uploaded! Ready to proceed.
+                <span className="text-green-600 font-semibold flex items-center justify-center gap-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  All content uploaded and ready!
                 </span>
               )}
             </div>
