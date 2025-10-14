@@ -9,9 +9,9 @@ import QuestionContextBanner from './QuestionContextBanner';
 import ProgressStepper from '@/components/common/ProgressStepper';
 
 const ANSWER_STEPS = [
-  { id: 1, name: 'Review', icon: '📋', description: 'Understand question' },
-  { id: 2, name: 'Record', icon: '🎥', description: 'Create your answer' },
-  { id: 3, name: 'Submit', icon: '✅', description: 'Review & send' }
+  { id: 1, name: 'View Question', icon: '📋', description: 'Review details' },
+  { id: 2, name: 'Answer', icon: '🎥', description: 'Record response' },
+  { id: 3, name: 'Review', icon: '✅', description: 'Submit answer' }
 ];
 
 function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmitted, expertProfile }) {
@@ -629,8 +629,8 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 rounded-t-2xl z-10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1 min-w-0 mr-4">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Answer Question</h2>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Record your answer with video, audio, or screen recording</p>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Create Your Answer</h2>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Record your response with video, audio, or screen recording</p>
                   </div>
                   <button
                     onClick={handleRecorderCancel}
