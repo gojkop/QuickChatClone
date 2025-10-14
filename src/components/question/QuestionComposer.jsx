@@ -6,6 +6,10 @@ import { InlineAICoach } from './InlineAICoach';
 import HelpButton from '@/components/common/HelpButton';
 
 const MAX_RECORDING_SECONDS = 90;
+const MAX_FILE_SIZE_MB = 25; // 25MB per file
+const MAX_TOTAL_FILE_SIZE_MB = 75; // 75MB total across all files
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const MAX_TOTAL_FILE_SIZE_BYTES = MAX_TOTAL_FILE_SIZE_MB * 1024 * 1024;
 
 const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, expertProfile }, ref) => {
   // Form state
@@ -157,11 +161,40 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
 
   const handleFileChange = async (e) => {
     const newFiles = Array.from(e.target.files);
+    
+    // Check number of files
     if (newFiles.length + attachmentUpload.uploads.length > 3) {
       alert('Maximum 3 files allowed.');
+      e.target.value = ''; // Reset input
       return;
     }
 
+    // Check individual file sizes and calculate total
+    const currentTotalSize = attachmentUpload.uploads.reduce((sum, upload) => sum + upload.file.size, 0);
+    let newFilesTotalSize = 0;
+    
+    for (const file of newFiles) {
+      // Check individual file size
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        alert(`File "${file.name}" is too large. Maximum file size is ${MAX_FILE_SIZE_MB}MB. This file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.`);
+        e.target.value = ''; // Reset input
+        return;
+      }
+      newFilesTotalSize += file.size;
+    }
+    
+    // Check total size across all files
+    const totalSize = currentTotalSize + newFilesTotalSize;
+    if (totalSize > MAX_TOTAL_FILE_SIZE_BYTES) {
+      const currentSizeMB = (currentTotalSize / (1024 * 1024)).toFixed(1);
+      const newSizeMB = (newFilesTotalSize / (1024 * 1024)).toFixed(1);
+      const maxSizeMB = MAX_TOTAL_FILE_SIZE_MB;
+      alert(`Total file size would exceed the ${maxSizeMB}MB limit. Current uploads: ${currentSizeMB}MB, New files: ${newSizeMB}MB. Please remove some files or choose smaller files.`);
+      e.target.value = ''; // Reset input
+      return;
+    }
+
+    // All validations passed, proceed with upload
     for (const file of newFiles) {
       try {
         await attachmentUpload.uploadAttachment(file);
@@ -169,6 +202,16 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
         console.error('File upload failed:', error);
       }
     }
+    
+    e.target.value = ''; // Reset input for next selection
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
   const startNewSegment = async (mode) => {
@@ -1070,7 +1113,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       <div>
         <label className="flex items-center text-sm font-semibold text-gray-900 mb-2">
           <span>Add Supporting Documents</span>
-          <span className="text-gray-500 font-normal ml-2">(Optional, max 3)</span>
+          <span className="text-gray-500 font-normal ml-2">(Optional, max 3 files, {MAX_FILE_SIZE_MB}MB per file, {MAX_TOTAL_FILE_SIZE_MB}MB total)</span>
           <HelpButton>
             Attach PDFs, images, documents, or any files that provide additional context for your question.
           </HelpButton>
@@ -1084,41 +1127,54 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
           disabled={attachmentUpload.uploads.length >= 3}
         />
         {attachmentUpload.uploads.length > 0 && (
-          <ul className="mt-3 space-y-2">
-            {attachmentUpload.uploads.map((upload) => (
-              <li key={upload.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-700 truncate flex-1">{upload.file.name}</span>
-                <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                  {upload.uploading && (
-                    <span className="text-xs text-indigo-600 flex items-center gap-1">
-                      <div className="w-3 h-3 border border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                      Uploading...
-                    </span>
-                  )}
-                  {upload.error && (
-                    <>
-                      <span className="text-xs text-red-600">Failed</span>
-                      <button
-                        onClick={() => attachmentUpload.retryUpload(upload.id)}
-                        className="text-xs text-indigo-600 hover:underline font-semibold touch-manipulation min-h-[32px] px-2"
-                      >
-                        Retry
-                      </button>
-                    </>
-                  )}
-                  {upload.result && (
-                    <span className="text-xs text-green-600 font-semibold">✅ Ready</span>
-                  )}
-                  <button
-                    onClick={() => attachmentUpload.removeUpload(upload.id)}
-                    className="ml-2 text-red-500 hover:text-red-700 font-semibold text-sm touch-manipulation min-h-[32px] px-2"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-3">
+            <ul className="space-y-2">
+              {attachmentUpload.uploads.map((upload) => (
+                <li key={upload.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1 min-w-0 mr-3">
+                    <span className="text-sm text-gray-700 truncate block">{upload.file.name}</span>
+                    <span className="text-xs text-gray-500">{formatFileSize(upload.file.size)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {upload.uploading && (
+                      <span className="text-xs text-indigo-600 flex items-center gap-1">
+                        <div className="w-3 h-3 border border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                        Uploading...
+                      </span>
+                    )}
+                    {upload.error && (
+                      <>
+                        <span className="text-xs text-red-600">Failed</span>
+                        <button
+                          onClick={() => attachmentUpload.retryUpload(upload.id)}
+                          className="text-xs text-indigo-600 hover:underline font-semibold touch-manipulation min-h-[32px] px-2"
+                        >
+                          Retry
+                        </button>
+                      </>
+                    )}
+                    {upload.result && (
+                      <span className="text-xs text-green-600 font-semibold">✅ Ready</span>
+                    )}
+                    <button
+                      onClick={() => attachmentUpload.removeUpload(upload.id)}
+                      className="ml-2 text-red-500 hover:text-red-700 font-semibold text-sm touch-manipulation min-h-[32px] px-2"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-2 text-xs text-gray-600 flex items-center justify-between">
+              <span>
+                Total: {formatFileSize(attachmentUpload.uploads.reduce((sum, u) => sum + u.file.size, 0))} / {MAX_TOTAL_FILE_SIZE_MB}MB
+              </span>
+              <span>
+                {3 - attachmentUpload.uploads.length} file{3 - attachmentUpload.uploads.length !== 1 ? 's' : ''} remaining
+              </span>
+            </div>
+          </div>
         )}
       </div>
 
