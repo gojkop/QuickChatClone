@@ -219,9 +219,14 @@ export default async function handler(req, res) {
     // ============================================================
     // PART 1B: Cloudflare → Database (find files not in DB)
     // ============================================================
-    console.log('☁️  Part 1B: Checking Cloudflare for files not in database...');
+    console.log('☁️  Part 1B: TEMPORARILY DISABLED for safety');
+    console.log('⚠️  This check has been disabled after deleting valid files');
+    console.log('⚠️  Needs investigation before re-enabling');
 
     let cloudflareOrphanedCount = 0;
+
+    // TEMPORARILY DISABLED - DO NOT RUN
+    if (false) {
 
     // Build sets of known asset_ids from database
     const knownStreamAssets = new Set();
@@ -238,6 +243,17 @@ export default async function handler(req, res) {
     }
 
     console.log(`Database has ${knownStreamAssets.size} Stream videos and ${knownR2AudioAssets.size} R2 audio files`);
+
+    // SAFETY CHECK: If database is empty or suspiciously small, skip Part 1B
+    if (allMedia.length === 0) {
+      console.error('⚠️  SAFETY CHECK FAILED: No media assets in database!');
+      console.error('⚠️  Skipping Part 1B to prevent accidental deletion of all Cloudflare files');
+      console.error('⚠️  This could indicate a problem with the database query or endpoint');
+      mediaErrorCount++;
+    } else if (knownStreamAssets.size === 0 && knownR2AudioAssets.size === 0) {
+      console.warn('⚠️  WARNING: Database has media records but no asset_ids found');
+      console.warn('⚠️  Skipping Part 1B to be safe');
+    } else {
 
     // Check Cloudflare Stream for orphaned videos
     console.log('📡 Listing all videos in Cloudflare Stream...');
@@ -348,7 +364,10 @@ export default async function handler(req, res) {
       mediaErrorCount++;
     }
 
-    console.log('Part 1B complete:', { deletedFromCloudflare: cloudflareOrphanedCount });
+      console.log('Part 1B complete:', { deletedFromCloudflare: cloudflareOrphanedCount });
+    } // End of safety check else block
+    } // End of TEMPORARILY DISABLED block
+
     console.log('');
     console.log('Part 1 TOTAL:', {
       deletedFromDB: mediaDeletedCount,
