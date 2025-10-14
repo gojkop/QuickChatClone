@@ -82,12 +82,13 @@ export default async function handler(req, res) {
       ]);
     }
 
-    // Send sign-in notification email (non-blocking)
+    // Send sign-in notification email (non-blocking) - only on first signup
     const userEmail = responseData?.email;
     const userName = responseData?.name;
     const firstTime = responseData?.first_time;
 
-    if (userEmail) {
+    if (userEmail && firstTime === true) {
+      console.log('📧 First-time user detected, sending welcome email...');
       // Dynamic import to avoid module loading issues
       import('../lib/zeptomail.js')
         .then(({ sendSignInNotification }) => {
@@ -95,6 +96,8 @@ export default async function handler(req, res) {
         })
         .then(() => console.log('✅ Sign-in notification sent'))
         .catch((err) => console.error('❌ Failed to send sign-in notification:', err.message));
+    } else if (userEmail) {
+      console.log('🔄 Returning user, skipping welcome email');
     }
 
     return res.status(200).json({
