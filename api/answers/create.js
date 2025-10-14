@@ -21,21 +21,33 @@ export default async function handler(req, res) {
     console.log('Question ID:', question_id);
     console.log('User ID:', user_id);
     console.log('📎 Raw attachments received:', JSON.stringify(attachments, null, 2));
+    console.log('📎 Attachments type:', typeof attachments);
+    console.log('📎 Is array?:', Array.isArray(attachments));
+    console.log('📎 Length:', attachments?.length);
 
     // 1. Create answer record in Xano
+    // Use Array.isArray for explicit type checking
+    const attachmentsString = Array.isArray(attachments) && attachments.length > 0
+      ? JSON.stringify(attachments)
+      : null;
+
     const answerPayload = {
       question_id,
       user_id,
       text_response: text_response || null,
       media_asset_id: media_asset_id || null,
-      attachments: attachments && attachments.length > 0 ? JSON.stringify(attachments) : null,
+      attachments: attachmentsString,
     };
 
     console.log('Creating answer in Xano...');
-    console.log('📎 Attachments payload:', attachments ? `Array with ${attachments.length} items` : 'null');
+    console.log('📎 Stringified attachments:', attachmentsString ? attachmentsString.substring(0, 200) + '...' : 'null');
     console.log('📦 Full answer payload:', JSON.stringify(answerPayload, null, 2));
     console.log('Using URL:', `${process.env.XANO_BASE_URL}/answer`);
     console.log('Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+
+    const requestBody = JSON.stringify(answerPayload);
+    console.log('📤 Request body being sent to Xano:', requestBody);
+    console.log('📤 Request body length:', requestBody.length);
 
     const answerResponse = await fetch(
       `${process.env.XANO_BASE_URL}/answer`,
@@ -48,11 +60,11 @@ export default async function handler(req, res) {
             Authorization: req.headers.authorization,
           }),
         },
-        body: JSON.stringify(answerPayload),
+        body: requestBody,
       }
     );
 
-    console.log('Answer response status:', answerResponse.status);
+    console.log('📥 Answer response status:', answerResponse.status);
 
     if (!answerResponse.ok) {
       const errorText = await answerResponse.text();
