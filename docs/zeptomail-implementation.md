@@ -1,6 +1,6 @@
 # ZeptoMail Email Notifications - Implementation Documentation
 
-## Overview
+## Overview 
 
 ZeptoMail has been successfully integrated into QuickChat to send transactional email notifications for four key events:
 1. **Sign In** - Welcome back notification when users sign in via OAuth

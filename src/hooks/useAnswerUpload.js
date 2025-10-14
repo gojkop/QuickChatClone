@@ -147,8 +147,8 @@ export function useAnswerUpload() {
       return [];
     }
 
-    console.log('📎 Starting attachment uploads:', files.map(f => f.name));
-    
+    console.log('📎 Starting attachment uploads:', files.map(f => f.name || 'unknown'));
+
     setUploadState(prev => ({
       ...prev,
       stage: 'attachments',
@@ -158,6 +158,12 @@ export function useAnswerUpload() {
 
     for (const file of files) {
       try {
+        // Validate file is a File or Blob
+        if (!(file instanceof File) && !(file instanceof Blob)) {
+          console.error(`❌ Invalid file object (not File/Blob):`, file);
+          throw new Error(`Invalid file object: ${typeof file}`);
+        }
+
         const base64 = await fileToBase64(file);
 
         const response = await fetch('/api/media/upload-attachment', {
@@ -179,7 +185,7 @@ export function useAnswerUpload() {
 
         const result = await response.json();
         results.push(result.data);
-        
+
         console.log(`✅ Uploaded: ${file.name}`);
       } catch (error) {
         console.error(`Error uploading ${file.name}:`, error);
@@ -187,7 +193,7 @@ export function useAnswerUpload() {
     }
 
     console.log('✅ All attachments uploaded:', results);
-    
+
     setUploadState(prev => ({
       ...prev,
       attachmentResults: results,
@@ -236,8 +242,10 @@ export function useAnswerUpload() {
    */
   const submitAnswer = useCallback(async (answerData, questionId, userId) => {
     console.log('🚀 Starting answer submission for question:', questionId);
-    console.log('Answer data received:', answerData);
-    
+    console.log('📦 Answer data received:', answerData);
+    console.log('📎 Answer data files:', answerData.files);
+    console.log('📎 Answer data attachments:', answerData.attachments);
+
     if (!userId) {
       throw new Error('userId is required for answer submission');
     }
@@ -314,29 +322,47 @@ export function useAnswerUpload() {
       }));
 
       let attachmentResults = [];
-      
+
       // Handle both files array and attachments array
       const filesToProcess = answerData.files || answerData.attachments || [];
-      
+
       if (filesToProcess.length > 0) {
-        console.log('📎 Processing attachments...');
-        
-        // Check if already uploaded (from progressive upload)
-        const firstItem = filesToProcess[0];
-        if (firstItem.uid && firstItem.url) {
-          // Already uploaded - just use the metadata
-          attachmentResults = filesToProcess.map(att => ({
-            uid: att.uid,
-            url: att.url,
-            filename: att.filename || att.name,
-            size: att.size,
-            type: att.type,
-          }));
-          console.log('✅ Using pre-uploaded attachments:', attachmentResults.length);
-        } else {
-          // Not uploaded yet - upload now
-          attachmentResults = await uploadAttachments(filesToProcess);
+        console.log('📎 Processing attachments...', filesToProcess);
+
+        // Separate already-uploaded from files that need uploading
+        const alreadyUploaded = [];
+        const needsUpload = [];
+
+        for (const item of filesToProcess) {
+          if (item.uid && item.url) {
+            // Already uploaded - just use the metadata
+            alreadyUploaded.push({
+              uid: item.uid,
+              url: item.url,
+              filename: item.filename || item.name,
+              size: item.size,
+              type: item.type,
+            });
+          } else if (item instanceof File || item instanceof Blob) {
+            // Actual file that needs uploading
+            needsUpload.push(item);
+          } else {
+            console.warn('⚠️ Invalid attachment item (not File/Blob and not uploaded):', item);
+          }
         }
+
+        console.log(`📎 Found ${alreadyUploaded.length} pre-uploaded, ${needsUpload.length} need upload`);
+
+        // Use pre-uploaded attachments
+        attachmentResults = [...alreadyUploaded];
+
+        // Upload new files if any
+        if (needsUpload.length > 0) {
+          const newlyUploaded = await uploadAttachments(needsUpload);
+          attachmentResults = [...attachmentResults, ...newlyUploaded];
+        }
+
+        console.log('✅ Total attachments ready:', attachmentResults.length);
       }
 
       // Step 3: Create answer record
@@ -346,19 +372,22 @@ export function useAnswerUpload() {
       }));
 
       console.log('💾 Creating answer record...');
+      console.log('📎 attachmentResults before payload:', attachmentResults);
+      console.log('📎 attachmentResults.length:', attachmentResults.length);
 
       // ✅ FIXED: Always include all fields explicitly
+      // ✅ Send attachments as array (backend will stringify) - matches question creation pattern
       const payload = {
         question_id: questionId,
         user_id: userId,
         text_response: answerData.text?.trim() || null,
         media_asset_id: mediaAssetId || null,
-        attachments: attachmentResults.length > 0 
-          ? JSON.stringify(attachmentResults) 
-          : null,
+        attachments: attachmentResults.length > 0 ? attachmentResults : null,
       };
 
-      console.log('Sending to /api/answers/create endpoint:', payload);
+      console.log('📤 Payload being sent to /api/answers/create:', payload);
+      console.log('📎 Attachments in payload:', payload.attachments);
+      console.log('📎 Attachments count:', attachmentResults.length, 'items');
 
       // Call consolidated endpoint that creates answer + sends email
       const response = await fetch('/api/answers/create', {
