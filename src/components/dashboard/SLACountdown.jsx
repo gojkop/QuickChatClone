@@ -93,28 +93,29 @@ function SLACountdown({ question, expert, className = '' }) {
 
   return (
     <div className={`bg-gradient-to-r ${config.bg} border ${config.border} rounded-lg overflow-hidden ${className}`}>
-      {/* Mobile-optimized layout */}
-      <div className="p-3 sm:p-4">
-        <div className="flex items-center gap-3">
-          {/* Icon - smaller on mobile */}
-          <div className={`w-10 h-10 sm:w-12 sm:h-12 ${config.iconBg} rounded-full flex items-center justify-center flex-shrink-0`}>
-            <span className="text-xl sm:text-2xl">{config.icon}</span>
+      {/* SUPER COMPRESSED for mobile, normal for desktop */}
+      <div className="p-2 sm:p-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Icon - much smaller on mobile */}
+          <div className={`w-8 h-8 sm:w-12 sm:h-12 ${config.iconBg} rounded-full flex items-center justify-center flex-shrink-0`}>
+            <span className="text-base sm:text-2xl">{config.icon}</span>
           </div>
 
-          {/* Content - compact on mobile */}
+          {/* Content - very compact on mobile */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2 mb-1">
-              <h4 className={`text-xs sm:text-sm font-bold ${config.textColor}`}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className={`text-[11px] sm:text-sm font-bold ${config.textColor} leading-tight`}>
                 {timeLeft.isOverdue ? 'SLA Overdue' : 'Answer Due'}
               </h4>
               {!timeLeft.isOverdue && (
-                <span className={`text-xs ${config.timeColor} font-semibold`}>
-                  in {timeLeft.hours}h {timeLeft.minutes}m
+                <span className={`text-[11px] sm:text-xs ${config.timeColor} font-semibold whitespace-nowrap`}>
+                  {timeLeft.hours}h {timeLeft.minutes}m
                 </span>
               )}
             </div>
             
-            <p className={`text-xs ${config.timeColor} leading-snug`}>
+            {/* Hide on mobile, show on desktop */}
+            <p className={`hidden sm:block text-xs ${config.timeColor} leading-snug mt-1`}>
               {timeLeft.isOverdue ? (
                 'Please respond as soon as possible'
               ) : status === 'urgent' ? (

@@ -9,9 +9,37 @@ import QuestionContextBanner from './QuestionContextBanner';
 import ProgressStepper from '@/components/common/ProgressStepper';
 
 const ANSWER_STEPS = [
-  { id: 1, name: 'View Question', icon: '📋', description: 'Review details' },
-  { id: 2, name: 'Answer', icon: '🎥', description: 'Record response' },
-  { id: 3, name: 'Review', icon: '✅', description: 'Submit answer' }
+  { 
+    id: 1, 
+    name: 'View Question', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      </svg>
+    ),
+    description: 'Review details' 
+  },
+  { 
+    id: 2, 
+    name: 'Answer', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+    ),
+    description: 'Record response' 
+  },
+  { 
+    id: 3, 
+    name: 'Review', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    description: 'Submit answer' 
+  }
 ];
 
 function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmitted, expertProfile }) {
@@ -201,12 +229,12 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
           onClick={onClose}
         />
 
-        <div className="flex min-h-full items-end sm:items-center justify-center">
-          {/* MOBILE FIX: Removed overflow-y-auto from outer container, added to scrollable content area */}
-          <div className="relative bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-4xl h-screen sm:h-auto sm:max-h-[90vh] flex flex-col">
+        <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
+          {/* MOBILE FIX: Strict constraints to prevent horizontal scroll */}
+          <div className="relative bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-4xl h-screen sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden">
             
             {/* Sticky Header */}
-            <div className="flex-shrink-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sm:rounded-t-2xl">
+            <div className="flex-shrink-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sm:rounded-t-2xl z-20">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex-1 min-w-0 mr-4">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Question Details</h2>
@@ -231,9 +259,9 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               )}
             </div>
 
-            {/* MOBILE FIX: Scrollable Content Area - now with overflow-y-auto */}
-            <div className="flex-1 overflow-y-auto overscroll-contain">
-              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            {/* MOBILE FIX: Scrollable Content Area with strict width constraint */}
+            <div className="flex-1 overflow-y-auto overscroll-contain overflow-x-hidden">
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-full">{/* ADDED max-w-full */}
                 
                 {/* Question Context Banner - Compressed on mobile */}
                 {isPending && (
@@ -596,9 +624,9 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               </div>
             </div>
 
-            {/* MOBILE FIX: Sticky Footer for CTA */}
+            {/* MOBILE FIX: Sticky Footer for CTA - properly positioned from start */}
             {isPending && (
-              <div className="flex-shrink-0 bg-white border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sm:rounded-b-2xl">
+              <div className="flex-shrink-0 bg-white border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sm:rounded-b-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
                 <button
                   onClick={handleStartAnswer}
                   className="w-full py-3 sm:py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 touch-manipulation min-h-[48px] sm:min-h-[52px]"
@@ -619,11 +647,11 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
             onClick={handleRecorderCancel}
           />
 
-          <div className="flex min-h-full items-end sm:items-center justify-center">
-            {/* MOBILE FIX: Consistent structure with question detail modal */}
-            <div className="relative bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-5xl h-screen sm:h-auto sm:max-h-[90vh] flex flex-col">
+          <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
+            {/* MOBILE FIX: Strict constraints + proper sticky footer */}
+            <div className="relative bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-5xl h-screen sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden">
               
-              <div className="flex-shrink-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sm:rounded-t-2xl">
+              <div className="flex-shrink-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sm:rounded-t-2xl z-20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1 min-w-0 mr-4">
                     <h2 className="text-lg sm:text-xl font-bold text-gray-900">Create Your Answer</h2>
@@ -642,9 +670,9 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 <ProgressStepper currentStep={currentStep} steps={ANSWER_STEPS} />
               </div>
 
-              {/* MOBILE FIX: Scrollable content area */}
-              <div className="flex-1 overflow-y-auto overscroll-contain">
-                <div className="p-4 sm:p-6">
+              {/* MOBILE FIX: Scrollable content with strict constraints */}
+              <div className="flex-1 overflow-y-auto overscroll-contain overflow-x-hidden">
+                <div className="p-4 sm:p-6 max-w-full">{/* ADDED max-w-full */}
                   <AnswerRecorder
                     question={question}
                     expert={expertProfile}
@@ -671,4 +699,4 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   );
 }
 
-export default QuestionDetailModal;
+export default QuestionDetailModal; 

@@ -1,14 +1,41 @@
 // src/components/common/ProgressStepper.jsx
-// UPDATED - Now accepts steps as prop for reusability
+// UPDATED - Modern icon design with SVG icons
 
 import React from 'react';
 
 const ProgressStepper = ({ currentStep, steps }) => {
-  // Default to Asker journey steps if none provided (backward compatible)
+  // Default to Asker journey steps if none provided
   const defaultSteps = [
-    { id: 1, name: 'Compose', icon: '✏️', description: 'Record your question' },
-    { id: 2, name: 'Review', icon: '👀', description: 'Check everything' },
-    { id: 3, name: 'Payment', icon: '💳', description: 'Complete & send' }
+    { 
+      id: 1, 
+      name: 'Compose', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+      ),
+      description: 'Record your question' 
+    },
+    { 
+      id: 2, 
+      name: 'Review', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      description: 'Check everything' 
+    },
+    { 
+      id: 3, 
+      name: 'Payment', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+      ),
+      description: 'Complete & send' 
+    }
   ];
   
   const progressSteps = steps || defaultSteps;
@@ -34,7 +61,7 @@ const ProgressStepper = ({ currentStep, steps }) => {
         </div>
       </div>
 
-      {/* Desktop view - full stepper */}
+      {/* Desktop view - full stepper with modern icons */}
       <div className="hidden sm:flex items-center justify-center">
         {progressSteps.map((step, idx) => (
           <React.Fragment key={step.id}>
@@ -49,7 +76,9 @@ const ProgressStepper = ({ currentStep, steps }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
-                  <span className="text-xl">{step.icon}</span>
+                  <div className={currentStep >= step.id ? 'text-white' : 'text-gray-400'}>
+                    {step.icon}
+                  </div>
                 )}
               </div>
               <div className="mt-2 text-center">
