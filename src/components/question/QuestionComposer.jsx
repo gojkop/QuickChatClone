@@ -6,8 +6,8 @@ import { InlineAICoach } from './InlineAICoach';
 import HelpButton from '@/components/common/HelpButton';
 
 const MAX_RECORDING_SECONDS = 90;
-const MAX_FILE_SIZE_MB = 25; // 25MB per file
-const MAX_TOTAL_FILE_SIZE_MB = 75; // 75MB total across all files
+const MAX_FILE_SIZE_MB = 5; // 25MB per file
+const MAX_TOTAL_FILE_SIZE_MB = 15; // 75MB total across all files
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const MAX_TOTAL_FILE_SIZE_BYTES = MAX_TOTAL_FILE_SIZE_MB * 1024 * 1024;
 
