@@ -14,47 +14,33 @@ All internal endpoints:
 
 ### `GET /internal/media`
 
-Unified endpoint to fetch media records for cleanup operations.
+Unified endpoint to fetch all media records for cleanup operations. Returns both media assets and avatar URLs in a single call.
 
 **Query Parameters:**
 - `x_api_key` (required) - Internal API key for authentication
-- `type` (required) - Type of media to fetch: `assets` or `avatars`
-
-**Type: `assets`**
-
-Returns all records from the `media_assets` table.
 
 **Response:**
 ```json
-[
-  {
-    "id": 123,
-    "asset_id": "abc123",
-    "provider": "cloudflare_stream",
-    "owner_type": "question",
-    "owner_id": 456,
-    "created_at": "2025-10-14T10:00:00.000Z",
-    ...
-  }
-]
+{
+  "media": [
+    {
+      "id": 123,
+      "asset_id": "abc123",
+      "provider": "cloudflare_stream",
+      "owner_type": "question",
+      "owner_id": 456,
+      "created_at": "2025-10-14T10:00:00.000Z"
+    }
+  ],
+  "avatars": [
+    {
+      "avatar_url": "https://pub-xxx.r2.dev/profiles/123456-abc.webp"
+    }
+  ]
+}
 ```
 
-**Used by:** `/api/cron/cleanup-orphaned-media.js` (Part 1)
-
-**Type: `avatars`**
-
-Returns all non-null avatar URLs from the `expert_profile` table.
-
-**Response:**
-```json
-[
-  {
-    "avatar_url": "https://pub-xxx.r2.dev/profiles/123456-abc.webp"
-  }
-]
-```
-
-**Used by:** `/api/cron/cleanup-orphaned-media.js` (Part 2)
+**Used by:** `/api/cron/cleanup-orphaned-media.js`
 
 ---
 
@@ -101,7 +87,6 @@ The unified cleanup script `/api/cron/cleanup-orphaned-media.js` runs daily at 3
 
 1. **Get Query Parameters**
    - `x_api_key` (text)
-   - `type` (text)
 
 2. **Authenticate**
    ```javascript
@@ -112,18 +97,17 @@ The unified cleanup script `/api/cron/cleanup-orphaned-media.js` runs daily at 3
    }
    ```
 
-3. **Branch on type parameter**
+3. **Query Records**
+   - Variable `all_media`: Query all records from `media_assets` table
+   - Variable `all_avatars`: Query all records from `expert_profile` table where `avatar_url IS NOT NULL`
 
-   **If type === "assets":**
-   - Query all records from `media_assets` table
-   - Return all records
-
-   **If type === "avatars":**
-   - Query all records from `expert_profile` table where `avatar_url IS NOT NULL`
-   - Return records (or map to return only avatar_url field)
-
-   **Else:**
-   - Return error: "Invalid type parameter. Must be 'assets' or 'avatars'"
+4. **Return Combined Response**
+   ```javascript
+   return {
+     media: all_media,
+     avatars: all_avatars
+   }
+   ```
 
 ### 2. Create DELETE /internal/media_asset
 
@@ -155,12 +139,13 @@ The unified cleanup script `/api/cron/cleanup-orphaned-media.js` runs daily at 3
 Test the endpoints using curl:
 
 ```bash
-# Test assets endpoint
-curl "https://your-xano-url/api:BQW1GS7L/internal/media?x_api_key=YOUR_KEY&type=assets"
-
-# Test avatars endpoint
-curl "https://your-xano-url/api:BQW1GS7L/internal/media?x_api_key=YOUR_KEY&type=avatars"
+# Test media endpoint (returns both media and avatars)
+curl "https://your-xano-url/api:BQW1GS7L/internal/media?x_api_key=YOUR_KEY"
 
 # Test delete endpoint
 curl -X DELETE "https://your-xano-url/api:BQW1GS7L/internal/media_asset?x_api_key=YOUR_KEY&media_asset_id=123"
+
+# Test cleanup script
+curl -X POST "https://quickchat-dev.vercel.app/api/cron/cleanup-orphaned-media" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```

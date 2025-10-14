@@ -65,22 +65,15 @@ export default async function handler(req, res) {
     });
 
     // ============================================================
-    // PART 1: Clean up orphaned media_assets
+    // Fetch all media data from Xano (one call for everything)
     // ============================================================
-    console.log('📦 PART 1: Cleaning up orphaned media assets...');
-
-    // Calculate cutoff time (48 hours ago)
-    const cutoffDate = new Date(Date.now() - (48 * 60 * 60 * 1000));
-
-    // Get all media_assets from Xano via internal endpoint
-    // Note: Uses Public API group endpoint that accepts internal API key
     const XANO_PUBLIC_API_URL = process.env.XANO_PUBLIC_API_URL;
     const internalEndpoint = `${XANO_PUBLIC_API_URL}/internal/media`;
 
-    console.log('📡 Fetching media assets from:', internalEndpoint);
+    console.log('📡 Fetching all media data from:', internalEndpoint);
     console.log('📡 Using API Key:', XANO_INTERNAL_API_KEY ? 'Present' : 'Missing');
 
-    const mediaResponse = await fetch(`${internalEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}&type=assets`, {
+    const mediaResponse = await fetch(`${internalEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -92,10 +85,23 @@ export default async function handler(req, res) {
     if (!mediaResponse.ok) {
       const errorText = await mediaResponse.text();
       console.error('❌ Xano error response:', errorText);
-      throw new Error(`Failed to fetch media assets from Xano: ${mediaResponse.status} - ${errorText}`);
+      throw new Error(`Failed to fetch media data from Xano: ${mediaResponse.status} - ${errorText}`);
     }
 
-    const allMedia = await mediaResponse.json();
+    const mediaData = await mediaResponse.json();
+    const allMedia = mediaData.media || [];
+    const allAvatars = mediaData.avatars || [];
+
+    console.log(`Found ${allMedia.length} media assets and ${allAvatars.length} avatar URLs`);
+    console.log('');
+
+    // ============================================================
+    // PART 1: Clean up orphaned media_assets
+    // ============================================================
+    console.log('📦 PART 1: Cleaning up orphaned media assets...');
+
+    // Calculate cutoff time (48 hours ago)
+    const cutoffDate = new Date(Date.now() - (48 * 60 * 60 * 1000));
     let mediaDeletedCount = 0;
     let mediaErrorCount = 0;
 
@@ -220,29 +226,12 @@ export default async function handler(req, res) {
     console.log(`Found ${r2Files.length} profile pictures in R2`);
 
     if (r2Files.length > 0) {
-      // Step 2: Get all avatar URLs from Xano
-      console.log('📡 Fetching avatar URLs from Xano...');
+      // Step 2: Build set of active files from avatar URLs (already fetched)
+      console.log(`Processing ${allAvatars.length} avatar URLs from Xano...`);
 
-      const avatarsResponse = await fetch(`${internalEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}&type=avatars`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!avatarsResponse.ok) {
-        const errorText = await avatarsResponse.text();
-        console.error('❌ Failed to fetch avatar URLs:', errorText);
-        throw new Error(`Failed to fetch avatar URLs from Xano: ${avatarsResponse.status}`);
-      }
-
-      const avatarRecords = await avatarsResponse.json();
-      console.log(`Found ${avatarRecords.length} avatar URLs in Xano`);
-
-      // Step 3: Build set of active files
       const activeFiles = new Set();
 
-      for (const record of avatarRecords) {
+      for (const record of allAvatars) {
         if (record.avatar_url && record.avatar_url.includes('/profiles/')) {
           // Extract the path after the domain
           // URL: https://pub-xxx.r2.dev/profiles/123456-abc.webp
@@ -257,7 +246,7 @@ export default async function handler(req, res) {
 
       console.log(`Extracted ${activeFiles.size} active profile picture paths`);
 
-      // Step 4: Compare and delete orphaned profile pictures
+      // Step 3: Compare and delete orphaned profile pictures
       for (const file of r2Files) {
         const key = file.Key;
 
