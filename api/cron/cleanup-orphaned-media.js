@@ -40,6 +40,7 @@ export default async function handler(req, res) {
   }
 
   const XANO_BASE_URL = process.env.XANO_BASE_URL;
+  const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
   const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
   const CLOUDFLARE_STREAM_API_TOKEN = process.env.CLOUDFLARE_STREAM_API_TOKEN;
   const CLOUDFLARE_R2_ACCESS_KEY = process.env.CLOUDFLARE_R2_ACCESS_KEY;
@@ -48,14 +49,18 @@ export default async function handler(req, res) {
 
   try {
     console.log('Starting orphaned media cleanup...');
-    
+
     // Calculate cutoff time (48 hours ago)
     const cutoffDate = new Date(Date.now() - (48 * 60 * 60 * 1000));
-    
+
     // Get all media_assets from Xano older than 48 hours
+    // Note: media_asset endpoint requires internal API key for authentication
     const mediaResponse = await fetch(`${XANO_BASE_URL}/media_asset`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': XANO_INTERNAL_API_KEY,
+      },
     });
 
     if (!mediaResponse.ok) {
@@ -93,13 +98,17 @@ export default async function handler(req, res) {
         isOrphaned = true;
       } else if (media.owner_type === 'question') {
         // Verify question still exists
-        const questionResponse = await fetch(`${XANO_BASE_URL}/question/${media.owner_id}`);
+        const questionResponse = await fetch(`${XANO_BASE_URL}/question/${media.owner_id}`, {
+          headers: { 'X-API-Key': XANO_INTERNAL_API_KEY },
+        });
         if (!questionResponse.ok) {
           isOrphaned = true; // Question doesn't exist
         }
       } else if (media.owner_type === 'answer') {
         // Verify answer still exists
-        const answerResponse = await fetch(`${XANO_BASE_URL}/answer/${media.owner_id}`);
+        const answerResponse = await fetch(`${XANO_BASE_URL}/answer/${media.owner_id}`, {
+          headers: { 'X-API-Key': XANO_INTERNAL_API_KEY },
+        });
         if (!answerResponse.ok) {
           isOrphaned = true; // Answer doesn't exist
         }
@@ -150,6 +159,9 @@ export default async function handler(req, res) {
         // 2. Delete from Xano database
         const xanoDeleteResponse = await fetch(`${XANO_BASE_URL}/media_asset/${media.id}`, {
           method: 'DELETE',
+          headers: {
+            'X-API-Key': XANO_INTERNAL_API_KEY,
+          },
         });
 
         if (xanoDeleteResponse.ok) {
