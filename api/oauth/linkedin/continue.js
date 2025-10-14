@@ -178,23 +178,22 @@ export default async function handler(req, res) {
     // Handle both boolean true and string "true"
     const isFirstTime = firstTime === true || firstTime === 'true' || firstTime === 1;
 
+    // Send sign-in notification email for first-time users
+    // IMPORTANT: We await this to ensure it completes before the serverless function terminates
     if (userInfo.email && isFirstTime) {
       console.log('📧 First-time user detected, sending welcome email...');
-      // Dynamic import to avoid module loading issues
-      // Note: path is relative to /api/oauth/linkedin/, so ../../lib goes to /api/lib
-      import('../../lib/zeptomail.js')
-        .then(({ sendSignInNotification }) => {
-          console.log('📧 ZeptoMail module loaded, calling sendSignInNotification...');
-          return sendSignInNotification({ email: userInfo.email, name: userInfo.name });
-        })
-        .then(() => {
-          console.log('✅ Sign-in notification sent successfully');
-        })
-        .catch((err) => {
-          console.error('❌ Failed to send sign-in notification:', err);
-          console.error('❌ Error message:', err.message);
-          console.error('❌ Error stack:', err.stack);
-        });
+      try {
+        // Dynamic import to avoid module loading issues
+        // Note: path is relative to /api/oauth/linkedin/, so ../../lib goes to /api/lib
+        const { sendSignInNotification } = await import('../../lib/zeptomail.js');
+        console.log('📧 ZeptoMail module loaded, calling sendSignInNotification...');
+        await sendSignInNotification({ email: userInfo.email, name: userInfo.name });
+        console.log('✅ Sign-in notification sent successfully');
+      } catch (err) {
+        console.error('❌ Failed to send sign-in notification:', err);
+        console.error('❌ Error message:', err.message);
+        // Don't fail the OAuth flow if email fails
+      }
     } else if (userInfo.email) {
       console.log('🔄 Returning user, skipping welcome email (first_time:', firstTime, ')');
     }
