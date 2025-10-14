@@ -27,10 +27,11 @@ export default async function handler(req, res) {
       user_id,
       text_response: text_response || null,
       media_asset_id: media_asset_id || null,
-      attachments: attachments || null,
+      attachments: attachments && attachments.length > 0 ? JSON.stringify(attachments) : null,
     };
 
     console.log('Creating answer in Xano...');
+    console.log('Attachments payload:', attachments ? `Array with ${attachments.length} items` : 'null');
     console.log('Using URL:', `${process.env.XANO_BASE_URL}/answer`);
     console.log('Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
 
