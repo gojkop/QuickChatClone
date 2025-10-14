@@ -229,10 +229,49 @@ export default async function handler(req, res) {
 
     for (const media of allMedia) {
       if (media.asset_id) {
+        // Add top-level asset_id
         if (media.provider === 'cloudflare_stream') {
           knownStreamAssets.add(media.asset_id);
         } else if (media.provider === 'cloudflare_r2') {
           knownR2AudioAssets.add(media.asset_id);
+        }
+
+        // Parse metadata to find audio segments
+        if (media.metadata) {
+          try {
+            const metadata = typeof media.metadata === 'string'
+              ? JSON.parse(media.metadata)
+              : media.metadata;
+
+            // Check if this has segments array (multi-segment recordings)
+            if (metadata.segments && Array.isArray(metadata.segments)) {
+              for (const segment of metadata.segments) {
+                if (segment.mode === 'audio' && segment.uid) {
+                  // Extract filename from playback_url
+                  // URL: https://pub-xxx.r2.dev/audio/1760443457854-f802f4ebfb0c6498d6208867a7badcbe.webm
+                  // Want: audio/1760443457854-f802f4ebfb0c6498d6208867a7badcbe.webm
+                  if (segment.playback_url && segment.playback_url.includes('/audio/')) {
+                    const urlParts = segment.playback_url.split('/audio/');
+                    if (urlParts.length === 2) {
+                      const audioPath = `audio/${urlParts[1]}`;
+                      knownR2AudioAssets.add(audioPath);
+                    }
+                  }
+                }
+              }
+            }
+          } catch (parseError) {
+            console.warn(`⚠️  Failed to parse metadata for media ${media.id}:`, parseError.message);
+          }
+        }
+      }
+
+      // Also check if URL points to R2 audio (for records with wrong provider)
+      if (media.url && media.url.includes('/audio/')) {
+        const urlParts = media.url.split('/audio/');
+        if (urlParts.length === 2) {
+          const audioPath = `audio/${urlParts[1]}`;
+          knownR2AudioAssets.add(audioPath);
         }
       }
     }
