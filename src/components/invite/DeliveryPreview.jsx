@@ -95,13 +95,13 @@ Thanks for considering!`;
           {getDeliveryIcon()}
         </div>
         <div className="flex-1">
-          <h3 className="font-bold text-indigo-900 mb-1">{delivery.title}</h3>
-          <p className="text-sm text-indigo-700">{delivery.description}</p>
+          <h3 className="font-bold text-gray-900 mb-1">{delivery.title}</h3>
+          <p className="text-sm text-gray-700">{delivery.description}</p>
         </div>
       </div>
 
       {delivery.action === 'copy' && (
-        <div className="mt-4 bg-white rounded-lg border border-indigo-200 overflow-hidden">
+        <div className="mt-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="p-4 bg-gray-50 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -140,8 +140,8 @@ Thanks for considering!`;
       {delivery.action === 'automatic' && (
         <div className="mt-4 flex items-center gap-2 text-sm">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-          <span className="text-indigo-700 font-medium">
-            Question will be sent to: <span className="font-bold">{expertInfo.identifier}</span>
+          <span className="text-gray-700 font-medium">
+            Question will be sent to: <span className="font-bold text-gray-900">{expertInfo.identifier}</span>
           </span>
         </div>
       )}
