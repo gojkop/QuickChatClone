@@ -53,16 +53,18 @@ export default async function handler(req, res) {
     // Calculate cutoff time (48 hours ago)
     const cutoffDate = new Date(Date.now() - (48 * 60 * 60 * 1000));
 
-    // Get all media_assets from Xano older than 48 hours
-    // Note: media_asset endpoint requires internal API key for authentication
-    console.log('📡 Fetching media assets from:', `${XANO_BASE_URL}/media_asset`);
+    // Get all media_assets from Xano via internal endpoint
+    // Note: Uses Public API group endpoint that accepts internal API key
+    const XANO_PUBLIC_API_URL = process.env.XANO_PUBLIC_API_URL;
+    const internalEndpoint = `${XANO_PUBLIC_API_URL}/internal/media_assets`;
+
+    console.log('📡 Fetching media assets from:', internalEndpoint);
     console.log('📡 Using API Key:', XANO_INTERNAL_API_KEY ? 'Present' : 'Missing');
 
-    const mediaResponse = await fetch(`${XANO_BASE_URL}/media_asset`, {
+    const mediaResponse = await fetch(`${internalEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': XANO_INTERNAL_API_KEY,
       },
     });
 
@@ -163,12 +165,10 @@ export default async function handler(req, res) {
           }
         }
 
-        // 2. Delete from Xano database
-        const xanoDeleteResponse = await fetch(`${XANO_BASE_URL}/media_asset/${media.id}`, {
+        // 2. Delete from Xano database via internal endpoint
+        const xanoDeleteEndpoint = `${XANO_PUBLIC_API_URL}/internal/media_asset`;
+        const xanoDeleteResponse = await fetch(`${xanoDeleteEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}&media_asset_id=${media.id}`, {
           method: 'DELETE',
-          headers: {
-            'X-API-Key': XANO_INTERNAL_API_KEY,
-          },
         });
 
         if (xanoDeleteResponse.ok) {
