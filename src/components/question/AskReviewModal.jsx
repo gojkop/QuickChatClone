@@ -1,5 +1,6 @@
 // src/components/question/AskReviewModal.jsx - IMPROVED VERSION
 import React, { useState } from 'react';
+import ProgressStepper from '@/components/common/ProgressStepper';
 
 const formatPrice = (cents, currency = 'USD') => {
   const symbols = { USD: '$', EUR: '€', GBP: '£' };
@@ -61,8 +62,12 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-surface rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+             {/* Progress Stepper at top */}
+      <div className="pt-6 px-4 sm:px-6">
+        <ProgressStepper currentStep={2} />
+      </div>
           {/* Header */}
-          <div className="sticky top-0 bg-surface border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+  <div className="bg-surface border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
             <h2 className="text-xl sm:text-2xl font-bold text-ink">Review Your Question</h2>
             <button
               onClick={onClose}
