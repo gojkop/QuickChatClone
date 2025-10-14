@@ -1,10 +1,16 @@
 // api/lib/email-templates/sign-in.js
-// Email template for sign-in notification
+// Email template for welcome notification (first-time sign-in)
+
+import { getWelcomeTip } from './tip-bank.js';
 
 export function getSignInTemplate(user) {
   const { name, email, location } = user;
   
-  const subject = `Welcome back to mindPick`;
+  // 🎯 Get random welcome tip
+  const welcomeTip = getWelcomeTip();
+  
+  const firstName = name ? name.split(' ')[0] : 'there';
+  const subject = `Welcome to mindPick, ${firstName}!`;
 
   const htmlBody = `
     <!DOCTYPE html>
@@ -17,7 +23,7 @@ export function getSignInTemplate(user) {
     <body style="margin: 0; padding: 0; background-color: #F9FAFB;">
       <!-- Preheader -->
       <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0; max-width: 0; opacity: 0; overflow: hidden;">
-        Successful sign-in at ${new Date().toLocaleString()} • Secure your account if this wasn't you
+        Welcome to mindPick! Your expert profile is ready to set up. Start sharing your expertise and earning today.
       </div>
       
       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #F9FAFB; padding: 40px 20px;">
@@ -37,18 +43,18 @@ export function getSignInTemplate(user) {
               <!-- Hero Section -->
               <tr>
                 <td>
-                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
                     <tr>
                       <td style="padding: 40px 32px; text-align: center;">
-                        <!-- Icon -->
-                        <div style="width: 64px; height: 64px; background: #10B981; border-radius: 50%; margin: 0 auto 24px; line-height: 64px; font-size: 32px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
-                          👋
+                        <!-- Welcome Icon -->
+                        <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border-radius: 50%; margin: 0 auto 24px; line-height: 64px; font-size: 32px;">
+                          🚀
                         </div>
-                        <h1 style="color: #111827; font-size: 32px; font-weight: 800; line-height: 1.2; margin: 0 0 12px 0;">
-                          Welcome back${name ? ', ' + name.split(' ')[0] : ''}
+                        <h1 style="color: white; font-size: 32px; font-weight: 800; line-height: 1.2; margin: 0 0 12px 0;">
+                          Welcome to mindPick!
                         </h1>
-                        <p style="color: #4B5563; font-size: 18px; margin: 0;">
-                          You've successfully signed in to your account
+                        <p style="color: rgba(255,255,255,0.95); font-size: 18px; margin: 0;">
+                          Your expert profile is ready. Let's get you set up.
                         </p>
                       </td>
                     </tr>
@@ -56,21 +62,58 @@ export function getSignInTemplate(user) {
                 </td>
               </tr>
               
-              <!-- Sign-in Details Card -->
+              <!-- Welcome Content Card -->
               <tr>
                 <td style="padding-top: 32px;">
                   <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
                     <tr>
                       <td style="padding: 32px;">
                         
-                        <!-- Details -->
-                        <div style="padding: 12px 0; border-bottom: 1px solid #E5E7EB;">
-                          <p style="font-size: 12px; color: #6B7280; margin: 0 0 4px 0;">Account</p>
-                          <p style="font-size: 16px; font-weight: 600; color: #111827; margin: 0;">${email}</p>
+                        <!-- What is mindPick -->
+                        <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 16px 0;">
+                          What is mindPick?
+                        </h2>
+                        <p style="font-size: 16px; color: #4B5563; line-height: 1.6; margin: 0 0 24px 0;">
+                          mindPick connects experts like you with people who need your advice. When someone has a question only you can answer, they pay to ask—and you earn money sharing your expertise through quick video or audio responses.
+                        </p>
+                        
+                        <!-- How It Works -->
+                        <div style="background: #F9FAFB; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                          <p style="font-size: 14px; font-weight: 600; color: #111827; margin: 0 0 12px 0;">
+                            How it works:
+                          </p>
+                          <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                            <tr>
+                              <td style="padding: 8px 0; font-size: 14px; color: #4B5563;">
+                                <span style="color: #4F46E5; margin-right: 8px; font-weight: 600;">1.</span> Complete your profile and set your rate
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; font-size: 14px; color: #4B5563;">
+                                <span style="color: #4F46E5; margin-right: 8px; font-weight: 600;">2.</span> Receive paid questions in your inbox
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; font-size: 14px; color: #4B5563;">
+                                <span style="color: #4F46E5; margin-right: 8px; font-weight: 600;">3.</span> Record your answer (video or audio)
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; font-size: 14px; color: #4B5563;">
+                                <span style="color: #4F46E5; margin-right: 8px; font-weight: 600;">4.</span> Get paid directly to your account
+                              </td>
+                            </tr>
+                          </table>
                         </div>
-                        <div style="padding: 12px 0;">
-                          <p style="font-size: 12px; color: #6B7280; margin: 0 0 4px 0;">Time</p>
-                          <p style="font-size: 16px; font-weight: 600; color: #111827; margin: 0;">${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                        
+                        <!-- 🎯 DYNAMIC WELCOME TIP -->
+                        <div style="background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%); border-radius: 8px; padding: 16px 20px;">
+                          <p style="font-size: 13px; font-weight: 700; color: #1E40AF; margin: 0 0 6px 0;">
+                            💡 GETTING STARTED TIP
+                          </p>
+                          <p style="font-size: 14px; color: #1E3A8A; margin: 0; line-height: 1.5;">
+                            ${welcomeTip}
+                          </p>
                         </div>
                         
                       </td>
@@ -79,43 +122,39 @@ export function getSignInTemplate(user) {
                 </td>
               </tr>
               
-              <!-- Quick Actions -->
+              <!-- ✅ TWO-BUTTON CTA -->
               <tr>
                 <td style="padding-top: 32px;">
-                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border-radius: 12px; padding: 24px; border: 2px solid #C7D2FE;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
                     <tr>
-                      <td>
-                        <p style="font-size: 14px; font-weight: 700; color: #3730A3; margin: 0 0 16px 0;">
-                          🚀 Quick actions:
-                        </p>
-                        <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                          <tr>
-                            <td style="padding: 0 4px 0 0; width: 50%;">
-                              <a href="https://mindpick.me/dashboard" style="display: block; text-decoration: none; padding: 12px; background: white; border: 2px solid #A5B4FC; border-radius: 8px; text-align: center; font-size: 14px; font-weight: 600; color: #4F46E5;">
-                                View Dashboard
-                              </a>
-                            </td>
-                            <td style="padding: 0 0 0 4px; width: 50%;">
-                              <a href="https://mindpick.me/profile/setup" style="display: block; text-decoration: none; padding: 12px; background: white; border: 2px solid #A5B4FC; border-radius: 8px; text-align: center; font-size: 14px; font-weight: 600; color: #4F46E5;">
-                                Profile Setup
-                              </a>
-                            </td>
-                          </tr>
-                        </table>
+                      <!-- Complete Profile Button (Primary) -->
+                      <td style="width: 50%; padding-right: 8px;">
+                        <a href="https://mindpick.me/profile/setup" style="display: block; background: #4F46E5; color: white; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: 700; font-size: 16px; text-align: center; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);">
+                          Complete Your Profile →
+                        </a>
+                      </td>
+                      <!-- Explore Dashboard Button (Secondary) -->
+                      <td style="width: 50%; padding-left: 8px;">
+                        <a href="https://mindpick.me/expert" style="display: block; background: white; color: #4F46E5; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: 700; font-size: 16px; text-align: center; border: 2px solid #4F46E5;">
+                          Explore Dashboard
+                        </a>
                       </td>
                     </tr>
                   </table>
                 </td>
               </tr>
               
-              <!-- Security Alert -->
+              <!-- Next Steps -->
               <tr>
-                <td style="padding-top: 24px;">
-                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #FEF2F2; border-left: 3px solid #EF4444; border-radius: 8px; padding: 16px 20px;">
+                <td style="padding-top: 32px;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #FFFBEB; border-left: 3px solid #F59E0B; border-radius: 8px; padding: 16px 20px;">
                     <tr>
                       <td>
-                        <p style="font-size: 14px; color: #7F1D1D; margin: 0; line-height: 1.5;">
-                          🔒 <strong>Wasn't you?</strong> Secure your account immediately at mindpick.me/security
+                        <p style="font-size: 14px; color: #78350F; margin: 0 0 8px 0; font-weight: 600;">
+                          🎯 Complete your profile to start receiving questions
+                        </p>
+                        <p style="font-size: 13px; color: #92400E; margin: 0; line-height: 1.5;">
+                          Add your bio, expertise areas, set your rate, and choose your response time. A complete profile gets 3x more questions.
                         </p>
                       </td>
                     </tr>
@@ -127,9 +166,12 @@ export function getSignInTemplate(user) {
               <tr>
                 <td style="padding-top: 48px; text-align: center; border-top: 2px solid #F3F4F6;">
                   <p style="font-size: 12px; color: #9CA3AF; margin: 24px 0 8px 0;">
-                    <a href="https://mindpick.me/faq" style="color: #4F46E5; text-decoration: none;">FAQ</a>
+                    Questions? Check our <a href="https://mindpick.me/faq" style="color: #4F46E5; text-decoration: none;">FAQ</a> or reply to this email
                   </p>
-                  <p style="font-size: 12px; color: #9CA3AF; margin: 0;">
+                  <p style="font-size: 11px; color: #D1D5DB; margin: 0 0 4px 0;">
+                    Signed in at ${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })} • Wasn't you? <a href="https://mindpick.me/security" style="color: #6B7280; text-decoration: none;">Secure your account</a>
+                  </p>
+                  <p style="font-size: 12px; color: #9CA3AF; margin: 4px 0 0 0;">
                     © 2025 mindPick • Amsterdam, NL
                   </p>
                 </td>
@@ -144,24 +186,35 @@ export function getSignInTemplate(user) {
   `;
 
   const textBody = `
-Welcome back to mindPick
+Welcome to mindPick, ${firstName}!
 
-Hi ${name || 'there'},
+Your expert profile is ready. Let's get you set up.
 
-You've successfully signed in to your account.
+WHAT IS MINDPICK?
+mindPick connects experts like you with people who need your advice. When someone has a question only you can answer, they pay to ask—and you earn money sharing your expertise through quick video or audio responses.
+
+HOW IT WORKS:
+1. Complete your profile and set your rate
+2. Receive paid questions in your inbox
+3. Record your answer (video or audio)
+4. Get paid directly to your account
+
+GETTING STARTED TIP: ${welcomeTip}
+
+NEXT STEPS:
+• Complete your profile: https://mindpick.me/profile/setup
+• Explore dashboard: https://mindpick.me/expert
+
+Complete your profile to start receiving questions. Add your bio, expertise areas, set your rate, and choose your response time. A complete profile gets 3x more questions.
 
 Account: ${email}
-Time: ${new Date().toLocaleString()}
-${location ? 'Location: ' + location : ''}
+Signed in: ${new Date().toLocaleString()}
 
-Quick actions:
-• View Dashboard: https://mindpick.me/dashboard
-• Profile Setup: https://mindpick.me/profile/setup
+Questions? Check our FAQ: https://mindpick.me/faq
 
-SECURITY: Wasn't you? Secure your account immediately at https://mindpick.me/security
+Wasn't you? Secure your account: https://mindpick.me/security
 
 ---
-FAQ: https://mindpick.me/faq
 © 2025 mindPick • Amsterdam, NL
   `;
 
