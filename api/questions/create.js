@@ -24,7 +24,6 @@ export default async function handler(req, res) {
     // 1. Get expert profile
     console.log('Fetching expert profile...');
     
-    // ✅ FIX: Use Public API base URL for public endpoints
     const XANO_PUBLIC_BASE_URL = process.env.XANO_PUBLIC_BASE_URL || 
                                    'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
     
@@ -93,14 +92,80 @@ export default async function handler(req, res) {
 
     const question = JSON.parse(responseText);
     const questionId = question.id;
+    
+    // ✅ Extract playback_token_hash from response (the field already exists in Xano)
+    const reviewToken = question.playback_token_hash;
+    
+    console.log('✅ Question created:', {
+      id: questionId,
+      playback_token_hash: reviewToken,
+      hasToken: !!reviewToken
+    });
 
-    console.log('✅ Question created with ID:', questionId);
+    if (!reviewToken) {
+      console.error('⚠️ CRITICAL: playback_token_hash not returned by Xano!');
+      console.error('⚠️ Check that POST /question endpoint includes playback_token_hash in response');
+      console.error('⚠️ Available fields:', Object.keys(question));
+    }
 
-    // Send email notifications to both expert and payer/asker
+    // 3. Create media assets for recording segments
+    if (recordingSegments && recordingSegments.length > 0) {
+      console.log(`Creating ${recordingSegments.length} media assets...`);
+      
+      for (let i = 0; i < recordingSegments.length; i++) {
+        const segment = recordingSegments[i];
+        
+        let statusString = 'ready';
+        if (segment.status && typeof segment.status === 'object') {
+          statusString = segment.status.state || 'ready';
+        } else if (typeof segment.status === 'string') {
+          statusString = segment.status;
+        }
+        
+        const durationSec = parseInt(segment.duration) || 0;
+        
+        const mediaAssetPayload = {
+          owner_type: 'question',
+          owner_id: questionId,
+          provider: 'cloudflare_stream',
+          asset_id: segment.uid,
+          url: segment.playbackUrl,
+          duration_sec: durationSec,
+          status: statusString,
+          segment_index: i,
+          metadata: JSON.stringify({
+            mode: segment.mode,
+            segmentIndex: i,
+          }),
+        };
+
+        console.log(`Creating media asset ${i}:`, mediaAssetPayload);
+
+        const mediaResponse = await fetch(
+          `${XANO_PUBLIC_BASE_URL}/media_asset`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mediaAssetPayload),
+          }
+        );
+
+        const mediaResponseText = await mediaResponse.text();
+
+        if (!mediaResponse.ok) {
+          console.error(`Failed to create media asset ${i}:`, mediaResponseText);
+        } else {
+          const mediaAsset = JSON.parse(mediaResponseText);
+          console.log(`✅ Media asset ${i} created with ID:`, mediaAsset.id);
+        }
+      }
+    }
+
+    // 4. Send email notifications
     const userId = profileData.expert_profile?.user_id;
     const expertProfileName = profileData.expert_profile?.name || profileData.name || 'Expert';
 
-    // 1. Send notification to expert
+    // Send notification to expert
     if (userId) {
       const expertData = await fetchUserData(userId);
 
@@ -128,11 +193,10 @@ export default async function handler(req, res) {
       console.warn('⚠️ No user_id found in expert profile - skipping expert notification');
     }
 
-    // 2. Send confirmation to payer/asker
+    // ✅ NEW: Send confirmation to payer/asker WITH review_token
     if (payerEmail) {
-      console.log('📧 Sending asker confirmation...');
+      console.log('📧 Sending asker confirmation with review token...');
 
-      // Construct asker name from payerFirstName and payerLastName
       const askerName = [payerFirstName, payerLastName].filter(Boolean).join(' ') ||
                         getAskerName(question) ||
                         payerEmail.split('@')[0];
@@ -145,6 +209,7 @@ export default async function handler(req, res) {
           questionTitle: title,
           questionText: text,
           questionId,
+          reviewToken,  // ✅ NEW: Pass review token to email
           slaHours: slaHours,
         });
         console.log('✅ Asker confirmation sent successfully');
@@ -156,66 +221,12 @@ export default async function handler(req, res) {
       console.warn('⚠️ No payer email found - skipping asker confirmation');
     }
 
-    // 3. Create media assets
-    if (recordingSegments && recordingSegments.length > 0) {
-      console.log(`Creating ${recordingSegments.length} media assets...`);
-      
-      for (let i = 0; i < recordingSegments.length; i++) {
-        const segment = recordingSegments[i];
-        
-        // ⭐ FIX: Extract status string from the status object
-        let statusString = 'ready';
-        if (segment.status && typeof segment.status === 'object') {
-          statusString = segment.status.state || 'ready';
-        } else if (typeof segment.status === 'string') {
-          statusString = segment.status;
-        }
-        
-        // ⭐ FIX: Ensure duration_sec is a number, not a string
-        const durationSec = parseInt(segment.duration) || 0;
-        
-        const mediaAssetPayload = {
-          owner_type: 'question',
-          owner_id: questionId,
-          provider: 'cloudflare_stream',
-          asset_id: segment.uid,
-          url: segment.playbackUrl,
-          duration_sec: durationSec,
-          status: statusString,
-          segment_index: i,
-          metadata: JSON.stringify({
-            mode: segment.mode,
-            segmentIndex: i,
-          }),
-        };
-
-        console.log(`Creating media asset ${i}:`, mediaAssetPayload);
-
-        // ✅ FIX: Use Public API for media_asset creation during question submission
-        const mediaResponse = await fetch(
-          `${XANO_PUBLIC_BASE_URL}/media_asset`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(mediaAssetPayload),
-          }
-        );
-
-        const mediaResponseText = await mediaResponse.text();
-
-        if (!mediaResponse.ok) {
-          console.error(`Failed to create media asset ${i}:`, mediaResponseText);
-        } else {
-          const mediaAsset = JSON.parse(mediaResponseText);
-          console.log(`✅ Media asset ${i} created with ID:`, mediaAsset.id);
-        }
-      }
-    }
-
+    // ✅ Return response with playback_token_hash
     return res.status(200).json({
       success: true,
       data: {
         questionId,
+        playback_token_hash: reviewToken,  // ✅ Use consistent field name
         mediaAssetsCreated: recordingSegments?.length || 0,
       },
     });
