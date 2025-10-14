@@ -28,6 +28,27 @@ export async function sendEmail({ to, toName, subject, htmlBody, textBody }) {
     console.error('ZEPTOMAIL_TOKEN not configured');
     throw new Error('Email service not configured');
   }
+  
+  // Validate required parameters
+  if (!to) {
+    console.error('❌ Missing required parameter: to (email address)');
+    throw new Error('Email address (to) is required');
+  }
+  
+  if (!subject) {
+    console.error('❌ Missing required parameter: subject');
+    throw new Error('Email subject is required');
+  }
+  
+  if (!htmlBody) {
+    console.error('❌ Missing required parameter: htmlBody');
+    throw new Error('Email htmlBody is required');
+  }
+
+  console.log('📧 Sending email via ZeptoMail');
+  console.log('   To:', to);
+  console.log('   To Name:', toName);
+  console.log('   Subject:', subject);
 
   const payload = {
     from: {
@@ -53,8 +74,6 @@ export async function sendEmail({ to, toName, subject, htmlBody, textBody }) {
 
   try {
     console.log('📧 Sending email via ZeptoMail to:', to);
-    console.log('📧 Subject:', subject);
-    console.log('📧 ZeptoMail API URL:', ZEPTOMAIL_API_URL);
 
     const response = await fetch(ZEPTOMAIL_API_URL, {
       method: 'POST',
@@ -66,17 +85,14 @@ export async function sendEmail({ to, toName, subject, htmlBody, textBody }) {
       body: JSON.stringify(payload),
     });
 
-    console.log('📧 ZeptoMail response status:', response.status);
-
     const responseData = await response.json();
-    console.log('📧 ZeptoMail response data:', JSON.stringify(responseData));
 
     if (!response.ok) {
       console.error('❌ ZeptoMail API error:', responseData);
       throw new Error(JSON.stringify(responseData) || 'Failed to send email');
     }
 
-    console.log('✅ Email sent successfully to:', to);
+    console.log('✅ Email sent successfully');
     return responseData;
 
   } catch (error) {
@@ -181,11 +197,20 @@ export async function sendQuestionConfirmationNotification(data) {
  */
 export async function sendAccountDeletionNotification(data) {
   const { email, name } = data;
+  
+  // Validate email exists
+  if (!email) {
+    console.error('❌ Cannot send deletion email: email is missing from data:', data);
+    throw new Error('Email address is required to send deletion notification');
+  }
+  
+  console.log('📧 Preparing deletion notification for:', email);
+  
   const { subject, htmlBody, textBody } = getAccountDeletionTemplate(data);
 
   return sendEmail({
     to: email,
-    toName: name,
+    toName: name || email,
     subject,
     htmlBody,
     textBody,
