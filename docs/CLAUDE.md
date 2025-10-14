@@ -405,12 +405,145 @@ Use presigned URLs for private access.
 - Verify UIDs match between Cloudflare and Xano
 - Check `media_assets` table for status
 
-## Cron Jobs
+## Media Cleanup System
 
-**Daily Cleanup:** `/api/cron/cleanup-orphaned-media`
-- Runs daily at 3 AM UTC
-- Deletes media_assets without linked questions/answers
-- Configured in `vercel.json`
+QuickChat implements a comprehensive automated cleanup system to remove orphaned media files from Cloudflare and Xano.
+
+### Cron Job: cleanup-orphaned-media
+
+**Script:** `/api/cron/cleanup-orphaned-media.js`
+**Schedule:** Daily at 3:00 AM UTC
+**Configuration:** `vercel.json`
+
+The cleanup script runs in three parts:
+
+#### Part 1: Media Assets (Videos & Audio)
+- Fetches all records from `media_assets` table
+- Checks if media is older than 48 hours (grace period for uploads)
+- Verifies if parent question/answer still exists
+- Deletes orphaned media from:
+  - Cloudflare Stream (videos)
+  - Cloudflare R2 (audio)
+  - Xano database (`media_assets` table)
+
+#### Part 2: Profile Pictures
+- Lists all files in R2 under `profiles/` prefix
+- Fetches all avatar URLs from `expert_profile` table
+- Compares R2 files against active avatar URLs
+- Deletes orphaned profile pictures from R2
+
+#### Part 3: Attachments (PDFs, Documents)
+- Lists all files in R2 under `question-attachments/` prefix
+- Fetches attachments JSON from both `question` and `answer` tables
+- Parses JSON arrays to extract attachment URLs
+- Compares R2 files against active attachments
+- Deletes orphaned attachment files from R2
+
+### Xano Internal Endpoints
+
+The cleanup system uses internal Xano endpoints that bypass user authentication.
+
+#### GET /internal/media
+
+**Location:** Public API group in Xano
+**Auth:** `x_api_key` query parameter
+**Used by:** Cleanup script to fetch all media records
+
+**Response Format:**
+```json
+{
+  "media": [...],                    // All media_assets records
+  "avatars": [...],                  // All expert_profile.avatar_url
+  "question_attachments": [...],     // All question.attachments (JSON)
+  "answer_attachments": [...]        // All answer.attachments (JSON)
+}
+```
+
+#### DELETE /internal/media_asset
+
+**Location:** Public API group in Xano
+**Auth:** `x_api_key` query parameter
+**Parameters:** `media_asset_id` (integer)
+**Used by:** Cleanup script to delete orphaned media_asset records
+
+### Notifications
+
+The cleanup script sends email notifications to `gojkop@gmail.com` when:
+- Any error occurs during cleanup (via ZeptoMail)
+- Error rate exceeds 50% (high error rate alert)
+
+Email includes detailed breakdown of:
+- Media assets deleted/errors
+- Profile pictures deleted/errors
+- Attachments deleted/errors
+- Total counts and error rate
+
+### Manual Execution
+
+To manually trigger the cleanup script:
+
+```bash
+curl -X POST https://quickchat-dev.vercel.app/api/cron/cleanup-orphaned-media \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "mediaAssets": {
+    "deleted": 0,
+    "errors": 0
+  },
+  "profilePictures": {
+    "deleted": 0,
+    "errors": 0
+  },
+  "attachments": {
+    "deleted": 0,
+    "errors": 0
+  },
+  "totals": {
+    "deleted": 0,
+    "errors": 0
+  },
+  "message": "Cleaned up 0 orphaned items (0 media assets, 0 profile pictures, 0 attachments)"
+}
+```
+
+### Monitoring
+
+Check cleanup logs in Vercel dashboard:
+1. Go to Vercel project → Functions
+2. Find `/api/cron/cleanup-orphaned-media`
+3. View execution logs for detailed output
+
+Logs include:
+- 🧹 Starting cleanup
+- 📦 Part 1: Media assets cleanup
+- 🖼️ Part 2: Profile pictures cleanup
+- 📎 Part 3: Attachments cleanup
+- 🎉 Summary with totals
+
+### Architecture Notes
+
+**Why not use media_assets for attachments?**
+- Attachments are stored directly in `question.attachments` and `answer.attachments` JSON fields
+- This is a legacy design pattern from the original implementation
+- Part 3 of cleanup handles this by parsing JSON and comparing against R2 files
+
+**Grace Period:**
+- Media assets have a 48-hour grace period before deletion
+- This prevents deletion of recently uploaded media that hasn't been associated yet
+- Profile pictures and attachments are deleted immediately if orphaned
+
+**Storage Locations:**
+- Videos: Cloudflare Stream
+- Audio: Cloudflare R2 (various paths)
+- Profile Pictures: R2 `profiles/` folder
+- Attachments: R2 `question-attachments/` folder
+
+For detailed implementation, see `docs/xano-internal-endpoints.md`.
 
 ## Known Limitations
 
