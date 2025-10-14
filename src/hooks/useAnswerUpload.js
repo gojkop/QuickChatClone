@@ -334,15 +334,18 @@ export function useAnswerUpload() {
         const needsUpload = [];
 
         for (const item of filesToProcess) {
-          if (item.uid && item.url) {
+          // Check if already uploaded (has url property)
+          if (item.url && typeof item.url === 'string') {
             // Already uploaded - just use the metadata
             alreadyUploaded.push({
-              uid: item.uid,
+              uid: item.uid,  // May be undefined, that's OK
               url: item.url,
               filename: item.filename || item.name,
               size: item.size,
               type: item.type,
+              name: item.name,  // Include name for compatibility
             });
+            console.log('✅ Using pre-uploaded attachment:', item.name || item.filename);
           } else if (item instanceof File || item instanceof Blob) {
             // Actual file that needs uploading
             needsUpload.push(item);
