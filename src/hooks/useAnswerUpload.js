@@ -242,8 +242,10 @@ export function useAnswerUpload() {
    */
   const submitAnswer = useCallback(async (answerData, questionId, userId) => {
     console.log('🚀 Starting answer submission for question:', questionId);
-    console.log('Answer data received:', answerData);
-    
+    console.log('📦 Answer data received:', answerData);
+    console.log('📎 Answer data files:', answerData.files);
+    console.log('📎 Answer data attachments:', answerData.attachments);
+
     if (!userId) {
       throw new Error('userId is required for answer submission');
     }
@@ -370,6 +372,8 @@ export function useAnswerUpload() {
       }));
 
       console.log('💾 Creating answer record...');
+      console.log('📎 attachmentResults before payload:', attachmentResults);
+      console.log('📎 attachmentResults.length:', attachmentResults.length);
 
       // ✅ FIXED: Always include all fields explicitly
       // ✅ Send attachments as array (backend will stringify) - matches question creation pattern
@@ -381,8 +385,9 @@ export function useAnswerUpload() {
         attachments: attachmentResults.length > 0 ? attachmentResults : null,
       };
 
-      console.log('Sending to /api/answers/create endpoint:', payload);
-      console.log('📎 Attachments being sent:', attachmentResults.length, 'items');
+      console.log('📤 Payload being sent to /api/answers/create:', payload);
+      console.log('📎 Attachments in payload:', payload.attachments);
+      console.log('📎 Attachments count:', attachmentResults.length, 'items');
 
       // Call consolidated endpoint that creates answer + sends email
       const response = await fetch('/api/answers/create', {

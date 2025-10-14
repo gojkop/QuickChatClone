@@ -33,7 +33,10 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
 
     try {
       console.log('📝 Submitting answer for question:', question.id);
-      console.log('Answer data:', {
+      console.log('📦 Full answerData object:', answerData);
+      console.log('📎 answerData.attachments:', answerData.attachments);
+      console.log('📎 answerData.files:', answerData.files);
+      console.log('Answer data summary:', {
         hasMedia: !!answerData.mediaBlob,
         hasText: !!answerData.text,
         hasRecordingSegments: (answerData.recordingSegments || []).length > 0,
