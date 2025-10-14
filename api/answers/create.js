@@ -20,6 +20,7 @@ export default async function handler(req, res) {
     console.log('=== ANSWER CREATION ===');
     console.log('Question ID:', question_id);
     console.log('User ID:', user_id);
+    console.log('📎 Raw attachments received:', JSON.stringify(attachments, null, 2));
 
     // 1. Create answer record in Xano
     const answerPayload = {
@@ -31,7 +32,8 @@ export default async function handler(req, res) {
     };
 
     console.log('Creating answer in Xano...');
-    console.log('Attachments payload:', attachments ? `Array with ${attachments.length} items` : 'null');
+    console.log('📎 Attachments payload:', attachments ? `Array with ${attachments.length} items` : 'null');
+    console.log('📦 Full answer payload:', JSON.stringify(answerPayload, null, 2));
     console.log('Using URL:', `${process.env.XANO_BASE_URL}/answer`);
     console.log('Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
 
@@ -74,6 +76,8 @@ export default async function handler(req, res) {
     const answer = await answerResponse.json();
     const answerId = answer.id;
     console.log('✅ Answer created:', answerId);
+    console.log('📦 Full answer response from Xano:', JSON.stringify(answer, null, 2));
+    console.log('📎 Attachments in response:', answer.attachments || 'null');
 
     // 2. Extract question data from answer response (embedded by Xano)
     const questionData = answer.question || answer._question;

@@ -348,17 +348,17 @@ export function useAnswerUpload() {
       console.log('💾 Creating answer record...');
 
       // ✅ FIXED: Always include all fields explicitly
+      // ✅ Send attachments as array (backend will stringify) - matches question creation pattern
       const payload = {
         question_id: questionId,
         user_id: userId,
         text_response: answerData.text?.trim() || null,
         media_asset_id: mediaAssetId || null,
-        attachments: attachmentResults.length > 0 
-          ? JSON.stringify(attachmentResults) 
-          : null,
+        attachments: attachmentResults.length > 0 ? attachmentResults : null,
       };
 
       console.log('Sending to /api/answers/create endpoint:', payload);
+      console.log('📎 Attachments being sent:', attachmentResults.length, 'items');
 
       // Call consolidated endpoint that creates answer + sends email
       const response = await fetch('/api/answers/create', {
