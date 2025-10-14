@@ -219,14 +219,9 @@ export default async function handler(req, res) {
     // ============================================================
     // PART 1B: Cloudflare → Database (find files not in DB)
     // ============================================================
-    console.log('☁️  Part 1B: TEMPORARILY DISABLED for safety');
-    console.log('⚠️  This check has been disabled after deleting valid files');
-    console.log('⚠️  Needs investigation before re-enabling');
+    console.log('☁️  Part 1B: Checking Cloudflare for files not in database...');
 
     let cloudflareOrphanedCount = 0;
-
-    // TEMPORARILY DISABLED - DO NOT RUN
-    if (false) {
 
     // Build sets of known asset_ids from database
     const knownStreamAssets = new Set();
@@ -366,7 +361,6 @@ export default async function handler(req, res) {
 
       console.log('Part 1B complete:', { deletedFromCloudflare: cloudflareOrphanedCount });
     } // End of safety check else block
-    } // End of TEMPORARILY DISABLED block
 
     console.log('');
     console.log('Part 1 TOTAL:', {
