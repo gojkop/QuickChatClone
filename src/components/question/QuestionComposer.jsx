@@ -137,6 +137,12 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       liveStreamRef.current = null;
     }
     
+    // Cleanup mic stream if exists
+    if (liveStreamRef.micStream) {
+      liveStreamRef.micStream.getTracks().forEach(track => track.stop());
+      liveStreamRef.micStream = null;
+    }
+    
     // Cleanup audio context if exists
     if (audioContextRef.current) {
       audioContextRef.current.close();
@@ -192,44 +198,70 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
         // Get display stream with audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({ 
           video: true,
-          audio: true 
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false
+          }
         });
         
-        // Get microphone audio
-        const micStream = await navigator.mediaDevices.getUserMedia({ 
-          audio: true,
-          video: false 
-        });
-        
-        // Create audio context to mix both audio sources
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        audioContextRef.current = audioContext;
-        
-        const destination = audioContext.createMediaStreamDestination();
-        
-        // Add system audio if available
-        const systemAudioTracks = displayStream.getAudioTracks();
-        if (systemAudioTracks.length > 0) {
-          const systemSource = audioContext.createMediaStreamSource(
-            new MediaStream(systemAudioTracks)
-          );
-          systemSource.connect(destination);
+        try {
+          // Get microphone audio
+          const micStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            },
+            video: false 
+          });
+          
+          // Create audio context to mix both audio sources
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          audioContextRef.current = audioContext;
+          
+          const destination = audioContext.createMediaStreamDestination();
+          
+          // Add system audio if available
+          const systemAudioTracks = displayStream.getAudioTracks();
+          if (systemAudioTracks.length > 0) {
+            const systemSource = audioContext.createMediaStreamSource(
+              new MediaStream(systemAudioTracks)
+            );
+            // Create a gain node to control system audio volume
+            const systemGain = audioContext.createGain();
+            systemGain.gain.value = 0.7; // Reduce system audio slightly
+            systemSource.connect(systemGain);
+            systemGain.connect(destination);
+          }
+          
+          // Add microphone audio
+          const micAudioTracks = micStream.getAudioTracks();
+          if (micAudioTracks.length > 0) {
+            const micSource = audioContext.createMediaStreamSource(micStream);
+            // Create a gain node to control mic volume
+            const micGain = audioContext.createGain();
+            micGain.gain.value = 1.0; // Keep mic at full volume
+            micSource.connect(micGain);
+            micGain.connect(destination);
+          }
+          
+          // Store reference to mic stream for cleanup
+          liveStreamRef.micStream = micStream;
+          
+          // Combine video from display with mixed audio
+          const combinedStream = new MediaStream([
+            ...displayStream.getVideoTracks(),
+            ...destination.stream.getAudioTracks()
+          ]);
+          
+          stream = combinedStream;
+          
+        } catch (micError) {
+          console.warn('Microphone access failed, using screen audio only:', micError);
+          // Fall back to just screen audio
+          stream = displayStream;
         }
-        
-        // Add microphone audio
-        const micSource = audioContext.createMediaStreamSource(micStream);
-        micSource.connect(destination);
-        
-        // Combine video from display with mixed audio
-        const combinedStream = new MediaStream([
-          ...displayStream.getVideoTracks(),
-          ...destination.stream.getAudioTracks()
-        ]);
-        
-        stream = combinedStream;
-        
-        // Stop the original mic stream tracks (we're using the audio context version)
-        micStream.getTracks().forEach(track => track.stop());
         
       } else {
         const constraints = mode === 'video' 
@@ -268,6 +300,19 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
     segmentStartTimeRef.current = Date.now();
     
     const streamToRecord = liveStreamRef.current;
+    
+    // Log audio tracks for debugging
+    const audioTracks = streamToRecord.getAudioTracks();
+    console.log('Recording stream audio tracks:', audioTracks.length);
+    audioTracks.forEach((track, index) => {
+      console.log(`Audio track ${index}:`, {
+        label: track.label,
+        enabled: track.enabled,
+        muted: track.muted,
+        readyState: track.readyState
+      });
+    });
+    
     const mimeType = currentSegment.mode === 'audio' ? 'audio/webm' : 'video/webm;codecs=vp8,opus';
     
     mediaRecorderRef.current = new MediaRecorder(streamToRecord, { mimeType });
@@ -281,6 +326,7 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
     
     mediaRecorderRef.current.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
+      console.log('Recording stopped. Blob size:', blob.size, 'bytes');
       const duration = Math.max(1, Math.floor((Date.now() - segmentStartTimeRef.current) / 1000));
       const url = URL.createObjectURL(blob);
       
