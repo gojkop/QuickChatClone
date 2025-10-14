@@ -5,6 +5,7 @@ import { getSignInTemplate } from './email-templates/sign-in.js';
 import { getNewQuestionTemplate } from './email-templates/new-question.js';
 import { getAnswerReceivedTemplate } from './email-templates/answer-received.js';
 import { getQuestionConfirmationTemplate } from './email-templates/question-confirmation.js';
+import { getAccountDeletionTemplate } from './email-templates/account-deletion.js';
 
 const ZEPTOMAIL_API_URL = 'https://api.zeptomail.eu/v1.1/email';
 
@@ -164,6 +165,27 @@ export async function sendQuestionConfirmationNotification(data) {
   return sendEmail({
     to: askerEmail,
     toName: askerName,
+    subject,
+    htmlBody,
+    textBody,
+  });
+}
+
+/**
+ * Send account deletion confirmation email
+ * @param {Object} data - Deletion data
+ * @param {string} data.name - User's name
+ * @param {string} data.email - User's email
+ * @param {string} data.userType - 'expert' or 'asker'
+ * @param {string} data.deletionDate - ISO date when deletion was completed
+ */
+export async function sendAccountDeletionNotification(data) {
+  const { email, name } = data;
+  const { subject, htmlBody, textBody } = getAccountDeletionTemplate(data);
+
+  return sendEmail({
+    to: email,
+    toName: name,
     subject,
     htmlBody,
     textBody,

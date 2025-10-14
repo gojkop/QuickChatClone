@@ -1,6 +1,7 @@
 // api/users/delete-account.js
-// Delete user account and all associated data
+// Delete user account and all associated data (MVP - immediate deletion)
 import apiClient from '../lib/xano/client.js';
+import { sendAccountDeletionNotification } from '../lib/zeptomail.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'DELETE') {
@@ -17,9 +18,9 @@ export default async function handler(req, res) {
     // Extract token and verify by fetching user profile
     const token = authHeader.replace('Bearer ', '');
 
-    console.log('=== ACCOUNT DELETION REQUEST ===');
+    console.log('=== ACCOUNT DELETION REQUEST (MVP - IMMEDIATE) ===');
 
-    // Fetch current user profile to get user ID
+    // Fetch current user profile to get user ID and details
     const profileResponse = await fetch(
       `${process.env.XANO_BASE_URL}/me/profile`,
       {
@@ -38,36 +39,20 @@ export default async function handler(req, res) {
 
     const profile = await profileResponse.json();
     const userId = profile.id;
+    const userEmail = profile.email;
+    const userName = profile.name;
     const expertProfileId = profile.expert_profile?.id;
 
     console.log('User ID:', userId);
     console.log('Expert Profile ID:', expertProfileId);
+    console.log('User Email:', userEmail);
 
-    // Step 1: Fetch all questions by this expert
-    let questionsToDelete = [];
-    if (expertProfileId) {
-      try {
-        const questionsResponse = await fetch(
-          `${process.env.XANO_BASE_URL}/me/questions`,
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+    // Determine user type
+    const userType = expertProfileId ? 'expert' : 'asker';
+    console.log('User Type:', userType);
 
-        if (questionsResponse.ok) {
-          questionsToDelete = await questionsResponse.json();
-          console.log(`Found ${questionsToDelete.length} questions to delete`);
-        }
-      } catch (error) {
-        console.warn('Could not fetch questions:', error.message);
-      }
-    }
-
-    // Step 2: Delete all media_asset records owned by user's answers
+    // Step 1: Delete all media_asset records owned by user's answers
+    console.log('Step 1: Deleting answer media assets...');
     try {
       const answerMediaResponse = await fetch(
         `${process.env.XANO_BASE_URL}/media_asset?owner_type=answer`,
@@ -97,9 +82,9 @@ export default async function handler(req, res) {
                 },
               }
             );
-            console.log(`Deleted media asset ${media.id}`);
+            console.log(`✅ Deleted media asset ${media.id}`);
           } catch (err) {
-            console.error(`Failed to delete media asset ${media.id}:`, err.message);
+            console.error(`❌ Failed to delete media asset ${media.id}:`, err.message);
           }
         }
       }
@@ -107,24 +92,42 @@ export default async function handler(req, res) {
       console.warn('Could not delete answer media:', error.message);
     }
 
-    // Step 3: Delete all media_asset records owned by user's questions
+    // Step 2: Delete all media_asset records owned by user's questions
+    console.log('Step 2: Deleting question media assets...');
     try {
-      for (const question of questionsToDelete) {
-        if (question.media_asset_id) {
-          try {
-            await fetch(
-              `${process.env.XANO_BASE_URL}/media_asset/${question.media_asset_id}`,
-              {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-              }
-            );
-            console.log(`Deleted question media asset ${question.media_asset_id}`);
-          } catch (err) {
-            console.error(`Failed to delete question media ${question.media_asset_id}:`, err.message);
+      // First fetch questions to get media asset IDs
+      const questionsResponse = await fetch(
+        `${process.env.XANO_BASE_URL}/me/questions`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (questionsResponse.ok) {
+        const questions = await questionsResponse.json();
+        console.log(`Found ${questions.length} questions`);
+
+        for (const question of questions) {
+          if (question.media_asset_id) {
+            try {
+              await fetch(
+                `${process.env.XANO_BASE_URL}/media_asset/${question.media_asset_id}`,
+                {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+              console.log(`✅ Deleted question media asset ${question.media_asset_id}`);
+            } catch (err) {
+              console.error(`❌ Failed to delete question media ${question.media_asset_id}:`, err.message);
+            }
           }
         }
       }
@@ -132,27 +135,8 @@ export default async function handler(req, res) {
       console.warn('Could not delete question media:', error.message);
     }
 
-    // Step 4: Delete all answer records by this user
-    // Note: Xano doesn't have a bulk delete endpoint, so we need to use custom endpoint
-    // For now, we'll skip this and let Xano handle cascading deletes
-    console.log('Skipping answer deletion (will be handled by Xano cascading deletes)');
-
-    // Step 5: Delete all questions by this expert
-    console.log('Skipping question deletion (will be handled by Xano cascading deletes)');
-
-    // Step 6: Delete expert_profile
-    if (expertProfileId) {
-      try {
-        // Xano doesn't expose direct DELETE on expert_profile
-        // We'll need to create a custom endpoint in Xano or handle via user deletion
-        console.log('Expert profile will be deleted with user account');
-      } catch (error) {
-        console.warn('Could not delete expert profile:', error.message);
-      }
-    }
-
-    // Step 7: Delete user account
-    // This should be done via a custom Xano endpoint that handles all cascading deletes
+    // Step 3: Delete user account (Xano handles cascading deletes for questions, answers, etc.)
+    console.log('Step 3: Deleting user account...');
     try {
       const deleteUserResponse = await fetch(
         `${process.env.XANO_BASE_URL}/me/delete-account`,
@@ -171,6 +155,21 @@ export default async function handler(req, res) {
       }
 
       console.log('✅ User account deleted successfully');
+
+      // Step 4: Send account deletion confirmation email
+      console.log('📧 Sending account deletion confirmation email...');
+      try {
+        await sendAccountDeletionNotification({
+          name: userName,
+          email: userEmail,
+          userType: userType,
+          deletionDate: new Date().toISOString(),
+        });
+        console.log('✅ Deletion confirmation email sent successfully');
+      } catch (emailError) {
+        console.error('❌ Failed to send deletion confirmation email:', emailError);
+        // Don't fail the deletion if email fails - account is already deleted
+      }
 
       return res.status(200).json({
         success: true,
