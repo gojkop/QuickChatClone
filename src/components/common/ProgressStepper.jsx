@@ -1,21 +1,27 @@
+// src/components/common/ProgressStepper.jsx
+// UPDATED - Now accepts steps as prop for reusability
+
 import React from 'react';
 
-const ProgressStepper = ({ currentStep }) => {
-  const steps = [
+const ProgressStepper = ({ currentStep, steps }) => {
+  // Default to Asker journey steps if none provided (backward compatible)
+  const defaultSteps = [
     { id: 1, name: 'Compose', icon: '✏️', description: 'Record your question' },
     { id: 2, name: 'Review', icon: '👀', description: 'Check everything' },
     { id: 3, name: 'Payment', icon: '💳', description: 'Complete & send' }
   ];
   
+  const progressSteps = steps || defaultSteps;
+  
   return (
-    <div className="w-full max-w-3xl mx-auto mb-8">
+    <div className="w-full max-w-3xl mx-auto mb-4 sm:mb-8">
       {/* Mobile view - simplified */}
       <div className="flex sm:hidden items-center justify-center gap-2 px-4">
         <div className="text-sm font-semibold text-gray-600">
-          Step {currentStep} of {steps.length}
+          Step {currentStep} of {progressSteps.length}
         </div>
         <div className="flex gap-1">
-          {steps.map((step) => (
+          {progressSteps.map((step) => (
             <div
               key={step.id}
               className={`h-2 w-8 rounded-full transition-all ${
@@ -30,7 +36,7 @@ const ProgressStepper = ({ currentStep }) => {
 
       {/* Desktop view - full stepper */}
       <div className="hidden sm:flex items-center justify-center">
-        {steps.map((step, idx) => (
+        {progressSteps.map((step, idx) => (
           <React.Fragment key={step.id}>
             <div className="flex flex-col items-center">
               <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all ${
@@ -58,7 +64,7 @@ const ProgressStepper = ({ currentStep }) => {
               </div>
             </div>
             
-            {idx < steps.length - 1 && (
+            {idx < progressSteps.length - 1 && (
               <div className={`flex-1 h-0.5 mx-4 mb-8 transition-all ${
                 currentStep > step.id ? 'bg-indigo-600' : 'bg-gray-300'
               }`} />
