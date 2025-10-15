@@ -1,3 +1,5 @@
+import { MindPilotIcon } from './MindPilotIcon';
+
 /**
  * MindPilotAlert - Alert box with icon and content
  * @param {string} variant - Type: 'success', 'info', 'warning', 'error'

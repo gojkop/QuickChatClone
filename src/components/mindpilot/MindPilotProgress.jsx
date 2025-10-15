@@ -1,3 +1,5 @@
+import { MindPilotIcon } from './MindPilotIcon';
+
 /**
  * MindPilotProgress - Animated progress bar
  * @param {number} value - Progress value (0-100)

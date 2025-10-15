@@ -1,3 +1,5 @@
+import { MindPilotIcon } from './MindPilotIcon';
+
 /**
  * MindPilotTopicItem - Single topic item
  * @param {string} status - Status: 'completed', 'active', 'pending'
