@@ -1,5 +1,5 @@
 // src/components/dashboard/SLACountdown.jsx
-// MOBILE OPTIMIZED: Compressed design that's still informative
+// ULTRA COMPACT MOBILE: Single line design, full info on desktop
 
 import React, { useState, useEffect } from 'react';
 
@@ -55,37 +55,37 @@ function SLACountdown({ question, expert, className = '' }) {
       bg: 'from-blue-50 to-indigo-50',
       border: 'border-blue-200',
       icon: '⏰',
-      iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600',
       textColor: 'text-blue-900',
-      timeColor: 'text-blue-700'
+      badgeBg: 'bg-blue-100',
+      badgeText: 'text-blue-700'
     },
     warning: {
       bg: 'from-amber-50 to-orange-50',
       border: 'border-amber-200',
       icon: '⚠️',
-      iconBg: 'bg-amber-100',
       iconColor: 'text-amber-600',
       textColor: 'text-amber-900',
-      timeColor: 'text-amber-700'
+      badgeBg: 'bg-amber-100',
+      badgeText: 'text-amber-700'
     },
     urgent: {
       bg: 'from-red-50 to-rose-50',
       border: 'border-red-200',
       icon: '🚨',
-      iconBg: 'bg-red-100',
       iconColor: 'text-red-600',
       textColor: 'text-red-900',
-      timeColor: 'text-red-700'
+      badgeBg: 'bg-red-100',
+      badgeText: 'text-red-700'
     },
     overdue: {
       bg: 'from-red-100 to-rose-100',
       border: 'border-red-300',
       icon: '⏱️',
-      iconBg: 'bg-red-200',
       iconColor: 'text-red-700',
       textColor: 'text-red-900',
-      timeColor: 'text-red-800'
+      badgeBg: 'bg-red-200',
+      badgeText: 'text-red-800'
     }
   };
 
@@ -93,29 +93,46 @@ function SLACountdown({ question, expert, className = '' }) {
 
   return (
     <div className={`bg-gradient-to-r ${config.bg} border ${config.border} rounded-lg overflow-hidden ${className}`}>
-      {/* SUPER COMPRESSED for mobile, normal for desktop */}
-      <div className="p-2 sm:p-4">
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Icon - much smaller on mobile */}
-          <div className={`w-8 h-8 sm:w-12 sm:h-12 ${config.iconBg} rounded-full flex items-center justify-center flex-shrink-0`}>
-            <span className="text-base sm:text-2xl">{config.icon}</span>
+      {/* MOBILE: Ultra compact single line */}
+      <div className="sm:hidden px-3 py-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm flex-shrink-0">{config.icon}</span>
+          <span className={`text-xs font-bold ${config.textColor} truncate`}>
+            {timeLeft.isOverdue ? 'SLA Overdue' : 'Due'}
+          </span>
+        </div>
+        <div className={`flex items-center gap-1.5 px-2 py-1 ${config.badgeBg} rounded-md flex-shrink-0`}>
+          <svg className={`w-3 h-3 ${config.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className={`text-xs font-bold ${config.badgeText} whitespace-nowrap`}>
+            {timeLeft.isOverdue ? 'Respond ASAP' : `${timeLeft.hours}h ${timeLeft.minutes}m`}
+          </span>
+        </div>
+      </div>
+
+      {/* DESKTOP: Full informative design */}
+      <div className="hidden sm:block p-4">
+        <div className="flex items-center gap-3">
+          {/* Icon */}
+          <div className={`w-12 h-12 ${config.badgeBg} rounded-full flex items-center justify-center flex-shrink-0`}>
+            <span className="text-2xl">{config.icon}</span>
           </div>
 
-          {/* Content - very compact on mobile */}
+          {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className={`text-[11px] sm:text-sm font-bold ${config.textColor} leading-tight`}>
+              <h4 className={`text-sm font-bold ${config.textColor} leading-tight`}>
                 {timeLeft.isOverdue ? 'SLA Overdue' : 'Answer Due'}
               </h4>
               {!timeLeft.isOverdue && (
-                <span className={`text-[11px] sm:text-xs ${config.timeColor} font-semibold whitespace-nowrap`}>
+                <span className={`text-xs ${config.badgeText} font-semibold px-2 py-0.5 ${config.badgeBg} rounded whitespace-nowrap`}>
                   {timeLeft.hours}h {timeLeft.minutes}m
                 </span>
               )}
             </div>
             
-            {/* Hide on mobile, show on desktop */}
-            <p className={`hidden sm:block text-xs ${config.timeColor} leading-snug mt-1`}>
+            <p className={`text-xs ${config.textColor} leading-snug mt-1 opacity-90`}>
               {timeLeft.isOverdue ? (
                 'Please respond as soon as possible'
               ) : status === 'urgent' ? (
@@ -128,9 +145,9 @@ function SLACountdown({ question, expert, className = '' }) {
             </p>
           </div>
 
-          {/* Progress indicator - only on desktop */}
+          {/* Progress indicator */}
           {!timeLeft.isOverdue && (
-            <div className="hidden sm:flex flex-col items-end gap-1">
+            <div className="flex flex-col items-end gap-1">
               <div className="w-16 h-2 bg-white rounded-full overflow-hidden">
                 <div
                   className={`h-full transition-all duration-1000 ${
@@ -145,7 +162,7 @@ function SLACountdown({ question, expert, className = '' }) {
                   }}
                 />
               </div>
-              <span className={`text-[10px] font-semibold ${config.timeColor}`}>
+              <span className={`text-[10px] font-semibold ${config.badgeText}`}>
                 {Math.floor(((timeLeft.hours * 60 + timeLeft.minutes) / (question.sla_hours_snapshot * 60)) * 100)}%
               </span>
             </div>

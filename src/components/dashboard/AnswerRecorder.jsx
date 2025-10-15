@@ -1,5 +1,5 @@
 // src/components/dashboard/AnswerRecorder.jsx
-// COMPLETE WORKING VERSION with mobile fixes
+// COMPLETE WORKING VERSION with mobile fixes - STICKY FOOTER ON MOBILE
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
@@ -1033,24 +1033,27 @@ function AnswerRecorder({ question, onReady, onCancel, expert }) {
           question={question}
         />
 
-        <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200 pb-6 sm:pb-4">
-          <button
-            onClick={onCancel}
-            className="px-4 sm:px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition touch-manipulation min-h-[44px]"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleProceedToReview}
-            disabled={!canSubmit}
-            className="flex-1 sm:flex-initial px-4 sm:px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
-          >
-            {!canSubmit ? 'Uploading...' : 'Review Answer →'}
-          </button>
+        {/* MOBILE: Sticky footer that's always visible */}
+        <div className="sticky bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] sm:shadow-none sm:relative sm:border-t">
+          <div className="flex items-center justify-between gap-3 sm:gap-4 p-3 sm:pt-4 sm:pb-4">
+            <button
+              onClick={onCancel}
+              className="px-4 sm:px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition touch-manipulation min-h-[44px]"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleProceedToReview}
+              disabled={!canSubmit}
+              className="flex-1 sm:flex-initial px-4 sm:px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
+            >
+              {!canSubmit ? 'Uploading...' : 'Review Answer →'}
+            </button>
+          </div>
         </div>
 
         {(segmentUpload.segments.length > 0 || attachmentUpload.uploads.length > 0) && (
-          <div className="text-center text-sm text-gray-600 -mt-2">
+          <div className="text-center text-sm text-gray-600 mb-20 sm:mb-2">
             {segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading) ? (
               <span className="flex items-center justify-center gap-2">
                 <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>

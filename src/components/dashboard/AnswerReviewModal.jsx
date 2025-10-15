@@ -1,5 +1,5 @@
 // src/components/dashboard/AnswerReviewModal.jsx
-// FULLY UPDATED - Outcome-focused design (Phase 2-3)
+// FULLY UPDATED - Outcome-focused design with fee disclosure
 
 import React, { useState } from 'react';
 import { useAnswerUpload } from '@/hooks/useAnswerUpload';
@@ -248,9 +248,9 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
                 </div>
               )}
 
-              {/* Earnings Info */}
+              {/* Earnings Info with Fee Breakdown */}
               <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-lg p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <div>
                     <div className="text-xs sm:text-sm text-gray-600 mb-1">You'll earn from this answer:</div>
                     <div className="text-xl sm:text-2xl font-black text-indigo-600">
@@ -261,6 +261,19 @@ function AnswerReviewModal({ isOpen, onClose, answerData, question, onEdit, onSu
                     <svg className="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
+                  </div>
+                </div>
+                
+                {/* Fee Disclosure */}
+                <div className="bg-white rounded-lg p-3 text-xs text-gray-600">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <span className="font-semibold text-gray-700">Net payout after fees:</span>
+                      <span className="ml-1">Platform fee (7-10%) and Stripe processing fees (~3%) will be deducted.</span>
+                    </div>
                   </div>
                 </div>
               </div>
