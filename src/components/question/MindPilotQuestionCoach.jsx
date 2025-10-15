@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import {
-  MindPilotButton,
-  MindPilotCard,
-  MindPilotAlert,
-  MindPilotIcon,
-  MindPilotBadge,
-  MindPilotProgress,
-  MindPilotWordmark,
-  MINDPILOT_ICONS,
-} from '@/components/mindpilot';
+import { MindPilotButton } from '@/components/mindpilot/MindPilotButton';
+import { MindPilotCard } from '@/components/mindpilot/MindPilotCard';
+import { MindPilotAlert } from '@/components/mindpilot/MindPilotAlert';
+import { MindPilotIcon } from '@/components/mindpilot/MindPilotIcon';
+import { MindPilotBadge } from '@/components/mindpilot/MindPilotBadge';
+import { MindPilotProgress } from '@/components/mindpilot/MindPilotProgress';
+import { MINDPILOT_ICONS } from '@/components/mindpilot/index';
+
 
 /**
  * mindPilot Question Coach - Inline collapsible AI guidance
