@@ -1179,19 +1179,9 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
         )}
       </div>
 
-      {expertId && expertProfile && title.trim() && (
-        <div className="pt-4 border-t-2 border-gray-200">
-//          <InlineAICoach
-//            questionTitle={title}
-//            questionText={text}
-//            recordingSegments={segments}
-//            attachments={attachmentUpload.uploads.filter(u => u.result).map(u => u.result)}
-//            expertId={expertId}
-//            expertProfile={expertProfile}
-//            onApplySuggestions={handleApplyAISuggestions}
-//          />
-
-<MindPilotQuestionCoach
+{expertId && expertProfile && title.trim() && (
+  <div className="pt-4 border-t-2 border-gray-200">
+    <MindPilotQuestionCoach
       questionTitle={title}
       questionText={text}
       recordingSegments={segments}
@@ -1200,9 +1190,8 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
       expertProfile={expertProfile}
       onApplySuggestions={handleApplyAISuggestions}
     />
-        </div>
-      )}
-
+  </div>
+)}
       {!hideButton && (
         <div>
           <button
