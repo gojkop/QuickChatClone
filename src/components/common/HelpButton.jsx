@@ -1,17 +1,60 @@
-import React, { useState } from 'react';
+// src/components/common/HelpButton.jsx
+// MOBILE FIX: Tooltip stays within viewport boundaries
+
+import React, { useState, useRef, useEffect } from 'react';
 
 const HelpButton = ({ children, position = 'right' }) => {
   const [show, setShow] = useState(false);
+  const [adjustedPosition, setAdjustedPosition] = useState(position);
+  const tooltipRef = useRef(null);
+  const buttonRef = useRef(null);
+  
+  // Auto-adjust position if tooltip would overflow on mobile
+  useEffect(() => {
+    if (show && tooltipRef.current && buttonRef.current) {
+      const tooltip = tooltipRef.current;
+      const button = buttonRef.current;
+      const rect = tooltip.getBoundingClientRect();
+      const buttonRect = button.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      let newPosition = position;
+      
+      // Check horizontal overflow
+      if (rect.right > viewportWidth - 16) {
+        newPosition = 'left';
+      } else if (rect.left < 16) {
+        newPosition = 'right';
+      }
+      
+      // Check vertical overflow
+      if (rect.bottom > viewportHeight - 16) {
+        newPosition = 'top';
+      }
+      
+      setAdjustedPosition(newPosition);
+    }
+  }, [show, position]);
   
   const positionClasses = {
-    right: 'left-6 top-0',
-    left: 'right-6 top-0',
-    bottom: 'left-0 top-6'
+    right: 'left-full ml-2 top-0',
+    left: 'right-full mr-2 top-0',
+    top: 'bottom-full mb-2 left-1/2 -translate-x-1/2',
+    bottom: 'top-full mt-2 left-1/2 -translate-x-1/2'
+  };
+  
+  const arrowClasses = {
+    right: '-left-2 top-2 rotate-45 border-l-2 border-t-2',
+    left: '-right-2 top-2 -rotate-45 border-r-2 border-t-2',
+    top: '-bottom-2 left-1/2 -translate-x-1/2 rotate-[135deg] border-l-2 border-t-2',
+    bottom: '-top-2 left-1/2 -translate-x-1/2 -rotate-45 border-r-2 border-t-2'
   };
   
   return (
     <div className="relative inline-block">
       <button 
+        ref={buttonRef}
         onMouseEnter={() => setShow(true)}
         onMouseLeave={() => setShow(false)}
         onClick={() => setShow(!show)}
@@ -23,9 +66,14 @@ const HelpButton = ({ children, position = 'right' }) => {
         </svg>
       </button>
       {show && (
-        <div className={`absolute z-50 w-64 p-3 bg-white border-2 border-indigo-200 rounded-lg shadow-xl text-sm text-gray-700 ${positionClasses[position]}`}>
-          <div className="absolute -left-2 top-2 w-4 h-4 bg-white border-l-2 border-t-2 border-indigo-200 transform rotate-45"></div>
-          {children}
+        <div 
+          ref={tooltipRef}
+          className={`absolute z-50 w-64 max-w-[calc(100vw-2rem)] p-3 bg-white border-2 border-indigo-200 rounded-lg shadow-xl text-sm text-gray-700 ${positionClasses[adjustedPosition]}`}
+        >
+          <div className={`absolute w-4 h-4 bg-white border-indigo-200 ${arrowClasses[adjustedPosition]}`}></div>
+          <div className="relative z-10">
+            {children}
+          </div>
         </div>
       )}
     </div>

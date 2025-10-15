@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import apiClient from '@/api'; // ✅ ADDED
 
 const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,7 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
     });
   };
 
+  // ✅ UPDATED: Use apiClient instead of fetch
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -36,25 +38,15 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
         zip: formData.postalCode,
       };
 
-      // Make the API call to update account
-      const response = await fetch('/api:3B14WLbJ/me/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
+      // Use apiClient which handles authentication automatically
+      await apiClient.put('/me/profile', updateData);
       
       onSave(updateData);
       alert('Account updated successfully!');
       onClose();
     } catch (error) {
       console.error('Failed to update account:', error);
-      alert('Failed to update account. Please try again.');
+      alert(`Failed to update account: ${error.response?.data?.error || error.message}`);
     } finally {
       setIsSaving(false);
     }

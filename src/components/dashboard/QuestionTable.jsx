@@ -27,6 +27,40 @@ const getTimeAgo = (timestamp) => {
   return `${Math.floor(diff / 604800)}w ago`;
 };
 
+// Helper to construct full name from payer fields
+const getPayerName = (question) => {
+  // Extract and clean first name
+  let firstName = '';
+  if (Array.isArray(question.payer_first_name)) {
+    // Fallback: handle array format (shouldn't happen now, but defensive)
+    firstName = question.payer_first_name.find(name => name && name.trim()) || '';
+  } else if (question.payer_first_name) {
+    firstName = question.payer_first_name.trim();
+  }
+  
+  // Extract and clean last name
+  let lastName = '';
+  if (Array.isArray(question.payer_last_name)) {
+    // Fallback: handle array format (shouldn't happen now, but defensive)
+    lastName = question.payer_last_name.find(name => name && name.trim()) || '';
+  } else if (question.payer_last_name) {
+    lastName = question.payer_last_name.trim();
+  }
+  
+  // Combine names
+  if (firstName && lastName) {
+    return `${firstName} ${lastName}`;
+  }
+  if (firstName) {
+    return firstName;
+  }
+  if (lastName) {
+    return lastName;
+  }
+  
+  return 'Anonymous';
+};
+
 // Helper to format SLA remaining time - FIXED with null handling
 const formatSLA = (slaHours, createdAt) => {
   if (!slaHours || slaHours <= 0) {
@@ -165,7 +199,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm">
-                        <div className="font-medium text-gray-900">{question.payer_name || 'Anonymous'}</div>
+                        <div className="font-medium text-gray-900">{getPayerName(question)}</div>
                         <div className="text-xs text-gray-500 truncate max-w-[180px]">
                           {question.payer_email}
                         </div>
@@ -271,7 +305,7 @@ const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages,
                 {/* From Info */}
                 <div className="mb-3 pb-3 border-b border-gray-100">
                   <div className="text-xs text-gray-500 mb-0.5">From</div>
-                  <div className="text-sm font-medium text-gray-900">{question.payer_name || 'Anonymous'}</div>
+                  <div className="text-sm font-medium text-gray-900">{getPayerName(question)}</div>
                   <div className="text-xs text-gray-500 truncate">{question.payer_email}</div>
                 </div>
 
