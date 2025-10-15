@@ -1,5 +1,5 @@
 // src/components/dashboard/QuestionDetailModal.jsx
-// MOBILE UX FIXES: Sticky footer for CTA, vertical-only scroll, consistent layout
+// FIXED: Answer Recorder scroll containment + compact mobile header
 
 import React, { useState, useEffect } from 'react';
 import apiClient from '@/api';
@@ -230,7 +230,6 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
         />
 
         <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
-          {/* MOBILE FIX: Strict constraints to prevent horizontal scroll */}
           <div className="relative bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-4xl h-screen sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden">
             
             {/* Sticky Header */}
@@ -259,11 +258,11 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               )}
             </div>
 
-            {/* MOBILE FIX: Scrollable Content Area with strict width constraint */}
+            {/* Scrollable Content Area */}
             <div className="flex-1 overflow-y-auto overscroll-contain overflow-x-hidden">
-              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-full">{/* ADDED max-w-full */}
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-full">
                 
-                {/* Question Context Banner - Compressed on mobile */}
+                {/* MOBILE COMPACT: Question Context Banner */}
                 {isPending && (
                   <QuestionContextBanner question={question} expert={expertProfile} />
                 )}
@@ -619,12 +618,9 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                   </div>
                 )}
 
-                {/* Add padding at bottom for mobile to ensure last content is visible */}
-                <div className="h-4 sm:h-0"></div>
-
-                {/* Answer Button - Now inside scrollable content (not sticky) */}
+                {/* Answer Button - Inside scrollable content */}
                 {isPending && (
-                  <div className="pt-4">
+                  <div className="pt-4 pb-24">
                     <button
                       onClick={handleStartAnswer}
                       className="w-full py-3 sm:py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 touch-manipulation min-h-[48px] sm:min-h-[52px]"
@@ -633,27 +629,25 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                     </button>
                   </div>
                 )}
-
-                {/* Extra padding at bottom for mobile scroll comfort */}
-                <div className="h-20 sm:h-4"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Answer Recorder Modal */}
+      {/* Answer Recorder Modal - FIXED SCROLL CONTAINMENT */}
       {showAnswerRecorder && (
-        <div className="fixed inset-0 z-[60] overflow-hidden">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div
             className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
             onClick={handleRecorderCancel}
           />
 
-          <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
-            {/* MOBILE FIX: Use min-h-screen instead of h-screen + add safe area padding */}
-            <div className="relative bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-5xl min-h-screen sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden">
+          {/* MOBILE FIX: Proper container with flex column */}
+          <div className="relative w-full h-full sm:h-auto sm:w-auto sm:max-w-5xl sm:max-h-[90vh] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="relative bg-white w-full h-full sm:h-auto sm:rounded-2xl sm:shadow-2xl flex flex-col overflow-hidden sm:max-h-[90vh]">
               
+              {/* Header */}
               <div className="flex-shrink-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sm:rounded-t-2xl z-20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1 min-w-0 mr-4">
@@ -673,9 +667,9 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 <ProgressStepper currentStep={currentStep} steps={ANSWER_STEPS} />
               </div>
 
-              {/* MOBILE FIX: Scrollable content with proper bottom padding */}
-              <div className="flex-1 overflow-y-auto overscroll-contain overflow-x-hidden pb-safe">
-                <div className="p-4 sm:p-6 max-w-full pb-32 sm:pb-6">{/* ADDED pb-32 for mobile */}
+              {/* FIXED: Scrollable content with proper padding for sticky footer */}
+              <div className="flex-1 overflow-y-auto overscroll-contain overflow-x-hidden">
+                <div className="p-4 sm:p-6 max-w-full pb-24 sm:pb-6">
                   <AnswerRecorder
                     question={question}
                     expert={expertProfile}
