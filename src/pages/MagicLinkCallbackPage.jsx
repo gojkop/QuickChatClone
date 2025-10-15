@@ -16,9 +16,18 @@ export default function MagicLinkCallbackPage() {
   const [error, setError] = React.useState("");
   const [userData, setUserData] = React.useState(null);
 
+  // Prevent double-execution in React StrictMode
+  const hasVerifiedRef = React.useRef(false);
+
   console.log('[Magic Link Page] All hooks initialized, token:', searchParams.get('token'));
 
   React.useEffect(() => {
+    // Skip if already verified (prevents StrictMode double-render)
+    if (hasVerifiedRef.current) {
+      console.log('[Magic Link Page] Already verified, skipping duplicate call');
+      return;
+    }
+    hasVerifiedRef.current = true;
     console.log('[Magic Link Page] Component mounted');
     console.log('[Magic Link Page] Search params:', searchParams.toString());
 
