@@ -66,7 +66,14 @@ export async function xanoPost(endpoint, data, options = {}) {
     return response.data;
   } catch (error) {
     console.error(`Xano POST ${endpoint} error:`, error.response?.data || error.message);
-    throw new Error(`Xano API error: ${error.message}`);
+    console.error(`Xano POST ${endpoint} status:`, error.response?.status);
+    console.error(`Xano POST ${endpoint} full error:`, error);
+
+    // Preserve original error information
+    const enhancedError = new Error(`Xano API error: ${error.message}`);
+    enhancedError.response = error.response;
+    enhancedError.xanoData = error.response?.data;
+    throw enhancedError;
   }
 }
 

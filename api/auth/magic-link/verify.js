@@ -107,6 +107,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('[Magic Link Verify] Error:', error);
+    console.error('[Magic Link Verify] Error message:', error.message);
+    console.error('[Magic Link Verify] Error stack:', error.stack);
+    console.error('[Magic Link Verify] Error response:', error.response?.data);
 
     return res.status(500).json({
       error: 'Verification failed. Please try again or request a new link.',
