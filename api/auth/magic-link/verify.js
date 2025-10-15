@@ -54,6 +54,9 @@ export default async function handler(req, res) {
       { usePublicApi: true }
     );
 
+    console.log('[Magic Link] Xano response received:', JSON.stringify(xanoResponse, null, 2));
+    console.log('[Magic Link] Xano response keys:', Object.keys(xanoResponse));
+
     // Handle various error cases
     if (xanoResponse.error) {
       const errorMap = {
