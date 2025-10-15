@@ -6,8 +6,6 @@ import { useAuth } from "../context/AuthContext";
 import logo from "@/assets/images/logo-mindpick.svg";
 
 export default function MagicLinkCallbackPage() {
-  console.log('[Magic Link Page] ===== COMPONENT FUNCTION CALLED =====');
-
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
@@ -19,50 +17,35 @@ export default function MagicLinkCallbackPage() {
   // Prevent double-execution in React StrictMode
   const hasVerifiedRef = React.useRef(false);
 
-  console.log('[Magic Link Page] All hooks initialized, token:', searchParams.get('token'));
-
   React.useEffect(() => {
     // Skip if already verified (prevents StrictMode double-render)
     if (hasVerifiedRef.current) {
-      console.log('[Magic Link Page] Already verified, skipping duplicate call');
       return;
     }
     hasVerifiedRef.current = true;
-    console.log('[Magic Link Page] Component mounted');
-    console.log('[Magic Link Page] Search params:', searchParams.toString());
 
     const verifyToken = async () => {
-      console.log('[Magic Link Page] verifyToken function called');
-
       const token = searchParams.get('token');
-      console.log('[Magic Link Page] Token from URL:', token);
 
       if (!token) {
-        console.error('[Magic Link Page] No token found in URL');
+        console.error('[Magic Link] No token found in URL');
         setStatus('error');
         setError('Invalid magic link. No token found.');
         return;
       }
 
       try {
-        console.log('[Magic Link] Starting verification for token:', token);
         setStatus('verifying');
 
         // Call verify endpoint
-        console.log('[Magic Link] Calling AuthAPI.verifyMagicLink...');
         const response = await AuthAPI.verifyMagicLink(token);
-        console.log('[Magic Link] API response received:', response);
 
         if (!response.token) {
-          console.error('[Magic Link] No auth token in response');
           throw new Error('No authentication token received');
         }
 
-        console.log('[Magic Link] Verification successful, storing token');
-
         // Store JWT token
         login(response.token);
-        console.log('[Magic Link] Token stored via login()');
 
         // Store user data for display
         setUserData({
@@ -70,22 +53,16 @@ export default function MagicLinkCallbackPage() {
           name: response.name,
           isNewUser: response.is_new_user
         });
-        console.log('[Magic Link] User data set:', response.email);
 
         setStatus('success');
-        console.log('[Magic Link] Status set to success, will redirect in 2 seconds');
 
         // Redirect after brief success message
         setTimeout(() => {
-          console.log('[Magic Link] Redirecting to /expert');
           navigate('/expert', { replace: true });
         }, 2000);
 
       } catch (e) {
-        console.error('[Magic Link] Verification failed - Full error:', e);
-        console.error('[Magic Link] Error response:', e.response);
-        console.error('[Magic Link] Error status:', e.response?.status);
-        console.error('[Magic Link] Error data:', e.response?.data);
+        console.error('[Magic Link] Verification failed:', e.response?.data || e.message);
 
         setStatus('error');
 
@@ -108,11 +85,8 @@ export default function MagicLinkCallbackPage() {
       }
     };
 
-    console.log('[Magic Link Page] About to call verifyToken()');
     verifyToken();
   }, [searchParams, login, navigate]);
-
-  console.log('[Magic Link Page] Rendering with status:', status);
 
   return (
     <div className="min-h-screen bg-canvas">

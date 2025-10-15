@@ -46,10 +46,7 @@ export default async function handler(req, res) {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     const clientIp = Array.isArray(ip) ? ip[0] : ip.split(',')[0].trim();
 
-    console.log(`[Magic Link] Initiating for email: ${email}, IP: ${clientIp}`);
-
     // Call Xano to generate token and check rate limits
-    // This endpoint will be created in Xano Public API
     const xanoResponse = await xanoPost(
       '/auth/magic-link/initiate',
       {
@@ -72,15 +69,9 @@ export default async function handler(req, res) {
     }
 
     // Build magic link URL
-    // For local development, override with localhost
     const isLocalDev = process.env.VERCEL_ENV === 'development' || !process.env.VERCEL_ENV;
     const origin = isLocalDev ? 'http://localhost:5173' : (process.env.CLIENT_PUBLIC_ORIGIN || 'http://localhost:5173');
     const magicLinkUrl = `${origin}/auth/magic-link?token=${xanoResponse.token}`;
-
-    console.log('[Magic Link] Environment:', process.env.VERCEL_ENV || 'local');
-    console.log('[Magic Link] Origin:', origin);
-
-    console.log(`[Magic Link] Generated token for ${email}, sending email...`);
 
     // Send email with magic link
     await sendMagicLinkEmail({
@@ -89,8 +80,6 @@ export default async function handler(req, res) {
       verificationCode: xanoResponse.verification_code,
       expiresInMinutes: 15
     });
-
-    console.log(`[Magic Link] Email sent successfully to ${email}`);
 
     // Don't reveal whether email exists in system (security best practice)
     return res.status(200).json({

@@ -12,8 +12,6 @@ function RequireAuth({ children }) {
 }
 
 export default function AppRouter() {
-  console.log('[Router] AppRouter rendering');
-
   return (
     <BrowserRouter>
       <Routes>
