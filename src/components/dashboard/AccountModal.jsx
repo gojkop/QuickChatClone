@@ -39,7 +39,7 @@ const AccountModal = ({ isOpen, onClose, profile, onSave }) => {
       };
 
       // Use apiClient which handles authentication automatically
-      await apiClient.put('/me/profile', updateData);
+      await apiClient.put('/me/account', updateData);
       
       onSave(updateData);
       alert('Account updated successfully!');
