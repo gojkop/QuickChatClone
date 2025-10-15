@@ -234,19 +234,6 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocial
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [isMobile]);
 
-  // Generate particles - DISABLED
-  // const particleCount = isMobile ? 8 : 16;
-  // const particles = Array.from({ length: particleCount }, (_, i) => {
-  //   const angle = (i / particleCount) * Math.PI * 2;
-  //   const radius = isMobile ? 70 : 85;
-  //   const x = Math.cos(angle) * radius;
-  //   const y = Math.sin(angle) * radius;
-  //   const delay = i * 0.15;
-  //   const duration = 8 + (i % 3) * 2;
-  //   
-  //   return { x, y, delay, duration, id: i };
-  // });
-
   const parallaxStyle = !isMobile ? {
     transform: `translate(${mousePosition.x}px, ${mousePosition.y}px)`,
     transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
@@ -263,28 +250,6 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocial
         {/* Ambient glow - enhanced with breathing */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-violet-400 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500 living-breath"/>
         
-        {/* Particle field - DISABLED */}
-        {/* <div className="absolute inset-0 pointer-events-none">
-          {particles.map((particle) => (
-            <div
-              key={particle.id}
-              className="absolute w-1.5 h-1.5 rounded-full living-particle"
-              style={{
-                left: '50%',
-                top: '50%',
-                marginLeft: `${particle.x}px`,
-                marginTop: `${particle.y}px`,
-                animationDelay: `${particle.delay}s`,
-                animationDuration: `${particle.duration}s`,
-                background: particle.id % 2 === 0 
-                  ? 'linear-gradient(135deg, #4F46E5, #7C3AED)' 
-                  : 'linear-gradient(135deg, #7C3AED, #8B5CF6)',
-                boxShadow: '0 0 8px rgba(79, 70, 229, 0.5)'
-              }}
-            />
-          ))}
-        </div> */}
-
         {/* Avatar container with breathing animation and parallax */}
         <div 
           className="relative living-breath-avatar"
@@ -366,7 +331,7 @@ function PublicProfilePage() {
   const [error, setError] = useState('');
   const [showShareMenu, setShowShareMenu] = useState(false);
 
-  // Track UTM visit on page load
+  // ⭐ FIXED: Track UTM visit on page load WITH localStorage storage
   useEffect(() => {
     const trackVisit = async () => {
       if (!handle) return;
@@ -378,27 +343,65 @@ function PublicProfilePage() {
       const utmMedium = urlParams.get('utm_medium');
       const utmContent = urlParams.get('utm_content');
 
+      // 🔍 DEBUG: Log what we found
+      console.log('🔍 UTM Parameters detected:', {
+        utm_source: utmSource,
+        utm_campaign: utmCampaign,
+        utm_medium: utmMedium,
+        utm_content: utmContent,
+        fullURL: window.location.href
+      });
+
       // Only track if we have at least source and campaign
       if (utmSource && utmCampaign) {
+        console.log('✅ Valid UTM params, tracking visit...');
+
+        // Prepare UTM data object
+        const utmData = {
+          expert_handle: handle,
+          utm_source: utmSource,
+          utm_campaign: utmCampaign,
+          utm_medium: utmMedium || '',
+          utm_content: utmContent || ''
+        };
+
         try {
-          await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/track-visit', {
+          // Call tracking API
+          const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/track-visit', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              expert_handle: handle,
-              utm_source: utmSource,
-              utm_campaign: utmCampaign,
-              utm_medium: utmMedium || '',
-              utm_content: utmContent || ''
-            })
+            body: JSON.stringify(utmData)
           });
-          console.log('UTM visit tracked:', { utmSource, utmCampaign });
+
+          const result = await response.json();
+          console.log('📊 Track visit response:', result);
+
+          // ⭐ CRITICAL FIX: Store in localStorage AFTER successful tracking
+          if (result.tracked) {
+            console.log('💾 Storing UTM params in localStorage...');
+            localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
+            localStorage.setItem('qc_utm_timestamp', Date.now().toString());
+            
+            // 🔍 DEBUG: Verify storage
+            const stored = localStorage.getItem('qc_utm_params');
+            console.log('✅ Verified localStorage:', stored);
+          } else {
+            console.warn('⚠️ Tracking response: tracked=false');
+          }
+
         } catch (err) {
-          console.error('Failed to track UTM visit:', err);
-          // Silently fail - don't block page load
+          console.error('❌ Failed to track UTM visit:', err);
+          
+          // ⭐ FALLBACK: Store in localStorage even if API fails
+          // This ensures attribution still works if backend is temporarily down
+          console.log('💾 Storing UTM params anyway (API failed)...');
+          localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
+          localStorage.setItem('qc_utm_timestamp', Date.now().toString());
         }
+      } else {
+        console.log('ℹ️ No UTM params in URL, skipping tracking');
       }
     };
 
