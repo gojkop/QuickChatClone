@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } f
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
 import { InlineAICoach } from './InlineAICoach';
+import { MindPilotQuestionCoach } from './MindPilotQuestionCoach';
 import HelpButton from '@/components/common/HelpButton';
 
 const MAX_RECORDING_SECONDS = 90;
@@ -1180,15 +1181,25 @@ const QuestionComposer = forwardRef(({ onReady, hideButton = false, expertId, ex
 
       {expertId && expertProfile && title.trim() && (
         <div className="pt-4 border-t-2 border-gray-200">
-          <InlineAICoach
-            questionTitle={title}
-            questionText={text}
-            recordingSegments={segments}
-            attachments={attachmentUpload.uploads.filter(u => u.result).map(u => u.result)}
-            expertId={expertId}
-            expertProfile={expertProfile}
-            onApplySuggestions={handleApplyAISuggestions}
-          />
+//          <InlineAICoach
+//            questionTitle={title}
+//            questionText={text}
+//            recordingSegments={segments}
+//            attachments={attachmentUpload.uploads.filter(u => u.result).map(u => u.result)}
+//            expertId={expertId}
+//            expertProfile={expertProfile}
+//            onApplySuggestions={handleApplyAISuggestions}
+//          />
+
+<MindPilotQuestionCoach
+      questionTitle={title}
+      questionText={text}
+      recordingSegments={segments}
+      attachments={attachmentUpload.uploads.filter(u => u.result).map(u => u.result)}
+      expertId={expertId}
+      expertProfile={expertProfile}
+      onApplySuggestions={handleApplyAISuggestions}
+    />
         </div>
       )}
 
