@@ -60,6 +60,8 @@ export default async function handler(req, res) {
     const questionPayload = {
       expert_profile_id: expertProfileId,
       payer_email: payerEmail,
+      payer_first_name : payerFirstName || null;
+      payer_last_name : payerLastName || null;
       price_cents: priceCents,
       currency: currency,
       status: 'paid',
