@@ -6,6 +6,7 @@ import { getNewQuestionTemplate } from './email-templates/new-question.js';
 import { getAnswerReceivedTemplate } from './email-templates/answer-received.js';
 import { getQuestionConfirmationTemplate } from './email-templates/question-confirmation.js';
 import { getAccountDeletionTemplate } from './email-templates/account-deletion.js';
+import { getMagicLinkTemplate, getWelcomeEmailTemplate } from './email-templates/magic-link.js';
 
 const ZEPTOMAIL_API_URL = 'https://api.zeptomail.eu/v1.1/email';
 
@@ -197,20 +198,96 @@ export async function sendQuestionConfirmationNotification(data) {
  */
 export async function sendAccountDeletionNotification(data) {
   const { email, name } = data;
-  
+
   // Validate email exists
   if (!email) {
     console.error('❌ Cannot send deletion email: email is missing from data:', data);
     throw new Error('Email address is required to send deletion notification');
   }
-  
+
   console.log('📧 Preparing deletion notification for:', email);
-  
+
   const { subject, htmlBody, textBody } = getAccountDeletionTemplate(data);
 
   return sendEmail({
     to: email,
     toName: name || email,
+    subject,
+    htmlBody,
+    textBody,
+  });
+}
+
+/**
+ * Send magic link authentication email
+ * @param {Object} data - Magic link data
+ * @param {string} data.to - Recipient email
+ * @param {string} data.magicLinkUrl - Full URL with token
+ * @param {string} data.verificationCode - 6-digit backup code
+ * @param {number} data.expiresInMinutes - Expiration time in minutes (default 15)
+ */
+export async function sendMagicLinkEmail(data) {
+  const { to, magicLinkUrl, verificationCode, expiresInMinutes = 15 } = data;
+
+  // Validate required parameters
+  if (!to) {
+    console.error('❌ Cannot send magic link: email is missing');
+    throw new Error('Email address is required');
+  }
+
+  if (!magicLinkUrl) {
+    console.error('❌ Cannot send magic link: magicLinkUrl is missing');
+    throw new Error('Magic link URL is required');
+  }
+
+  if (!verificationCode) {
+    console.error('❌ Cannot send magic link: verificationCode is missing');
+    throw new Error('Verification code is required');
+  }
+
+  console.log('📧 Preparing magic link email for:', to);
+
+  const { subject, htmlBody, textBody } = getMagicLinkTemplate({
+    magicLinkUrl,
+    verificationCode,
+    expiresInMinutes
+  });
+
+  return sendEmail({
+    to,
+    toName: to, // Use email as name since we don't have user name yet
+    subject,
+    htmlBody,
+    textBody,
+  });
+}
+
+/**
+ * Send welcome email for new users
+ * @param {Object} data - Welcome email data
+ * @param {string} data.to - Recipient email
+ * @param {string} data.name - User's name
+ * @param {string} data.authMethod - Authentication method used ('magic_link', 'google', 'linkedin')
+ */
+export async function sendWelcomeEmail(data) {
+  const { to, name, authMethod = 'magic_link' } = data;
+
+  // Validate required parameters
+  if (!to) {
+    console.error('❌ Cannot send welcome email: email is missing');
+    throw new Error('Email address is required');
+  }
+
+  console.log('📧 Preparing welcome email for:', to);
+
+  const { subject, htmlBody, textBody } = getWelcomeEmailTemplate({
+    name: name || to.split('@')[0],
+    authMethod
+  });
+
+  return sendEmail({
+    to,
+    toName: name || to,
     subject,
     htmlBody,
     textBody,

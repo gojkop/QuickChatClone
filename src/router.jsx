@@ -3,6 +3,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SignInPage from "./pages/SignInPage";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
+import MagicLinkCallbackPage from "./pages/MagicLinkCallbackPage";
 import ExpertDashboardPage from "./pages/ExpertDashboardPage";
 import { authService } from "./api";
 
@@ -16,6 +17,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+        <Route path="/auth/magic-link" element={<MagicLinkCallbackPage />} />
         <Route
           path="/expert"
           element={

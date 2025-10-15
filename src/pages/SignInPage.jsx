@@ -9,6 +9,9 @@ export default function SignInPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [magicLinkSent, setMagicLinkSent] = React.useState(false);
+  const [rateLimitError, setRateLimitError] = React.useState(null);
 
   React.useEffect(() => {
     if (authService.isAuthenticated()) {
@@ -67,6 +70,50 @@ export default function SignInPage() {
 
       setLoading(false);
       sessionStorage.removeItem("qc_auth_in_progress");
+    }
+  };
+
+  const onEmailSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setRateLimitError(null);
+    setMagicLinkSent(false);
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await AuthAPI.sendMagicLink(email);
+
+      if (response.success) {
+        setMagicLinkSent(true);
+        setEmail(""); // Clear email field
+      }
+    } catch (e) {
+      console.error("Magic link send failed", e);
+
+      if (e.response?.status === 429) {
+        // Rate limit exceeded
+        const retryAfter = e.response?.data?.retryAfter || 3600;
+        const minutesLeft = Math.ceil(retryAfter / 60);
+        setRateLimitError({
+          message: `Too many requests. Please try again in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}.`,
+          retryAfter
+        });
+      } else if (e.response?.status === 400) {
+        setError("Invalid email address. Please check and try again.");
+      } else if (!navigator.onLine) {
+        setError("No internet connection. Please check your network.");
+      } else {
+        setError("Unable to send magic link. Please try again or use another sign-in method.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -178,16 +225,65 @@ export default function SignInPage() {
                 </div>
               </div>
 
-              <SocialButton
-                comingSoon
-                label="Continue with Email"
-                icon={
-                  <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              {/* Email Magic Link Form */}
+              <form onSubmit={onEmailSubmit} className="space-y-3">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-ink mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    disabled={loading}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !email || magicLinkSent}
+                  className="w-full inline-flex items-center justify-center gap-3 rounded-lg transition-all duration-200 border border-primary bg-primary hover:bg-accent hover:border-accent active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed px-4 py-3.5 font-semibold text-white"
+                >
+                  <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                }
-              />
+                  <span className="text-sm md:text-base">
+                    {magicLinkSent ? 'Check your email' : 'Continue with Email'}
+                  </span>
+                </button>
+              </form>
             </div>
+
+            {/* Magic Link Success Message */}
+            {magicLinkSent && (
+              <div className="flex items-start gap-2 p-3.5 bg-green-50 border border-green-200 rounded-lg mt-4" role="status">
+                <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm text-green-700 leading-relaxed">
+                  <p className="font-semibold mb-1">Check your inbox!</p>
+                  <p>We've sent you a sign-in link. Click the link in the email to continue.</p>
+                  <p className="mt-2 text-xs text-green-600">The link expires in 15 minutes.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Rate Limit Message */}
+            {rateLimitError && (
+              <div className="flex items-start gap-2 p-3.5 bg-yellow-50 border border-yellow-200 rounded-lg mt-4" role="alert">
+                <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="text-sm text-yellow-700 leading-relaxed">
+                  <p className="font-semibold mb-1">Too many attempts</p>
+                  <p>{rateLimitError.message}</p>
+                  <p className="mt-2 text-xs text-yellow-600">You can use Google or LinkedIn to sign in immediately.</p>
+                </div>
+              </div>
+            )}
 
             {/* Loading State */}
             {loading && (
