@@ -8,7 +8,6 @@ import { MindPilotBadge } from '@/components/mindpilot/MindPilotBadge';
 import { MindPilotProgress } from '@/components/mindpilot/MindPilotProgress';
 import { MINDPILOT_ICONS } from '@/components/mindpilot/index';
 
-
 /**
  * mindPilot Question Coach - Inline collapsible AI guidance
  * Helps users improve questions before submission
@@ -125,28 +124,43 @@ export const MindPilotQuestionCoach = ({
   };
 
   // ============================================================================
-  // COLLAPSED STATE (CTA BUTTON)
+  // COLLAPSED STATE (CTA BUTTON) - UPDATED WITH ANIMATIONS
   // ============================================================================
   if (!isExpanded) {
     return (
       <div className="my-6">
-        <div className="flex items-center gap-3">
-          <MindPilotButton
-            variant="secondary"
-            size="md"
-            icon={MINDPILOT_ICONS.SPARKLES}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* Animated AI Button */}
+          <button
             onClick={handleStartCoaching}
             disabled={!questionTitle?.trim()}
-            className="flex-shrink-0"
+            className="group relative inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
           >
-            Get mindPilot Feedback
-          </MindPilotButton>
-          
-          <div className="flex items-center gap-2">
-            <MindPilotIcon variant="lightbulb" size="sm" />
-            <span className="text-xs text-slate-600">
-              AI-powered question improvement (optional)
+            {/* Animated background shimmer */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            
+            {/* Pulsing glow effect */}
+            <div className="absolute inset-0 bg-blue-400/20 rounded-xl blur-xl group-hover:bg-blue-400/40 transition-all duration-500"></div>
+            
+            {/* Animated sparkles icon */}
+            <span className="relative text-2xl animate-pulse group-hover:scale-110 transition-transform duration-300">
+              ✨
             </span>
+            
+            <span className="relative font-bold">Get mindPilot Feedback</span>
+            
+            {/* Subtle dot animation */}
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+            </span>
+          </button>
+          
+          {/* Helper text - responsive */}
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <span className="hidden sm:inline">💡</span>
+            <span className="sm:hidden">AI-powered • Optional</span>
+            <span className="hidden sm:inline">AI-powered improvement (optional)</span>
           </div>
         </div>
       </div>
@@ -154,44 +168,53 @@ export const MindPilotQuestionCoach = ({
   }
 
   // ============================================================================
-  // EXPANDED PANEL
+  // EXPANDED PANEL - UPDATED WITH LIGHT, CLEAN DESIGN
   // ============================================================================
   return (
     <div className="my-6">
-      <MindPilotCard
-        className="relative overflow-visible animate-slideDown"
-      >
-        {/* Header with branding */}
-        <div className="absolute -top-3 left-6">
-          <MindPilotBadge icon="sparkles">
-            mindPilot Question Coach
-          </MindPilotBadge>
+      {/* Clean white card with subtle shadow */}
+      <div className="bg-white border-2 border-indigo-200 rounded-2xl shadow-xl overflow-hidden animate-slideDown">
+        {/* Header - Clean gradient */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-indigo-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl animate-pulse">✨</span>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">mindPilot Question Coach</h3>
+                <p className="text-xs text-gray-600">AI-powered guidance</p>
+              </div>
+            </div>
+            {step === 'completed' && (
+              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                ✓ Applied
+              </span>
+            )}
+            <button
+              onClick={handleReset}
+              className="p-2 hover:bg-white/50 rounded-lg transition"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
         </div>
 
-        {/* Close button */}
-        <button
-          onClick={handleReset}
-          className="absolute top-4 right-4 p-2 hover:bg-slate-700/50 rounded-lg transition"
-        >
-          <X className="w-4 h-4 text-slate-400" />
-        </button>
-
-        {/* Content */}
-        <div className="mt-6">
+        {/* Content - Light background */}
+        <div className="p-6 bg-white">
           {/* ============================================================ */}
           {/* TIER 1 LOADING */}
           {/* ============================================================ */}
           {step === 'tier1-loading' && (
-            <div className="text-center py-8">
-              <MindPilotIcon 
-                variant="brain" 
-                size="xl" 
-                className="animate-pulse mb-4" 
-              />
-              <p className="text-base font-semibold text-slate-100 mb-2">
-                mindPilot is validating...
+            <div className="text-center py-12">
+              <div className="relative inline-block mb-4">
+                <span className="text-5xl animate-pulse">🧠</span>
+                <div className="absolute inset-0 animate-ping">
+                  <span className="text-5xl opacity-20">🧠</span>
+                </div>
+              </div>
+              <p className="text-lg font-semibold text-gray-900 mb-2">
+                Analyzing your question...
               </p>
-              <p className="text-sm text-slate-400">This takes ~1 second</p>
+              <p className="text-sm text-gray-600">This takes ~1 second</p>
             </div>
           )}
 
@@ -200,54 +223,62 @@ export const MindPilotQuestionCoach = ({
           {/* ============================================================ */}
           {step === 'tier1-feedback' && tier1Result && (
             <div>
-              <div className="flex items-start gap-3 mb-6">
-                <MindPilotIcon variant="target" size="lg" />
-                <div>
-                  <h3 className="text-lg font-bold text-slate-50 mb-1">
+              <div className="flex items-start gap-4 mb-6">
+                <span className="text-3xl">🎯</span>
+                <div className="flex-1">
+                  <h4 className="text-lg font-bold text-gray-900 mb-2">
                     Quick improvements suggested
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <span>Clarity Score:</span>
-                    <span className="font-bold text-slate-200">
+                  </h4>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-sm font-medium text-gray-700">Clarity Score:</span>
+                    <div className="flex-1 max-w-xs bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${tier1Result.validation?.clarityScore || 0}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">
                       {tier1Result.validation?.clarityScore || 0}/100
                     </span>
                   </div>
                 </div>
               </div>
 
-              <MindPilotProgress
-                value={tier1Result.validation?.clarityScore || 0}
-                label="Question Clarity"
-                className="mb-6"
-              />
-
               <div className="space-y-3 mb-6">
                 {tier1Result.feedback.map((item, idx) => (
-                  <MindPilotAlert
+                  <div 
                     key={idx}
-                    variant={item.severity === 'high' ? 'error' : 'warning'}
-                    title={item.message}
-                    description={item.suggestion}
-                  />
+                    className={`p-4 rounded-xl border-2 ${
+                      item.severity === 'high' 
+                        ? 'bg-red-50 border-red-200' 
+                        : 'bg-amber-50 border-amber-200'
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-gray-900 mb-1">
+                      {item.message}
+                    </p>
+                    {item.suggestion && (
+                      <p className="text-xs text-gray-700">
+                        💡 {item.suggestion}
+                      </p>
+                    )}
+                  </div>
                 ))}
               </div>
 
               <div className="flex gap-3">
-                <MindPilotButton
-                  variant="ghost"
+                <button
                   onClick={handleReset}
-                  className="flex-1"
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition"
                 >
                   I'll fix it
-                </MindPilotButton>
-                <MindPilotButton
-                  variant="primary"
-                  icon={MINDPILOT_ICONS.COMPASS}
+                </button>
+                <button
                   onClick={proceedToTier2}
-                  className="flex-1"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold rounded-xl hover:shadow-lg transition"
                 >
                   Get Coaching Anyway
-                </MindPilotButton>
+                </button>
               </div>
             </div>
           )}
@@ -257,31 +288,31 @@ export const MindPilotQuestionCoach = ({
           {/* ============================================================ */}
           {step === 'tier2-loading' && (
             <div>
-              <MindPilotAlert
-                variant="success"
-                title="Validation Complete"
-                description="mindPilot is now analyzing your question"
-                className="mb-6"
-              />
+              <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl mb-6 flex items-center gap-3">
+                <span className="text-2xl">✓</span>
+                <div>
+                  <p className="text-sm font-bold text-green-900">Validation Complete</p>
+                  <p className="text-xs text-green-700">mindPilot is now analyzing your question</p>
+                </div>
+              </div>
 
-              <div className="text-center py-8">
-                <MindPilotIcon 
-                  variant="sparkles" 
-                  size="xl" 
-                  className="animate-pulse mb-4" 
-                />
-                <p className="text-base font-semibold text-slate-100 mb-2">
+              <div className="text-center py-12">
+                <div className="relative inline-block mb-4">
+                  <span className="text-5xl animate-pulse">✨</span>
+                  <div className="absolute inset-0 animate-ping">
+                    <span className="text-5xl opacity-20">✨</span>
+                  </div>
+                </div>
+                <p className="text-lg font-semibold text-gray-900 mb-2">
                   AI is analyzing your question...
                 </p>
-                <p className="text-sm text-slate-400 mb-6">
+                <p className="text-sm text-gray-600 mb-6">
                   This takes 3-5 seconds
                 </p>
                 
-                <MindPilotProgress 
-                  value={60} 
-                  className="max-w-xs mx-auto"
-                  showPercentage={false}
-                />
+                <div className="max-w-xs mx-auto bg-gray-200 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
+                </div>
               </div>
             </div>
           )}
@@ -293,31 +324,39 @@ export const MindPilotQuestionCoach = ({
             <div>
               {/* Summary */}
               <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <MindPilotIcon variant="brain" size="md" />
-                  <h3 className="text-base font-bold text-slate-50">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-2xl">🧠</span>
+                  <h4 className="text-base font-bold text-gray-900">
                     mindPilot Analysis
-                  </h3>
+                  </h4>
                 </div>
 
-                <MindPilotAlert
-                  variant="info"
-                  title={tier2Result.analysis?.summary}
-                  className="mb-4"
-                />
+                <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-xl mb-4">
+                  <p className="text-sm text-gray-800">
+                    {tier2Result.analysis?.summary}
+                  </p>
+                </div>
 
-                <MindPilotProgress
-                  value={tier2Result.analysis?.clarity || 0}
-                  label="Question Clarity"
-                />
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-sm font-medium text-gray-700">Question Clarity:</span>
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${tier2Result.analysis?.clarity || 0}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">
+                    {tier2Result.analysis?.clarity || 0}/100
+                  </span>
+                </div>
               </div>
 
               {/* Clarifications */}
               {tier2Result.clarifications && tier2Result.clarifications.length > 0 && (
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-4">
-                    <MindPilotIcon variant="compass" size="md" />
-                    <h4 className="text-sm font-bold text-slate-100">
+                    <span className="text-xl">🧭</span>
+                    <h4 className="text-sm font-bold text-gray-900">
                       mindPilot suggests clarifying:
                     </h4>
                   </div>
@@ -326,21 +365,21 @@ export const MindPilotQuestionCoach = ({
                     {tier2Result.clarifications.map((q) => (
                       <div 
                         key={q.id} 
-                        className="bg-slate-900/60 border border-blue-500/30 rounded-xl p-4"
+                        className="p-4 bg-gray-50 border-2 border-gray-200 rounded-xl"
                       >
                         <label className="block mb-2">
-                          <span className="text-sm font-semibold text-slate-100">
+                          <span className="text-sm font-semibold text-gray-900">
                             {q.question}
                           </span>
                           {q.optional && (
-                            <span className="text-xs text-slate-500 ml-2">
+                            <span className="text-xs text-gray-500 ml-2">
                               (optional)
                             </span>
                           )}
                         </label>
                         <textarea
                           placeholder="Your answer..."
-                          className="w-full p-3 bg-slate-800/60 border border-blue-500/30 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-3 border-2 border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           rows={2}
                           value={clarificationResponses[q.id] || ''}
                           onChange={(e) => setClarificationResponses(prev => ({
@@ -349,8 +388,8 @@ export const MindPilotQuestionCoach = ({
                           }))}
                         />
                         <div className="flex items-start gap-2 mt-2">
-                          <MindPilotIcon variant="lightbulb" size="sm" />
-                          <p className="text-xs text-slate-400">{q.why}</p>
+                          <span className="text-sm">💡</span>
+                          <p className="text-xs text-gray-600">{q.why}</p>
                         </div>
                       </div>
                     ))}
@@ -361,37 +400,37 @@ export const MindPilotQuestionCoach = ({
               {/* Attachment suggestions */}
               {tier2Result.attachmentSuggestions && 
                tier2Result.attachmentSuggestions.length > 0 && (
-                <MindPilotAlert
-                  variant="info"
-                  icon="💡"
-                  title="These attachments would help:"
-                  description={
-                    <ul className="mt-2 space-y-1">
-                      {tier2Result.attachmentSuggestions.map((s, i) => (
-                        <li key={i} className="text-sm">• {s}</li>
-                      ))}
-                    </ul>
-                  }
-                  className="mb-6"
-                />
+                <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl mb-6">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">💡</span>
+                    <div>
+                      <h4 className="text-sm font-bold text-yellow-900 mb-2">
+                        These attachments would help:
+                      </h4>
+                      <ul className="space-y-1">
+                        {tier2Result.attachmentSuggestions.map((s, i) => (
+                          <li key={i} className="text-sm text-yellow-800">• {s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* Actions */}
               <div className="flex gap-3">
-                <MindPilotButton
-                  variant="ghost"
+                <button
                   onClick={handleReset}
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition"
                 >
                   Skip
-                </MindPilotButton>
-                <MindPilotButton
-                  variant="primary"
-                  icon={MINDPILOT_ICONS.SPARKLES}
+                </button>
+                <button
                   onClick={handleApplyImprovements}
-                  className="flex-1"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold rounded-xl hover:shadow-lg transition"
                 >
                   Apply to Form
-                </MindPilotButton>
+                </button>
               </div>
             </div>
           )}
@@ -400,33 +439,34 @@ export const MindPilotQuestionCoach = ({
           {/* COMPLETED */}
           {/* ============================================================ */}
           {step === 'completed' && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-                <MindPilotIcon variant="star" size="lg" />
+            <div className="text-center py-12">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                <span className="text-4xl">⭐</span>
               </div>
-              <h4 className="text-lg font-bold text-slate-50 mb-2">
+              <h4 className="text-xl font-bold text-gray-900 mb-2">
                 Improvements Applied!
               </h4>
-              <p className="text-sm text-slate-400 mb-6">
+              <p className="text-sm text-gray-600 mb-6">
                 Your clarifications have been added to the context field
               </p>
               
-              <MindPilotBadge icon="sparkles">
-                Enhanced by mindPilot
-              </MindPilotBadge>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full">
+                <span className="text-lg">✨</span>
+                <span className="text-sm font-bold text-indigo-900">Enhanced by mindPilot</span>
+              </div>
 
               <div className="mt-6">
-                <MindPilotButton
-                  variant="ghost"
+                <button
                   onClick={handleReset}
+                  className="px-6 py-2 text-gray-600 hover:text-gray-900 font-medium transition"
                 >
                   Close
-                </MindPilotButton>
+                </button>
               </div>
             </div>
           )}
         </div>
-      </MindPilotCard>
+      </div>
     </div>
   );
 };
