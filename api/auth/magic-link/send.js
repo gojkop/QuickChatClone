@@ -72,8 +72,13 @@ export default async function handler(req, res) {
     }
 
     // Build magic link URL
-    const origin = process.env.CLIENT_PUBLIC_ORIGIN || 'http://localhost:5173';
+    // For local development, override with localhost
+    const isLocalDev = process.env.VERCEL_ENV === 'development' || !process.env.VERCEL_ENV;
+    const origin = isLocalDev ? 'http://localhost:5173' : (process.env.CLIENT_PUBLIC_ORIGIN || 'http://localhost:5173');
     const magicLinkUrl = `${origin}/auth/magic-link?token=${xanoResponse.token}`;
+
+    console.log('[Magic Link] Environment:', process.env.VERCEL_ENV || 'local');
+    console.log('[Magic Link] Origin:', origin);
 
     console.log(`[Magic Link] Generated token for ${email}, sending email...`);
 
