@@ -1033,7 +1033,7 @@ function AnswerRecorder({ question, onReady, onCancel, expert }) {
           question={question}
         />
 
-        <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200 pb-safe">
+        <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200 pb-6 sm:pb-4">
           <button
             onClick={onCancel}
             className="px-4 sm:px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition touch-manipulation min-h-[44px]"

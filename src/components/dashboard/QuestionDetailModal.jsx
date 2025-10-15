@@ -651,8 +651,8 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
           />
 
           <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
-            {/* MOBILE FIX: Strict constraints + proper sticky footer */}
-            <div className="relative bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-5xl h-screen sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden">
+            {/* MOBILE FIX: Use min-h-screen instead of h-screen + add safe area padding */}
+            <div className="relative bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-5xl min-h-screen sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden">
               
               <div className="flex-shrink-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sm:rounded-t-2xl z-20">
                 <div className="flex items-center justify-between mb-4">
@@ -673,9 +673,9 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                 <ProgressStepper currentStep={currentStep} steps={ANSWER_STEPS} />
               </div>
 
-              {/* MOBILE FIX: Scrollable content with strict constraints */}
-              <div className="flex-1 overflow-y-auto overscroll-contain overflow-x-hidden">
-                <div className="p-4 sm:p-6 max-w-full">{/* ADDED max-w-full */}
+              {/* MOBILE FIX: Scrollable content with proper bottom padding */}
+              <div className="flex-1 overflow-y-auto overscroll-contain overflow-x-hidden pb-safe">
+                <div className="p-4 sm:p-6 max-w-full pb-32 sm:pb-6">{/* ADDED pb-32 for mobile */}
                   <AnswerRecorder
                     question={question}
                     expert={expertProfile}
