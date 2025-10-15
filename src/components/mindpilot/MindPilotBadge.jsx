@@ -1,3 +1,5 @@
+import { MindPilotIcon } from './MindPilotIcon';
+
 /**
  * MindPilotBadge - Small badge with icon and text
  * @param {string} icon - Icon variant

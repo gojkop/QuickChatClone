@@ -1,3 +1,5 @@
+import { MindPilotIcon } from './MindPilotIcon';
+
 /**
  * MindPilotWordmark - Renders mindPilot logo with icon + text
  * @param {boolean} showIcon - Whether to show icon

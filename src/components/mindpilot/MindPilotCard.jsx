@@ -1,3 +1,5 @@
+import { MindPilotIcon } from './MindPilotIcon';
+
 /**
  * MindPilotCard - Glassmorphic card container
  * @param {string} title - Card title

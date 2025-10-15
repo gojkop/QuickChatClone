@@ -1,3 +1,5 @@
+import { MindPilotIcon } from './MindPilotIcon';
+
 /**
  * MindPilotFloatingPanel - Floating panel for recording co-pilot
  * @param {string} title - Panel title

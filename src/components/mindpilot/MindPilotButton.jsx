@@ -1,3 +1,5 @@
+import { MindPilotIcon } from './MindPilotIcon';
+
 /**
  * MindPilotButton - Styled button with optional icon
  * @param {string} variant - Style: 'primary', 'secondary', 'ghost'
