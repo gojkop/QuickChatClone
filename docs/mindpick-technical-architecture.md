@@ -116,6 +116,13 @@ project-root/
 │   │   └── linkedin/
 │   ├── ai/                     # AI features
 │   │   └── coach/              # Question coaching
+│   ├── marketing/              # Marketing endpoints
+│   │   ├── campaigns.js
+│   │   ├── traffic-sources.js
+│   │   ├── share-templates.js
+│   │   └── insights.js
+│   ├── public/                 # Public (no auth)
+│   │   └── track-visit.js      # UTM tracking
 │   └── lib/                    # Shared utilities
 │       ├── xano/               # Xano API client
 │       ├── cloudflare/         # Media services
@@ -173,6 +180,8 @@ admin/
 - `answer` - Expert responses
 - `media_asset` - Cloudflare media references
 - `payment` - Stripe transaction records
+- `utm_campaigns` - Marketing campaigns with UTM tracking
+- `campaign_visits` - Visitor tracking for campaigns
 
 **Access:**
 - REST API: `https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ`
@@ -292,6 +301,20 @@ admin/
 6. Propagates → Within 5 minutes (cache expiry)
 ```
 
+### UTM Campaign Tracking
+
+```
+1. Expert creates campaign → POST /marketing/campaigns
+2. Xano stores → utm_campaigns table
+3. Expert shares link → https://mindpick.me/u/handle?utm_source=...
+4. Visitor clicks → PublicProfilePage loads
+5. Frontend extracts → UTM params from URL
+6. Track visit → POST /public/track-visit (no auth)
+7. Xano stores → campaign_visits table
+8. Update metrics → update_campaign_metrics()
+9. Expert views → GET /marketing/campaigns (with analytics)
+```
+
 ---
 
 ## Key Integrations
@@ -345,6 +368,8 @@ admin/
 ```bash
 # Xano
 XANO_BASE_URL=https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ
+XANO_PUBLIC_API_URL=https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L  # For LinkedIn OAuth & internal endpoints
+XANO_INTERNAL_API_KEY=xxx
 
 # Cloudflare Media
 CLOUDFLARE_ACCOUNT_ID=xxx
@@ -373,6 +398,12 @@ ZEPTOMAIL_FROM_NAME=mindPick Notification
 # Payments
 STRIPE_SECRET_KEY=sk_live_xxx
 STRIPE_PUBLISHABLE_KEY=pk_live_xxx
+```
+
+**Xano Environment Variables (set in Xano dashboard):**
+```bash
+# Marketing Module
+APP_URL=https://mindpick.me
 ```
 
 **Frontend (Vite):**
@@ -632,6 +663,90 @@ vercel env ls
 - ✅ S3-compatible API
 - ✅ $0 egress fees (vs. AWS $0.09/GB)
 - ✅ 10x cheaper storage
+
+---
+
+## Marketing Module
+
+### Overview
+
+**Status:** ✅ Production Ready (October 2025)
+
+The Marketing Module enables experts to create campaigns, track traffic sources, and understand their marketing performance through UTM parameter tracking.
+
+### Architecture
+
+**Components:**
+- **Backend:** 6 Xano API endpoints (5 authenticated + 1 public)
+- **Database:** 2 tables (`utm_campaigns`, `campaign_visits`)
+- **Functions:** `update_campaign_metrics()`, `link_question_to_campaign()`
+- **Frontend:** `useMarketing.js` hook, PublicProfilePage integration
+
+### Features
+
+**Campaign Management:**
+- Create campaigns with UTM parameters
+- Auto-generate shareable URLs
+- Track performance metrics (visits, questions, revenue, conversion rate)
+
+**Analytics:**
+- Traffic source breakdown
+- Performance insights and recommendations
+- Conversion tracking
+
+**Social Sharing:**
+- Pre-filled templates for Twitter, LinkedIn, Facebook
+- Copy-paste ready with UTM parameters
+
+### Data Flow
+
+```
+Campaign Creation:
+Expert → POST /marketing/campaigns → utm_campaigns table
+
+Visit Tracking:
+Visitor → PublicProfilePage (with UTM params) →
+POST /public/track-visit → campaign_visits table →
+update_campaign_metrics() → utm_campaigns updated
+
+Analytics:
+Expert → GET /marketing/campaigns →
+Returns campaigns with metrics (visits, conversions, revenue)
+```
+
+### Database Schema
+
+**utm_campaigns:**
+- Campaign metadata (name, UTM parameters)
+- Performance metrics (visits, questions, revenue, conversion rate)
+- Unique constraint: (expert_profile_id, utm_source, utm_campaign)
+
+**campaign_visits:**
+- Individual visit records
+- Visitor metadata (IP hash, user agent, referrer, device)
+- Conversion tracking (question_id when visitor converts)
+
+### Implementation Notes
+
+- **Public endpoint:** `/public/track-visit` requires no authentication
+- **Auto-creation:** Campaigns auto-created if visitor arrives with new UTM combo
+- **Privacy:** IP addresses are hashed, not stored raw
+- **Metrics:** Updated via Xano function `update_campaign_metrics()`
+- **Attribution:** Question-to-campaign linking planned for Phase 2
+
+### Known Limitations
+
+1. **Manual campaign creation recommended:** While auto-creation exists, experts should create campaigns before sharing links
+2. **No session persistence:** Multiple visits by same visitor create separate records
+3. **Question attribution:** Not automatically linked yet (requires session tracking)
+
+### Future Enhancements (Phase 2)
+
+- Automatic question-to-campaign attribution
+- Session-based visitor tracking (deduplication)
+- Time-series charts and cohort analysis
+- QR code generation for offline campaigns
+- A/B testing support
 
 ---
 

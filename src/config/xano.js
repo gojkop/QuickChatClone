@@ -1,14 +1,13 @@
 // Centralized Xano configuration
 // Single source of truth for all Xano URLs
 
-// Main API base URL (auth, users, questions, answers)
+// Main API base URL (authenticated endpoints: auth, users, questions, answers, marketing)
 export const XANO_BASE_URL = "https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ";
 
-// Media/public API base URL (media assets, public profiles, feedback)
-export const XANO_MEDIA_BASE_URL = "https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L";
+// Note: Public API endpoints (LinkedIn OAuth, internal endpoints, public tracking)
+// are handled by backend using XANO_PUBLIC_API_URL environment variable
 
 // For backward compatibility
 export default {
   BASE_URL: XANO_BASE_URL,
-  MEDIA_BASE_URL: XANO_MEDIA_BASE_URL,
 };

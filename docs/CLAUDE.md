@@ -78,6 +78,7 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
     - useAnswerUpload.js      # Answer submission logic
     - useRecordingSegmentUpload.js  # Progressive segment uploads
     - useQuestionCoach.js     # AI coaching state management
+    - useMarketing.js         # Marketing campaigns & analytics (NEW)
   /context
     - AuthContext.jsx         # Authentication state
   /api
@@ -98,6 +99,13 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
   /questions                  # Question endpoints
     - create.js               # Create new question
     - submit.js               # Submit question for expert
+  /marketing                  # Marketing & UTM tracking (NEW)
+    - campaigns.js            # GET/POST campaigns
+    - traffic-sources.js      # GET traffic breakdown
+    - share-templates.js      # GET social media templates
+    - insights.js             # GET performance insights
+  /public                     # Public (unauthenticated) endpoints
+    - track-visit.js          # POST UTM visit tracking
   /oauth                      # OAuth flows
     /google                   # Google OAuth
     /linkedin                 # LinkedIn OAuth
@@ -151,6 +159,18 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
 **coaching_rate_limits** - AI Coach abuse prevention
 - fingerprint, questions_started_today, questions_paid_today
 - is_flagged, flag_reason
+
+**utm_campaigns** - Marketing campaigns tracking
+- id, expert_profile_id, name
+- utm_source, utm_campaign, utm_medium, utm_content
+- total_visits, total_questions, total_revenue_cents, conversion_rate
+- status, created_at, updated_at
+- Unique constraint: (expert_profile_id, utm_source, utm_campaign)
+
+**campaign_visits** - Visitor tracking for campaigns
+- id, campaign_id, expert_profile_id, question_id
+- visitor_ip_hash, referrer, user_agent, country, device_type
+- converted_to_question, visited_at
 
 ## Authentication
 
@@ -241,6 +261,99 @@ await apiClient.post('/media_asset', {
   segment_index: 0           // null for parent, 0+ for segments
 });
 ```
+
+## Marketing Module
+
+### Overview
+
+The Marketing Module enables experts to track campaign performance, understand traffic sources, and optimize their marketing efforts through UTM parameter tracking.
+
+**Status:** ✅ Production Ready (October 2025)
+
+### Architecture
+
+**UTM Tracking Flow:**
+1. Expert creates campaign via POST /marketing/campaigns
+2. Expert shares profile link with UTM parameters
+3. Visitor clicks link → PublicProfilePage loads
+4. Frontend extracts UTM params from URL
+5. POST /public/track-visit logs visit (no auth required)
+6. Visit stored in `campaign_visits` table
+7. Metrics updated in `utm_campaigns` table
+
+**Question Attribution Flow (Future):**
+1. Visitor with UTM visit asks question
+2. Question linked to campaign via `link_question_to_campaign()`
+3. Metrics recalculated automatically
+4. Expert sees conversion data
+
+### API Endpoints
+
+**Authenticated (for experts):**
+- GET /marketing/campaigns - List all campaigns with metrics
+- POST /marketing/campaigns - Create new campaign
+- GET /marketing/traffic-sources - Traffic breakdown by source
+- GET /marketing/share-templates - Pre-filled social media copy
+- GET /marketing/insights - Performance insights & recommendations
+
+**Public (no auth):**
+- POST /public/track-visit - Track UTM visits from public profile
+
+### Xano Functions
+
+**update_campaign_metrics(campaign_id):**
+- Recalculates: total_visits, total_questions, total_revenue_cents, conversion_rate
+- Called when metrics need refreshing
+
+**link_question_to_campaign(question_id, campaign_id):**
+- Links question to source campaign
+- Updates campaign.total_questions and campaign.total_revenue_cents
+- Triggers metric recalculation
+
+### Frontend Integration
+
+**PublicProfilePage.jsx:**
+- Automatically extracts UTM parameters on page load
+- Calls `/public/track-visit` to log visit
+- Supports: utm_source, utm_campaign, utm_medium, utm_content
+
+**useMarketing.js hook:**
+- `campaigns` - List of all campaigns
+- `trafficSources` - Breakdown by source
+- `shareTemplates` - Social media templates
+- `insights` - Performance data
+- `createCampaign()` - Create new campaign
+- `refreshCampaigns()` - Reload data
+
+### Example Usage
+
+**Creating a campaign:**
+```javascript
+const { createCampaign } = useMarketing();
+
+await createCampaign({
+  name: "LinkedIn Launch",
+  utm_source: "linkedin",
+  utm_campaign: "q4_2025",
+  utm_medium: "social",
+  utm_content: "post_1"
+});
+```
+
+**Generated campaign URL:**
+```
+https://mindpick.me/u/yourhandle?utm_source=linkedin&utm_campaign=q4_2025&utm_medium=social&utm_content=post_1
+```
+
+**Tracking happens automatically when visitors click the link.**
+
+### Documentation
+
+See `docs/marketing module/` for detailed implementation docs:
+- `IMPLEMENTATION-MASTER-GUIDE.md` - Architecture overview
+- `IMPLEMENTATION-STEP-3-ENDPOINTS.md` - API specifications
+- `IMPLEMENTATION-COMPLETE.md` - Implementation summary
+- `PROGRESS-2025-10-14.md` - Development log
 
 ## AI Features
 
@@ -378,6 +491,9 @@ Handle gracefully in UI, never expose raw errors to users.
 **Frontend (Vite):**
 - `VITE_CLOUDFLARE_ACCOUNT_ID` - For constructing playback URLs
 - Auto-loaded from `.env.local` during development
+
+**Xano Environment Variables:**
+- `APP_URL` - Base URL for campaign link generation (e.g., `https://mindpick.me`)
 
 ### Media Playback URLs
 
@@ -595,6 +711,7 @@ For detailed implementation, see `docs/xano-internal-endpoints.md`.
 4. **Rate Limiting:** AI Coach rate limits not enforced yet
 5. **Session Persistence:** AI Coach sessions not saved to Xano
 6. **Xano Free Tier:** Rate limiting may affect high-traffic usage (429 errors)
+7. **Marketing Attribution:** Questions not automatically linked to campaigns yet (requires session tracking)
 
 ## Troubleshooting
 
@@ -676,7 +793,10 @@ For detailed implementation, see `docs/xano-internal-endpoints.md`.
 - Ensure `id` parameter references `user.id` from conditional
 - Check token is returned in response: `{ "token": token, ... }`
 
-## Next Steps (from spec doc)
+## Next Steps
+
+**Recently Completed:**
+- ✅ Marketing Module - UTM tracking, campaign management, analytics (October 2025)
 
 **Immediate Priority:** Complete AI Coach Xano integration
 1. Create `question_coaching_sessions` table in Xano
@@ -689,6 +809,10 @@ For detailed implementation, see `docs/xano-internal-endpoints.md`.
 - Feature 1: Expert Co-pilot (vector search + AI analysis)
 - Feature 3: Knowledge Graph (Neo4j + entity extraction)
 - Tier 3 Enhancement (post-payment question enrichment)
+- Marketing Module Phase 2:
+  - Automatic question-to-campaign attribution
+  - Session-based visitor tracking
+  - Advanced analytics and charts
 
 ## Critical Notes
 

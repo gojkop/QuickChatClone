@@ -581,69 +581,113 @@ Get user email and name (internal use only).
 
 ## Marketing Endpoints
 
-### `GET /marketing/campaigns`
-Get all marketing campaigns.
+**Status:** ✅ Production Ready (October 2025)
 
-**API Group:** Authentication API
+The Marketing Module enables experts to track campaign performance through UTM parameter tracking.
+
+### `GET /marketing/campaigns`
+List all campaigns for authenticated expert with performance metrics.
+
+**API Group:** Authentication API (`api:3B14WLbJ`)
 **Authentication:** Required
 **Response:**
 ```json
 [
   {
-    "id": 1,
-    "name": "Q4 Campaign",
+    "id": 9,
+    "name": "LinkedIn Launch",
+    "utm_source": "linkedin",
+    "utm_campaign": "q4_2025",
+    "utm_medium": "social",
+    "utm_content": "post_1",
+    "url": "https://mindpick.me/u/yourhandle?utm_source=linkedin&utm_campaign=q4_2025&utm_medium=social&utm_content=post_1",
+    "total_visits": 45,
+    "total_questions": 3,
+    "total_revenue": 150.00,
+    "conversion_rate": 6.67,
     "status": "active",
-    "budget": 5000,
-    "impressions": 10000,
-    "clicks": 500
+    "created_at": 1760349011047
   }
 ]
 ```
+
+**Notes:**
+- Automatically generates campaign URL with UTM parameters
+- Revenue in dollars (converted from cents)
+- Conversion rate as percentage
 
 ### `POST /marketing/campaigns`
 Create new marketing campaign.
 
-**API Group:** Authentication API
+**API Group:** Authentication API (`api:3B14WLbJ`)
 **Authentication:** Required
 **Request Body:**
 ```json
 {
-  "name": "Q4 Campaign",
-  "budget": 5000,
-  "target_audience": "developers"
+  "name": "LinkedIn Launch",
+  "utm_source": "linkedin",
+  "utm_campaign": "q4_2025",
+  "utm_medium": "social",
+  "utm_content": "post_1"
 }
 ```
 
 **Response:**
 ```json
 {
-  "id": 1,
-  "name": "Q4 Campaign",
-  "status": "draft",
+  "id": 9,
+  "name": "LinkedIn Launch",
+  "expert_profile_id": 139,
+  "utm_source": "linkedin",
+  "utm_campaign": "q4_2025",
+  "utm_medium": "social",
+  "utm_content": "post_1",
+  "total_visits": 0,
+  "total_questions": 0,
+  "total_revenue_cents": 0,
+  "conversion_rate": 0,
+  "status": "active",
   "created_at": 1760349011047
 }
 ```
 
-### `GET /marketing/traffic-sources`
-Get traffic source analytics.
+**Notes:**
+- Unique constraint on (expert_profile_id, utm_source, utm_campaign)
+- Returns 409 if campaign already exists
 
-**API Group:** Authentication API
+### `GET /marketing/traffic-sources`
+Get traffic breakdown by UTM source.
+
+**API Group:** Authentication API (`api:3B14WLbJ`)
 **Authentication:** Required
 **Response:**
 ```json
 [
   {
-    "source": "google",
-    "visits": 1500,
-    "conversions": 50
+    "source": "linkedin",
+    "visits": 45,
+    "questions": 3,
+    "revenue": 150.00,
+    "conversion_rate": 6.67
+  },
+  {
+    "source": "twitter",
+    "visits": 28,
+    "questions": 1,
+    "revenue": 50.00,
+    "conversion_rate": 3.57
   }
 ]
 ```
 
-### `GET /marketing/share-templates`
-Get social media share templates.
+**Notes:**
+- Aggregates all campaigns by utm_source
+- Sorted by visits descending
 
-**API Group:** Authentication API
+### `GET /marketing/share-templates`
+Get pre-filled social media share templates.
+
+**API Group:** Authentication API (`api:3B14WLbJ`)
 **Authentication:** Required
 **Response:**
 ```json
@@ -651,25 +695,89 @@ Get social media share templates.
   {
     "id": 1,
     "platform": "twitter",
-    "template": "Check out my expert profile..."
+    "template": "Have a question about [your expertise]? Ask me directly: https://mindpick.me/u/yourhandle?utm_source=twitter&utm_campaign=share",
+    "utm_source": "twitter",
+    "utm_campaign": "share"
+  },
+  {
+    "id": 2,
+    "platform": "linkedin",
+    "template": "I'm now available on MindPick to answer your questions about [expertise]. Get personalized advice: https://mindpick.me/u/yourhandle?utm_source=linkedin&utm_campaign=share",
+    "utm_source": "linkedin",
+    "utm_campaign": "share"
+  },
+  {
+    "id": 3,
+    "platform": "facebook",
+    "template": "Ask me anything about [expertise]! I'm answering questions on MindPick: https://mindpick.me/u/yourhandle?utm_source=facebook&utm_campaign=share",
+    "utm_source": "facebook",
+    "utm_campaign": "share"
   }
 ]
 ```
 
-### `GET /marketing/insights`
-Get marketing insights and analytics.
+**Notes:**
+- Templates include UTM parameters
+- Expert should replace [expertise] placeholders
 
-**API Group:** Authentication API
+### `GET /marketing/insights`
+Get performance insights and recommendations.
+
+**API Group:** Authentication API (`api:3B14WLbJ`)
 **Authentication:** Required
 **Response:**
 ```json
 {
-  "total_impressions": 50000,
-  "total_clicks": 2500,
-  "conversion_rate": 5.2,
-  "top_sources": [...]
+  "total_visits": 73,
+  "total_questions": 4,
+  "total_revenue": 200.00,
+  "overall_conversion_rate": 5.48,
+  "best_performing_source": {
+    "source": "linkedin",
+    "conversion_rate": 6.67
+  },
+  "recommendations": [
+    "Your LinkedIn campaigns are performing well! Consider increasing activity there.",
+    "Your conversion rate is 5.5% - slightly below the 7% platform average. Try improving your profile description.",
+    "You have 4 campaigns running. Focus on your top 2-3 performers."
+  ]
 }
 ```
+
+**Notes:**
+- Provides actionable recommendations
+- Compares against platform benchmarks
+
+### `POST /public/track-visit`
+Track UTM visit to expert profile (public, no authentication).
+
+**API Group:** Public API (`api:BQW1GS7L`)
+**Authentication:** None (public endpoint)
+**Request Body:**
+```json
+{
+  "expert_handle": "yourhandle",
+  "utm_source": "linkedin",
+  "utm_campaign": "q4_2025",
+  "utm_medium": "social",
+  "utm_content": "post_1"
+}
+```
+
+**Response:**
+```json
+{
+  "tracked": true,
+  "campaign_id": 9,
+  "visit_id": 8
+}
+```
+
+**Notes:**
+- Called automatically by PublicProfilePage when UTM params present
+- Creates campaign if it doesn't exist (with ID 0 if campaign not pre-created)
+- Stores visitor metadata (IP hash, user agent, referrer)
+- No authentication required
 
 ---
 
@@ -764,6 +872,44 @@ References to Cloudflare media (videos, audio, files).
 - `metadata` (text) - JSON string with extra data
 - `created_at` (timestamp)
 
+### utm_campaigns
+Marketing campaigns with UTM tracking.
+
+**Fields:**
+- `id` (int, auto-increment) - Primary key
+- `expert_profile_id` (int) - Foreign key to expert_profile
+- `name` (text) - Campaign name
+- `utm_source` (text) - Traffic source (e.g., 'linkedin', 'twitter')
+- `utm_campaign` (text) - Campaign identifier
+- `utm_medium` (text) - Marketing medium (e.g., 'social', 'email')
+- `utm_content` (text) - Campaign content variant
+- `total_visits` (int) - Total profile visits
+- `total_questions` (int) - Questions from this campaign
+- `total_revenue_cents` (int) - Revenue in cents
+- `conversion_rate` (float) - Percentage of visits that converted
+- `status` (text) - 'active', 'paused', 'archived'
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+**Constraints:**
+- Unique: (expert_profile_id, utm_source, utm_campaign)
+
+### campaign_visits
+Visitor tracking for marketing campaigns.
+
+**Fields:**
+- `id` (int, auto-increment) - Primary key
+- `campaign_id` (int) - Foreign key to utm_campaigns
+- `expert_profile_id` (int) - Foreign key to expert_profile
+- `question_id` (int, nullable) - Foreign key to questions if converted
+- `visitor_ip_hash` (text) - Hashed IP for privacy
+- `referrer` (text) - Referring URL
+- `user_agent` (text) - Browser user agent
+- `country` (text) - Visitor country (if available)
+- `device_type` (text) - 'mobile', 'desktop', 'tablet'
+- `converted_to_question` (boolean) - Whether visitor asked question
+- `visited_at` (timestamp)
+
 ---
 
 ## Common Patterns
@@ -814,7 +960,7 @@ GET /endpoint?page=1&per_page=20
 ```bash
 # Xano Configuration
 XANO_BASE_URL=https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ
-XANO_MEDIA_BASE_URL=https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L
+XANO_PUBLIC_API_URL=https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L
 XANO_INTERNAL_API_KEY=your_internal_api_key
 
 # OAuth Configuration
@@ -828,6 +974,12 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 # LinkedIn OAuth
 LINKEDIN_CLIENT_ID=your_linkedin_client_id
 LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
+```
+
+### Required for Xano (Environment Variables)
+```bash
+# Marketing Module
+APP_URL=https://mindpick.me  # Base URL for campaign link generation
 ```
 
 ### Required for Frontend (Vite)
@@ -918,11 +1070,20 @@ VITE_CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
 
 ## Changelog
 
+### 2025-10-15 (Marketing Module + Cleanup)
+- ✅ Added Marketing Module endpoints (6 endpoints)
+- ✅ Added `utm_campaigns` and `campaign_visits` database tables
+- ✅ Documented UTM tracking flow
+- ✅ Added Xano environment variables (`APP_URL`)
+- ✅ Updated endpoint specifications with real response examples
+- ✅ Added `/public/track-visit` public endpoint documentation
+- ✅ Removed redundant `XANO_MEDIA_BASE_URL` (same as `XANO_PUBLIC_API_URL`)
+
 ### 2025-10-13 (Updated)
 - ✅ Corrected API group classifications based on actual Xano configuration
 - ✅ Added Google OAuth API as third API group
 - ✅ Updated all endpoint references to correct API groups
-- ✅ Authentication API (`api:3B14WLbJ`): `/answer`, `/me/*`, `/expert/*`, `/media_asset`, `/question/hidden`, `/upload/*`
+- ✅ Authentication API (`api:3B14WLbJ`): `/answer`, `/me/*`, `/expert/*`, `/media_asset`, `/question/hidden`, `/upload/*`, `/marketing/*`
 - ✅ Public API (`api:BQW1GS7L`): `/question`, `/public/*`, `/auth/linkedin/*`, `/internal/*`, `/feedback`, `/review/*`
 - ✅ Google OAuth API: `/oauth/google/*`
 - ✅ Updated consolidated answer endpoint documentation (`/api/answers/create`)
