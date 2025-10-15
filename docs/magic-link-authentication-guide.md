@@ -5,7 +5,7 @@ Complete guide for implementing passwordless email authentication in QuickChat u
 **Status:** ✅ Frontend Complete | ⏳ Xano Configuration Required
 
 ---
-
+ 
 ## Table of Contents
 
 1. [Overview](#overview)
