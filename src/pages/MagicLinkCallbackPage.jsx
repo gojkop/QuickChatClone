@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import logo from "@/assets/images/logo-mindpick.svg";
 
 export default function MagicLinkCallbackPage() {
+  console.log('[Magic Link Page] ===== COMPONENT FUNCTION CALLED =====');
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
@@ -13,6 +15,8 @@ export default function MagicLinkCallbackPage() {
   const [status, setStatus] = React.useState('verifying'); // 'verifying', 'success', 'error'
   const [error, setError] = React.useState("");
   const [userData, setUserData] = React.useState(null);
+
+  console.log('[Magic Link Page] All hooks initialized, token:', searchParams.get('token'));
 
   React.useEffect(() => {
     console.log('[Magic Link Page] Component mounted');
@@ -98,6 +102,8 @@ export default function MagicLinkCallbackPage() {
     console.log('[Magic Link Page] About to call verifyToken()');
     verifyToken();
   }, [searchParams, login, navigate]);
+
+  console.log('[Magic Link Page] Rendering with status:', status);
 
   return (
     <div className="min-h-screen bg-canvas">

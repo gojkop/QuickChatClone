@@ -19,10 +19,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
-        <Route path="/auth/magic-link" element={(() => {
-          console.log('[Router] Magic link route matched!');
-          return <MagicLinkCallbackPage />;
-        })()} />
+        <Route path="/auth/magic-link" element={<MagicLinkCallbackPage />} />
         <Route
           path="/expert"
           element={
