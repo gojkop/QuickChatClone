@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { sendNewQuestionNotification, sendQuestionConfirmationNotification } from '../lib/zeptomail.js';
 import { fetchUserData, getAskerName } from '../lib/user-data.js';
 
@@ -261,6 +262,67 @@ export default async function handler(req, res) {
           console.log(`✅ Media asset ${i} created with ID:`, mediaAsset.id);
         }
       }
+    }
+
+    // 🔥 NEW: Link question to campaign (if user came from UTM link)
+    try {
+      console.log('🎯 Attempting campaign attribution...');
+      
+      // Generate visitor hash matching visit tracking logic
+      const ipAddress = req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+                       req.headers['x-real-ip'] || 
+                       req.socket.remoteAddress || 
+                       'unknown';
+      const userAgent = req.headers['user-agent'] || 'unknown';
+      
+      // Must match the hash generation in /api/public/track-visit
+      const visitorIpHash = crypto
+        .createHash('sha256')
+        .update(ipAddress + '_' + userAgent)
+        .digest('hex');
+      
+      console.log('🎯 Campaign attribution params:', {
+        questionId,
+        expertProfileId,
+        visitorIpHash: visitorIpHash.substring(0, 16) + '...',
+        ipAddress: ipAddress.substring(0, 10) + '...',
+        userAgent: userAgent.substring(0, 50) + '...'
+      });
+      
+      // Call Xano function to link question to campaign
+      const XANO_BASE_URL = process.env.XANO_BASE_URL || 
+                           'https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ';
+      
+      const linkResponse = await fetch(
+        `${XANO_BASE_URL}/function/link_question_to_campaign`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question_id: questionId,
+            visitor_ip_hash: visitorIpHash,
+            expert_profile_id: expertProfileId
+          })
+        }
+      );
+      
+      if (linkResponse.ok) {
+        const linkResult = await linkResponse.json();
+        console.log('🎯 Campaign link result:', linkResult);
+        
+        if (linkResult.linked) {
+          console.log(`✅ Question linked to campaign ${linkResult.campaign_id}`);
+        } else {
+          console.log('ℹ️ No recent campaign visit found (user may not have come from UTM link)');
+        }
+      } else {
+        const errorText = await linkResponse.text();
+        console.warn('⚠️ Campaign linking failed:', linkResponse.status, errorText);
+      }
+      
+    } catch (linkError) {
+      // Don't fail the whole request if campaign linking fails
+      console.error('⚠️ Campaign linking error (non-critical):', linkError.message);
     }
 
     // ✅ Return complete response structure
