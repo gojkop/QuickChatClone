@@ -366,6 +366,45 @@ function PublicProfilePage() {
   const [error, setError] = useState('');
   const [showShareMenu, setShowShareMenu] = useState(false);
 
+  // Track UTM visit on page load
+  useEffect(() => {
+    const trackVisit = async () => {
+      if (!handle) return;
+
+      // Extract UTM parameters from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const utmSource = urlParams.get('utm_source');
+      const utmCampaign = urlParams.get('utm_campaign');
+      const utmMedium = urlParams.get('utm_medium');
+      const utmContent = urlParams.get('utm_content');
+
+      // Only track if we have at least source and campaign
+      if (utmSource && utmCampaign) {
+        try {
+          await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/track-visit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              expert_handle: handle,
+              utm_source: utmSource,
+              utm_campaign: utmCampaign,
+              utm_medium: utmMedium || '',
+              utm_content: utmContent || ''
+            })
+          });
+          console.log('UTM visit tracked:', { utmSource, utmCampaign });
+        } catch (err) {
+          console.error('Failed to track UTM visit:', err);
+          // Silently fail - don't block page load
+        }
+      }
+    };
+
+    trackVisit();
+  }, [handle]);
+
   useEffect(() => {
     if (!handle) {
       setIsLoading(false);
