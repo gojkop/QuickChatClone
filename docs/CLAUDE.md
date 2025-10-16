@@ -16,7 +16,16 @@ QuickChat is a video-based Q&A platform connecting askers with experts. Users re
 
 ## Documentation & Resources
 
-- **Documentation:** In the `docs` folder you will find documentation
+- **Documentation Index:** [`docs/README.md`](./README.md) - Complete documentation navigation
+- **Quick Reference Sections:**
+  - **Features:** `docs/features/` - Feature implementations and guides
+  - **API & Database:** `docs/api-database/` - Xano endpoints and database
+  - **Integrations:** `docs/integrations/` - Third-party integrations
+  - **Marketing:** `docs/marketing module/` - UTM tracking and campaigns
+  - **AI (MindPilot):** `docs/mindpilot/` - AI features and specifications
+  - **Admin:** `docs/admin/` - Admin panel and feedback system
+  - **Launch:** `docs/launch features/` - Feature flags and onboarding
+  - **Brand:** `docs/brand/` - Brand guidelines
 - **Screenshots:** Screenshots can be found at `/Users/gojkop/Desktop/Screenshots` for troubleshooting
 
 ## Commands
@@ -240,7 +249,7 @@ Supports three authentication methods with JWT tokens stored in localStorage as 
 - IP tracking for audit trail
 - Handles email client pre-fetching
 
-**Documentation:** See `docs/magic-link-authentication-guide.md` for complete implementation guide
+**Documentation:** See [`docs/features/magic-link-authentication-guide.md`](./features/magic-link-authentication-guide.md) for complete implementation guide
 
 ### Auth Middleware
 
@@ -417,7 +426,7 @@ Users can download all media files and attachments from questions and answers as
 - Reusable `downloadAsZip()` function in `AnswerReviewPage.jsx`
 - Files named systematically: `part-1-video.mp4`, `part-2-audio.webm`, etc.
 
-**Documentation:** See `docs/ZIP-DOWNLOAD-FEATURE.md` for complete implementation details
+**Documentation:** See [`docs/features/ZIP-DOWNLOAD-FEATURE.md`](./features/ZIP-DOWNLOAD-FEATURE.md) for complete implementation details
 
 ## Profile Sharing Features
 
@@ -601,7 +610,7 @@ for (var i = 0; i < $var.conversions.length; i++) {
 3. Avoid nested function calls with array parameters
 4. Keep all logic flat in the main function's Lambda steps
 
-**See:** `/docs/XANO-LAMBDA-TROUBLESHOOTING.md` for detailed troubleshooting guide
+**See:** [`docs/api-database/XANO-LAMBDA-TROUBLESHOOTING.md`](./api-database/XANO-LAMBDA-TROUBLESHOOTING.md) for detailed troubleshooting guide
 
 ### API Client Usage
 
@@ -883,7 +892,7 @@ Logs include:
 - Profile Pictures: R2 `profiles/` folder
 - Attachments: R2 `question-attachments/` folder
 
-For detailed implementation, see `docs/xano-internal-endpoints.md`.
+For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`](./api-database/xano-internal-endpoints.md).
 
 ## Known Limitations
 
