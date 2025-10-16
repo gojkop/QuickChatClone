@@ -597,14 +597,24 @@ Body:
 - Minimal data retention
 
 **Token Cleanup:**
-- Periodically delete expired tokens (>24 hours old)
-- Keeps database clean
-- Reduces attack surface
+- ✅ **Automated cleanup runs daily at 3:00 AM UTC**
+- Expired tokens deleted after 7 days (grace period for debugging)
+- Used tokens deleted after 30 days (audit trail)
+- Unused tokens deleted after 30 days (abandoned attempts)
+- Part of unified cleanup system (see `docs/xano-internal-endpoints.md`)
 
-**Recommended Cleanup Cron:**
-```sql
-DELETE FROM magic_link_tokens
-WHERE created_at < now() - 86400  // 24 hours old
+**Cleanup Implementation:**
+The cleanup is handled by `/api/cron/cleanup-orphaned-media.js` which also cleans:
+- Orphaned media assets (videos/audio)
+- Orphaned profile pictures
+- Orphaned attachments
+- Old magic link tokens
+
+**Manual Cleanup (if needed):**
+```bash
+# Trigger cleanup manually
+curl -X POST "https://quickchat-dev.vercel.app/api/cron/cleanup-orphaned-media" \
+  -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ---
@@ -955,7 +965,14 @@ HAVING COUNT(*) >= 3
 - [x] Test with real email addresses
 - [x] Deploy to production
 
-### Phase 4: 📊 Monitoring & Optimization (TODO)
+### Phase 4: ✅ Automated Cleanup (COMPLETE)
+- [x] Integrated with nightly cleanup cron job
+- [x] Expired tokens cleanup (>7 days)
+- [x] Used tokens cleanup (>30 days)
+- [x] Unused tokens cleanup (>30 days)
+- [x] Automated monitoring via Vercel logs
+
+### Phase 5: 📊 Monitoring & Optimization (TODO)
 - [ ] Set up metrics tracking
 - [ ] Monitor email delivery rates
 - [ ] Monitor verification success rates
@@ -982,6 +999,12 @@ For issues with implementation:
 
 ## Changelog
 
+### 2025-01-16 (Automated Cleanup)
+- ✅ Integrated magic link token cleanup with nightly cron job
+- ✅ Automated deletion of old tokens (expired >7d, used >30d, unused >30d)
+- ✅ Added Xano internal endpoints for cleanup
+- ✅ Updated documentation across all files
+
 ### 2025-01-15 (Production Release)
 - ✅ Created magic link authentication system
 - ✅ Frontend implementation complete (React + Vercel API)
@@ -999,6 +1022,7 @@ For issues with implementation:
 - New user auto-creation
 - Welcome email for first-time users
 - Works alongside Google/LinkedIn OAuth
+- Automated token cleanup (nightly)
 
 **Issues Resolved:**
 - Fixed missing /auth/magic-link route in App.jsx
@@ -1006,8 +1030,9 @@ For issues with implementation:
 - Fixed React StrictMode double-render
 - Fixed Xano query type mismatch
 - Configured Public API for unauthenticated endpoints
+- Fixed missing expert_profile creation in magic link flow
 
 ---
 
-**Last Updated:** January 15, 2025
+**Last Updated:** January 16, 2025
 **Status:** ✅ Production Ready | Fully Operational
