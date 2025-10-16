@@ -129,7 +129,7 @@ export default function MagicLinkCallbackPage() {
                   </div>
                 </div>
                 <h1 className="text-2xl font-bold text-ink mb-2">
-                  {userData?.isNewUser ? 'Welcome to QuickChat!' : 'Welcome back!'}
+                  {userData?.isNewUser ? 'Welcome to mindPick!' : 'Welcome back!'}
                 </h1>
                 <p className="text-subtext text-sm mb-4">
                   Signed in as <span className="font-medium text-ink">{userData?.email}</span>

@@ -29,12 +29,6 @@ const EmptyQuestionState = ({ expertProfile }) => {
         action: () => navigate('#profile-settings')
       },
       {
-        key: 'specialty',
-        label: 'Specialty defined',
-        completed: !!expertProfile.specialty && expertProfile.specialty.trim().length > 0,
-        action: () => navigate('#profile-settings')
-      },
-      {
         key: 'price',
         label: 'Price set',
         completed: (expertProfile.price_cents > 0) || (expertProfile.priceUsd > 0),
@@ -50,6 +44,18 @@ const EmptyQuestionState = ({ expertProfile }) => {
         key: 'bio',
         label: 'Bio written (50+ characters)',
         completed: !!expertProfile.bio && expertProfile.bio.trim().length >= 50,
+        action: () => navigate('#profile-settings')
+      },
+      {
+        key: 'public',
+        label: 'Profile set to public',
+        completed: expertProfile.isPublic === true || expertProfile.public === true,
+        action: () => navigate('#profile-settings')
+      },
+      {
+        key: 'accepting',
+        label: 'Available to accept questions',
+        completed: expertProfile.accepting_questions === true,
         action: () => navigate('#profile-settings')
       }
     ];
@@ -88,28 +94,20 @@ const EmptyQuestionState = ({ expertProfile }) => {
 
   // Share button handlers
   const handleLinkedInShare = () => {
-    const text = expertProfile?.specialty 
-      ? `Ask me anything about ${expertProfile.specialty} on mindPick!`
-      : 'Ask me questions on mindPick!';
+    const text = 'Ask me questions on mindPick!';
     const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(profileUrl)}`;
     window.open(url, '_blank', 'noopener,noreferrer,width=600,height=600');
   };
 
   const handleTwitterShare = () => {
-    const text = expertProfile?.specialty
-      ? `Got questions about ${expertProfile.specialty}? Ask me anything on mindPick! 🧠`
-      : 'Ask me questions on mindPick! 🧠';
+    const text = 'Ask me questions on mindPick! 🧠';
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(profileUrl)}`;
     window.open(url, '_blank', 'noopener,noreferrer,width=600,height=600');
   };
 
   const handleEmailShare = () => {
-    const subject = expertProfile?.specialty
-      ? `Ask me about ${expertProfile.specialty}`
-      : 'Ask me questions on mindPick';
-    const body = expertProfile?.specialty
-      ? `Hi,\n\nI'm now answering questions about ${expertProfile.specialty} on mindPick. Got a question? Ask me here:\n\n${profileUrl}\n\nLooking forward to helping!`
-      : `Hi,\n\nI'm now answering questions on mindPick. Got a question? Ask me here:\n\n${profileUrl}`;
+    const subject = 'Ask me questions on mindPick';
+    const body = `Hi,\n\nI'm now answering questions on mindPick. Got a question? Ask me here:\n\n${profileUrl}\n\nLooking forward to helping!`;
     
     const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoUrl;
@@ -121,9 +119,7 @@ const EmptyQuestionState = ({ expertProfile }) => {
       try {
         await navigator.share({
           title: 'Ask me on mindPick',
-          text: expertProfile?.specialty
-            ? `Ask me anything about ${expertProfile.specialty}!`
-            : 'Ask me questions on mindPick!',
+          text: 'Ask me questions on mindPick!',
           url: profileUrl
         });
       } catch (err) {
