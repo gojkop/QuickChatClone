@@ -80,7 +80,7 @@ export default function CampaignCard({ campaign, onArchive, onViewDetails }) {
   };
 
   return (
-    <div className="bg-surface rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-base overflow-hidden group">
+    <div className="bg-surface rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-base group relative">
       {/* Compact Header */}
       <div className="p-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">

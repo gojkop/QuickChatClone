@@ -96,70 +96,82 @@ export default function MarketingOverview({
         </div>
       </div>
 
-      {/* Action Cards */}
+      {/* Action Cards - More Subtle */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Traffic Source Action */}
         {topSource && (
-          <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-lg border border-indigo-200 p-4">
+          <div className="bg-surface rounded-lg border border-gray-200 p-4 hover:border-indigo-300 transition-all duration-base">
             <div className="mb-3">
-              <h3 className="text-sm font-bold text-indigo-900 mb-1">
-                🎯 Your Best Channel
-              </h3>
-              <p className="text-xs text-indigo-700 font-medium capitalize">
-                <strong>{topSource.name}</strong> drives {topSource.questions} questions
-                ({((topSource.questions / totalQuestions) * 100).toFixed(0)}% of total)
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">🎯</span>
+                <h3 className="text-sm font-bold text-ink">
+                  Your Best Channel
+                </h3>
+              </div>
+              <p className="text-sm text-subtext font-medium capitalize">
+                <strong className="text-ink">{topSource.name}</strong> drives {topSource.questions} questions
+                <span className="text-xs ml-1">({((topSource.questions / totalQuestions) * 100).toFixed(0)}% of total)</span>
               </p>
             </div>
             <button
               onClick={() => onNavigate('share-kit')}
-              className="w-full px-3 py-2 text-xs font-bold bg-primary text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="text-sm font-medium text-primary hover:text-indigo-700 transition-colors flex items-center gap-1"
             >
-              Create {topSource.name} Post →
+              Create {topSource.name} post
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         )}
 
         {/* Top Campaign Action */}
         {topCampaign && (
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200 p-4">
+          <div className="bg-surface rounded-lg border border-gray-200 p-4 hover:border-green-300 transition-all duration-base">
             <div className="mb-3">
-              <h3 className="text-sm font-bold text-green-900 mb-1">
-                💰 Top Performer
-              </h3>
-              <p className="text-xs text-green-700 font-medium">
-                <strong>{topCampaign.name}</strong> earned €{topCampaign.total_revenue}
-                ({((topCampaign.total_revenue / totalRevenue) * 100).toFixed(0)}% of revenue)
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">💰</span>
+                <h3 className="text-sm font-bold text-ink">
+                  Top Performer
+                </h3>
+              </div>
+              <p className="text-sm text-subtext font-medium">
+                <strong className="text-ink">{topCampaign.name}</strong> earned €{topCampaign.total_revenue}
+                <span className="text-xs ml-1">({((topCampaign.total_revenue / totalRevenue) * 100).toFixed(0)}% of revenue)</span>
               </p>
             </div>
             <button
               onClick={() => onNavigate('campaigns')}
-              className="w-full px-3 py-2 text-xs font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="text-sm font-medium text-success hover:text-green-700 transition-colors flex items-center gap-1"
             >
-              View Campaign Details →
+              View campaign details
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         )}
       </div>
 
-      {/* Conversion Performance */}
+      {/* Conversion Performance - More Subtle */}
       <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6">
         <h3 className="text-lg font-black text-ink mb-4">Conversion Performance</h3>
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold text-subtext">Your Conversion Rate</span>
-              <span className="text-sm font-black text-ink">
+              <span className="text-sm font-medium text-subtext">Your Conversion Rate</span>
+              <span className="text-lg font-black text-ink">
                 {insights?.your_metrics?.visit_to_question?.toFixed(1) || overallConversionRate}%
               </span>
             </div>
-            <div className="relative h-3 bg-canvas rounded-full overflow-hidden">
+            <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
               <div 
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-slow" 
+                className="absolute top-0 left-0 h-full bg-indigo-500 rounded-full transition-all duration-slow" 
                 style={{ width: `${Math.min(insights?.your_metrics?.visit_to_question || parseFloat(overallConversionRate), 100)}%` }}
               ></div>
             </div>
             {insights?.platform_average?.visit_to_question && (
-              <p className="text-xs text-success mt-1 font-bold">
+              <p className="text-xs text-subtext mt-2 font-medium">
                 {insights.your_metrics.visit_to_question > insights.platform_average.visit_to_question ? '✓' : '↓'} 
                 {' '}Platform average: {insights.platform_average.visit_to_question}%
               </p>

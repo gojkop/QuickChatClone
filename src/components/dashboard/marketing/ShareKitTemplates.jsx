@@ -11,6 +11,7 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   // Step 2: Campaign
   const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [campaignSearchQuery, setCampaignSearchQuery] = useState('');
   // Step 3: Template
   const [currentPage, setCurrentPage] = useState(1);
   const [editingTemplate, setEditingTemplate] = useState(null);
@@ -18,10 +19,11 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
 
   // Build template data once
   const templateData = useMemo(() => {
-    if (!expertProfile) return {};
+    if (!expertProfile || !user) return {};
     
     const data = getTemplateData(expertProfile, user, stats);
     
+    // Override with campaign URL if selected
     if (selectedCampaign) {
       data.profile_url = buildCampaignUrl(expertProfile, selectedCampaign);
     }
@@ -38,6 +40,18 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
       count: SHARE_TEMPLATES.filter(t => t.platform === platform).length,
     }));
   }, []);
+
+  // Filter campaigns by search
+  const filteredCampaigns = useMemo(() => {
+    if (!campaignSearchQuery) return campaigns;
+    
+    const query = campaignSearchQuery.toLowerCase();
+    return campaigns.filter(c =>
+      c.name.toLowerCase().includes(query) ||
+      c.utm_source.toLowerCase().includes(query) ||
+      c.utm_campaign.toLowerCase().includes(query)
+    );
+  }, [campaigns, campaignSearchQuery]);
 
   // Filter templates
   const filteredTemplates = useMemo(() => {
@@ -84,7 +98,10 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
   const handleBack = () => {
     if (selectedPlatform) {
       setSelectedPlatform(null);
+      setSelectedCampaign(null); // Reset campaign selection
+      setCampaignSearchQuery(''); // Reset campaign search
       setSearchQuery('');
+      setCurrentPage(1); // Reset pagination
     }
   };
 
@@ -196,26 +213,95 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
       {/* Steps 2 & 3: Campaign + Templates */}
       {selectedPlatform && (
         <>
-          {/* Step 2: Campaign Selector (Optional) */}
+          {/* Step 2: Campaign Selector (Optional) - Improved for many campaigns */}
           <div className="bg-surface rounded-lg border border-gray-200 p-4">
             <label className="block text-xs font-bold text-ink mb-2 uppercase tracking-wide">
               Step 2: Track with Campaign (Optional)
             </label>
-            <select
-              value={selectedCampaign?.id || ''}
-              onChange={(e) => {
-                const campaign = campaigns.find(c => c.id === parseInt(e.target.value));
-                setSelectedCampaign(campaign || null);
-              }}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-ink font-medium"
-            >
-              <option value="">Direct link (no tracking)</option>
-              {campaigns.map(campaign => (
-                <option key={campaign.id} value={campaign.id}>
-                  {campaign.name}
-                </option>
-              ))}
-            </select>
+            
+            {campaigns.length > 10 ? (
+              // Searchable combobox for many campaigns
+              <div className="space-y-2">
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-subtext" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={campaignSearchQuery}
+                    onChange={(e) => setCampaignSearchQuery(e.target.value)}
+                    placeholder="Search campaigns..."
+                    className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-ink font-medium"
+                  />
+                </div>
+                
+                {/* Campaign list */}
+                <div className="max-h-48 overflow-y-auto space-y-1 border border-gray-200 rounded-lg p-2">
+                  <button
+                    onClick={() => {
+                      setSelectedCampaign(null);
+                      setCampaignSearchQuery('');
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                      !selectedCampaign
+                        ? 'bg-indigo-50 text-primary font-bold'
+                        : 'text-ink hover:bg-gray-50 font-medium'
+                    }`}
+                  >
+                    Direct link (no tracking)
+                  </button>
+                  
+                  {filteredCampaigns.map(campaign => (
+                    <button
+                      key={campaign.id}
+                      onClick={() => {
+                        setSelectedCampaign(campaign);
+                        setCampaignSearchQuery('');
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                        selectedCampaign?.id === campaign.id
+                          ? 'bg-indigo-50 text-primary font-bold'
+                          : 'text-ink hover:bg-gray-50 font-medium'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="truncate">{campaign.name}</span>
+                        <span className="text-xs text-subtext capitalize ml-2">{campaign.utm_source}</span>
+                      </div>
+                    </button>
+                  ))}
+                  
+                  {filteredCampaigns.length === 0 && (
+                    <div className="text-center py-4 text-sm text-subtext">
+                      No campaigns found
+                    </div>
+                  )}
+                </div>
+                
+                {selectedCampaign && (
+                  <div className="text-xs text-success font-medium">
+                    ✓ Using: {selectedCampaign.name}
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Simple dropdown for few campaigns
+              <select
+                value={selectedCampaign?.id || ''}
+                onChange={(e) => {
+                  const campaign = campaigns.find(c => c.id === parseInt(e.target.value));
+                  setSelectedCampaign(campaign || null);
+                }}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-ink font-medium"
+              >
+                <option value="">Direct link (no tracking)</option>
+                {campaigns.map(campaign => (
+                  <option key={campaign.id} value={campaign.id}>
+                    {campaign.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Step 3: Search & Templates */}

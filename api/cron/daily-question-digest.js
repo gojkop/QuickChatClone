@@ -1,5 +1,6 @@
 // api/cron/daily-question-digest.js
 // Daily digest email for experts with pending questions
+// Runs daily at 8:00 AM UTC
 
 import { xanoGet } from '../lib/xano/client.js';
 import { sendDailyDigestEmail } from '../lib/zeptomail.js';
@@ -25,7 +26,7 @@ const chunkArray = (array, size) => {
  */
 const getRemainingTime = (question) => {
   if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
-    return -1; // Overdue
+    return -1; // Overdue or no SLA
   }
 
   const now = Date.now() / 1000;
@@ -48,27 +49,25 @@ export default async function handler(req, res) {
   
   try {
     console.log('🌅 Starting daily question digest (8:00 AM UTC)');
+    console.log('📅 Date:', new Date().toISOString());
     
-    // Step 1: Fetch all pending questions with expert data (single query)
-    console.log('📦 Fetching all pending questions with expert data...');
+    // Step 1: Fetch all pending questions with expert data (single optimized query)
+    console.log('📦 Fetching pending questions from Xano...');
     
-    const questions = await xanoGet('/questions', {
-      status: 'paid',
-      include_expert: true // Assumes Xano can include expert_profile data
+    const questions = await xanoGet('/internal/digest/pending-questions', {
+      x_api_key: process.env.XANO_INTERNAL_API_KEY
     });
     
-    // Filter only unanswered questions
-    const pendingQuestions = questions.filter(q => !q.answered_at);
+    console.log(`✅ Fetched ${questions.length} pending questions from database`);
     
-    console.log(`✅ Found ${pendingQuestions.length} pending questions across experts`);
-    
-    if (pendingQuestions.length === 0) {
+    if (questions.length === 0) {
       console.log('✨ No pending questions - skipping digest');
       return res.json({
         success: true,
-        message: 'No pending questions',
+        message: 'No pending questions to send',
         sent: 0,
-        failed: 0
+        failed: 0,
+        execution_time_seconds: Math.round((Date.now() - startTime) / 1000)
       });
     }
     
@@ -76,12 +75,27 @@ export default async function handler(req, res) {
     console.log('🔄 Grouping questions by expert...');
     
     const expertGroups = {};
+    let skippedQuestions = 0;
     
-    for (const question of pendingQuestions) {
+    for (const question of questions) {
       const expertId = question.expert_id;
       
+      // Validate expert ID exists
       if (!expertId) {
         console.warn(`⚠️ Question ${question.id} has no expert_id, skipping`);
+        skippedQuestions++;
+        continue;
+      }
+      
+      // Extract expert data from nested structure
+      const expertProfile = question.expert_profile || {};
+      const expertUser = expertProfile.user || {};
+      
+      // Validate expert has email
+      const expertEmail = expertUser.email;
+      if (!expertEmail) {
+        console.warn(`⚠️ Expert ${expertId} has no email, skipping their questions`);
+        skippedQuestions++;
         continue;
       }
       
@@ -89,9 +103,9 @@ export default async function handler(req, res) {
       if (!expertGroups[expertId]) {
         expertGroups[expertId] = {
           expert_id: expertId,
-          expert_email: question.expert_profile?.user?.email || question.expert_email,
-          expert_name: question.expert_profile?.user?.name || question.expert_name || 'Expert',
-          expert_handle: question.expert_profile?.handle || null,
+          expert_email: expertEmail,
+          expert_name: expertUser.name || 'Expert',
+          expert_handle: expertProfile.handle || null,
           questions: [],
           total_pending: 0,
           urgent_count: 0,
@@ -99,17 +113,17 @@ export default async function handler(req, res) {
         };
       }
       
-      // Calculate time remaining
+      // Calculate time remaining for this question
       const timeRemaining = getRemainingTime(question);
       
       // Add question to expert's group
       expertGroups[expertId].questions.push({
         id: question.id,
-        title: question.title,
+        title: question.title || 'Untitled Question',
         payer_first_name: question.payer_first_name,
         payer_last_name: question.payer_last_name,
         payer_email: question.payer_email,
-        price_cents: question.price_cents,
+        price_cents: question.price_cents || 0,
         created_at: question.created_at,
         sla_hours_snapshot: question.sla_hours_snapshot,
         time_remaining_seconds: timeRemaining
@@ -129,6 +143,14 @@ export default async function handler(req, res) {
     const digests = Object.values(expertGroups);
     
     console.log(`✅ Grouped into ${digests.length} expert digests`);
+    if (skippedQuestions > 0) {
+      console.log(`⚠️ Skipped ${skippedQuestions} questions (missing expert_id or email)`);
+    }
+    
+    // Log some stats
+    const totalUrgent = digests.reduce((sum, d) => sum + d.urgent_count, 0);
+    const totalEarnings = digests.reduce((sum, d) => sum + d.total_earnings_cents, 0);
+    console.log(`📊 Stats: ${totalUrgent} urgent questions, $${(totalEarnings / 100).toFixed(2)} potential earnings`);
     
     // Step 3: Send emails in batches
     console.log('📧 Sending digest emails in batches of 50...');
@@ -142,35 +164,49 @@ export default async function handler(req, res) {
       const batch = batches[i];
       console.log(`📮 Processing batch ${i + 1}/${batches.length} (${batch.length} emails)...`);
       
+      // Send all emails in batch concurrently
       const results = await Promise.allSettled(
         batch.map(digest => sendDailyDigestEmail(digest))
       );
       
       // Count results
-      for (const result of results) {
+      for (let j = 0; j < results.length; j++) {
+        const result = results[j];
         if (result.status === 'fulfilled') {
           totalSent++;
         } else {
           totalFailed++;
-          errors.push(result.reason?.message || 'Unknown error');
+          const expertEmail = batch[j].expert_email;
+          const errorMsg = result.reason?.message || 'Unknown error';
+          errors.push({ email: expertEmail, error: errorMsg });
+          console.error(`❌ Failed to send to ${expertEmail}:`, errorMsg);
         }
       }
       
       // Pause between batches (except last batch)
       if (i < batches.length - 1) {
-        await sleep(1000); // 1 second pause
+        console.log('⏸️  Pausing 1 second before next batch...');
+        await sleep(1000);
       }
     }
     
     const executionTime = Math.round((Date.now() - startTime) / 1000);
     
-    console.log(`✅ Daily digest complete in ${executionTime}s`);
-    console.log(`   ✓ Sent: ${totalSent}`);
-    console.log(`   ✗ Failed: ${totalFailed}`);
+    console.log('');
+    console.log('═══════════════════════════════════════');
+    console.log('✅ Daily digest complete!');
+    console.log(`⏱️  Execution time: ${executionTime}s`);
+    console.log(`✓  Sent successfully: ${totalSent}`);
+    console.log(`✗  Failed: ${totalFailed}`);
+    console.log(`📊 Total digests: ${digests.length}`);
+    console.log('═══════════════════════════════════════');
     
-    // Log errors if any
+    // Log sample of errors if any
     if (totalFailed > 0) {
-      console.error(`❌ Failed emails (${totalFailed}):`, errors.slice(0, 5));
+      console.error(`❌ Failed emails (showing first 5):`);
+      errors.slice(0, 5).forEach(({ email, error }) => {
+        console.error(`   • ${email}: ${error}`);
+      });
     }
     
     // Return success response
@@ -180,13 +216,23 @@ export default async function handler(req, res) {
       failed: totalFailed,
       total: digests.length,
       execution_time_seconds: executionTime,
+      stats: {
+        urgent_questions: totalUrgent,
+        potential_earnings_usd: (totalEarnings / 100).toFixed(2)
+      },
       errors: totalFailed > 0 ? errors.slice(0, 5) : []
     });
     
   } catch (error) {
     const executionTime = Math.round((Date.now() - startTime) / 1000);
     
-    console.error('❌ Daily digest failed:', error);
+    console.error('');
+    console.error('═══════════════════════════════════════');
+    console.error('❌ Daily digest FAILED');
+    console.error(`⏱️  Execution time: ${executionTime}s`);
+    console.error(`💥 Error: ${error.message}`);
+    console.error('═══════════════════════════════════════');
+    console.error('Stack trace:', error.stack);
     
     return res.status(500).json({
       success: false,
