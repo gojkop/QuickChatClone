@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '@/api';
 import { useAuth } from '@/context/AuthContext'; // ✅ ADDED
@@ -90,10 +90,6 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
     setIsOpen(false);
   };
   
-  const [showFirstQuestionCelebration, setShowFirstQuestionCelebration] = useState(false);
-  const [firstQuestion, setFirstQuestion] = useState(null);
-  const previousQuestionCountRef = useRef(0);
-
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -173,6 +169,9 @@ function ExpertDashboardPage() {
   const { isEnabled: socialImpactEnabled, loading: featureFlagLoading } = useFeature('social_impact_dashboard');
   const { isEnabled: marketingEnabled } = useFeature('marketing_module');
 
+  const [showFirstQuestionCelebration, setShowFirstQuestionCelebration] = useState(false);
+  const [firstQuestion, setFirstQuestion] = useState(null);
+  const previousQuestionCountRef = useRef(0);
 
   
   const [selectedQuestion, setSelectedQuestion] = useState(null);
