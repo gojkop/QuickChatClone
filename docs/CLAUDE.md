@@ -601,7 +601,7 @@ QuickChat implements a comprehensive automated cleanup system to remove orphaned
 **Schedule:** Daily at 3:00 AM UTC
 **Configuration:** `vercel.json`
 
-The cleanup script runs in three parts:
+The cleanup script runs in four parts:
 
 #### Part 1: Media Assets (Videos & Audio)
 
@@ -636,6 +636,14 @@ The cleanup script runs in three parts:
 - Compares R2 files against active attachments
 - Deletes orphaned attachment files from R2
 
+#### Part 4: Magic Link Tokens
+- Fetches all `magic_link_tokens` from database
+- Deletes tokens matching cleanup criteria:
+  - **Expired tokens** older than 7 days (grace period for debugging)
+  - **Used tokens** older than 30 days (keep recent for audit trail)
+  - **Unused tokens** older than 30 days (abandoned sign-in attempts)
+- Preserves recent tokens for security auditing and debugging
+
 ### Xano Internal Endpoints
 
 The cleanup system uses internal Xano endpoints that bypass user authentication.
@@ -652,7 +660,8 @@ The cleanup system uses internal Xano endpoints that bypass user authentication.
   "media": [...],                    // All media_assets records
   "avatars": [...],                  // All expert_profile.avatar_url
   "question_attachments": [...],     // All question.attachments (JSON)
-  "answer_attachments": [...]        // All answer.attachments (JSON)
+  "answer_attachments": [...],       // All answer.attachments (JSON)
+  "magic_link_tokens": [...]         // All magic_link_tokens records
 }
 ```
 
@@ -662,6 +671,13 @@ The cleanup system uses internal Xano endpoints that bypass user authentication.
 **Auth:** `x_api_key` query parameter
 **Parameters:** `media_asset_id` (integer)
 **Used by:** Cleanup script to delete orphaned media_asset records
+
+#### DELETE /internal/magic-link-token
+
+**Location:** Public API group in Xano
+**Auth:** `x_api_key` query parameter
+**Parameters:** `token_id` (integer)
+**Used by:** Cleanup script to delete old magic link tokens
 
 ### Notifications
 
@@ -673,6 +689,7 @@ Email includes detailed breakdown of:
 - Media assets deleted/errors
 - Profile pictures deleted/errors
 - Attachments deleted/errors
+- Magic link tokens deleted/errors
 - Total counts and error rate
 
 ### Manual Execution
@@ -702,11 +719,15 @@ curl -X POST https://quickchat-dev.vercel.app/api/cron/cleanup-orphaned-media \
     "deleted": 0,
     "errors": 0
   },
+  "magicLinkTokens": {
+    "deleted": 0,
+    "errors": 0
+  },
   "totals": {
     "deleted": 0,
     "errors": 0
   },
-  "message": "Cleaned up 0 orphaned items (0 media assets: 0 from DB + 0 from Cloudflare, 0 profile pictures, 0 attachments)"
+  "message": "Cleaned up 0 orphaned items (0 media assets: 0 from DB + 0 from Cloudflare, 0 profile pictures, 0 attachments, 0 magic link tokens)"
 }
 ```
 
@@ -724,6 +745,7 @@ Logs include:
   - ☁️  Part 1B: Cloudflare → Database comparison
 - 🖼️ Part 2: Profile pictures cleanup
 - 📎 Part 3: Attachments cleanup
+- 🔐 Part 4: Magic link tokens cleanup
 - 🎉 Summary with totals
 
 ### Architecture Notes
@@ -733,10 +755,11 @@ Logs include:
 - This is a legacy design pattern from the original implementation
 - Part 3 of cleanup handles this by parsing JSON and comparing against R2 files
 
-**Grace Period:**
-- Media assets have a 48-hour grace period before deletion
-- This prevents deletion of recently uploaded media that hasn't been associated yet
-- Profile pictures and attachments are deleted immediately if orphaned
+**Grace Periods:**
+- **Media assets:** 48-hour grace period before deletion (prevents deletion of recently uploaded media)
+- **Profile pictures:** Deleted immediately if orphaned
+- **Attachments:** Deleted immediately if orphaned
+- **Magic link tokens:** 7-day grace period for expired tokens, 30-day grace period for used/unused tokens
 
 **Storage Locations:**
 - Videos: Cloudflare Stream

@@ -1,8 +1,9 @@
 // api/cron/cleanup-orphaned-media.js
-// Runs daily to clean up orphaned media:
+// Runs daily to clean up orphaned media and expired data:
 // 1. Media assets not associated with any question or answer
 // 2. Profile pictures not referenced in any expert_profile
 // 3. Attachments not referenced in any answer
+// 4. Old magic_link_tokens (expired >7 days, used >30 days, unused >30 days)
 
 import { S3Client, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { sendEmail } from '../lib/zeptomail.js';
@@ -94,8 +95,9 @@ export default async function handler(req, res) {
     const allAvatars = mediaData.avatars || [];
     const allQuestionAttachments = mediaData.question_attachments || [];
     const allAnswerAttachments = mediaData.answer_attachments || [];
+    const allMagicLinkTokens = mediaData.magic_link_tokens || [];
 
-    console.log(`Found ${allMedia.length} media assets, ${allAvatars.length} avatar URLs, ${allQuestionAttachments.length} question attachments, and ${allAnswerAttachments.length} answer attachments`);
+    console.log(`Found ${allMedia.length} media assets, ${allAvatars.length} avatar URLs, ${allQuestionAttachments.length} question attachments, ${allAnswerAttachments.length} answer attachments, and ${allMagicLinkTokens.length} magic link tokens`);
     console.log('');
 
     // ============================================================
@@ -628,11 +630,96 @@ export default async function handler(req, res) {
     console.log('');
 
     // ============================================================
+    // PART 4: Clean up old magic_link_tokens
+    // ============================================================
+    console.log('🔐 PART 4: Cleaning up old magic link tokens...');
+
+    let tokensDeletedCount = 0;
+    let tokensErrorCount = 0;
+    let tokensSkippedCount = 0;
+
+    // Calculate cutoff dates
+    const now = Date.now();
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+    const expiredCutoff = now - SEVEN_DAYS_MS;    // Expired tokens older than 7 days
+    const usedCutoff = now - THIRTY_DAYS_MS;      // Used tokens older than 30 days
+    const unusedCutoff = now - THIRTY_DAYS_MS;    // Unused tokens older than 30 days
+
+    console.log('Cutoff dates:');
+    console.log(`  - Expired tokens: older than ${new Date(expiredCutoff).toISOString()}`);
+    console.log(`  - Used tokens: older than ${new Date(usedCutoff).toISOString()}`);
+    console.log(`  - Unused tokens: older than ${new Date(unusedCutoff).toISOString()}`);
+    console.log('');
+
+    for (const token of allMagicLinkTokens) {
+      let shouldDelete = false;
+      let deleteReason = '';
+
+      const createdAt = token.created_at || 0;
+      const expiresAt = token.expires_at || 0;
+      const usedAt = token.used_at || 0;
+      const isUsed = token.used === true || token.used === 1;
+
+      // Criteria 1: Expired tokens older than 7 days
+      if (expiresAt < now && expiresAt < expiredCutoff) {
+        shouldDelete = true;
+        deleteReason = 'expired_old';
+      }
+      // Criteria 2: Used tokens older than 30 days
+      else if (isUsed && usedAt > 0 && usedAt < usedCutoff) {
+        shouldDelete = true;
+        deleteReason = 'used_old';
+      }
+      // Criteria 3: Unused tokens older than 30 days
+      else if (!isUsed && createdAt > 0 && createdAt < unusedCutoff) {
+        shouldDelete = true;
+        deleteReason = 'unused_old';
+      }
+
+      if (!shouldDelete) {
+        tokensSkippedCount++;
+        continue;
+      }
+
+      // Delete this token
+      console.log(`Deleting token ${token.id} (${deleteReason}): email=${token.email}, created=${new Date(createdAt).toISOString()}`);
+
+      try {
+        const deleteEndpoint = `${XANO_PUBLIC_API_URL}/internal/magic-link-token`;
+        const deleteResponse = await fetch(`${deleteEndpoint}?x_api_key=${XANO_INTERNAL_API_KEY}&token_id=${token.id}`, {
+          method: 'DELETE',
+        });
+
+        if (deleteResponse.ok) {
+          tokensDeletedCount++;
+          console.log(`✅ Deleted token ${token.id}`);
+        } else {
+          const errorText = await deleteResponse.text();
+          console.warn(`⚠️  Failed to delete token ${token.id}:`, errorText);
+          tokensErrorCount++;
+        }
+      } catch (deleteError) {
+        console.error(`❌ Error deleting token ${token.id}:`, deleteError.message);
+        tokensErrorCount++;
+      }
+    }
+
+    console.log('Part 4 complete:', {
+      total: allMagicLinkTokens.length,
+      deleted: tokensDeletedCount,
+      skipped: tokensSkippedCount,
+      errors: tokensErrorCount
+    });
+    console.log('');
+
+    // ============================================================
     // Summary and notifications
     // ============================================================
     const totalMediaDeleted = mediaDeletedCount + cloudflareOrphanedCount;
-    const totalDeleted = totalMediaDeleted + profileDeletedCount + attachmentDeletedCount;
-    const totalErrors = mediaErrorCount + profileErrorCount + attachmentErrorCount;
+    const totalDeleted = totalMediaDeleted + profileDeletedCount + attachmentDeletedCount + tokensDeletedCount;
+    const totalErrors = mediaErrorCount + profileErrorCount + attachmentErrorCount + tokensErrorCount;
 
     console.log('🎉 All cleanup complete:', {
       mediaAssets: {
@@ -643,6 +730,7 @@ export default async function handler(req, res) {
       },
       profilePictures: { deleted: profileDeletedCount, errors: profileErrorCount },
       attachments: { deleted: attachmentDeletedCount, errors: attachmentErrorCount },
+      magicLinkTokens: { deleted: tokensDeletedCount, errors: tokensErrorCount },
       totals: { deleted: totalDeleted, errors: totalErrors }
     });
 
@@ -660,6 +748,7 @@ export default async function handler(req, res) {
           },
           profilePictures: { deleted: profileDeletedCount, errors: profileErrorCount },
           attachments: { deleted: attachmentDeletedCount, errors: attachmentErrorCount },
+          magicLinkTokens: { deleted: tokensDeletedCount, errors: tokensErrorCount },
           totals: { deleted: totalDeleted, errors: totalErrors },
           errorRate: `${Math.round((totalErrors / (totalDeleted + totalErrors)) * 100)}%`,
         }
@@ -682,11 +771,15 @@ export default async function handler(req, res) {
         deleted: attachmentDeletedCount,
         errors: attachmentErrorCount,
       },
+      magicLinkTokens: {
+        deleted: tokensDeletedCount,
+        errors: tokensErrorCount,
+      },
       totals: {
         deleted: totalDeleted,
         errors: totalErrors,
       },
-      message: `Cleaned up ${totalDeleted} orphaned items (${totalMediaDeleted} media assets: ${mediaDeletedCount} from DB + ${cloudflareOrphanedCount} from Cloudflare, ${profileDeletedCount} profile pictures, ${attachmentDeletedCount} attachments)`,
+      message: `Cleaned up ${totalDeleted} orphaned items (${totalMediaDeleted} media assets: ${mediaDeletedCount} from DB + ${cloudflareOrphanedCount} from Cloudflare, ${profileDeletedCount} profile pictures, ${attachmentDeletedCount} attachments, ${tokensDeletedCount} magic link tokens)`,
     });
 
   } catch (error) {
