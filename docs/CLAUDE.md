@@ -10,7 +10,7 @@ QuickChat is a video-based Q&A platform connecting askers with experts. Users re
 - Frontend: React 18 + Vite + Tailwind CSS + React Router
 - Backend: Node.js serverless functions on Vercel
 - Database: Xano (REST API)
-- Auth: Google OAuth + LinkedIn OAuth
+- Auth: Google OAuth + LinkedIn OAuth + Magic Link (passwordless email)
 - Media: Cloudflare Stream (video) + Cloudflare R2 (audio/files)
 - AI: Google Gemini (free tier), multi-provider LLM service architecture
 
@@ -109,6 +109,10 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
   /oauth                      # OAuth flows
     /google                   # Google OAuth
     /linkedin                 # LinkedIn OAuth
+  /auth                       # Authentication endpoints
+    /magic-link               # Magic link (passwordless) auth
+      - send.js               # Initiate magic link flow
+      - verify.js             # Verify token and authenticate
   /lib                        # Shared utilities
     /llm-providers            # LLM provider implementations
       - gemini.js             # Google Gemini (active)
@@ -172,9 +176,17 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
 - visitor_ip_hash, referrer, user_agent, country, device_type
 - converted_to_question, visited_at
 
+**magic_link_tokens** - Passwordless authentication tokens
+- id, email, token (UUID), verification_code (6-digit)
+- user_id (nullable), expires_at, used, used_at
+- ip_address (hashed), created_at
+
 ## Authentication
 
-Supports both Google OAuth and LinkedIn OAuth with JWT tokens stored in localStorage as `qc_token`.
+Supports three authentication methods with JWT tokens stored in localStorage as `qc_token`:
+1. **Google OAuth** - Sign in with Google account
+2. **LinkedIn OAuth** - Sign in with LinkedIn account
+3. **Magic Link** - Passwordless email authentication (NEW - Jan 2025)
 
 ### OAuth Flow (Google)
 
@@ -202,6 +214,33 @@ Supports both Google OAuth and LinkedIn OAuth with JWT tokens stored in localSto
 - Eliminates dependency on Xano OAuth marketplace addons
 - Gives full control over the OAuth flow
 - Only requires Xano for user creation and token generation
+
+### Magic Link Flow (Passwordless)
+
+1. User enters email on `/signin` → `/api/auth/magic-link/send` (Vercel)
+2. Vercel calls Xano `/auth/magic-link/initiate` (Public API)
+3. Xano generates UUID token, stores in `magic_link_tokens` table
+4. Email sent with link: `https://mindpick.me/auth/magic-link?token={uuid}`
+5. User clicks link → `/auth/magic-link` page
+6. Frontend calls `/api/auth/magic-link/verify` (Vercel)
+7. Vercel calls Xano `/auth/magic-link/verify` (Public API)
+8. Xano validates token, creates/finds user, returns JWT
+9. Frontend stores token, redirects to `/expert` dashboard
+
+**Key Features:**
+- Time-limited tokens (15 minutes)
+- One-time use links
+- Rate limiting (3 per hour per email)
+- Automatic user creation for new emails
+- Welcome email for first-time users
+
+**Security:**
+- UUIDs prevent guessing
+- Tokens marked as used immediately
+- IP tracking for audit trail
+- Handles email client pre-fetching
+
+**Documentation:** See `docs/magic-link-authentication-guide.md` for complete implementation guide
 
 ### Auth Middleware
 
@@ -478,8 +517,12 @@ Handle gracefully in UI, never expose raw errors to users.
 
 **Backend (Vercel):**
 - `XANO_BASE_URL` - Xano API base URL (Authentication API group)
-- `XANO_PUBLIC_API_URL` - Xano Public API URL (for LinkedIn OAuth: `https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L`)
+- `XANO_PUBLIC_API_URL` - Xano Public API URL (for magic link & LinkedIn: `https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L`)
 - `XANO_INTERNAL_API_KEY` - Internal API key for secure Xano calls
+- `ZEPTOMAIL_TOKEN` - ZeptoMail API token (for magic link emails)
+- `ZEPTOMAIL_FROM_EMAIL` - From email address (e.g., noreply@mindpick.me)
+- `ZEPTOMAIL_FROM_NAME` - From name (e.g., QuickChat)
+- `CLIENT_PUBLIC_ORIGIN` - Public app URL (e.g., https://mindpick.me)
 - `LLM_PROVIDER` - AI provider (gemini, openai, anthropic, groq)
 - `GOOGLE_AI_API_KEY` - Gemini API key
 - `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account ID
@@ -797,6 +840,7 @@ For detailed implementation, see `docs/xano-internal-endpoints.md`.
 
 **Recently Completed:**
 - ✅ Marketing Module - UTM tracking, campaign management, analytics (October 2025)
+- ✅ Magic Link Authentication - Passwordless email sign-in (January 2025)
 
 **Immediate Priority:** Complete AI Coach Xano integration
 1. Create `question_coaching_sessions` table in Xano

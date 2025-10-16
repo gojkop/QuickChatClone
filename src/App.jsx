@@ -10,6 +10,7 @@ import PricingPage from '@/pages/PricingPage';
 import SocialImpactPage from '@/pages/SocialImpactPage';
 import SignInPage from '@/pages/SignInPage';
 import OAuthCallbackPage from '@/pages/OAuthCallbackPage';
+import MagicLinkCallbackPage from '@/pages/MagicLinkCallbackPage';
 import ExpertDashboardPage from '@/pages/ExpertDashboardPage';
 import PublicProfilePage from '@/pages/PublicProfilePage';
 import FaqPage from '@/pages/FaqPage';
@@ -36,6 +37,7 @@ const AppLayout = () => {
   // Hide navbar/footer on specific pages
   const hideLayout = [
     '/auth/callback',
+    '/auth/magic-link',
     '/invite-sent',
     '/signin',
     '/question-sent'
@@ -72,6 +74,7 @@ const AppLayout = () => {
           {/* Auth Routes */}
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+          <Route path="/auth/magic-link" element={<MagicLinkCallbackPage />} />
 
           {/* Protected Routes - Expert Dashboard and Marketing */}
           <Route 

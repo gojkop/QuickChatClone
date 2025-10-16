@@ -89,6 +89,100 @@ Content-Type: application/json
 - LinkedIn OAuth is handled entirely by Vercel (not Xano OAuth addon)
 - This endpoint only creates/updates user and returns auth token
 
+### Magic Link Authentication
+
+**Status:** ✅ Production Ready (January 2025)
+
+Passwordless email authentication system. See `docs/magic-link-authentication-guide.md` for complete implementation guide.
+
+#### `POST /auth/magic-link/initiate`
+Generate magic link token and send email.
+
+**API Group:** Public API (`api:BQW1GS7L`)
+**Authentication:** None (public)
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "ip_address": "192.168.1.1"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "verification_code": "123456",
+  "expires_in_seconds": 900
+}
+```
+
+**Response (Rate Limited):**
+```json
+{
+  "error": "rate_limit_exceeded",
+  "retry_after": 3600
+}
+```
+
+**Notes:**
+- Generates UUID v4 token + 6-digit verification code
+- Tokens expire after 15 minutes (900 seconds)
+- Rate limit: 3 requests per hour per email
+- IP address stored (hashed) for security auditing
+
+#### `POST /auth/magic-link/verify`
+Verify magic link token and authenticate user.
+
+**API Group:** Public API (`api:BQW1GS7L`)
+**Authentication:** None (public)
+**Request Body:**
+```json
+{
+  "token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "ip_address": "192.168.1.1"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "email": "user@example.com",
+  "name": "John Doe",
+  "is_new_user": true
+}
+```
+
+**Response (Token Not Found - 404):**
+```json
+{
+  "error": "token_not_found"
+}
+```
+
+**Response (Token Expired - 410):**
+```json
+{
+  "error": "token_expired"
+}
+```
+
+**Response (Token Already Used - 410):**
+```json
+{
+  "error": "token_already_used"
+}
+```
+
+**Notes:**
+- Validates token exists, not expired, not used
+- Marks token as used immediately
+- Creates new user if email doesn't exist
+- Returns JWT authentication token
+- `is_new_user`: true if account was just created
+
 ---
 
 ## User Endpoints
