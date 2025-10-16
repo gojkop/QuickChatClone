@@ -7,11 +7,17 @@ import TemplateEditorModal from './TemplateEditorModal';
 const TEMPLATES_PER_PAGE = 6;
 
 export default function ShareKitTemplates({ campaigns, expertProfile, user, stats }) {
+  // Current step: 'platform' | 'campaign' | 'templates'
+  const [currentStep, setCurrentStep] = useState('platform');
+  
   // Step 1: Platform
   const [selectedPlatform, setSelectedPlatform] = useState(null);
+  
   // Step 2: Campaign
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [campaignSearchQuery, setCampaignSearchQuery] = useState('');
+  const [showCampaignDropdown, setShowCampaignDropdown] = useState(false);
+  
   // Step 3: Template
   const [currentPage, setCurrentPage] = useState(1);
   const [editingTemplate, setEditingTemplate] = useState(null);
@@ -53,12 +59,32 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
     );
   }, [campaigns, campaignSearchQuery]);
 
+  // Group campaigns by source for better UX
+  const groupedCampaigns = useMemo(() => {
+    const groups = {};
+    filteredCampaigns.forEach(campaign => {
+      const source = campaign.utm_source || 'other';
+      if (!groups[source]) {
+        groups[source] = [];
+      }
+      groups[source].push(campaign);
+    });
+    return groups;
+  }, [filteredCampaigns]);
+
+  // Get recent campaigns (top 5)
+  const recentCampaigns = useMemo(() => {
+    return [...campaigns]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5);
+  }, [campaigns]);
+
   // Filter templates
   const filteredTemplates = useMemo(() => {
     let filtered = SHARE_TEMPLATES;
 
-    // Step 1: Filter by platform
-    if (selectedPlatform) {
+    // Filter by platform (unless "all" selected)
+    if (selectedPlatform && selectedPlatform !== 'all') {
       filtered = filtered.filter(t => t.platform === selectedPlatform);
     }
 
@@ -93,15 +119,29 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
 
   const handlePlatformSelect = (platform) => {
     setSelectedPlatform(platform);
+    setCurrentStep('campaign');
+  };
+
+  const handleCampaignSelect = (campaign) => {
+    setSelectedCampaign(campaign);
+    setShowCampaignDropdown(false);
+    setCampaignSearchQuery('');
+  };
+
+  const handleContinueToTemplates = () => {
+    setCurrentStep('templates');
   };
 
   const handleBack = () => {
-    if (selectedPlatform) {
+    if (currentStep === 'templates') {
+      setCurrentStep('campaign');
+    } else if (currentStep === 'campaign') {
+      setCurrentStep('platform');
       setSelectedPlatform(null);
-      setSelectedCampaign(null); // Reset campaign selection
-      setCampaignSearchQuery(''); // Reset campaign search
+      setSelectedCampaign(null);
+      setCampaignSearchQuery('');
       setSearchQuery('');
-      setCurrentPage(1); // Reset pagination
+      setCurrentPage(1);
     }
   };
 
@@ -121,13 +161,12 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
         <div>
           <h2 className="text-xl font-black text-ink mb-1">Share Kit</h2>
           <p className="text-sm text-subtext font-medium">
-            {!selectedPlatform 
-              ? 'Choose a platform to get started'
-              : `${filteredTemplates.length} template${filteredTemplates.length !== 1 ? 's' : ''} for ${PLATFORM_INFO[selectedPlatform]?.name}`
-            }
+            {currentStep === 'platform' && 'Choose a platform to get started'}
+            {currentStep === 'campaign' && 'Optional: Track with a campaign'}
+            {currentStep === 'templates' && `${filteredTemplates.length} template${filteredTemplates.length !== 1 ? 's' : ''} ${selectedPlatform === 'all' ? 'across all platforms' : `for ${PLATFORM_INFO[selectedPlatform]?.name}`}`}
           </p>
         </div>
-        {selectedPlatform && (
+        {currentStep !== 'platform' && (
           <button
             onClick={handleBack}
             className="text-xs font-medium text-primary hover:text-indigo-700 flex items-center gap-1"
@@ -143,26 +182,37 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
       {/* Step Indicator */}
       <div className="bg-surface rounded-lg border border-gray-200 p-3">
         <div className="flex items-center gap-2 text-xs">
-          <div className={`flex items-center gap-1.5 ${selectedPlatform ? 'text-success' : 'text-primary'}`}>
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold ${selectedPlatform ? 'bg-success text-white' : 'bg-primary text-white'}`}>
-              {selectedPlatform ? '✓' : '1'}
+          {/* Step 1: Platform */}
+          <div className={`flex items-center gap-1.5 ${currentStep === 'platform' ? 'text-primary' : 'text-success'}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold ${currentStep === 'platform' ? 'bg-primary text-white' : 'bg-success text-white'}`}>
+              {currentStep === 'platform' ? '1' : '✓'}
             </div>
             <span className="font-medium">Platform</span>
           </div>
+          
           <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
           </svg>
-          <div className={`flex items-center gap-1.5 ${selectedCampaign ? 'text-success' : 'text-subtext'}`}>
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold ${selectedCampaign ? 'bg-success text-white' : 'bg-gray-200 text-gray-600'}`}>
-              {selectedCampaign ? '✓' : '2'}
+          
+          {/* Step 2: Campaign */}
+          <div className={`flex items-center gap-1.5 ${currentStep === 'campaign' ? 'text-primary' : currentStep === 'templates' ? 'text-success' : 'text-subtext'}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold ${
+              currentStep === 'campaign' ? 'bg-primary text-white' : 
+              currentStep === 'templates' ? 'bg-success text-white' : 
+              'bg-gray-200 text-gray-600'
+            }`}>
+              {currentStep === 'templates' ? '✓' : '2'}
             </div>
             <span className="font-medium">Campaign</span>
           </div>
+          
           <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
           </svg>
-          <div className={`flex items-center gap-1.5 ${selectedPlatform ? 'text-primary' : 'text-subtext'}`}>
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold ${selectedPlatform ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'}`}>
+          
+          {/* Step 3: Template */}
+          <div className={`flex items-center gap-1.5 ${currentStep === 'templates' ? 'text-primary' : 'text-subtext'}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold ${currentStep === 'templates' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'}`}>
               3
             </div>
             <span className="font-medium">Template</span>
@@ -171,8 +221,23 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
       </div>
 
       {/* Step 1: Platform Selection */}
-      {!selectedPlatform && (
+      {currentStep === 'platform' && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {/* All Platforms Option */}
+          <button
+            onClick={() => handlePlatformSelect('all')}
+            className="p-4 bg-surface rounded-lg border-2 border-dashed border-gray-300 hover:border-primary hover:shadow-md transition-all duration-base text-left group"
+          >
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-base">
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </div>
+            <h3 className="font-bold text-sm text-ink mb-0.5">All Platforms</h3>
+            <p className="text-xs text-subtext">{SHARE_TEMPLATES.length} templates</p>
+          </button>
+
+          {/* Individual Platforms */}
           {platforms.map(({ id, info, count }) => (
             <button
               key={id}
@@ -210,177 +275,268 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
         </div>
       )}
 
-      {/* Steps 2 & 3: Campaign + Templates */}
-      {selectedPlatform && (
-        <>
-          {/* Step 2: Campaign Selector (Optional) - Improved for many campaigns */}
-          <div className="bg-surface rounded-lg border border-gray-200 p-4">
-            <label className="block text-xs font-bold text-ink mb-2 uppercase tracking-wide">
-              Step 2: Track with Campaign (Optional)
-            </label>
-            
-            {campaigns.length > 10 ? (
-              // Searchable combobox for many campaigns
-              <div className="space-y-2">
-                <div className="relative">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-subtext" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <input
-                    type="text"
-                    value={campaignSearchQuery}
-                    onChange={(e) => setCampaignSearchQuery(e.target.value)}
-                    placeholder="Search campaigns..."
-                    className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-ink font-medium"
-                  />
-                </div>
-                
-                {/* Campaign list */}
-                <div className="max-h-48 overflow-y-auto space-y-1 border border-gray-200 rounded-lg p-2">
+      {/* Step 2: Campaign Selection (Optional) */}
+      {currentStep === 'campaign' && (
+        <div className="space-y-4">
+          <div className="bg-surface rounded-lg border border-gray-200 p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-base font-bold text-ink mb-1">
+                  Track with Campaign (Optional)
+                </h3>
+                <p className="text-sm text-subtext">
+                  Link templates to a campaign for analytics tracking
+                </p>
+              </div>
+              <button
+                onClick={handleContinueToTemplates}
+                className="px-4 py-2 text-sm font-medium text-primary hover:text-indigo-700 flex items-center gap-1 whitespace-nowrap"
+              >
+                Skip
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Campaign Combobox */}
+            <div className="relative">
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-subtext pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  value={selectedCampaign ? selectedCampaign.name : campaignSearchQuery}
+                  onChange={(e) => {
+                    setCampaignSearchQuery(e.target.value);
+                    setShowCampaignDropdown(true);
+                    if (selectedCampaign) setSelectedCampaign(null);
+                  }}
+                  onFocus={() => setShowCampaignDropdown(true)}
+                  placeholder="Search campaigns..."
+                  className="w-full pl-10 pr-10 py-3 text-sm border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-ink font-medium"
+                />
+                {selectedCampaign && (
                   <button
                     onClick={() => {
                       setSelectedCampaign(null);
                       setCampaignSearchQuery('');
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
-                      !selectedCampaign
-                        ? 'bg-indigo-50 text-primary font-bold'
-                        : 'text-ink hover:bg-gray-50 font-medium'
-                    }`}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
                   >
-                    Direct link (no tracking)
+                    <svg className="w-4 h-4 text-subtext" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
-                  
-                  {filteredCampaigns.map(campaign => (
-                    <button
-                      key={campaign.id}
-                      onClick={() => {
-                        setSelectedCampaign(campaign);
-                        setCampaignSearchQuery('');
-                      }}
-                      className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
-                        selectedCampaign?.id === campaign.id
-                          ? 'bg-indigo-50 text-primary font-bold'
-                          : 'text-ink hover:bg-gray-50 font-medium'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="truncate">{campaign.name}</span>
-                        <span className="text-xs text-subtext capitalize ml-2">{campaign.utm_source}</span>
-                      </div>
-                    </button>
-                  ))}
-                  
-                  {filteredCampaigns.length === 0 && (
-                    <div className="text-center py-4 text-sm text-subtext">
-                      No campaigns found
-                    </div>
-                  )}
-                </div>
-                
-                {selectedCampaign && (
-                  <div className="text-xs text-success font-medium">
-                    ✓ Using: {selectedCampaign.name}
-                  </div>
                 )}
               </div>
-            ) : (
-              // Simple dropdown for few campaigns
-              <select
-                value={selectedCampaign?.id || ''}
-                onChange={(e) => {
-                  const campaign = campaigns.find(c => c.id === parseInt(e.target.value));
-                  setSelectedCampaign(campaign || null);
-                }}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-ink font-medium"
-              >
-                <option value="">Direct link (no tracking)</option>
-                {campaigns.map(campaign => (
-                  <option key={campaign.id} value={campaign.id}>
-                    {campaign.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
 
-          {/* Step 3: Search & Templates */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="relative flex-1">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-subtext" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search templates..."
-                  className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
-            </div>
+              {/* Dropdown */}
+              {showCampaignDropdown && !selectedCampaign && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-surface rounded-lg border-2 border-gray-200 shadow-xl max-h-96 overflow-y-auto z-10">
+                  {/* Direct link option */}
+                  <button
+                    onClick={() => {
+                      setSelectedCampaign(null);
+                      setShowCampaignDropdown(false);
+                      setCampaignSearchQuery('');
+                      handleContinueToTemplates();
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 transition-colors border-b border-gray-200"
+                  >
+                    <div className="font-medium text-ink">No campaign (direct link)</div>
+                    <div className="text-xs text-subtext mt-0.5">Use your profile URL without tracking</div>
+                  </button>
 
-            {filteredTemplates.length === 0 ? (
-              <div className="text-center py-8 bg-canvas rounded-lg border border-gray-200">
-                <p className="text-subtext text-sm">No templates found</p>
-              </div>
-            ) : (
-              <>
-                {/* Template Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                  {paginatedTemplates.map(template => {
-                    const processedText = processTemplate(template.template, templateData);
-                    
-                    return (
-                      <TemplateCard
-                        key={template.id}
-                        template={template}
-                        processedText={processedText}
-                        onEdit={() => handleEdit(template)}
-                      />
-                    );
-                  })}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1.5 text-xs font-medium text-ink hover:bg-canvas rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Previous
-                    </button>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  {/* Recent campaigns */}
+                  {!campaignSearchQuery && recentCampaigns.length > 0 && (
+                    <div className="border-b border-gray-200">
+                      <div className="px-4 py-2 bg-gray-50">
+                        <span className="text-xs font-bold text-subtext uppercase tracking-wide">Recent</span>
+                      </div>
+                      {recentCampaigns.map(campaign => (
                         <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`w-8 h-8 text-xs font-bold rounded-lg transition-colors ${
-                            currentPage === page
-                              ? 'bg-primary text-white'
-                              : 'text-ink hover:bg-canvas'
-                          }`}
+                          key={campaign.id}
+                          onClick={() => handleCampaignSelect(campaign)}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-indigo-50 transition-colors group"
                         >
-                          {page}
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-ink group-hover:text-primary truncate">{campaign.name}</div>
+                              <div className="text-xs text-subtext mt-0.5 capitalize">
+                                {campaign.utm_source} • {campaign.total_visits} visits
+                              </div>
+                            </div>
+                            <div className="text-xs font-bold text-success ml-3">
+                              {campaign.conversion_rate}%
+                            </div>
+                          </div>
                         </button>
                       ))}
                     </div>
-                    <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 text-xs font-medium text-ink hover:bg-canvas rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Next
-                    </button>
+                  )}
+
+                  {/* Filtered/All campaigns */}
+                  {campaignSearchQuery && filteredCampaigns.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-subtext">
+                      No campaigns found
+                    </div>
+                  ) : (
+                    <>
+                      {Object.entries(groupedCampaigns).map(([source, sourceCampaigns]) => (
+                        <div key={source}>
+                          <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                            <span className="text-xs font-bold text-subtext uppercase tracking-wide capitalize">
+                              {source} ({sourceCampaigns.length})
+                            </span>
+                          </div>
+                          {sourceCampaigns.map(campaign => (
+                            <button
+                              key={campaign.id}
+                              onClick={() => handleCampaignSelect(campaign)}
+                              className="w-full text-left px-4 py-3 text-sm hover:bg-indigo-50 transition-colors group border-b border-gray-100"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-ink group-hover:text-primary truncate">{campaign.name}</div>
+                                  <div className="text-xs text-subtext mt-0.5">
+                                    {campaign.total_visits} visits • {campaign.total_questions} questions
+                                  </div>
+                                </div>
+                                <div className="text-xs font-bold text-success ml-3">
+                                  {campaign.conversion_rate}%
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Selected campaign confirmation */}
+            {selectedCampaign && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <svg className="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-bold text-green-900">Campaign Selected</span>
+                    </div>
+                    <p className="text-sm text-green-800 font-medium">{selectedCampaign.name}</p>
+                    <p className="text-xs text-green-700 mt-1 capitalize">
+                      {selectedCampaign.utm_source} • Links will include tracking
+                    </p>
                   </div>
-                )}
-              </>
+                  <button
+                    onClick={handleContinueToTemplates}
+                    className="ml-4 px-4 py-2 bg-success text-white text-sm font-bold rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+                  >
+                    Continue →
+                  </button>
+                </div>
+              </div>
             )}
           </div>
-        </>
+
+          {/* Visual separator */}
+          <div className="text-center">
+            <span className="text-xs text-subtext">or</span>
+          </div>
+
+          {/* Skip button */}
+          <button
+            onClick={handleContinueToTemplates}
+            className="w-full p-4 bg-canvas hover:bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-subtext hover:text-ink hover:border-gray-400 transition-all"
+          >
+            Continue without campaign tracking
+          </button>
+        </div>
+      )}
+
+      {/* Step 3: Templates */}
+      {currentStep === 'templates' && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-subtext" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search templates..."
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {filteredTemplates.length === 0 ? (
+            <div className="text-center py-8 bg-canvas rounded-lg border border-gray-200">
+              <p className="text-subtext text-sm">No templates found</p>
+            </div>
+          ) : (
+            <>
+              {/* Template Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                {paginatedTemplates.map(template => {
+                  const processedText = processTemplate(template.template, templateData);
+                  
+                  return (
+                    <TemplateCard
+                      key={template.id}
+                      template={template}
+                      processedText={processedText}
+                      onEdit={() => handleEdit(template)}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 text-xs font-medium text-ink hover:bg-canvas rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Previous
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-8 h-8 text-xs font-bold rounded-lg transition-colors ${
+                          currentPage === page
+                            ? 'bg-primary text-white'
+                            : 'text-ink hover:bg-canvas'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 text-xs font-medium text-ink hover:bg-canvas rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       )}
 
       {/* Editor Modal */}
@@ -390,6 +546,14 @@ export default function ShareKitTemplates({ campaigns, expertProfile, user, stat
           onClose={() => setEditingTemplate(null)}
           template={editingTemplate.template}
           initialText={editingTemplate.processedText}
+        />
+      )}
+
+      {/* Click outside to close campaign dropdown */}
+      {showCampaignDropdown && (
+        <div
+          className="fixed inset-0 z-0"
+          onClick={() => setShowCampaignDropdown(false)}
         />
       )}
     </div>
