@@ -1,5 +1,6 @@
 import React from 'react';
 import QuestionActionsDropdown from './QuestionActionsDropdown';
+import EmptyQuestionState from './EmptyQuestionState';
 
 // ✅ FIXED: Helper to check if attachments exist safely
 const hasAttachments = (question) => {
@@ -92,20 +93,42 @@ const formatPrice = (cents, currency = 'USD') => {
   return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
 };
 
-const QuestionTable = ({ questions, onAnswer, onDelete, currentPage, totalPages, onPageChange, onQuestionClick, onAction }) => {
+const QuestionTable = ({ 
+  questions, 
+  onAnswer, 
+  onDelete, 
+  currentPage, 
+  totalPages, 
+  onPageChange, 
+  onQuestionClick, 
+  onAction,
+  expertProfile,  // ✅ NEW PROP
+  activeTab  // ✅ NEW PROP - to determine which empty state to show
+}) => {
 
+  // ✅ ENHANCED: Smart empty state based on tab context
   if (questions.length === 0) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+    // Show EmptyQuestionState ONLY on "pending" or "all" tabs
+    // This is the activation/onboarding experience
+    if (activeTab === 'pending' || activeTab === 'all') {
+      return <EmptyQuestionState expertProfile={expertProfile} />;
+    }
+    
+    // For "answered" tab with no results, show a simple message
+    // (Expert already has pending questions, just hasn't answered any yet)
+    if (activeTab === 'answered') {
+      return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="text-gray-600 font-medium mb-1">No answered questions yet</p>
+          <p className="text-sm text-gray-500">Check the "Pending" tab to answer your questions</p>
         </div>
-        <p className="text-gray-600 font-medium mb-1">No questions yet!</p>
-        <p className="text-sm text-gray-500">Share your profile link to start receiving questions</p>
-      </div>
-    );
+      );
+    }
   }
 
   return (

@@ -805,6 +805,8 @@ function ExpertDashboardPage() {
                 onPageChange={handlePageChange}
                 onQuestionClick={handleQuestionClick}
                 onAction={handleQuestionAction}
+                expertProfile={profile}  // ✅ ADD THIS LINE
+                activeTab={activeTab}     // ✅ ADD THIS LINE
               />
             )}
           </div>
