@@ -6,7 +6,7 @@ import { getNewQuestionTemplate } from './email-templates/new-question.js';
 import { getAnswerReceivedTemplate } from './email-templates/answer-received.js';
 import { getQuestionConfirmationTemplate } from './email-templates/question-confirmation.js';
 import { getAccountDeletionTemplate } from './email-templates/account-deletion.js';
-import { getMagicLinkTemplate, getWelcomeEmailTemplate } from './email-templates/magic-link.js';
+import { getMagicLinkTemplate } from './email-templates/magic-link.js';
 
 const ZEPTOMAIL_API_URL = 'https://api.zeptomail.eu/v1.1/email';
 
@@ -104,6 +104,7 @@ export async function sendEmail({ to, toName, subject, htmlBody, textBody }) {
 
 /**
  * Send sign-in notification email
+ * USED FOR: First-time users across ALL authentication methods
  * @param {Object} user - User object with email and name
  */
 export async function sendSignInNotification(user) {
@@ -220,6 +221,7 @@ export async function sendAccountDeletionNotification(data) {
 
 /**
  * Send magic link authentication email
+ * USED FOR: Magic link sign-in (returning users)
  * @param {Object} data - Magic link data
  * @param {string} data.to - Recipient email
  * @param {string} data.magicLinkUrl - Full URL with token
@@ -264,6 +266,12 @@ export async function sendMagicLinkEmail(data) {
 
 /**
  * Send welcome email for new users
+ * USED FOR: First-time users across ALL authentication methods
+ * (Google OAuth, LinkedIn OAuth, Magic Link)
+ * 
+ * This replaces the old getWelcomeEmailTemplate from magic-link.js
+ * to ensure consistency across all sign-in methods.
+ * 
  * @param {Object} data - Welcome email data
  * @param {string} data.to - Recipient email
  * @param {string} data.name - User's name
@@ -279,10 +287,13 @@ export async function sendWelcomeEmail(data) {
   }
 
   console.log('📧 Preparing welcome email for:', to);
+  console.log('   Auth method:', authMethod);
 
-  const { subject, htmlBody, textBody } = getWelcomeEmailTemplate({
+  // Use getSignInTemplate which has the complete welcome email with tips
+  const { subject, htmlBody, textBody } = getSignInTemplate({
     name: name || to.split('@')[0],
-    authMethod
+    email: to,
+    location: 'Amsterdam, NL' // Default location
   });
 
   return sendEmail({
