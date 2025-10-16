@@ -3,6 +3,7 @@ import React from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { AuthAPI } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import apiClient from "../api";
 import logo from "@/assets/images/logo-mindpick.svg";
 
 export default function MagicLinkCallbackPage() {
@@ -53,6 +54,18 @@ export default function MagicLinkCallbackPage() {
           name: response.name,
           isNewUser: response.is_new_user
         });
+
+        // Call bootstrap to ensure expert_profile is created
+        console.log('📡 Calling /me/bootstrap...');
+        try {
+          const bootstrapResponse = await apiClient.post("/me/bootstrap");
+          console.log('✅ Bootstrap response:', bootstrapResponse.data);
+        } catch (bootstrapError) {
+          console.warn('⚠️ Bootstrap error (might be expected):', {
+            status: bootstrapError.response?.status,
+            message: bootstrapError.response?.data?.message
+          });
+        }
 
         setStatus('success');
 

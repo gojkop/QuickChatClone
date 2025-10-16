@@ -25,7 +25,8 @@ apiClient.interceptors.response.use(
     const inProgress = sessionStorage.getItem("qc_auth_in_progress") === "1";
     const onCallback =
       typeof window !== "undefined" &&
-      window.location.pathname.startsWith("/auth/callback");
+      (window.location.pathname.startsWith("/auth/callback") ||
+       window.location.pathname.startsWith("/auth/magic-link"));
 
     if (status === 401 && !inProgress && !onCallback) {
       authService.logout();
