@@ -219,11 +219,12 @@ function AnswerReviewPage() {
             let downloadUrl = asset.url;
             let fileName;
 
-            // For Cloudflare Stream videos, use downloads endpoint
+            // For Cloudflare Stream videos, proxy through backend to avoid CORS
             if (isVideo && asset.url.includes('cloudflarestream.com')) {
               const videoId = getStreamVideoId(asset.url);
               if (videoId) {
-                downloadUrl = `https://${CUSTOMER_CODE_OVERRIDE}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
+                const streamDownloadUrl = `https://${CUSTOMER_CODE_OVERRIDE}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
+                downloadUrl = `/api/media/download-video?url=${encodeURIComponent(streamDownloadUrl)}`;
                 fileName = `part-${index + 1}-${asset.metadata?.mode || 'video'}.mp4`;
               }
             } else if (isAudio) {
