@@ -142,7 +142,9 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         socials: formData.socials || {},
         charity_percentage: Number(formData.charity_percentage) || 0,
         selected_charity: formData.selected_charity || null,
-        accepting_questions: formData.accepting_questions
+        accepting_questions: formData.accepting_questions,
+        // ⚠️ Phase 2: Uncomment when backend is ready
+        // daily_digest_enabled: formData.daily_digest_enabled !== false
       };
 
       console.log('Saving payload:', payload);
@@ -156,7 +158,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       
       console.log('API response:', response.data);
       
-      // ✅ Also update accepting_questions using the dedicated endpoint (same as dashboard toggle)
+      // Also update accepting_questions using the dedicated endpoint
       try {
         await apiClient.post('/expert/profile/availability', {
           accepting_questions: formData.accepting_questions
@@ -164,14 +166,14 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         console.log('Availability status updated successfully');
       } catch (availabilityErr) {
         console.warn('Failed to update availability status:', availabilityErr);
-        // Continue anyway - the main profile was saved
       }
       
       const updatedProfile = {
         ...response.data,
         charity_percentage: formData.charity_percentage,
         selected_charity: formData.selected_charity,
-        accepting_questions: formData.accepting_questions // ✅ Preserve from form data
+        accepting_questions: formData.accepting_questions,
+        daily_digest_enabled: formData.daily_digest_enabled // Preserve UI state
       };
       
       onSave(updatedProfile);
@@ -305,6 +307,34 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-green-600 peer-checked:to-emerald-600"></div>
+                    </label>
+                  </div>
+
+                  {/* ✅ NEW: Daily Digest Toggle */}
+                  <div className="flex items-center justify-between bg-white/70 rounded-lg px-4 py-3 border border-blue-200/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                          Daily Question Digest
+                          <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Phase 2</span>
+                        </div>
+                        <div className="text-xs text-gray-600">Get a daily email of pending questions (8 AM UTC)</div>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0" title="Database implementation pending - currently UI only">
+                      <input 
+                        id="daily_digest_enabled" 
+                        type="checkbox" 
+                        checked={formData.daily_digest_enabled !== false} 
+                        onChange={handleChange} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-cyan-600"></div>
                     </label>
                   </div>
                 </div>

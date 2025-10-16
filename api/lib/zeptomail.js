@@ -1,12 +1,10 @@
-// api/lib/zeptomail.js
-// ZeptoMail email service for transactional emails
-
 import { getSignInTemplate } from './email-templates/sign-in.js';
 import { getNewQuestionTemplate } from './email-templates/new-question.js';
 import { getAnswerReceivedTemplate } from './email-templates/answer-received.js';
 import { getQuestionConfirmationTemplate } from './email-templates/question-confirmation.js';
 import { getAccountDeletionTemplate } from './email-templates/account-deletion.js';
 import { getMagicLinkTemplate } from './email-templates/magic-link.js';
+import { getDailyDigestTemplate } from './email-templates/daily-digest.js';
 
 const ZEPTOMAIL_API_URL = 'https://api.zeptomail.eu/v1.1/email';
 
@@ -299,6 +297,48 @@ export async function sendWelcomeEmail(data) {
   return sendEmail({
     to,
     toName: name || to,
+    subject,
+    htmlBody,
+    textBody,
+  });
+}
+
+/**
+ * Send daily digest email to expert
+ * USED FOR: Daily digest of pending questions
+ * @param {Object} digest - Digest data
+ * @param {string} digest.expert_email - Expert's email
+ * @param {string} digest.expert_name - Expert's name
+ * @param {string} digest.expert_handle - Expert's profile handle
+ * @param {Array} digest.questions - Array of pending questions
+ * @param {number} digest.total_pending - Total pending questions
+ * @param {number} digest.urgent_count - Urgent questions count
+ * @param {number} digest.total_earnings_cents - Total potential earnings
+ */
+export async function sendDailyDigestEmail(digest) {
+  const { expert_email, expert_name } = digest;
+
+  // Validate email exists
+  if (!expert_email) {
+    console.error('❌ Cannot send digest: expert_email is missing from digest:', digest);
+    throw new Error('Expert email is required to send digest');
+  }
+
+  console.log('📧 Preparing daily digest for:', expert_email);
+
+  const { subject, htmlBody, textBody } = getDailyDigestTemplate({
+    expertName: expert_name,
+    expertEmail: expert_email,
+    expertHandle: digest.expert_handle,
+    questions: digest.questions,
+    totalPending: digest.total_pending,
+    urgentCount: digest.urgent_count,
+    totalEarningsCents: digest.total_earnings_cents
+  });
+
+  return sendEmail({
+    to: expert_email,
+    toName: expert_name || expert_email,
     subject,
     htmlBody,
     textBody,
