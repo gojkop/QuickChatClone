@@ -12,6 +12,7 @@ import DefaultAvatar from '@/components/dashboard/DefaultAvatar';
 import QuestionTable from '@/components/dashboard/QuestionTable';
 import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
 import MarketingPreview from '@/components/dashboard/MarketingPreview';
+import FirstQuestionCelebration from '@/components/dashboard/FirstQuestionCelebration';
 
 
 // ✅ Hidden Questions Toggle Component
@@ -88,6 +89,10 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
     onSortChange(value);
     setIsOpen(false);
   };
+  
+  const [showFirstQuestionCelebration, setShowFirstQuestionCelebration] = useState(false);
+  const [firstQuestion, setFirstQuestion] = useState(null);
+  const previousQuestionCountRef = useRef(0);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -295,6 +300,28 @@ function ExpertDashboardPage() {
       setIsLoadingQuestions(false);
     }
   };
+  
+  useEffect(() => {
+  if (isLoadingQuestions) return;
+  const alreadyCelebrated = localStorage.getItem('qc_first_question_celebrated');
+  if (alreadyCelebrated === 'true') return;
+  
+  const currentCount = Array.isArray(allQuestions) ? allQuestions.length : 0;
+  const previousCount = previousQuestionCountRef.current;
+  
+  if (previousCount === 0 && currentCount === 1) {
+    const newQuestion = allQuestions[0];
+    const questionAge = Date.now() / 1000 - (newQuestion.created_at > 4102444800 
+      ? newQuestion.created_at / 1000 : newQuestion.created_at);
+    
+    if (questionAge < 300) {
+      setFirstQuestion(newQuestion);
+      setShowFirstQuestionCelebration(true);
+      localStorage.setItem('qc_first_question_celebrated', 'true');
+    }
+  }
+  previousQuestionCountRef.current = currentCount;
+}, [allQuestions, isLoadingQuestions]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -374,6 +401,14 @@ function ExpertDashboardPage() {
     refreshQuestions();
   }, [profile, activeTab]); // sortBy removed!
 
+  const handleFirstQuestionAnswer = () => {
+  if (firstQuestion) {
+    setSelectedQuestion(firstQuestion);
+    setShowQuestionDetailModal(true);
+    navigate(`#question-${firstQuestion.id}`, { replace: false });
+  }
+};
+  
   const handleToggleAvailability = async () => {
     if (isTogglingAvailability) return;
     
@@ -845,6 +880,12 @@ function ExpertDashboardPage() {
               refreshQuestions();
             }}
           />
+          <FirstQuestionCelebration
+            isOpen={showFirstQuestionCelebration}
+            onClose={() => setShowFirstQuestionCelebration(false)}
+            question={firstQuestion}
+            onAnswerClick={handleFirstQuestionAnswer}
+        />
         </>
       )}
     </div>
