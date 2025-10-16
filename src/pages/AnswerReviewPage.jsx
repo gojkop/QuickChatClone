@@ -230,7 +230,9 @@ function AnswerReviewPage() {
               fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'video'}.mp4`;
             }
           } else if (isAudio) {
-            // Audio files - use direct R2 URL (already set in downloadUrl)
+            // Audio files - proxy through our backend to avoid CORS issues
+            downloadUrl = `/api/media/download-audio?url=${encodeURIComponent(asset.url)}`;
+
             // Determine file extension from URL
             let extension = 'webm';
             if (asset.url.includes('.mp3')) extension = 'mp3';
