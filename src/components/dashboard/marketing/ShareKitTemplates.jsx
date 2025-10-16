@@ -1,104 +1,194 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { SHARE_TEMPLATES, PLATFORM_INFO } from '@/constants/shareTemplates';
+import { processTemplate, getTemplateData, buildCampaignUrl } from '@/utils/templateEngine';
+import TemplateCard from './TemplateCard';
+import TemplateEditorModal from './TemplateEditorModal';
 
-export default function ShareKitTemplates({ templates }) {
-  const [copiedTemplate, setCopiedTemplate] = useState(null);
+export default function ShareKitTemplates({ campaigns, expertProfile, user, stats }) {
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [filterPlatform, setFilterPlatform] = useState('all');
+  const [editingTemplate, setEditingTemplate] = useState(null);
 
-  const handleCopy = (templateId, copy) => {
-    navigator.clipboard.writeText(copy);
-    setCopiedTemplate(templateId);
-    setTimeout(() => setCopiedTemplate(null), 2000);
-  };
-
-  const getPlatformIcon = (platform) => {
-    switch (platform) {
-      case 'twitter':
-        return (
-          <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-          </svg>
-        );
-      case 'linkedin':
-        return (
-          <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-          </svg>
-        );
-      case 'email':
-        return (
-          <svg className="w-5 h-5 text-subtext" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-        );
-      default:
-        return null;
+  // Build template data once
+  const templateData = useMemo(() => {
+    if (!expertProfile) return {};
+    
+    const data = getTemplateData(expertProfile, user, stats);
+    
+    // Add campaign URL if campaign selected
+    if (selectedCampaign) {
+      data.profile_url = buildCampaignUrl(expertProfile, selectedCampaign);
     }
+    
+    return data;
+  }, [expertProfile, user, stats, selectedCampaign]);
+
+  // Filter templates by platform
+  const filteredTemplates = useMemo(() => {
+    if (filterPlatform === 'all') return SHARE_TEMPLATES;
+    return SHARE_TEMPLATES.filter(t => t.platform === filterPlatform);
+  }, [filterPlatform]);
+
+  // Get unique platforms for filter
+  const platforms = useMemo(() => {
+    const uniquePlatforms = [...new Set(SHARE_TEMPLATES.map(t => t.platform))];
+    return uniquePlatforms;
+  }, []);
+
+  const handleEdit = (template) => {
+    const processedText = processTemplate(template.template, templateData);
+    setEditingTemplate({ template, processedText });
   };
+
+  if (!expertProfile) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-subtext font-medium">Loading expert profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6 shadow-elev-1">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-6 shadow-elev-1">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center flex-shrink-0 shadow-elev-2">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <div>
-            <h3 className="font-black text-indigo-900 mb-1">Pre-written templates with your stats</h3>
-            <p className="text-sm text-indigo-800 font-medium">
-              Copy and paste these templates into your social posts, emails, and bio. 
-              Your real metrics (questions answered, rating) are automatically included.
+          <div className="flex-1">
+            <h3 className="font-black text-indigo-900 mb-2 text-lg">Share Kit: Ready-to-Post Templates</h3>
+            <p className="text-sm text-indigo-800 font-medium mb-4">
+              Pre-written posts with your real stats automatically filled in. One click to copy, customize if you want, then paste anywhere.
             </p>
+            
+            {/* Quick Stats */}
+            <div className="flex flex-wrap gap-3 text-xs">
+              <div className="px-3 py-1.5 bg-white rounded-lg shadow-elev-1 border border-indigo-100">
+                <span className="text-indigo-600 font-bold">Price: </span>
+                <span className="text-indigo-900 font-black">€{templateData.price}</span>
+              </div>
+              <div className="px-3 py-1.5 bg-white rounded-lg shadow-elev-1 border border-indigo-100">
+                <span className="text-indigo-600 font-bold">Questions: </span>
+                <span className="text-indigo-900 font-black">{templateData.total_questions}</span>
+              </div>
+              <div className="px-3 py-1.5 bg-white rounded-lg shadow-elev-1 border border-indigo-100">
+                <span className="text-indigo-600 font-bold">Rating: </span>
+                <span className="text-indigo-900 font-black">{templateData.avg_rating}★</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Templates */}
-      <div className="grid gap-6">
-        {templates.map((template) => (
-          <div key={template.id} className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6 hover:shadow-elev-3 transition-all duration-base">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  template.platform === 'twitter' ? 'bg-blue-50' :
-                  template.platform === 'linkedin' ? 'bg-indigo-50' :
-                  'bg-gray-100'
-                }`}>
-                  {getPlatformIcon(template.platform)}
-                </div>
-                <div>
-                  <h4 className="font-black text-ink">{template.title}</h4>
-                  <p className="text-sm text-subtext capitalize font-medium">{template.platform}</p>
-                </div>
-              </div>
+      {/* Campaign Selector & Filters */}
+      <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Campaign Selector */}
+          <div>
+            <label className="block text-sm font-bold text-ink mb-2">
+              Track with Campaign (Optional)
+            </label>
+            <select
+              value={selectedCampaign?.id || ''}
+              onChange={(e) => {
+                const campaign = campaigns.find(c => c.id === parseInt(e.target.value));
+                setSelectedCampaign(campaign || null);
+              }}
+              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-ink font-medium transition-all duration-base"
+            >
+              <option value="">No tracking (direct link)</option>
+              {campaigns.map(campaign => (
+                <option key={campaign.id} value={campaign.id}>
+                  {campaign.name} ({campaign.utm_source})
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-subtext mt-1 font-medium">
+              {selectedCampaign ? 
+                `URLs will include UTM tracking for "${selectedCampaign.name}"` : 
+                'URLs will point to your profile without tracking'
+              }
+            </p>
+          </div>
+
+          {/* Platform Filter */}
+          <div>
+            <label className="block text-sm font-bold text-ink mb-2">
+              Filter by Platform
+            </label>
+            <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => handleCopy(template.id, template.copy)}
-                className="btn btn-primary px-4 py-2.5 text-sm gap-2"
+                onClick={() => setFilterPlatform('all')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-base ${
+                  filterPlatform === 'all'
+                    ? 'bg-primary text-white shadow-elev-2'
+                    : 'bg-canvas text-subtext hover:bg-gray-200'
+                }`}
               >
-                {copiedTemplate === template.id ? (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    Copy
-                  </>
-                )}
+                All
               </button>
-            </div>
-            <div className="bg-canvas rounded-lg p-4 border border-gray-200 font-mono text-sm text-ink whitespace-pre-wrap">
-              {template.copy}
+              {platforms.map(platform => {
+                const info = PLATFORM_INFO[platform];
+                return (
+                  <button
+                    key={platform}
+                    onClick={() => setFilterPlatform(platform)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-base ${
+                      filterPlatform === platform
+                        ? `${info.bgColor} ${info.textColor} shadow-elev-2`
+                        : 'bg-canvas text-subtext hover:bg-gray-200'
+                    }`}
+                  >
+                    {info.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        ))}
+        </div>
       </div>
+
+      {/* Template Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {filteredTemplates.map(template => {
+          const processedText = processTemplate(template.template, templateData);
+          
+          return (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              processedText={processedText}
+              onEdit={() => handleEdit(template)}
+            />
+          );
+        })}
+      </div>
+
+      {/* Empty State */}
+      {filteredTemplates.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-subtext font-medium">No templates found for this platform.</p>
+          <button
+            onClick={() => setFilterPlatform('all')}
+            className="mt-4 text-primary hover:text-indigo-700 font-bold text-sm"
+          >
+            Show all templates
+          </button>
+        </div>
+      )}
+
+      {/* Editor Modal */}
+      {editingTemplate && (
+        <TemplateEditorModal
+          isOpen={!!editingTemplate}
+          onClose={() => setEditingTemplate(null)}
+          template={editingTemplate.template}
+          initialText={editingTemplate.processedText}
+        />
+      )}
     </div>
   );
 }

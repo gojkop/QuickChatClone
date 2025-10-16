@@ -1,11 +1,14 @@
+// src/hooks/useMarketing.js
 import { useState, useEffect } from 'react';
 import apiClient from '@/api';
 
 export function useMarketing() {
   const [campaigns, setCampaigns] = useState([]);
   const [trafficSources, setTrafficSources] = useState([]);
-  const [shareTemplates, setShareTemplates] = useState([]);
   const [insights, setInsights] = useState(null);
+  const [expertProfile, setExpertProfile] = useState(null);
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -33,18 +36,6 @@ export function useMarketing() {
     }
   };
 
-  // Fetch share kit templates
-  const fetchShareTemplates = async () => {
-    try {
-      const response = await apiClient.get('/marketing/share-templates');
-      setShareTemplates(response.data || []);
-    } catch (err) {
-      console.error('Failed to fetch share templates:', err);
-      setError('Failed to load share templates');
-      setShareTemplates([]);
-    }
-  };
-
   // Fetch insights and recommendations
   const fetchInsights = async () => {
     try {
@@ -54,6 +45,37 @@ export function useMarketing() {
       console.error('Failed to fetch insights:', err);
       setError('Failed to load insights');
       setInsights(null);
+    }
+  };
+
+  // Fetch expert profile data (for Share Kit templates)
+  const fetchExpertProfile = async () => {
+    try {
+      // Assuming you have an endpoint to get current expert's profile
+      const response = await apiClient.get('/me/profile');
+      setExpertProfile(response.data);
+      setUser(response.data.user); // Assuming user is nested
+      
+      // Calculate stats from questions
+      const questionsResponse = await apiClient.get('/me/questions');
+      const questions = questionsResponse.data || [];
+      
+      const answeredQuestions = questions.filter(q => 
+        q.status === 'answered' || q.status === 'closed'
+      );
+      
+      const totalRating = answeredQuestions.reduce((sum, q) => sum + (q.rating || 0), 0);
+      const avgRating = answeredQuestions.length > 0 
+        ? (totalRating / answeredQuestions.length).toFixed(1) 
+        : '5.0';
+      
+      setStats({
+        total_questions: answeredQuestions.length,
+        avg_rating: avgRating,
+      });
+    } catch (err) {
+      console.error('Failed to fetch expert profile:', err);
+      // Non-critical error, Share Kit will show loading state
     }
   };
 
@@ -76,8 +98,8 @@ export function useMarketing() {
       await Promise.all([
         fetchCampaigns(),
         fetchTrafficSources(),
-        fetchShareTemplates(),
-        fetchInsights()
+        fetchInsights(),
+        fetchExpertProfile(),
       ]);
       setIsLoading(false);
     };
@@ -87,12 +109,14 @@ export function useMarketing() {
   return {
     campaigns,
     trafficSources,
-    shareTemplates,
     insights,
+    expertProfile,
+    user,
+    stats,
     isLoading,
     error,
     createCampaign,
     refreshCampaigns: fetchCampaigns,
-    refreshTrafficSources: fetchTrafficSources
+    refreshTrafficSources: fetchTrafficSources,
   };
 }

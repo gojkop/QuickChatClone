@@ -1,16 +1,37 @@
 import React from 'react';
 import InsightCard from './InsightCard';
 
-export default function MarketingOverview({ campaigns, insights, trafficSources }) {
+export default function MarketingOverview({ 
+  campaigns, 
+  insights, 
+  trafficSources,
+  onNavigate 
+}) {
   // Calculate totals
   const totalVisits = campaigns.reduce((sum, c) => sum + c.total_visits, 0);
   const totalQuestions = campaigns.reduce((sum, c) => sum + c.total_questions, 0);
   const totalRevenue = campaigns.reduce((sum, c) => sum + c.total_revenue, 0);
+  const overallConversionRate = totalVisits > 0 ? ((totalQuestions / totalVisits) * 100).toFixed(1) : '0.0';
+
+  // Get top traffic source
+  const topSource = trafficSources.length > 0 
+    ? trafficSources.reduce((prev, current) => 
+        current.questions > prev.questions ? current : prev
+      ) 
+    : null;
+
+  // Get top campaign
+  const topCampaign = campaigns.length > 0
+    ? campaigns.reduce((prev, current) => 
+        current.total_revenue > prev.total_revenue ? current : prev
+      )
+    : null;
 
   return (
     <div className="space-y-6">
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Visits */}
         <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6 hover:shadow-elev-3 transition-all duration-base">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-bold text-subtext uppercase tracking-wide">Total Visits</h3>
@@ -21,14 +42,12 @@ export default function MarketingOverview({ campaigns, insights, trafficSources 
             </div>
           </div>
           <p className="text-3xl font-black text-ink">{totalVisits.toLocaleString()}</p>
-          <p className="text-xs text-success mt-2 font-bold flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-            23% vs last month
+          <p className="text-xs text-subtext mt-2 font-medium">
+            Profile page views
           </p>
         </div>
 
+        {/* Questions */}
         <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6 hover:shadow-elev-3 transition-all duration-base">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-bold text-subtext uppercase tracking-wide">Questions</h3>
@@ -39,14 +58,12 @@ export default function MarketingOverview({ campaigns, insights, trafficSources 
             </div>
           </div>
           <p className="text-3xl font-black text-ink">{totalQuestions}</p>
-          <p className="text-xs text-success mt-2 font-bold flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-            31% vs last month
+          <p className="text-xs text-subtext mt-2 font-medium">
+            From tracked campaigns
           </p>
         </div>
 
+        {/* Revenue */}
         <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6 hover:shadow-elev-3 transition-all duration-base">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-bold text-subtext uppercase tracking-wide">Revenue</h3>
@@ -57,71 +74,157 @@ export default function MarketingOverview({ campaigns, insights, trafficSources 
             </div>
           </div>
           <p className="text-3xl font-black text-ink">€{totalRevenue.toLocaleString()}</p>
-          <p className="text-xs text-success mt-2 font-bold flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-            28% vs last month
+          <p className="text-xs text-subtext mt-2 font-medium">
+            Total campaign revenue
+          </p>
+        </div>
+
+        {/* Conversion Rate */}
+        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6 hover:shadow-elev-3 transition-all duration-base">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-bold text-subtext uppercase tracking-wide">Conv. Rate</h3>
+            <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-3xl font-black text-ink">{overallConversionRate}%</p>
+          <p className="text-xs text-subtext mt-2 font-medium">
+            Visit → Question rate
           </p>
         </div>
       </div>
 
-      {/* Conversion Benchmark */}
+      {/* Action Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Traffic Source Action */}
+        {topSource && (
+          <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl border-2 border-indigo-200 p-6 shadow-elev-2 hover:shadow-elev-3 transition-all duration-base">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-black text-indigo-900 mb-1">
+                  🎯 Your Best Channel
+                </h3>
+                <p className="text-sm text-indigo-700 font-medium capitalize">
+                  <strong>{topSource.name}</strong> drives {topSource.questions} questions
+                  ({((topSource.questions / totalQuestions) * 100).toFixed(0)}% of total)
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate('share-kit')}
+              className="w-full btn bg-gradient-to-r from-primary to-accent text-white px-4 py-3 text-sm font-black shadow-elev-2 hover:shadow-elev-3"
+            >
+              Create {topSource.name} Post →
+            </button>
+          </div>
+        )}
+
+        {/* Top Campaign Action */}
+        {topCampaign && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 p-6 shadow-elev-2 hover:shadow-elev-3 transition-all duration-base">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-black text-green-900 mb-1">
+                  💰 Top Performer
+                </h3>
+                <p className="text-sm text-green-700 font-medium">
+                  <strong>{topCampaign.name}</strong> earned €{topCampaign.total_revenue}
+                  ({((topCampaign.total_revenue / totalRevenue) * 100).toFixed(0)}% of revenue)
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate('campaigns')}
+              className="w-full btn bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-3 text-sm font-black shadow-elev-2 hover:shadow-elev-3"
+            >
+              View Campaign Details →
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Conversion Performance */}
       <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6">
         <h3 className="text-lg font-black text-ink mb-4">Conversion Performance</h3>
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold text-subtext">Visit → Question Rate</span>
+              <span className="text-sm font-bold text-subtext">Your Conversion Rate</span>
               <span className="text-sm font-black text-ink">
-                {insights?.your_metrics?.visit_to_question?.toFixed(1)}%
+                {insights?.your_metrics?.visit_to_question?.toFixed(1) || overallConversionRate}%
               </span>
             </div>
             <div className="relative h-3 bg-canvas rounded-full overflow-hidden">
               <div 
                 className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-slow" 
-                style={{ width: `${Math.min(insights?.your_metrics?.visit_to_question || 0, 100)}%` }}
+                style={{ width: `${Math.min(insights?.your_metrics?.visit_to_question || parseFloat(overallConversionRate), 100)}%` }}
               ></div>
             </div>
-            <p className="text-xs text-success mt-1 font-bold">
-              ✓ Above platform average ({insights?.platform_average?.visit_to_question}%)
-            </p>
+            {insights?.platform_average?.visit_to_question && (
+              <p className="text-xs text-success mt-1 font-bold">
+                {insights.your_metrics.visit_to_question > insights.platform_average.visit_to_question ? '✓' : '↓'} 
+                {' '}Platform average: {insights.platform_average.visit_to_question}%
+              </p>
+            )}
           </div>
 
-          {/* Insights */}
+          {/* Insights with Actions */}
           {insights?.insights && insights.insights.length > 0 && (
             <div className="space-y-3 mt-4">
               {insights.insights.map((insight, idx) => (
-                <InsightCard key={idx} {...insight} />
+                <InsightCard 
+                  key={idx} 
+                  {...insight}
+                  onAction={onNavigate}
+                />
               ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Top Campaigns */}
-      <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6">
-        <h3 className="text-lg font-black text-ink mb-4">Top Performing Campaigns</h3>
-        <div className="space-y-3">
-          {campaigns.slice(0, 3).map((campaign, idx) => (
-            <div key={campaign.id} className="flex items-center justify-between p-4 bg-canvas rounded-lg hover:bg-gray-100 transition-all duration-base">
-              <div className="flex items-center gap-4">
-                <div className="text-2xl font-black text-gray-300">#{idx + 1}</div>
-                <div>
-                  <p className="font-bold text-ink">{campaign.name}</p>
-                  <p className="text-sm text-subtext capitalize">{campaign.utm_source}</p>
+      {/* Traffic Sources Mini-View */}
+      {trafficSources.length > 0 && (
+        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-black text-ink">Traffic Sources</h3>
+            <button
+              onClick={() => onNavigate('campaigns')}
+              className="text-primary hover:text-indigo-700 font-bold text-sm"
+            >
+              View All →
+            </button>
+          </div>
+          
+          <div className="space-y-3">
+            {trafficSources.slice(0, 4).map((source) => (
+              <div key={source.name} className="flex items-center justify-between p-3 bg-canvas rounded-lg hover:bg-gray-100 transition-colors duration-fast">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <span className="text-sm font-black text-primary capitalize">
+                      {source.name[0].toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-ink capitalize">{source.name}</p>
+                    <p className="text-xs text-subtext">
+                      {source.visits} visits • {source.questions} questions
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-black text-ink">€{source.revenue}</p>
+                  <p className="text-xs text-subtext">
+                    {((source.questions / source.visits) * 100).toFixed(1)}% conv.
+                  </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-lg font-black text-ink">€{campaign.total_revenue}</p>
-                <p className="text-sm text-subtext">
-                  {campaign.total_questions} questions • {campaign.conversion_rate}% conv.
-                </p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
