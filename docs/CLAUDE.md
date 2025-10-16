@@ -394,6 +394,31 @@ See `docs/marketing module/` for detailed implementation docs:
 - `IMPLEMENTATION-COMPLETE.md` - Implementation summary
 - `PROGRESS-2025-10-14.md` - Development log
 
+## Download Features
+
+### ZIP Download for Questions & Answers
+
+**Status:** ✅ Production Ready (October 16, 2025)
+
+Users can download all media files and attachments from questions and answers as organized ZIP archives on the answer review page (`/r/{token}`).
+
+**Features:**
+- Download all answer content (videos, audio, attachments) as `answer-{id}.zip`
+- Download all question content (videos, audio, attachments) as `question-{id}.zip`
+- Sequential file downloads to prevent browser overload
+- Loading states with file count badges
+- CORS-safe downloads via backend proxy endpoints
+
+**Technical Implementation:**
+- Library: `jszip@3.10.1` for client-side ZIP creation
+- Proxy endpoints to avoid CORS errors:
+  - `/api/media/download-video` - Proxies Cloudflare Stream downloads
+  - `/api/media/download-audio` - Proxies R2 audio downloads
+- Reusable `downloadAsZip()` function in `AnswerReviewPage.jsx`
+- Files named systematically: `part-1-video.mp4`, `part-2-audio.webm`, etc.
+
+**Documentation:** See `docs/ZIP-DOWNLOAD-FEATURE.md` for complete implementation details
+
 ## Profile Sharing Features
 
 ### QR Code Generator
@@ -953,6 +978,7 @@ For detailed implementation, see `docs/xano-internal-endpoints.md`.
 ## Next Steps
 
 **Recently Completed:**
+- ✅ ZIP Download Feature - Download questions/answers as organized archives (October 16, 2025)
 - ✅ QR Code Profile Sharing - Generate and share profile QR codes (October 16, 2025)
 - ✅ Marketing Module - UTM tracking, campaign management, analytics (October 2025)
 - ✅ Magic Link Authentication - Passwordless email sign-in (January 2025)
