@@ -805,7 +805,10 @@ function ExpertDashboardPage() {
                 onPageChange={handlePageChange}
                 onQuestionClick={handleQuestionClick}
                 onAction={handleQuestionAction}
-                expertProfile={profile}  // ✅ ADD THIS LINE
+                expertProfile={{
+                    ...profile,
+                    total_questions_answered: answeredCount
+                }}
                 activeTab={activeTab}     // ✅ ADD THIS LINE
               />
             )}
