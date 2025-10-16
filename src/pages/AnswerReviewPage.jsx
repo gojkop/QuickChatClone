@@ -199,6 +199,8 @@ function AnswerReviewPage() {
 
     // Add all media assets (videos AND audio)
     if (data.answer.media_assets && data.answer.media_assets.length > 0) {
+      console.log('📥 Processing downloads for media assets:', data.answer.media_assets);
+
       data.answer.media_assets.forEach((asset, index) => {
         if (asset.url) {
           const isVideo = asset.metadata?.mode === 'video' ||
@@ -207,10 +209,17 @@ function AnswerReviewPage() {
                           asset.url?.includes('cloudflarestream.com');
 
           const isAudio = asset.metadata?.mode === 'audio' ||
-                          (!isVideo && (asset.url?.includes('.webm') || asset.url?.includes('.mp3')));
+                          (!isVideo && (asset.url?.includes('.webm') || asset.url?.includes('.mp3') || asset.url?.includes('.wav')));
 
           let downloadUrl = asset.url;
           let fileName;
+
+          console.log(`Asset ${index + 1}:`, {
+            mode: asset.metadata?.mode,
+            isVideo,
+            isAudio,
+            url: asset.url?.substring(0, 50)
+          });
 
           // For Cloudflare Stream videos, try to use downloads endpoint
           if (isVideo && asset.url.includes('cloudflarestream.com')) {
@@ -221,14 +230,24 @@ function AnswerReviewPage() {
               fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'video'}.mp4`;
             }
           } else if (isAudio) {
-            // Audio files - use direct R2 URL
-            fileName = `answer-part-${index + 1}-audio.webm`;
+            // Audio files - use direct R2 URL (already set in downloadUrl)
+            // Determine file extension from URL
+            let extension = 'webm';
+            if (asset.url.includes('.mp3')) extension = 'mp3';
+            else if (asset.url.includes('.wav')) extension = 'wav';
+
+            fileName = `answer-part-${index + 1}-audio.${extension}`;
           } else {
             // Other media types
             fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'media'}.${isVideo ? 'mp4' : 'webm'}`;
           }
 
-          downloads.push({ url: downloadUrl, name: fileName });
+          if (downloadUrl && fileName) {
+            downloads.push({ url: downloadUrl, name: fileName });
+            console.log(`✅ Added to downloads:`, { fileName, url: downloadUrl.substring(0, 50) });
+          } else {
+            console.log(`⚠️ Skipped asset ${index + 1}:`, { downloadUrl: !!downloadUrl, fileName: !!fileName });
+          }
         }
       });
     }
