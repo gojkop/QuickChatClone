@@ -487,6 +487,39 @@ if (item.uid && item.url) {
 
 **Applies to:** Questions and Answers with file attachments (PDFs, images, documents).
 
+### Xano Lambda Functions - Variable Scoping
+
+**Critical Rule:** Xano Lambda functions cannot directly access variables from previous function stack steps by typing their names.
+
+**Always use `$var.variableName` syntax:**
+
+```javascript
+// ❌ WRONG - Direct variable access doesn't work
+var total = 0
+for (var i = 0; i < conversions.length; i++) {
+  var c = conversions[i]
+}
+
+// ✅ CORRECT - Must use $var prefix
+var total = 0
+for (var i = 0; i < $var.conversions.length; i++) {
+  var c = $var.conversions[i]
+}
+```
+
+**Common errors and solutions:**
+- `Cannot find name 'conversions'` → Use `$var.conversions`
+- `Cannot read properties of undefined (reading 'length')` → Add `$var` prefix
+- Arrays empty when passed to helper functions → Avoid helper functions, keep logic in main function
+
+**Best practices:**
+1. Query all necessary data in separate steps before Lambda
+2. Use JavaScript objects as maps for fast lookups
+3. Avoid nested function calls with array parameters
+4. Keep all logic flat in the main function's Lambda steps
+
+**See:** `/docs/XANO-LAMBDA-TROUBLESHOOTING.md` for detailed troubleshooting guide
+
 ### API Client Usage
 
 Always use the configured axios client from `src/api/index.js`:

@@ -25,39 +25,53 @@ Add this input parameter:
 **Type:** Query All Records
 **Table:** `campaign_visits`
 **Filter:** `campaign_id` = `input.campaign_id`
-**Count:** Enable
+**Output tab → Enable Count**
 **Save result as:** `visitCount`
 
-#### Step 2: Query - Get Conversions with Question Data
+#### Step 2: Query - Get Conversions
 **Type:** Query All Records
 **Table:** `campaign_visits`
 **Filters:**
 - `campaign_id` = `input.campaign_id`
 - `converted_to_question` = `true`
 
-**Relationships:** Load `question` (to get price_cents)
+**Important:** Do NOT load relationships (they may not work in all Xano setups)
 **Save result as:** `conversions`
 
-#### Step 3: Custom Code - Calculate Metrics
+#### Step 3: Query - Get All Questions
+**Type:** Query All Records
+**Table:** `question`
+**No filters** (load all questions)
+**Select only these fields:** `id`, `price_cents`
+**Save result as:** `all_questions`
+
+#### Step 4: Custom Code - Calculate Metrics
+**Type:** Lambda Function
+
+**Important:** Use `$var.variableName` syntax to access variables from previous steps in Xano Lambda functions.
+
 ```javascript
-// Calculate total questions
-var totalQuestions = conversions.length
+// Build a map of question prices for fast lookup
+var priceMap = {}
+for (var i = 0; i < $var.all_questions.length; i++) {
+  var q = $var.all_questions[i]
+  priceMap[q.id] = q.price_cents || 0
+}
 
 // Calculate total revenue
 var totalRevenue = 0
-for (var i = 0; i < conversions.length; i++) {
-  var visit = conversions[i]
-  if (visit.question && visit.question.price_cents) {
-    totalRevenue = totalRevenue + visit.question.price_cents
+for (var j = 0; j < $var.conversions.length; j++) {
+  var conversion = $var.conversions[j]
+  var questionId = conversion.question_id
+  if (questionId && priceMap[questionId]) {
+    totalRevenue = totalRevenue + priceMap[questionId]
   }
 }
 
-// Calculate conversion rate
-var conversionRate = visitCount > 0
-  ? (totalQuestions / visitCount) * 100
-  : 0
+// Calculate metrics
+var totalQuestions = $var.conversions.length
+var conversionRate = $var.visitCount > 0 ? (totalQuestions / $var.visitCount) * 100 : 0
 
-// Return calculated values
 return {
   totalQuestions: totalQuestions,
   totalRevenue: totalRevenue,
@@ -66,7 +80,7 @@ return {
 ```
 **Save result as:** `metrics`
 
-#### Step 4: Update - Update Campaign Record
+#### Step 5: Update - Update Campaign Record
 **Type:** Update Record
 **Table:** `utm_campaigns`
 **Record ID:** `input.campaign_id`
@@ -78,15 +92,20 @@ return {
 - `updated_at` = `now()`
 - `last_visit_at` = `now()`
 
-#### Step 5: Return - Success Response
+#### Step 6: Return - Success Response
+In the **Response** section at the bottom:
+
+**Return as:** `result`
+
+Use the visual editor or JSON to return:
 ```javascript
-return {
-  success: true,
-  campaign_id: input.campaign_id,
-  total_visits: visitCount,
-  total_questions: metrics.totalQuestions,
-  total_revenue_cents: metrics.totalRevenue,
-  conversion_rate: metrics.conversionRate
+{
+  "success": true,
+  "campaign_id": $input.campaign_id,
+  "total_visits": $var.visitCount,
+  "total_questions": $var.metrics.totalQuestions,
+  "total_revenue_cents": $var.metrics.totalRevenue,
+  "conversion_rate": $var.metrics.conversionRate
 }
 ```
 
@@ -94,6 +113,7 @@ return {
 1. Create test campaign and visits first
 2. Run function in Xano debugger: `update_campaign_metrics({campaign_id: 1})`
 3. Verify campaign record is updated correctly
+4. Verify `total_revenue_cents` is calculated correctly (not 0)
 
 ---
 
@@ -205,3 +225,56 @@ After creating functions:
 
 Once functions are working:
 → **Proceed to Step 3:** Create API Endpoints
+
+---
+
+## Troubleshooting & Lessons Learned
+
+### Issue: Lambda Functions Returning 0 for Revenue
+
+**Symptoms:**
+- `total_revenue_cents` always returns 0
+- Lambda function can't access variables from previous steps
+- Errors like "Cannot find name 'conversions'" or "Cannot read properties of undefined"
+
+**Root Causes:**
+1. **Variable scoping in Xano Lambda:** Lambda functions cannot directly access variables from previous steps by typing their names
+2. **Relationships don't work:** Some Xano setups don't support relationship loading between tables
+3. **Incorrect variable syntax:** Must use `$var.variableName` to access function stack variables
+
+**Solutions That DON'T Work:**
+- ❌ Loading relationships on queries (`question` relationship on `campaign_visits`)
+- ❌ Using SQL queries with parameter syntax like `{{campaign_id}}` or `$campaign_id`
+- ❌ For Each loops with Get Record (scoping issues)
+- ❌ Passing arrays to helper functions (arrays become empty)
+- ❌ Typing variable names directly in Lambda (e.g., `conversions.length`)
+
+**Solution That WORKS:**
+1. Query all questions separately (Step 3)
+2. Use `$var.variableName` syntax in Lambda to access:
+   - `$var.all_questions`
+   - `$var.conversions`
+   - `$var.visitCount`
+3. Build a price map (object) for fast lookup
+4. Loop through conversions and sum prices from the map
+
+**Key Syntax Rule:**
+```javascript
+// ❌ WRONG - Direct variable access doesn't work
+var total = 0
+for (var i = 0; i < conversions.length; i++) {
+  var c = conversions[i]
+  // ...
+}
+
+// ✅ CORRECT - Must use $var prefix
+var total = 0
+for (var i = 0; i < $var.conversions.length; i++) {
+  var c = $var.conversions[i]
+  // ...
+}
+```
+
+### Date: October 16, 2025
+
+**Status:** ✅ Resolved - Revenue calculation working correctly
