@@ -1,6 +1,7 @@
 // src/pages/AnswerReviewPage.jsx - Complete with Feedback Submission & Display
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import JSZip from 'jszip';
 import logo from '@/assets/images/logo-mindpick.svg';
 
 const XANO_BASE_URL = import.meta.env.VITE_XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
@@ -18,6 +19,7 @@ function AnswerReviewPage() {
   const [showQuestion, setShowQuestion] = useState(false);
   const [allowTestimonial, setAllowTestimonial] = useState(false);
   const [showPrivacyReminder, setShowPrivacyReminder] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -192,93 +194,133 @@ function AnswerReviewPage() {
     }
   };
 
-  const handleDownloadAll = async () => {
-    if (!data?.answer) return;
+  // Reusable function to download as ZIP
+  const downloadAsZip = async (mediaAssets, attachments, zipFileName) => {
+    setIsDownloading(true);
 
-    const downloads = [];
+    try {
+      const zip = new JSZip();
+      const downloads = [];
 
-    // Add all media assets (videos AND audio)
-    if (data.answer.media_assets && data.answer.media_assets.length > 0) {
-      console.log('📥 Processing downloads for media assets:', data.answer.media_assets);
+      console.log(`📦 Creating ${zipFileName}...`);
 
-      data.answer.media_assets.forEach((asset, index) => {
-        if (asset.url) {
-          const isVideo = asset.metadata?.mode === 'video' ||
-                          asset.metadata?.mode === 'screen' ||
-                          asset.metadata?.mode === 'screen-camera' ||
-                          asset.url?.includes('cloudflarestream.com');
+      // Process media assets (videos and audio)
+      if (mediaAssets && mediaAssets.length > 0) {
+        mediaAssets.forEach((asset, index) => {
+          if (asset.url) {
+            const isVideo = asset.metadata?.mode === 'video' ||
+                            asset.metadata?.mode === 'screen' ||
+                            asset.metadata?.mode === 'screen-camera' ||
+                            asset.url?.includes('cloudflarestream.com');
 
-          const isAudio = asset.metadata?.mode === 'audio' ||
-                          (!isVideo && (asset.url?.includes('.webm') || asset.url?.includes('.mp3') || asset.url?.includes('.wav')));
+            const isAudio = asset.metadata?.mode === 'audio' ||
+                            (!isVideo && (asset.url?.includes('.webm') || asset.url?.includes('.mp3') || asset.url?.includes('.wav')));
 
-          let downloadUrl = asset.url;
-          let fileName;
+            let downloadUrl = asset.url;
+            let fileName;
 
-          console.log(`Asset ${index + 1}:`, {
-            mode: asset.metadata?.mode,
-            isVideo,
-            isAudio,
-            url: asset.url?.substring(0, 50)
-          });
+            // For Cloudflare Stream videos, use downloads endpoint
+            if (isVideo && asset.url.includes('cloudflarestream.com')) {
+              const videoId = getStreamVideoId(asset.url);
+              if (videoId) {
+                downloadUrl = `https://${CUSTOMER_CODE_OVERRIDE}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
+                fileName = `part-${index + 1}-${asset.metadata?.mode || 'video'}.mp4`;
+              }
+            } else if (isAudio) {
+              // Audio files - proxy through backend
+              downloadUrl = `/api/media/download-audio?url=${encodeURIComponent(asset.url)}`;
 
-          // For Cloudflare Stream videos, try to use downloads endpoint
-          if (isVideo && asset.url.includes('cloudflarestream.com')) {
-            const videoId = getStreamVideoId(asset.url);
-            if (videoId) {
-              // Use the Cloudflare downloads endpoint
-              downloadUrl = `https://${CUSTOMER_CODE_OVERRIDE}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
-              fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'video'}.mp4`;
+              let extension = 'webm';
+              if (asset.url.includes('.mp3')) extension = 'mp3';
+              else if (asset.url.includes('.wav')) extension = 'wav';
+
+              fileName = `part-${index + 1}-audio.${extension}`;
+            } else {
+              fileName = `part-${index + 1}-${asset.metadata?.mode || 'media'}.${isVideo ? 'mp4' : 'webm'}`;
             }
-          } else if (isAudio) {
-            // Audio files - proxy through our backend to avoid CORS issues
-            downloadUrl = `/api/media/download-audio?url=${encodeURIComponent(asset.url)}`;
 
-            // Determine file extension from URL
-            let extension = 'webm';
-            if (asset.url.includes('.mp3')) extension = 'mp3';
-            else if (asset.url.includes('.wav')) extension = 'wav';
+            if (downloadUrl && fileName) {
+              downloads.push({ url: downloadUrl, name: fileName });
+            }
+          }
+        });
+      }
 
-            fileName = `answer-part-${index + 1}-audio.${extension}`;
-          } else {
-            // Other media types
-            fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'media'}.${isVideo ? 'mp4' : 'webm'}`;
+      // Add attachments
+      if (attachments && attachments.length > 0) {
+        attachments.forEach((file) => {
+          downloads.push({ url: file.url, name: file.name || `attachment-${downloads.length + 1}` });
+        });
+      }
+
+      if (downloads.length === 0) {
+        alert('No files to download');
+        setIsDownloading(false);
+        return;
+      }
+
+      console.log(`📥 Downloading ${downloads.length} files...`);
+
+      // Download all files and add to ZIP
+      for (let i = 0; i < downloads.length; i++) {
+        const item = downloads[i];
+        console.log(`[${i + 1}/${downloads.length}] Downloading: ${item.name}`);
+
+        try {
+          const response = await fetch(item.url);
+          if (!response.ok) {
+            console.error(`❌ Failed to download ${item.name}: ${response.status}`);
+            continue;
           }
 
-          if (downloadUrl && fileName) {
-            downloads.push({ url: downloadUrl, name: fileName });
-            console.log(`✅ Added to downloads:`, { fileName, url: downloadUrl.substring(0, 50) });
-          } else {
-            console.log(`⚠️ Skipped asset ${index + 1}:`, { downloadUrl: !!downloadUrl, fileName: !!fileName });
-          }
+          const blob = await response.blob();
+          zip.file(item.name, blob);
+          console.log(`✅ Added to ZIP: ${item.name}`);
+        } catch (error) {
+          console.error(`❌ Error downloading ${item.name}:`, error);
         }
-      });
+      }
+
+      // Generate ZIP file
+      console.log('🗜️ Generating ZIP file...');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+      // Download ZIP
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = zipFileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+
+      console.log(`✅ ${zipFileName} downloaded successfully!`);
+    } catch (error) {
+      console.error('❌ Error creating ZIP:', error);
+      alert('Failed to download files. Please try again.');
+    } finally {
+      setIsDownloading(false);
     }
-    
-    // Add all attachments
-    if (data.answer.attachments && data.answer.attachments.length > 0) {
-      data.answer.attachments.forEach((file) => {
-        downloads.push({ url: file.url, name: file.name });
-      });
-    }
-    
-    if (downloads.length === 0) {
-      alert('No files to download');
-      return;
-    }
-    
-    // Download each file with a small delay to avoid browser blocking
-    for (let i = 0; i < downloads.length; i++) {
-      const item = downloads[i];
-      setTimeout(() => {
-        const link = document.createElement('a');
-        link.href = item.url;
-        link.download = item.name;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }, i * 300); // 300ms delay between downloads
-    }
+  };
+
+  // Download answer as ZIP
+  const handleDownloadAnswer = async () => {
+    if (!data?.answer) return;
+    await downloadAsZip(
+      data.answer.media_assets,
+      data.answer.attachments,
+      `answer-${data.id}.zip`
+    );
+  };
+
+  // Download question as ZIP
+  const handleDownloadQuestion = async () => {
+    if (!data) return;
+    await downloadAsZip(
+      data.media_assets,
+      data.attachments,
+      `question-${data.id}.zip`
+    );
   };
 
   const formatDuration = (seconds) => {
@@ -625,19 +667,29 @@ function AnswerReviewPage() {
             )}
 
             <div className="px-5 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              <button 
-                onClick={handleDownloadAll}
-                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium hover:bg-gray-100 px-3 py-2 rounded-lg"
+              <button
+                onClick={handleDownloadAnswer}
+                disabled={isDownloading}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download All
-                {data.answer?.media_assets?.length > 0 || data.answer?.attachments?.length > 0 ? (
-                  <span className="ml-1 text-xs bg-gray-200 px-2 py-0.5 rounded-full">
-                    {(data.answer.media_assets?.length || 0) + (data.answer.attachments?.length || 0)}
-                  </span>
-                ) : null}
+                {isDownloading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                    <span>Creating ZIP...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download All (ZIP)
+                    {data.answer?.media_assets?.length > 0 || data.answer?.attachments?.length > 0 ? (
+                      <span className="ml-1 text-xs bg-gray-200 px-2 py-0.5 rounded-full">
+                        {(data.answer.media_assets?.length || 0) + (data.answer.attachments?.length || 0)}
+                      </span>
+                    ) : null}
+                  </>
+                )}
               </button>
               <span className="text-xs text-gray-500">For personal use only</span>
             </div>
@@ -797,6 +849,34 @@ function AnswerReviewPage() {
                 </div>
               )}
             </div>
+
+            {/* Download button for question */}
+            {(data.media_assets?.length > 0 || data.attachments?.length > 0) && (
+              <div className="px-5 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-200">
+                <button
+                  onClick={handleDownloadQuestion}
+                  disabled={isDownloading}
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDownloading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                      <span>Creating ZIP...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download All (ZIP)
+                      <span className="ml-1 text-xs bg-gray-200 px-2 py-0.5 rounded-full">
+                        {(data.media_assets?.length || 0) + (data.attachments?.length || 0)}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
