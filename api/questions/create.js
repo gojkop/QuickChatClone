@@ -294,7 +294,7 @@ export default async function handler(req, res) {
                            'https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ';
       
       const linkResponse = await fetch(
-        `${XANO_BASE_URL}/marketing/link-question`,
+        `${XANO_PUBLIC_BASE_URL}/marketing/link-question`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
