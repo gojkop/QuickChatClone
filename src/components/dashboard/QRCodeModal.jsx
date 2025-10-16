@@ -115,7 +115,7 @@ function QRCodeModal({ isOpen, onClose, profileUrl, expertName, handle }) {
               level="H"
               includeMargin={true}
               imageSettings={{
-                src: "/logo.svg",
+                src: "/android-chrome-192x192.png",
                 height: 48,
                 width: 48,
                 excavate: true,
