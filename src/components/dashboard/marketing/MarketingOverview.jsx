@@ -97,24 +97,22 @@ export default function MarketingOverview({
       </div>
 
       {/* Action Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Traffic Source Action */}
         {topSource && (
-          <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl border-2 border-indigo-200 p-6 shadow-elev-2 hover:shadow-elev-3 transition-all duration-base">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-black text-indigo-900 mb-1">
-                  🎯 Your Best Channel
-                </h3>
-                <p className="text-sm text-indigo-700 font-medium capitalize">
-                  <strong>{topSource.name}</strong> drives {topSource.questions} questions
-                  ({((topSource.questions / totalQuestions) * 100).toFixed(0)}% of total)
-                </p>
-              </div>
+          <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-lg border border-indigo-200 p-4">
+            <div className="mb-3">
+              <h3 className="text-sm font-bold text-indigo-900 mb-1">
+                🎯 Your Best Channel
+              </h3>
+              <p className="text-xs text-indigo-700 font-medium capitalize">
+                <strong>{topSource.name}</strong> drives {topSource.questions} questions
+                ({((topSource.questions / totalQuestions) * 100).toFixed(0)}% of total)
+              </p>
             </div>
             <button
               onClick={() => onNavigate('share-kit')}
-              className="w-full btn bg-gradient-to-r from-primary to-accent text-white px-4 py-3 text-sm font-black shadow-elev-2 hover:shadow-elev-3"
+              className="w-full px-3 py-2 text-xs font-bold bg-primary text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
               Create {topSource.name} Post →
             </button>
@@ -123,21 +121,19 @@ export default function MarketingOverview({
 
         {/* Top Campaign Action */}
         {topCampaign && (
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 p-6 shadow-elev-2 hover:shadow-elev-3 transition-all duration-base">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-black text-green-900 mb-1">
-                  💰 Top Performer
-                </h3>
-                <p className="text-sm text-green-700 font-medium">
-                  <strong>{topCampaign.name}</strong> earned €{topCampaign.total_revenue}
-                  ({((topCampaign.total_revenue / totalRevenue) * 100).toFixed(0)}% of revenue)
-                </p>
-              </div>
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200 p-4">
+            <div className="mb-3">
+              <h3 className="text-sm font-bold text-green-900 mb-1">
+                💰 Top Performer
+              </h3>
+              <p className="text-xs text-green-700 font-medium">
+                <strong>{topCampaign.name}</strong> earned €{topCampaign.total_revenue}
+                ({((topCampaign.total_revenue / totalRevenue) * 100).toFixed(0)}% of revenue)
+              </p>
             </div>
             <button
               onClick={() => onNavigate('campaigns')}
-              className="w-full btn bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-3 text-sm font-black shadow-elev-2 hover:shadow-elev-3"
+              className="w-full px-3 py-2 text-xs font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               View Campaign Details →
             </button>

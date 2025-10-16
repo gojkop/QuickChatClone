@@ -120,31 +120,31 @@ export default function TemplateEditorModal({
         </div>
 
         {/* Actions */}
-        <div className="p-4 sm:p-6 border-t border-gray-200 flex gap-3 flex-shrink-0">
+        <div className="p-4 sm:p-6 border-t border-gray-200 flex gap-2 flex-shrink-0">
           <button
             onClick={handleCopy}
             disabled={charInfo.isOverLimit}
-            className="btn btn-primary flex-1 px-4 py-2.5 text-sm gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-2 text-sm font-bold bg-primary text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
           >
             {showCopied ? (
               <>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
-                Copied!
+                Copied
               </>
             ) : (
               <>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                Copy to Clipboard
+                Copy
               </>
             )}
           </button>
           <button
             onClick={onClose}
-            className="btn btn-secondary px-4 py-2.5 text-sm"
+            className="px-4 py-2 text-sm font-medium text-ink bg-canvas hover:bg-gray-200 rounded-lg transition-colors"
           >
             Cancel
           </button>

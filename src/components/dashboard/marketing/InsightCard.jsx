@@ -101,7 +101,7 @@ export default function InsightCard({ severity, title, issue, recommendations, o
           {cta && (
             <button
               onClick={cta.action}
-              className={`${color.buttonBg} ${color.buttonHover} text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-elev-1 hover:shadow-elev-2 transition-all duration-base`}
+              className={`${color.buttonBg} ${color.buttonHover} text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all duration-base`}
             >
               {cta.icon}
               {cta.text}

@@ -63,93 +63,85 @@ export default function TemplateCard({ template, processedText, onEdit }) {
   };
 
   return (
-    <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 hover:shadow-elev-3 transition-all duration-base overflow-hidden">
-      {/* Header */}
-      <div className="p-4 sm:p-6 border-b border-gray-200">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${platformInfo.bgColor}`}>
+    <div className="bg-surface rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-base overflow-hidden">
+      {/* Compact Header */}
+      <div className="p-3 border-b border-gray-200">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${platformInfo.bgColor}`}>
               <div className={platformInfo.iconColor}>
                 {getPlatformIcon()}
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-black text-ink truncate">{template.title}</h4>
-              <p className="text-sm text-subtext font-medium truncate">{template.description}</p>
+              <h4 className="font-bold text-ink text-sm truncate">{template.title}</h4>
             </div>
           </div>
-          
-          {/* Platform badge */}
-          <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${platformInfo.bgColor} ${platformInfo.textColor} whitespace-nowrap`}>
+          <span className={`px-2 py-0.5 rounded text-xs font-bold ${platformInfo.bgColor} ${platformInfo.textColor} whitespace-nowrap`}>
             {platformInfo.name}
           </span>
         </div>
       </div>
 
-      {/* Content Preview */}
-      <div className="p-4 sm:p-6 bg-canvas">
-        <div className="font-mono text-sm text-ink whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
+      {/* Content Preview - More compact */}
+      <div className="p-3 bg-canvas">
+        <div className="font-mono text-xs text-ink whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
           {processedText}
         </div>
         
-        {/* Character count */}
+        {/* Character count - inline */}
         {charInfo.limit && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-subtext font-medium">
-                {charInfo.count} / {charInfo.limit} characters
-              </span>
-              {charInfo.isOverLimit && (
-                <span className="text-error font-bold">Over limit!</span>
-              )}
-            </div>
+          <div className="mt-2 pt-2 border-t border-gray-200 flex items-center justify-between text-xs">
+            <span className="text-subtext font-medium">
+              {charInfo.count} / {charInfo.limit}
+            </span>
+            {charInfo.isOverLimit && (
+              <span className="text-error font-bold">Over limit</span>
+            )}
           </div>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="p-4 sm:p-6 flex gap-3">
-        {/* Quick Copy - Primary action */}
+      {/* Compact Actions */}
+      <div className="p-3 flex gap-2">
         <button
           onClick={handleQuickCopy}
-          className="btn btn-primary flex-1 px-4 py-2.5 text-sm gap-2"
+          className="flex-1 px-3 py-1.5 text-xs font-bold bg-primary text-white rounded-lg hover:bg-indigo-700 transition-colors duration-base flex items-center justify-center gap-1.5"
         >
           {showCopied ? (
             <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
               </svg>
-              Copied!
+              Copied
             </>
           ) : (
             <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              Quick Copy
+              Copy
             </>
           )}
         </button>
 
-        {/* Edit & Copy */}
         <button
           onClick={onEdit}
-          className="btn btn-secondary px-4 py-2.5 text-sm gap-2 whitespace-nowrap"
+          className="px-3 py-1.5 text-xs font-medium text-ink bg-canvas hover:bg-gray-200 rounded-lg transition-colors duration-base flex items-center gap-1.5"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
           Edit
         </button>
 
-        {/* Native Share (mobile only) */}
         {supportsNativeShare && (
           <button
             onClick={handleNativeShare}
-            className="btn btn-secondary px-3 py-2.5 sm:hidden"
+            className="px-2 py-1.5 text-xs font-medium text-ink bg-canvas hover:bg-gray-200 rounded-lg sm:hidden"
             title="Share"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </button>
