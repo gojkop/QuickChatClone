@@ -194,30 +194,40 @@ function AnswerReviewPage() {
 
   const handleDownloadAll = async () => {
     if (!data?.answer) return;
-    
+
     const downloads = [];
-    
-    // Add all media assets
+
+    // Add all media assets (videos AND audio)
     if (data.answer.media_assets && data.answer.media_assets.length > 0) {
       data.answer.media_assets.forEach((asset, index) => {
         if (asset.url) {
-          const isVideo = asset.metadata?.mode === 'video' || 
-                          asset.metadata?.mode === 'screen' || 
+          const isVideo = asset.metadata?.mode === 'video' ||
+                          asset.metadata?.mode === 'screen' ||
                           asset.metadata?.mode === 'screen-camera' ||
                           asset.url?.includes('cloudflarestream.com');
-          
+
+          const isAudio = asset.metadata?.mode === 'audio' ||
+                          (!isVideo && (asset.url?.includes('.webm') || asset.url?.includes('.mp3')));
+
           let downloadUrl = asset.url;
-          
-          // For Cloudflare Stream videos, reconstruct URL with correct customer code
+          let fileName;
+
+          // For Cloudflare Stream videos, try to use downloads endpoint
           if (isVideo && asset.url.includes('cloudflarestream.com')) {
             const videoId = getStreamVideoId(asset.url);
             if (videoId) {
-              // Use the correct customer code for download
+              // Use the Cloudflare downloads endpoint
               downloadUrl = `https://${CUSTOMER_CODE_OVERRIDE}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
+              fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'video'}.mp4`;
             }
+          } else if (isAudio) {
+            // Audio files - use direct R2 URL
+            fileName = `answer-part-${index + 1}-audio.webm`;
+          } else {
+            // Other media types
+            fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'media'}.${isVideo ? 'mp4' : 'webm'}`;
           }
-          
-          const fileName = `answer-part-${index + 1}-${asset.metadata?.mode || 'media'}.${isVideo ? 'mp4' : 'webm'}`;
+
           downloads.push({ url: downloadUrl, name: fileName });
         }
       });
