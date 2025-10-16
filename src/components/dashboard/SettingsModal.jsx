@@ -109,6 +109,25 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
     setIsLoading(true);
     setError('');
 
+    // Validate mandatory fields
+    if (!formData.handle || formData.handle.trim() === '') {
+      setError('Profile handle is required');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.priceUsd || formData.priceUsd <= 0) {
+      setError('Consultation fee must be greater than $0');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.slaHours || formData.slaHours <= 0) {
+      setError('Response time must be at least 1 hour');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const payload = {
         price_cents: Number(formData.priceUsd) * 100,
@@ -211,7 +230,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Profile Handle
+                      Profile Handle <span className="text-red-500">*</span>
                     </label>
                     <div className="flex items-stretch">
                       <span className="inline-flex items-center px-4 bg-white/80 border border-r-0 border-gray-300 rounded-l-lg text-sm text-gray-600 font-semibold">
@@ -288,7 +307,9 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               </h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Consultation Fee</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Consultation Fee <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">$</span>
                     <input 
@@ -299,13 +320,16 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                       min="1" 
                       step="1" 
                       placeholder="100"
+                      required
                       className="w-full pl-9 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base font-semibold" 
                     />
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Response Time</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Response Time <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <input 
                       id="slaHours" 
@@ -315,6 +339,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                       min="1" 
                       step="1" 
                       placeholder="48"
+                      required
                       className="w-full pl-4 pr-16 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base font-semibold" 
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">hours</span>
