@@ -156,10 +156,22 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       
       console.log('API response:', response.data);
       
+      // ✅ Also update accepting_questions using the dedicated endpoint (same as dashboard toggle)
+      try {
+        await apiClient.post('/expert/profile/availability', {
+          accepting_questions: formData.accepting_questions
+        });
+        console.log('Availability status updated successfully');
+      } catch (availabilityErr) {
+        console.warn('Failed to update availability status:', availabilityErr);
+        // Continue anyway - the main profile was saved
+      }
+      
       const updatedProfile = {
         ...response.data,
         charity_percentage: formData.charity_percentage,
-        selected_charity: formData.selected_charity
+        selected_charity: formData.selected_charity,
+        accepting_questions: formData.accepting_questions // ✅ Preserve from form data
       };
       
       onSave(updatedProfile);
