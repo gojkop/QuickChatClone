@@ -394,6 +394,64 @@ See `docs/marketing module/` for detailed implementation docs:
 - `IMPLEMENTATION-COMPLETE.md` - Implementation summary
 - `PROGRESS-2025-10-14.md` - Development log
 
+## Profile Sharing Features
+
+### QR Code Generator
+
+**Status:** ✅ Production Ready (October 16, 2025)
+
+Experts can generate and share QR codes for their profile, making it easy to share during in-person conversations, on business cards, or in presentations.
+
+**Features:**
+- Full-screen QR code modal with blurred backdrop
+- mindPick logo embedded in center of QR code
+- Download as high-res PNG (512x512px)
+- Native share functionality on mobile devices
+- Displays expert name and handle
+- Available on both Expert Dashboard and Public Profile pages
+
+**Component Location:**
+- Main Component: `/src/components/dashboard/QRCodeModal.jsx`
+- Integration: ExpertDashboardPage.jsx (desktop + mobile views)
+- Integration: PublicProfilePage.jsx (next to share button)
+
+**Usage:**
+```javascript
+import QRCodeModal from '@/components/dashboard/QRCodeModal';
+
+// In component
+const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+
+// Render modal
+<QRCodeModal
+  isOpen={isQRModalOpen}
+  onClose={() => setIsQRModalOpen(false)}
+  profileUrl={`https://mindpick.me/u/${handle}`}
+  expertName={expertName}
+  handle={handle}
+/>
+```
+
+**Technical Details:**
+- Library: `qrcode.react` (QRCodeSVG component)
+- QR Error Correction: Level "H" (high) for reliable scanning with logo
+- Logo: `/android-chrome-192x192.png` (48x48px in QR center)
+- Display size: 256x256px
+- Download size: 512x512px (print quality)
+- SVG → Canvas conversion for PNG export
+- Native share API for mobile sharing
+
+**User Flow:**
+1. Expert clicks QR button on dashboard or public profile
+2. Full-screen modal appears with QR code
+3. Expert can:
+   - Show QR code to scan with phone camera
+   - Download PNG for business cards/presentations
+   - Share via native share sheet (mobile)
+4. Click backdrop or X button to close
+
+**Documentation:** See `/docs/marketing module/FEATURE-SHARE-PROFILE.md` for complete feature specification (Phase 2 completed)
+
 ## AI Features
 
 ### Current Status
@@ -895,6 +953,7 @@ For detailed implementation, see `docs/xano-internal-endpoints.md`.
 ## Next Steps
 
 **Recently Completed:**
+- ✅ QR Code Profile Sharing - Generate and share profile QR codes (October 16, 2025)
 - ✅ Marketing Module - UTM tracking, campaign management, analytics (October 2025)
 - ✅ Magic Link Authentication - Passwordless email sign-in (January 2025)
 

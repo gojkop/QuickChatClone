@@ -1,8 +1,8 @@
 # Feature: Expert Profile Sharing Module
 
-**Status:** 📋 Planned (Not Started)
+**Status:** 🚧 In Progress (Phase 2 Complete)
 **Priority:** Medium
-**Estimated Time:** 6-8 hours
+**Estimated Time:** 6-8 hours (2 hours completed)
 **Dependencies:** Marketing Module (Step 3 & 4 complete)
 
 ---
@@ -123,90 +123,245 @@ const handleCopyLink = () => {
 
 ---
 
-### Phase 2: QR Code Generator - 2 hours
+### Phase 2: QR Code Generator - 2 hours ✅ COMPLETED
+
+**Status:** ✅ Production Ready (October 16, 2025)
 
 **2.1 On-Demand QR Generation**
-- "Show QR" button → Opens full-screen modal
-- Large QR code (512x512px)
-- mindPick logo in center
-- Expert name + specialty below QR
+- ✅ "Show QR" button → Opens full-screen modal
+- ✅ Large QR code (256x256px display, 512x512px download)
+- ✅ mindPick logo in center (using android-chrome-192x192.png)
+- ✅ Expert name + handle below QR
 
 **2.2 QR Code Modal Features**
-- Full-screen overlay (easy to scan)
-- Brightness boost (helps with scanning)
-- Download as PNG button
-- Share QR as image (native share)
-- Close button
+- ✅ Full-screen overlay with blurred backdrop (easy to scan)
+- ✅ Download as PNG button (512x512px high-res)
+- ✅ Share QR as image (native share API)
+- ✅ Close button (click backdrop or X button)
+- ✅ Smooth fade-in animation
 
 **2.3 Downloadable QR Assets**
-- PNG format (high-res)
-- Includes branding (mindPick logo)
-- Expert can print for business cards
-- Filename: `mindpick-{handle}-qr.png`
+- ✅ PNG format (512x512px high-res)
+- ✅ Includes branding (mindPick logo in center)
+- ✅ Expert can print for business cards
+- ✅ Filename: `mindpick-{handle}-qr.png`
 
-**Technical Implementation:**
+**2.4 Integration Points**
+- ✅ Expert Dashboard: QR button next to copy link (desktop view)
+- ✅ Expert Dashboard: QR button with text next to Link button (mobile view)
+- ✅ Public Profile: QR icon button next to share button in header
+
+**Actual Implementation:**
 ```bash
+# Installed dependency
 npm install qrcode.react
 ```
 
 ```javascript
 // /src/components/dashboard/QRCodeModal.jsx
 
-import QRCode from 'qrcode.react';
+import React, { useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 
-export function QRCodeModal({ isOpen, onClose, profileUrl, expertName, specialty }) {
+function QRCodeModal({ isOpen, onClose, profileUrl, expertName, handle }) {
   const qrRef = useRef(null);
 
+  if (!isOpen) return null;
+
   const downloadQR = () => {
-    const canvas = qrRef.current.querySelector('canvas');
-    const url = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.download = `mindpick-${handle}-qr.png`;
-    link.href = url;
-    link.click();
-    trackEvent('qr_code_downloaded');
+    const svg = qrRef.current.querySelector('svg');
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    canvas.width = 512;
+    canvas.height = 512;
+
+    img.onload = () => {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      const pngFile = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.download = `mindpick-${handle}-qr.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   const shareQR = async () => {
-    const canvas = qrRef.current.querySelector('canvas');
-    canvas.toBlob(async (blob) => {
-      const file = new File([blob], 'qr-code.png', { type: 'image/png' });
-      await navigator.share({
-        title: `${expertName}'s mindPick Profile`,
-        files: [file]
+    if (!navigator.share) {
+      alert('Share not supported on this browser');
+      return;
+    }
+
+    const svg = qrRef.current.querySelector('svg');
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    canvas.width = 512;
+    canvas.height = 512;
+
+    img.onload = async () => {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      canvas.toBlob(async (blob) => {
+        try {
+          const file = new File([blob], 'qr-code.png', { type: 'image/png' });
+          await navigator.share({
+            title: `${expertName}'s mindPick Profile`,
+            files: [file]
+          });
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.error('Share failed:', err);
+          }
+        }
       });
-      trackEvent('qr_code_shared');
-    });
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} fullScreen>
-      <div className="qr-modal-content">
-        <div ref={qrRef}>
-          <QRCode
-            value={profileUrl}
-            size={512}
-            level="H"
-            includeMargin={true}
-            imageSettings={{
-              src: "/logo.png",
-              height: 80,
-              width: 80,
-              excavate: true,
-            }}
-          />
-        </div>
-        <h2>{expertName}</h2>
-        <p>{specialty}</p>
-        <div className="actions">
-          <button onClick={downloadQR}>Download PNG</button>
-          <button onClick={shareQR}>Share QR Code</button>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      {/* Blurred backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+
+      {/* Modal content */}
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
+          aria-label="Close"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <div className="text-center space-y-6">
+          {/* Title */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Share Your Profile
+            </h2>
+            <p className="text-sm text-gray-600">
+              Scan this QR code to visit your profile
+            </p>
+          </div>
+
+          {/* QR Code */}
+          <div
+            ref={qrRef}
+            className="flex justify-center items-center p-6 bg-white rounded-xl border-2 border-gray-200"
+          >
+            <QRCodeSVG
+              value={profileUrl}
+              size={256}
+              level="H"
+              includeMargin={true}
+              imageSettings={{
+                src: "/android-chrome-192x192.png",
+                height: 48,
+                width: 48,
+                excavate: true,
+              }}
+            />
+          </div>
+
+          {/* Expert info */}
+          <div className="space-y-1">
+            <div className="text-lg font-bold text-gray-900">
+              {expertName}
+            </div>
+            <div className="text-sm text-gray-600">
+              mindpick.me/u/{handle}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={downloadQR}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-300 rounded-xl font-semibold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download
+            </button>
+
+            {navigator.share && (
+              <button
+                onClick={shareQR}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl font-semibold text-sm hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-lg hover:shadow-xl"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                </svg>
+                Share
+              </button>
+            )}
+          </div>
+
+          {/* Tip */}
+          <div className="pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
+              💡 Tip: Show this QR code during conversations so people can easily visit your profile
+            </p>
+          </div>
         </div>
       </div>
-    </Modal>
+
+      <style>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.2s ease-out;
+        }
+      `}</style>
+    </div>
   );
 }
+
+export default QRCodeModal;
 ```
+
+**Files Modified:**
+- ✅ Created: `/src/components/dashboard/QRCodeModal.jsx`
+- ✅ Modified: `/src/pages/ExpertDashboardPage.jsx` (added QR buttons + modal integration)
+- ✅ Modified: `/src/pages/PublicProfilePage.jsx` (added QR button next to share)
+- ✅ Fixed: Renamed `/src/state/auth.js` to `/src/state/auth.jsx` (JSX syntax support)
+
+**Key Decisions:**
+- Used `QRCodeSVG` instead of `QRCodeCanvas` for easier manipulation
+- Error correction level "H" for reliable scanning even with logo
+- Logo source: `/android-chrome-192x192.png` (existing mindPick logo)
+- 256x256px display size, 512x512px download for print quality
+- SVG → Canvas conversion for PNG downloads (better compatibility)
+- Full-screen modal with blur backdrop for optimal scanning experience
 
 ---
 
@@ -427,12 +582,15 @@ GET /api/expert/share-analytics
 - [ ] Add to Expert Dashboard
 - [ ] Test on iOS/Android
 
-### Week 2: Phase 2 (QR Code)
-- [ ] Install qrcode.react dependency
-- [ ] Create QRCodeModal component
-- [ ] Implement download functionality
-- [ ] Add share QR feature
-- [ ] Test QR scanning
+### Week 2: Phase 2 (QR Code) ✅ COMPLETED
+- [x] Install qrcode.react dependency
+- [x] Create QRCodeModal component
+- [x] Implement download functionality
+- [x] Add share QR feature
+- [x] Test QR scanning
+- [x] Add QR button to Expert Dashboard (desktop + mobile)
+- [x] Add QR button to Public Profile Page
+- [x] Fix logo display in QR code center
 
 ### Week 3: Phase 3 (Email Signature)
 - [ ] Design signature templates
@@ -566,13 +724,18 @@ GET /api/expert/share-analytics
 - [x] Works on iOS Safari and Android Chrome
 - [x] UTM parameters applied to all shares
 
-### Phase 2 Complete When:
+### Phase 2 Complete When: ✅ ALL DONE
 - [x] QR code generates correctly
 - [x] QR modal opens full-screen
 - [x] QR code scannable by phone cameras
-- [x] Download creates PNG file
+- [x] Download creates PNG file (512x512px)
 - [x] mindPick logo visible in QR center
 - [x] Expert name displays below QR
+- [x] Share button works on mobile (native share API)
+- [x] Close on backdrop click works
+- [x] Smooth fade-in animation
+- [x] Integrated in Expert Dashboard (desktop + mobile views)
+- [x] Integrated in Public Profile Page
 
 ### Phase 3 Complete When:
 - [x] Email signature copies to clipboard

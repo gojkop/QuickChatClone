@@ -1,5 +1,6 @@
 import FormData from 'form-data';
 import axios from 'axios';
+import { enableDownloads } from '../lib/cloudflare/stream.js';
 
 // In api/media/upload-video.js
 export default async function handler(req, res) {
@@ -91,7 +92,10 @@ export default async function handler(req, res) {
     }
 
     const video = uploadResult.result;
-    
+
+    // Enable downloads for payers and experts
+    await enableDownloads(video.uid);
+
     return res.status(200).json({
       success: true,
       data: {
