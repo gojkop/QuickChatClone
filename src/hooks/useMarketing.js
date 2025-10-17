@@ -53,8 +53,8 @@ export function useMarketing() {
     try {
       // Assuming you have an endpoint to get current expert's profile
       const response = await apiClient.get('/me/profile');
-      setExpertProfile(response.data);
-      setUser(response.data.user); // Assuming user is nested
+      setExpertProfile(response.data.expert_profile);
+      setUser(response.data); // Assuming user is nested
       
       // Calculate stats from questions
       const questionsResponse = await apiClient.get('/me/questions');
