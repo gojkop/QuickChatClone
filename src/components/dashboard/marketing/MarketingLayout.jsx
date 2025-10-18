@@ -156,7 +156,7 @@ export default function MarketingLayout({
         </div>
       </div>
 
-      {/* Floating Action Button - Half Circle (Mobile - Campaigns Tab Only) */}
+      {/* Floating Action Button - Disabled for now
       {activeTab === 'campaigns' && (
         <button
           onClick={() => {
@@ -178,6 +178,7 @@ export default function MarketingLayout({
           </svg>
         </button>
       )}
+      */}
     </div>
   );
 }
