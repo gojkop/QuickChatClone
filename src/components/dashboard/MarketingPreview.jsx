@@ -1,31 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function MarketingPreview({ isEnabled }) {
+export default function MarketingPreview({ isEnabled, campaigns = [], insights = null }) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // Mock data - will be replaced with real data from API later
-  const mockData = {
-    topCampaign: {
-      name: "LinkedIn Launch Post",
-      total_visits: 342,
-      total_questions: 14,
-      total_revenue: 1680,
-      conversion_rate: 4.1
-    },
-    totalCampaigns: 3,
-    totalVisits: 991,
-    totalQuestions: 41,
-    totalRevenue: 4920
-  };
+  // Calculate real data from API or use fallback
+  const marketingData = useMemo(() => {
+    // If no campaigns, use mock data for demo
+    if (!campaigns || campaigns.length === 0) {
+      return {
+        topCampaign: {
+          name: "LinkedIn Launch Post",
+          total_visits: 342,
+          total_questions: 14,
+          total_revenue: 1680,
+          conversion_rate: 4.1
+        },
+        totalCampaigns: 3,
+        totalVisits: 991,
+        totalQuestions: 41,
+        totalRevenue: 4920,
+        hasRealData: false
+      };
+    }
+
+    // Calculate from real data
+    const activeCampaigns = campaigns.filter(c => c.status === 'active');
+    
+    // Find top campaign by revenue
+    const topCampaign = [...campaigns].sort((a, b) => 
+      b.total_revenue - a.total_revenue
+    )[0];
+
+    // Calculate totals
+    const totalVisits = insights?.your_metrics?.total_visits 
+      || campaigns.reduce((sum, c) => sum + (c.total_visits || 0), 0);
+    
+    const totalQuestions = insights?.your_metrics?.total_questions 
+      || campaigns.reduce((sum, c) => sum + (c.total_questions || 0), 0);
+    
+    const totalRevenue = campaigns.reduce((sum, c) => sum + (c.total_revenue || 0), 0);
+
+    return {
+      topCampaign: {
+        name: topCampaign?.name || "No campaigns yet",
+        total_visits: topCampaign?.total_visits || 0,
+        total_questions: topCampaign?.total_questions || 0,
+        total_revenue: topCampaign?.total_revenue || 0,
+        conversion_rate: topCampaign?.conversion_rate || 0
+      },
+      totalCampaigns: activeCampaigns.length,
+      totalVisits,
+      totalQuestions,
+      totalRevenue,
+      hasRealData: true
+    };
+  }, [campaigns, insights]);
 
   // Don't render if feature is disabled
   if (!isEnabled) return null;
 
   const handleCardClick = () => {
-    // On mobile: first click expands, subsequent clicks navigate
-    // On desktop: always navigates
     const isMobile = window.innerWidth < 1024;
     
     if (isMobile && !isExpanded) {
@@ -36,10 +72,7 @@ export default function MarketingPreview({ isEnabled }) {
   };
 
   const handleChevronClick = (e) => {
-    // Prevent card click from firing
     e.stopPropagation();
-    
-    // Toggle expansion state
     setIsExpanded(!isExpanded);
   };
 
@@ -79,50 +112,56 @@ export default function MarketingPreview({ isEnabled }) {
         </div>
 
         {/* Top Campaign Highlight */}
-        <div className="mb-4 pb-4 border-b border-indigo-200">
-          <p className="text-xs font-bold text-indigo-700 uppercase mb-2">Top Campaign</p>
-          <p className="font-bold text-ink mb-1">{mockData.topCampaign.name}</p>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-subtext font-medium">
-              <span className="font-bold text-ink">{mockData.topCampaign.total_questions}</span> questions
-            </span>
-            <span className="text-subtext">•</span>
-            <span className="text-subtext font-medium">
-              <span className="font-bold text-ink">{mockData.topCampaign.conversion_rate}%</span> conv.
-            </span>
+        {marketingData.hasRealData && marketingData.totalCampaigns > 0 && (
+          <div className="mb-4 pb-4 border-b border-indigo-200">
+            <p className="text-xs font-bold text-indigo-700 uppercase mb-2">Top Campaign</p>
+            <p className="font-bold text-ink mb-1">{marketingData.topCampaign.name}</p>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-subtext font-medium">
+                <span className="font-bold text-ink">{marketingData.topCampaign.total_questions}</span> questions
+              </span>
+              <span className="text-subtext">•</span>
+              <span className="text-subtext font-medium">
+                <span className="font-bold text-ink">{marketingData.topCampaign.conversion_rate}%</span> conv.
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">
-            <p className="text-2xl font-black text-ink">{mockData.totalVisits}</p>
+            <p className="text-2xl font-black text-ink">{marketingData.totalVisits}</p>
             <p className="text-xs text-subtext mt-0.5 font-medium">Total Visits</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-black text-ink">{mockData.totalQuestions}</p>
+            <p className="text-2xl font-black text-ink">{marketingData.totalQuestions}</p>
             <p className="text-xs text-subtext mt-0.5 font-medium">Questions</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-black text-ink">€{mockData.totalRevenue}</p>
+            <p className="text-2xl font-black text-ink">€{marketingData.totalRevenue}</p>
             <p className="text-xs text-subtext mt-0.5 font-medium">Revenue</p>
           </div>
         </div>
 
-        {/* Growth Indicator */}
-        <div className="mt-4 pt-4 border-t border-indigo-200">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-subtext font-medium">
-              <span className="font-bold text-ink">{mockData.totalCampaigns}</span> active campaigns
-            </span>
-            <span className="inline-flex items-center gap-1 text-success font-bold">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-              23% vs last month
-            </span>
+        {/* Campaign Count */}
+        {marketingData.hasRealData && (
+          <div className="mt-4 pt-4 border-t border-indigo-200">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-subtext font-medium">
+                <span className="font-bold text-ink">{marketingData.totalCampaigns}</span> active campaign{marketingData.totalCampaigns !== 1 ? 's' : ''}
+              </span>
+              {marketingData.totalQuestions > 0 && marketingData.totalVisits > 0 && (
+                <span className="inline-flex items-center gap-1 text-success font-bold">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  {((marketingData.totalQuestions / marketingData.totalVisits) * 100).toFixed(1)}% conv.
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Hover Hint */}
         <div className="mt-3 pt-3 border-t border-indigo-200 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -157,11 +196,11 @@ export default function MarketingPreview({ isEnabled }) {
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-subtext font-medium">
-                    <span className="font-bold text-ink">{mockData.totalQuestions}</span> questions
+                    <span className="font-bold text-ink">{marketingData.totalQuestions}</span> questions
                   </span>
                   <span className="text-subtext">•</span>
                   <span className="text-subtext font-medium">
-                    <span className="font-bold text-ink">€{mockData.totalRevenue}</span> revenue
+                    <span className="font-bold text-ink">€{marketingData.totalRevenue}</span> revenue
                   </span>
                 </div>
               </div>
@@ -221,50 +260,56 @@ export default function MarketingPreview({ isEnabled }) {
             </div>
 
             {/* Top Campaign Highlight */}
-            <div className="mb-4 pb-4 border-b border-indigo-200">
-              <p className="text-xs font-bold text-indigo-700 uppercase mb-2">Top Campaign</p>
-              <p className="font-bold text-ink mb-1">{mockData.topCampaign.name}</p>
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-subtext font-medium">
-                  <span className="font-bold text-ink">{mockData.topCampaign.total_questions}</span> questions
-                </span>
-                <span className="text-subtext">•</span>
-                <span className="text-subtext font-medium">
-                  <span className="font-bold text-ink">{mockData.topCampaign.conversion_rate}%</span> conv.
-                </span>
+            {marketingData.hasRealData && marketingData.totalCampaigns > 0 && (
+              <div className="mb-4 pb-4 border-b border-indigo-200">
+                <p className="text-xs font-bold text-indigo-700 uppercase mb-2">Top Campaign</p>
+                <p className="font-bold text-ink mb-1">{marketingData.topCampaign.name}</p>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-subtext font-medium">
+                    <span className="font-bold text-ink">{marketingData.topCampaign.total_questions}</span> questions
+                  </span>
+                  <span className="text-subtext">•</span>
+                  <span className="text-subtext font-medium">
+                    <span className="font-bold text-ink">{marketingData.topCampaign.conversion_rate}%</span> conv.
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-3 gap-3">
               <div className="text-center">
-                <p className="text-xl font-black text-ink">{mockData.totalVisits}</p>
+                <p className="text-xl font-black text-ink">{marketingData.totalVisits}</p>
                 <p className="text-xs text-subtext mt-0.5 font-medium">Visits</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-black text-ink">{mockData.totalQuestions}</p>
+                <p className="text-xl font-black text-ink">{marketingData.totalQuestions}</p>
                 <p className="text-xs text-subtext mt-0.5 font-medium">Questions</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-black text-ink">€{mockData.totalRevenue}</p>
+                <p className="text-xl font-black text-ink">€{marketingData.totalRevenue}</p>
                 <p className="text-xs text-subtext mt-0.5 font-medium">Revenue</p>
               </div>
             </div>
 
-            {/* Growth Indicator */}
-            <div className="mt-4 pt-4 border-t border-indigo-200">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-subtext font-medium">
-                  <span className="font-bold text-ink">{mockData.totalCampaigns}</span> campaigns
-                </span>
-                <span className="inline-flex items-center gap-1 text-success font-bold">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  23%
-                </span>
+            {/* Campaign Count */}
+            {marketingData.hasRealData && (
+              <div className="mt-4 pt-4 border-t border-indigo-200">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-subtext font-medium">
+                    <span className="font-bold text-ink">{marketingData.totalCampaigns}</span> campaign{marketingData.totalCampaigns !== 1 ? 's' : ''}
+                  </span>
+                  {marketingData.totalQuestions > 0 && marketingData.totalVisits > 0 && (
+                    <span className="inline-flex items-center gap-1 text-success font-bold">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                      {((marketingData.totalQuestions / marketingData.totalVisits) * 100).toFixed(1)}%
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Tap Hint */}
             <div className="mt-3 pt-3 border-t border-indigo-200">
