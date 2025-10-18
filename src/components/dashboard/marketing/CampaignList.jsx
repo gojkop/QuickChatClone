@@ -7,7 +7,6 @@ export default function CampaignList({ campaigns, onCreate }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('active');
 
-  // Mark top performers (top 20% by revenue)
   const campaignsWithBadges = useMemo(() => {
     if (campaigns.length === 0) return [];
     
@@ -21,16 +20,13 @@ export default function CampaignList({ campaigns, onCreate }) {
     }));
   }, [campaigns]);
 
-  // Filter and search campaigns
   const filteredCampaigns = useMemo(() => {
     let filtered = campaignsWithBadges;
 
-    // Filter by status
     if (filterStatus !== 'all') {
       filtered = filtered.filter(c => c.status === filterStatus);
     }
 
-    // Search by name or source
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(c =>
@@ -44,13 +40,11 @@ export default function CampaignList({ campaigns, onCreate }) {
   }, [campaignsWithBadges, filterStatus, searchQuery]);
 
   const handleArchive = (campaign) => {
-    // TODO: Implement archive API call
     console.log('Archive campaign:', campaign.id);
     alert('Archive functionality coming soon!');
   };
 
   const handleViewDetails = (campaign) => {
-    // TODO: Implement campaign details view
     console.log('View details:', campaign);
     alert('Campaign details view coming soon!');
   };
@@ -64,6 +58,7 @@ export default function CampaignList({ campaigns, onCreate }) {
           <p className="text-sm text-subtext font-medium">Track which marketing efforts drive revenue</p>
         </div>
         <button
+          data-new-campaign-btn
           onClick={() => setShowModal(true)}
           className="px-3 py-2 text-xs font-bold bg-primary text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1.5 self-start sm:self-auto"
         >

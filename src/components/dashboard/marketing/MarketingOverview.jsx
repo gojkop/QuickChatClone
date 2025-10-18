@@ -7,20 +7,17 @@ export default function MarketingOverview({
   trafficSources,
   onNavigate 
 }) {
-  // Calculate totals
   const totalVisits = campaigns.reduce((sum, c) => sum + c.total_visits, 0);
   const totalQuestions = campaigns.reduce((sum, c) => sum + c.total_questions, 0);
   const totalRevenue = campaigns.reduce((sum, c) => sum + c.total_revenue, 0);
   const overallConversionRate = totalVisits > 0 ? ((totalQuestions / totalVisits) * 100).toFixed(1) : '0.0';
 
-  // Get top traffic source
   const topSource = trafficSources.length > 0 
     ? trafficSources.reduce((prev, current) => 
         current.questions > prev.questions ? current : prev
       ) 
     : null;
 
-  // Get top campaign
   const topCampaign = campaigns.length > 0
     ? campaigns.reduce((prev, current) => 
         current.total_revenue > prev.total_revenue ? current : prev
@@ -28,77 +25,76 @@ export default function MarketingOverview({
     : null;
 
   return (
-    <div className="space-y-6">
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Key Metrics - Compact on Mobile */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Visits */}
-        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6 hover:shadow-elev-3 transition-all duration-base">
+        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-3 sm:p-6 hover:shadow-elev-3 transition-all duration-base">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-bold text-subtext uppercase tracking-wide">Total Visits</h3>
-            <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 className="text-xs sm:text-sm font-bold text-subtext uppercase tracking-wide">Visits</h3>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-black text-ink">{totalVisits.toLocaleString()}</p>
-          <p className="text-xs text-subtext mt-2 font-medium">
-            Profile page views
+          <p className="text-2xl sm:text-3xl font-black text-ink">{totalVisits.toLocaleString()}</p>
+          <p className="text-xs text-subtext mt-1 sm:mt-2 font-medium">
+            Profile views
           </p>
         </div>
 
         {/* Questions */}
-        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6 hover:shadow-elev-3 transition-all duration-base">
+        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-3 sm:p-6 hover:shadow-elev-3 transition-all duration-base">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-bold text-subtext uppercase tracking-wide">Questions</h3>
-            <div className="w-10 h-10 bg-violet-50 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 className="text-xs sm:text-sm font-bold text-subtext uppercase tracking-wide">Questions</h3>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-violet-50 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-black text-ink">{totalQuestions}</p>
-          <p className="text-xs text-subtext mt-2 font-medium">
-            From tracked campaigns
+          <p className="text-2xl sm:text-3xl font-black text-ink">{totalQuestions}</p>
+          <p className="text-xs text-subtext mt-1 sm:mt-2 font-medium">
+            From campaigns
           </p>
         </div>
 
         {/* Revenue */}
-        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6 hover:shadow-elev-3 transition-all duration-base">
+        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-3 sm:p-6 hover:shadow-elev-3 transition-all duration-base">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-bold text-subtext uppercase tracking-wide">Revenue</h3>
-            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 className="text-xs sm:text-sm font-bold text-subtext uppercase tracking-wide">Revenue</h3>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-50 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-black text-ink">€{totalRevenue.toLocaleString()}</p>
-          <p className="text-xs text-subtext mt-2 font-medium">
-            Total campaign revenue
+          <p className="text-2xl sm:text-3xl font-black text-ink">€{totalRevenue.toLocaleString()}</p>
+          <p className="text-xs text-subtext mt-1 sm:mt-2 font-medium">
+            Total earned
           </p>
         </div>
 
         {/* Conversion Rate */}
-        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6 hover:shadow-elev-3 transition-all duration-base">
+        <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-3 sm:p-6 hover:shadow-elev-3 transition-all duration-base">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-bold text-subtext uppercase tracking-wide">Conv. Rate</h3>
-            <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 className="text-xs sm:text-sm font-bold text-subtext uppercase tracking-wide">Conv. Rate</h3>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-black text-ink">{overallConversionRate}%</p>
-          <p className="text-xs text-subtext mt-2 font-medium">
-            Visit → Question rate
+          <p className="text-2xl sm:text-3xl font-black text-ink">{overallConversionRate}%</p>
+          <p className="text-xs text-subtext mt-1 sm:mt-2 font-medium">
+            Visit → Question
           </p>
         </div>
       </div>
 
-      {/* Action Cards - More Subtle */}
+      {/* Action Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Top Traffic Source Action */}
         {topSource && (
           <div className="bg-surface rounded-lg border border-gray-200 p-4 hover:border-indigo-300 transition-all duration-base">
             <div className="mb-3">
@@ -125,7 +121,6 @@ export default function MarketingOverview({
           </div>
         )}
 
-        {/* Top Campaign Action */}
         {topCampaign && (
           <div className="bg-surface rounded-lg border border-gray-200 p-4 hover:border-green-300 transition-all duration-base">
             <div className="mb-3">
@@ -153,7 +148,7 @@ export default function MarketingOverview({
         )}
       </div>
 
-      {/* Conversion Performance - More Subtle */}
+      {/* Conversion Performance */}
       <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6">
         <h3 className="text-lg font-black text-ink mb-4">Conversion Performance</h3>
         <div className="space-y-4">
@@ -178,7 +173,6 @@ export default function MarketingOverview({
             )}
           </div>
 
-          {/* Insights with Actions */}
           {insights?.insights && insights.insights.length > 0 && (
             <div className="space-y-3 mt-4">
               {insights.insights.map((insight, idx) => (
@@ -193,7 +187,7 @@ export default function MarketingOverview({
         </div>
       </div>
 
-      {/* Traffic Sources Mini-View */}
+      {/* Traffic Sources */}
       {trafficSources.length > 0 && (
         <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">

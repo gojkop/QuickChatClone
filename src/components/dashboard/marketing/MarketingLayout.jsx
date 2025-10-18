@@ -156,14 +156,24 @@ export default function MarketingLayout({
         </div>
       </div>
 
-      {/* Floating Action Button (Mobile - Campaigns Tab Only) */}
+      {/* Floating Action Button - Half Circle (Mobile - Campaigns Tab Only) */}
       {activeTab === 'campaigns' && (
         <button
-          onClick={() => setShowCampaignModal(true)}
-          className="sm:hidden fixed bottom-20 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-elev-4 flex items-center justify-center z-30 active:scale-95 transition-transform"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          onClick={() => {
+            // Trigger the "New Campaign" button in CampaignList
+            const newCampaignBtn = document.querySelector('[data-new-campaign-btn]');
+            if (newCampaignBtn) newCampaignBtn.click();
+          }}
+          className="sm:hidden fixed bottom-24 right-0 bg-primary text-white shadow-elev-4 flex items-center justify-center z-30 active:scale-95 transition-all"
+          style={{ 
+            width: '56px',
+            height: '56px',
+            borderRadius: '56px 0 0 56px',
+            paddingRight: '8px'
+          }}
+          aria-label="New Campaign"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
           </svg>
         </button>
