@@ -26,7 +26,6 @@ export default function TemplateCard({ template, processedText, onEdit }) {
     if (success) {
       trackShare('native_share', template.platform, template.id);
     } else {
-      // Fallback to copy
       handleQuickCopy();
     }
   };
@@ -63,35 +62,35 @@ export default function TemplateCard({ template, processedText, onEdit }) {
   };
 
   return (
-    <div className="bg-surface rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-base overflow-hidden">
-      {/* Compact Header */}
-      <div className="p-3 border-b border-gray-200">
+    <div className="bg-surface rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-elev-2 transition-all duration-base overflow-hidden">
+      {/* Header */}
+      <div className="p-4 sm:p-3 border-b border-gray-200">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${platformInfo.bgColor}`}>
+          <div className="flex items-center gap-3 sm:gap-2 flex-1 min-w-0">
+            <div className={`w-9 h-9 sm:w-7 sm:h-7 rounded-xl sm:rounded-lg flex items-center justify-center flex-shrink-0 ${platformInfo.bgColor}`}>
               <div className={platformInfo.iconColor}>
                 {getPlatformIcon()}
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-ink text-sm truncate">{template.title}</h4>
+              <h4 className="font-bold text-ink text-base sm:text-sm truncate">{template.title}</h4>
             </div>
           </div>
-          <span className={`px-2 py-0.5 rounded text-xs font-bold ${platformInfo.bgColor} ${platformInfo.textColor} whitespace-nowrap`}>
+          <span className={`px-2 py-1 rounded text-xs font-bold ${platformInfo.bgColor} ${platformInfo.textColor} whitespace-nowrap`}>
             {platformInfo.name}
           </span>
         </div>
       </div>
 
-      {/* Content Preview - More compact */}
-      <div className="p-3 bg-canvas">
-        <div className="font-mono text-xs text-ink whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+      {/* Content Preview */}
+      <div className="p-4 sm:p-3 bg-canvas">
+        <div className="font-mono text-sm sm:text-xs text-ink whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
           {processedText}
         </div>
         
-        {/* Character count - inline */}
+        {/* Character count */}
         {charInfo.limit && (
-          <div className="mt-2 pt-2 border-t border-gray-200 flex items-center justify-between text-xs">
+          <div className="mt-3 sm:mt-2 pt-3 sm:pt-2 border-t border-gray-200 flex items-center justify-between text-sm sm:text-xs">
             <span className="text-subtext font-medium">
               {charInfo.count} / {charInfo.limit}
             </span>
@@ -102,22 +101,23 @@ export default function TemplateCard({ template, processedText, onEdit }) {
         )}
       </div>
 
-      {/* Compact Actions */}
-      <div className="p-3 flex gap-2">
+      {/* Actions */}
+      <div className="p-4 sm:p-3 flex gap-2 bg-surface">
         <button
           onClick={handleQuickCopy}
-          className="flex-1 px-3 py-1.5 text-xs font-bold bg-primary text-white rounded-lg hover:bg-indigo-700 transition-colors duration-base flex items-center justify-center gap-1.5"
+          className="flex-1 px-4 py-3 sm:py-2 text-base sm:text-xs font-bold bg-primary text-white rounded-xl sm:rounded-lg hover:bg-indigo-700 transition-colors duration-base flex items-center justify-center gap-2 sm:gap-1.5 active:scale-95 shadow-elev-2"
+          style={{ minHeight: '48px' }}
         >
           {showCopied ? (
             <>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
               </svg>
               Copied
             </>
           ) : (
             <>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
               Copy
@@ -127,21 +127,23 @@ export default function TemplateCard({ template, processedText, onEdit }) {
 
         <button
           onClick={onEdit}
-          className="px-3 py-1.5 text-xs font-medium text-ink bg-canvas hover:bg-gray-200 rounded-lg transition-colors duration-base flex items-center gap-1.5"
+          className="px-4 py-3 sm:px-3 sm:py-2 text-base sm:text-xs font-medium text-ink bg-canvas hover:bg-gray-200 rounded-xl sm:rounded-lg transition-colors duration-base flex items-center gap-2 sm:gap-1.5 active:scale-95"
+          style={{ minHeight: '48px' }}
         >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
-          Edit
+          <span className="hidden sm:inline">Edit</span>
         </button>
 
         {supportsNativeShare && (
           <button
             onClick={handleNativeShare}
-            className="px-2 py-1.5 text-xs font-medium text-ink bg-canvas hover:bg-gray-200 rounded-lg sm:hidden"
+            className="sm:hidden px-3 py-3 text-base font-medium text-ink bg-canvas hover:bg-gray-200 rounded-xl transition-colors active:scale-95"
+            style={{ minHeight: '48px', minWidth: '48px' }}
             title="Share"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </button>
