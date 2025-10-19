@@ -14,6 +14,7 @@ import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
 import MarketingPreview from '@/components/dashboard/MarketingPreview';
 import FirstQuestionCelebration from '@/components/dashboard/FirstQuestionCelebration';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
+import { useMarketing } from '@/hooks/useMarketing';
 
 
 // ✅ Hidden Questions Toggle Component
@@ -170,6 +171,8 @@ function ExpertDashboardPage() {
   const [showHidden, setShowHidden] = useState(false);
   const { isEnabled: socialImpactEnabled, loading: featureFlagLoading } = useFeature('social_impact_dashboard');
   const { isEnabled: marketingEnabled } = useFeature('marketing_module');
+  const { campaigns, insights } = useMarketing();
+
 
   const [showFirstQuestionCelebration, setShowFirstQuestionCelebration] = useState(false);
   const [firstQuestion, setFirstQuestion] = useState(null);
@@ -790,6 +793,8 @@ function ExpertDashboardPage() {
             {
             <MarketingPreview 
                 isEnabled={marketingEnabled}
+                campaigns={campaigns}
+                insights={insights}
                 onNavigate={() => navigate('/expert/marketing')}
             />
             }
