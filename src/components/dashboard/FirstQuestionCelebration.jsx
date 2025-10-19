@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 const FirstQuestionCelebration = ({ isOpen, onClose, question, onAnswerClick }) => {
-  const canvasRef = useRef(null);
-  const animationRef = useRef(null);
+  // const canvasRef = useRef(null);
+  // const animationRef = useRef(null);
   const [isExiting, setIsExiting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -16,105 +16,106 @@ const FirstQuestionCelebration = ({ isOpen, onClose, question, onAnswerClick }) 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // CONFETTI DISABLED - Uncomment to re-enable
   // Confetti particle system - optimized for mobile
-  useEffect(() => {
-    if (!isOpen || !canvasRef.current) return;
+  // useEffect(() => {
+  //   if (!isOpen || !canvasRef.current) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    
-    // Set canvas size
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+  //   const canvas = canvasRef.current;
+  //   const ctx = canvas.getContext('2d');
+  //   
+  //   // Set canvas size
+  //   const resizeCanvas = () => {
+  //     canvas.width = window.innerWidth;
+  //     canvas.height = window.innerHeight;
+  //   };
+  //   resizeCanvas();
+  //   window.addEventListener('resize', resizeCanvas);
 
-    // Confetti particles - FEWER on mobile for performance
-    const particles = [];
-    const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
-    const particleCount = isMobile ? 80 : 150; // Reduce by ~50% on mobile
+  //   // Confetti particles - FEWER on mobile for performance
+  //   const particles = [];
+  //   const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+  //   const particleCount = isMobile ? 80 : 150; // Reduce by ~50% on mobile
 
-    class Particle {
-      constructor() {
-        this.reset();
-        this.y = Math.random() * canvas.height - canvas.height;
-      }
+  //   class Particle {
+  //     constructor() {
+  //       this.reset();
+  //       this.y = Math.random() * canvas.height - canvas.height;
+  //     }
 
-      reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = -10;
-        this.vx = (Math.random() - 0.5) * 3;
-        this.vy = Math.random() * 3 + 4;
-        this.rotation = Math.random() * 360;
-        this.rotationSpeed = (Math.random() - 0.5) * 10;
-        this.size = Math.random() * 8 + 4;
-        this.color = colors[Math.floor(Math.random() * colors.length)];
-        this.opacity = 1;
-        this.gravity = 0.3;
-        this.life = 100;
-      }
+  //     reset() {
+  //       this.x = Math.random() * canvas.width;
+  //       this.y = -10;
+  //       this.vx = (Math.random() - 0.5) * 3;
+  //       this.vy = Math.random() * 3 + 4;
+  //       this.rotation = Math.random() * 360;
+  //       this.rotationSpeed = (Math.random() - 0.5) * 10;
+  //       this.size = Math.random() * 8 + 4;
+  //       this.color = colors[Math.floor(Math.random() * colors.length)];
+  //       this.opacity = 1;
+  //       this.gravity = 0.3;
+  //       this.life = 100;
+  //     }
 
-      update() {
-        this.vy += this.gravity;
-        this.x += this.vx;
-        this.y += this.vy;
-        this.rotation += this.rotationSpeed;
-        this.life--;
+  //     update() {
+  //       this.vy += this.gravity;
+  //       this.x += this.vx;
+  //       this.y += this.vy;
+  //       this.rotation += this.rotationSpeed;
+  //       this.life--;
 
-        if (this.life < 20) {
-          this.opacity = this.life / 20;
-        }
+  //       if (this.life < 20) {
+  //         this.opacity = this.life / 20;
+  //       }
 
-        if (this.y > canvas.height || this.life <= 0) {
-          this.reset();
-        }
-      }
+  //       if (this.y > canvas.height || this.life <= 0) {
+  //         this.reset();
+  //       }
+  //     }
 
-      draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate((this.rotation * Math.PI) / 180);
-        ctx.globalAlpha = this.opacity;
-        ctx.fillStyle = this.color;
-        ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-        ctx.restore();
-      }
-    }
+  //     draw() {
+  //       ctx.save();
+  //       ctx.translate(this.x, this.y);
+  //       ctx.rotate((this.rotation * Math.PI) / 180);
+  //       ctx.globalAlpha = this.opacity;
+  //       ctx.fillStyle = this.color;
+  //       ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+  //       ctx.restore();
+  //     }
+  //   }
 
-    // Create particles
-    for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle());
-    }
+  //   // Create particles
+  //   for (let i = 0; i < particleCount; i++) {
+  //     particles.push(new Particle());
+  //   }
 
-    // Animation loop
-    let startTime = Date.now();
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      particles.forEach(particle => {
-        particle.update();
-        particle.draw();
-      });
+  //   // Animation loop
+  //   let startTime = Date.now();
+  //   const animate = () => {
+  //     const elapsed = Date.now() - startTime;
+  //     
+  //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+  //     
+  //     particles.forEach(particle => {
+  //       particle.update();
+  //       particle.draw();
+  //     });
 
-      // Stop after 5 seconds
-      if (elapsed < 5000) {
-        animationRef.current = requestAnimationFrame(animate);
-      }
-    };
+  //     // Stop after 5 seconds
+  //     if (elapsed < 5000) {
+  //       animationRef.current = requestAnimationFrame(animate);
+  //     }
+  //   };
 
-    animate();
+  //   animate();
 
-    return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isOpen, isMobile]);
+  //   return () => {
+  //     window.removeEventListener('resize', resizeCanvas);
+  //     if (animationRef.current) {
+  //       cancelAnimationFrame(animationRef.current);
+  //     }
+  //   };
+  // }, [isOpen, isMobile]);
 
   // Handle close with exit animation
   const handleClose = () => {
@@ -167,12 +168,12 @@ const FirstQuestionCelebration = ({ isOpen, onClose, question, onAnswerClick }) 
     <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 transition-all duration-300 ${
       isExiting ? 'opacity-0' : 'opacity-100'
     }`}>
-      {/* Confetti Canvas */}
-      <canvas
+      {/* CONFETTI CANVAS DISABLED - Uncomment to re-enable */}
+      {/* <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
         style={{ zIndex: 1 }}
-      />
+      /> */}
 
       {/* Backdrop */}
       <div 
