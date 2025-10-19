@@ -1,14 +1,17 @@
+// MarketingPreview.jsx - FIXED VERSION
+// Use trafficSources as single source of truth until backend is fixed
+
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function MarketingPreview({ isEnabled, campaigns = [], insights = null }) {
+export default function MarketingPreview({ isEnabled, campaigns = [], trafficSources = [], insights = null }) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // Calculate real data from API or use fallback
+  // ✅ FIX: Calculate real data from trafficSources instead of campaigns
   const marketingData = useMemo(() => {
-    // If no campaigns, use mock data for demo
-    if (!campaigns || campaigns.length === 0) {
+    // If no traffic sources data, use mock data for demo
+    if (!trafficSources || trafficSources.length === 0) {
       return {
         topCampaign: {
           name: "LinkedIn Launch Post",
@@ -25,36 +28,47 @@ export default function MarketingPreview({ isEnabled, campaigns = [], insights =
       };
     }
 
-    // Calculate from real data
-    const activeCampaigns = campaigns.filter(c => c.status === 'active');
+    // ✅ Calculate from trafficSources (campaign_visits aggregation)
+    const totalVisits = trafficSources.reduce((sum, s) => sum + (s.visits || 0), 0);
+    const totalQuestions = trafficSources.reduce((sum, s) => sum + (s.questions || 0), 0);
+    const totalRevenue = trafficSources.reduce((sum, s) => sum + (s.revenue || 0), 0);
     
-    // Find top campaign by revenue
-    const topCampaign = [...campaigns].sort((a, b) => 
-      b.total_revenue - a.total_revenue
-    )[0];
+    // Find top source by revenue
+    const topSource = trafficSources.length > 0
+      ? trafficSources.reduce((prev, current) => 
+          current.revenue > prev.revenue ? current : prev
+        )
+      : null;
 
-    // Calculate totals
-    const totalVisits = campaigns.reduce((sum, c) => sum + (c.total_visits || 0), 0);
-    
-    const totalQuestions = campaigns.reduce((sum, c) => sum + (c.total_questions || 0), 0);
-    
-    const totalRevenue = campaigns.reduce((sum, c) => sum + (c.total_revenue || 0), 0);
+    // Map top source to campaign-like structure
+    const topCampaign = topSource ? {
+      name: `${topSource.name.charAt(0).toUpperCase() + topSource.name.slice(1)} campaigns`,
+      total_visits: topSource.visits,
+      total_questions: topSource.questions,
+      total_revenue: topSource.revenue,
+      conversion_rate: topSource.conversion_rate
+    } : {
+      name: "No campaigns yet",
+      total_visits: 0,
+      total_questions: 0,
+      total_revenue: 0,
+      conversion_rate: 0
+    };
+
+    // Count active campaigns (campaigns with any data)
+    const activeCampaigns = campaigns.filter(c => 
+      trafficSources.some(s => s.name.toLowerCase() === c.utm_source.toLowerCase())
+    ).length;
 
     return {
-      topCampaign: {
-        name: topCampaign?.name || "No campaigns yet",
-        total_visits: topCampaign?.total_visits || 0,
-        total_questions: topCampaign?.total_questions || 0,
-        total_revenue: topCampaign?.total_revenue || 0,
-        conversion_rate: topCampaign?.conversion_rate || 0
-      },
-      totalCampaigns: activeCampaigns.length,
+      topCampaign,
+      totalCampaigns: activeCampaigns,
       totalVisits,
       totalQuestions,
       totalRevenue,
       hasRealData: true
     };
-  }, [campaigns, insights]);
+  }, [campaigns, trafficSources]);
 
   // Don't render if feature is disabled
   if (!isEnabled) return null;
@@ -112,7 +126,7 @@ export default function MarketingPreview({ isEnabled, campaigns = [], insights =
         {/* Top Campaign Highlight */}
         {marketingData.hasRealData && marketingData.totalCampaigns > 0 && (
           <div className="mb-4 pb-4 border-b border-indigo-200">
-            <p className="text-xs font-bold text-indigo-700 uppercase mb-2">Top Campaign</p>
+            <p className="text-xs font-bold text-indigo-700 uppercase mb-2">Top Performing Source</p>
             <p className="font-bold text-ink mb-1">{marketingData.topCampaign.name}</p>
             <div className="flex items-center gap-4 text-sm">
               <span className="text-subtext font-medium">
@@ -126,7 +140,7 @@ export default function MarketingPreview({ isEnabled, campaigns = [], insights =
           </div>
         )}
 
-        {/* Quick Stats Grid */}
+        {/* Quick Stats Grid - NOW ACCURATE */}
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">
             <p className="text-2xl font-black text-ink">{marketingData.totalVisits}</p>
@@ -220,7 +234,7 @@ export default function MarketingPreview({ isEnabled, campaigns = [], insights =
           </div>
         )}
 
-        {/* Expanded View */}
+        {/* Expanded View - Same updates as desktop */}
         {isExpanded && (
           <div className="animate-slide-up">
             {/* Header */}
@@ -260,7 +274,7 @@ export default function MarketingPreview({ isEnabled, campaigns = [], insights =
             {/* Top Campaign Highlight */}
             {marketingData.hasRealData && marketingData.totalCampaigns > 0 && (
               <div className="mb-4 pb-4 border-b border-indigo-200">
-                <p className="text-xs font-bold text-indigo-700 uppercase mb-2">Top Campaign</p>
+                <p className="text-xs font-bold text-indigo-700 uppercase mb-2">Top Source</p>
                 <p className="font-bold text-ink mb-1">{marketingData.topCampaign.name}</p>
                 <div className="flex items-center gap-4 text-sm">
                   <span className="text-subtext font-medium">
