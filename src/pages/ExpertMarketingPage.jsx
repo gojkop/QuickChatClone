@@ -1,6 +1,7 @@
 import React from 'react';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingLayout from '@/components/dashboard/marketing/MarketingLayout';
+import MarketingDebugger from '@/components/dashboard/marketing/MarketingDebugger';
 
 export default function ExpertMarketingPage() {
   const {
@@ -39,6 +40,7 @@ export default function ExpertMarketingPage() {
   }
 
   return (
+    <>
     <MarketingLayout
       campaigns={campaigns}
       trafficSources={trafficSources}
@@ -49,5 +51,7 @@ export default function ExpertMarketingPage() {
       isLoading={isLoading}
       createCampaign={createCampaign}
     />
+    <MarketingDebugger /> {/* Add this */}
+    </>
   );
 }
