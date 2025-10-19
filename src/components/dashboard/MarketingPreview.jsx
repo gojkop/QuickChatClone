@@ -34,11 +34,9 @@ export default function MarketingPreview({ isEnabled, campaigns = [], insights =
     )[0];
 
     // Calculate totals
-    const totalVisits = insights?.your_metrics?.total_visits 
-      || campaigns.reduce((sum, c) => sum + (c.total_visits || 0), 0);
+    const totalVisits = campaigns.reduce((sum, c) => sum + (c.total_visits || 0), 0);
     
-    const totalQuestions = insights?.your_metrics?.total_questions 
-      || campaigns.reduce((sum, c) => sum + (c.total_questions || 0), 0);
+    const totalQuestions = campaigns.reduce((sum, c) => sum + (c.total_questions || 0), 0);
     
     const totalRevenue = campaigns.reduce((sum, c) => sum + (c.total_revenue || 0), 0);
 
