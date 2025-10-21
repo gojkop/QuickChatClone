@@ -71,54 +71,9 @@ export default async function handler(req, res) {
     const answer = await answerResponse.json();
     const answerId = answer.id;
     console.log('✅ Answer created:', answerId);
-
-    // ==========================================
-    // UPDATE QUESTION WITH answered_at TIMESTAMP
-    // ==========================================
-    console.log('📝 Updating question answered_at timestamp...');
-    console.log('📝 Question ID to update:', question_id);
-
-    // Use PUBLIC API for question updates (not Authentication API!)
-    const publicApiUrl = process.env.XANO_PUBLIC_API_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
-    const updateUrl = `${publicApiUrl}/question/${question_id}`;
-    console.log('📝 Update URL:', updateUrl);
-
-    const updatePayload = {
-      answered_at: Date.now(),
-      status: 'answered'
-    };
-    console.log('📝 Update payload:', JSON.stringify(updatePayload));
-
-    try {
-      const updateResponse = await fetch(updateUrl, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(req.headers.authorization && {
-            Authorization: req.headers.authorization,
-          }),
-        },
-        body: JSON.stringify(updatePayload),
-      });
-
-      console.log('📝 Update response status:', updateResponse.status);
-
-      if (updateResponse.ok) {
-        const updatedQuestion = await updateResponse.json();
-        console.log('✅ Question updated successfully');
-        console.log('✅ answered_at value:', updatedQuestion.answered_at);
-        console.log('✅ status value:', updatedQuestion.status);
-      } else {
-        const errorText = await updateResponse.text();
-        console.error('❌ Failed to update question answered_at');
-        console.error('❌ Status code:', updateResponse.status);
-        console.error('❌ Error response:', errorText);
-      }
-    } catch (updateErr) {
-      console.error('❌ Exception during question update:', updateErr.message);
-      console.error('❌ Error stack:', updateErr.stack);
-    }
-    // ==========================================
+    
+    // NOTE: answered_at is now set automatically by Xano POST /answer endpoint
+    // No need to make a separate PATCH request
 
     // 2. Extract question data from answer response (embedded by Xano)
     const questionData = answer.question || answer._question;
@@ -165,6 +120,8 @@ export default async function handler(req, res) {
 
       // Fallback: Fetch question directly if not embedded
       try {
+        const publicApiUrl = process.env.XANO_PUBLIC_API_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
+        
         const questionResponse = await fetch(
           `${publicApiUrl}/question/${question_id}`,
           {

@@ -83,7 +83,32 @@ export default async function handler(req, res) {
       throw new Error(`Failed to fetch pending questions from Xano: ${response.status} - ${errorText}`);
     }
     
-    const questions = await response.json();
+    const responseData = await response.json();
+    
+    // Debug: Log response structure to understand Xano's format
+    console.log('🔍 Response data type:', typeof responseData);
+    console.log('🔍 Response is array:', Array.isArray(responseData));
+    console.log('🔍 Response keys:', Object.keys(responseData || {}));
+    console.log('🔍 Sample response:', JSON.stringify(responseData).substring(0, 500));
+    
+    // Handle different Xano response formats
+    let questions;
+    if (Array.isArray(responseData)) {
+      // Direct array response
+      questions = responseData;
+    } else if (responseData.result && Array.isArray(responseData.result)) {
+      // Wrapped in { result: [...] }
+      questions = responseData.result;
+    } else if (responseData.questions && Array.isArray(responseData.questions)) {
+      // Wrapped in { questions: [...] }
+      questions = responseData.questions;
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // Wrapped in { data: [...] }
+      questions = responseData.data;
+    } else {
+      console.error('❌ Unexpected response format:', responseData);
+      throw new Error('Unexpected Xano response format - expected array of questions');
+    }
     
     console.log(`✅ Fetched ${questions.length} pending questions from database`);
     
