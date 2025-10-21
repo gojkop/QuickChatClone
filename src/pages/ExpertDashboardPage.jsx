@@ -171,7 +171,7 @@ function ExpertDashboardPage() {
   const [showHidden, setShowHidden] = useState(false);
   const { isEnabled: socialImpactEnabled, loading: featureFlagLoading } = useFeature('social_impact_dashboard');
   const { isEnabled: marketingEnabled } = useFeature('marketing_module');
-  const { campaigns, insights } = useMarketing();
+  const { campaigns, trafficSources, insights } = useMarketing();
 
 
   const [showFirstQuestionCelebration, setShowFirstQuestionCelebration] = useState(false);
