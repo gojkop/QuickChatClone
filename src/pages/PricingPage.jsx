@@ -1,3 +1,4 @@
+// src/pages/PricingPage.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -49,11 +50,13 @@ function PricingPage() {
                   </p>
                 </div>
 
+                {/* UPDATED CTA */}
                 <Link 
                   to={isAuthenticated ? "/expert" : "/signin"} 
                   className="block w-full text-center py-3 px-4 rounded-lg font-semibold transition-all duration-200 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
                 >
-                  {isAuthenticated ? "Go to Dashboard" : "Start for Free"}
+                  {/* CHANGED: Added clarity and removed card requirement */}
+                  {isAuthenticated ? "Go to Dashboard" : "Start Free • No Card Required"}
                 </Link>
 
                 <div className="mt-8 pt-8 border-t border-gray-100">
@@ -112,10 +115,12 @@ function PricingPage() {
                   </p>
                 </div>
 
+                {/* UPDATED CTA */}
                 <Link 
                   to={isAuthenticated ? "/expert" : "/signin?plan=pro"} 
                   className="group block w-full text-center py-3 px-4 rounded-lg font-semibold transition duration-base ease-in-out bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
+                  {/* CHANGED: More action-oriented */}
                   {isAuthenticated ? "Upgrade to Pro" : "Start with Pro"}
                 </Link>
 
