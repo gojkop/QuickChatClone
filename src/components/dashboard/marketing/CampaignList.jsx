@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import CampaignModal from './CampaignModal';
 import CampaignCard from './CampaignCard';
 import CampaignDetailsModal from './CampaignDetailsModal';
+import BetaFeatureModal from './BetaFeatureModal';
 
 export default function CampaignList({ campaigns, onCreate }) {
   const [showModal, setShowModal] = useState(false);
@@ -9,6 +10,8 @@ export default function CampaignList({ campaigns, onCreate }) {
   const [filterStatus, setFilterStatus] = useState('active');
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showBetaModal, setShowBetaModal] = useState(false);
+  const [betaFeatureName, setBetaFeatureName] = useState('');
 
   const campaignsWithBadges = useMemo(() => {
     if (campaigns.length === 0) return [];
@@ -43,23 +46,20 @@ export default function CampaignList({ campaigns, onCreate }) {
   }, [campaignsWithBadges, filterStatus, searchQuery]);
 
   const handleArchive = (campaign) => {
-    console.log('Archive campaign:', campaign.id);
-    // TODO: Call API to update campaign status to 'archived'
-    alert('Archive functionality: Update campaign status to "archived" via API');
+    setBetaFeatureName('Campaign archiving');
+    setShowBetaModal(true);
   };
 
   const handlePause = (campaign) => {
-    console.log('Pause/Resume campaign:', campaign.id);
-    // TODO: Call API to toggle campaign status between 'active' and 'paused'
-    const newStatus = campaign.status === 'active' ? 'paused' : 'active';
-    alert(`Update campaign status to "${newStatus}" via API`);
+    setBetaFeatureName(campaign.status === 'active' ? 'Campaign pause' : 'Campaign resume');
+    setShowBetaModal(true);
   };
 
   const handleViewDetails = (campaign) => {
     setSelectedCampaign(campaign);
     setShowDetailsModal(true);
   };
-
+  
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -198,5 +198,10 @@ export default function CampaignList({ campaigns, onCreate }) {
         onPause={handlePause}
       />
     </div>
+          <BetaFeatureModal
+        isOpen={showBetaModal}
+        onClose={() => setShowBetaModal(false)}
+        featureName={betaFeatureName}
+      />
   );
 }

@@ -141,7 +141,9 @@ export default function TemplateEditorModal({
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${platformInfo.bgColor}`}>
-                  <span className={`text-xl ${platformInfo.iconColor}`}>✏️</span>
+<svg className={`w-5 h-5 ${platformInfo.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+</svg>
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-ink">Edit Template</h3>
@@ -175,7 +177,9 @@ export default function TemplateEditorModal({
           {/* Mobile Header */}
           <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${platformInfo.bgColor}`}>
-              <span className={`text-xl ${platformInfo.iconColor}`}>✏️</span>
+<svg className={`w-5 h-5 ${platformInfo.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+</svg>
             </div>
             <div>
               <h3 className="text-lg font-black text-ink">Edit Template</h3>
