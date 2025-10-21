@@ -792,10 +792,11 @@ function ExpertDashboardPage() {
             )}
             {
             <MarketingPreview 
-                isEnabled={marketingEnabled}
+             isEnabled={marketingEnabled}
                 campaigns={campaigns}
-                insights={insights}
-                onNavigate={() => navigate('/expert/marketing')}
+             trafficSources={trafficSources}
+             insights={insights}
+             onNavigate={() => navigate('/expert/marketing')}
             />
             }
           </div>
