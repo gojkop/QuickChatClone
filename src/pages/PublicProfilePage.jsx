@@ -397,7 +397,7 @@ function PublicProfilePage() {
 
         try {
           // Call tracking API
-          const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/track-visit', {
+          const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/marketing/public/track-visit', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
