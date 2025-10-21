@@ -65,7 +65,7 @@ export default function TrafficSources({ trafficSources }) {
                 <th className="px-4 py-3 text-left text-xs font-black text-subtext uppercase tracking-wider">Visits</th>
                 <th className="px-4 py-3 text-left text-xs font-black text-subtext uppercase tracking-wider">Questions</th>
                 <th className="px-4 py-3 text-left text-xs font-black text-subtext uppercase tracking-wider">Conv. Rate</th>
-                <th className="px-4 py-3 text-left text-xs font-black text-subtext uppercase tracking-wider">Revenue</th>
+                <th className="px-4 py-3 text-left text-xs font-black text-subtext uppercase tracking-wider">Campaign Revenue</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">

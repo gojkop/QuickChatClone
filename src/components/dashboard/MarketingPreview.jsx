@@ -152,7 +152,7 @@ export default function MarketingPreview({ isEnabled, campaigns = [], trafficSou
           </div>
           <div className="text-center">
             <p className="text-2xl font-black text-ink">€{marketingData.totalRevenue}</p>
-            <p className="text-xs text-subtext mt-0.5 font-medium">Revenue</p>
+<p className="text-xs text-subtext mt-0.5 font-medium">Campaign Revenue</p>
           </div>
         </div>
 
@@ -211,9 +211,10 @@ export default function MarketingPreview({ isEnabled, campaigns = [], trafficSou
                     <span className="font-bold text-ink">{marketingData.totalQuestions}</span> questions
                   </span>
                   <span className="text-subtext">•</span>
-                  <span className="text-subtext font-medium">
-                    <span className="font-bold text-ink">€{marketingData.totalRevenue}</span> revenue
-                  </span>
+<span className="text-subtext font-medium">
+  <span className="font-bold text-ink">€{marketingData.totalRevenue}</span> from campaigns
+</span>
+
                 </div>
               </div>
             </div>
