@@ -15,6 +15,7 @@ import MarketingPreview from '@/components/dashboard/MarketingPreview';
 import FirstQuestionCelebration from '@/components/dashboard/FirstQuestionCelebration';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import { useMarketing } from '@/hooks/useMarketing';
+import { Clock, DollarSign, Coins, Calendar, CalendarDays } from 'lucide-react';
 
 
 // ✅ Hidden Questions Toggle Component
@@ -62,13 +63,13 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
   const dropdownRef = React.useRef(null);
   const buttonRef = React.useRef(null);
 
-  const sortOptions = [
-    { value: 'time_left', label: 'Time Left (Urgent First)', icon: '⏰' },
-    { value: 'price_high', label: 'Price (High to Low)', icon: '💰' },
-    { value: 'price_low', label: 'Price (Low to High)', icon: '💵' },
-    { value: 'date_new', label: 'Date (Newest First)', icon: '📅' },
-    { value: 'date_old', label: 'Date (Oldest First)', icon: '📆' },
-  ];
+const sortOptions = [
+  { value: 'time_left', label: 'Time Left (Urgent First)', icon: Clock, color: 'text-blue-600' },
+  { value: 'price_high', label: 'Price (High to Low)', icon: DollarSign, color: 'text-green-600' },
+  { value: 'price_low', label: 'Price (Low to High)', icon: Coins, color: 'text-emerald-600' },
+  { value: 'date_new', label: 'Date (Newest First)', icon: Calendar, color: 'text-indigo-600' },
+  { value: 'date_old', label: 'Date (Oldest First)', icon: CalendarDays, color: 'text-purple-600' },
+];
 
   const currentSort = sortOptions.find(opt => opt.value === sortBy) || sortOptions[0];
 
@@ -104,7 +105,7 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
         </svg>
         <span className="hidden sm:inline">Sort by:</span>
-        <span className="text-sm">{currentSort.icon}</span>
+        <currentSort.icon className={`w-4 h-4 ${currentSort.color}`} />
         <svg 
           className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
           fill="none" 
@@ -131,7 +132,7 @@ function SortDropdown({ sortBy, onSortChange, questionCount }) {
                 }`}
                 type="button"
               >
-                <span className="text-sm">{option.icon}</span>
+                <option.icon className={`w-4 h-4 ${option.color}`} />
                 <span className="flex-1">{option.label}</span>
                 {sortBy === option.value && (
                   <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
