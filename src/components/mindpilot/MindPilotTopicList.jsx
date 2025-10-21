@@ -1,4 +1,5 @@
 import { MindPilotIcon } from './MindPilotIcon';
+import { Check, ChevronRight, Circle } from 'lucide-react';
 
 /**
  * MindPilotTopicItem - Single topic item
@@ -10,14 +11,14 @@ function MindPilotTopicItem({ status = 'pending', text, priority }) {
   const statusConfig = {
     completed: {
       iconBg: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
-      icon: '✓',
+      icon: Check,
       textColor: 'text-slate-50',
       borderColor: 'border-emerald-500/30',
       bg: 'bg-slate-900/40',
     },
     active: {
       iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-500',
-      icon: '→',
+      icon: ChevronRight,
       textColor: 'text-blue-400',
       borderColor: 'border-blue-500/50',
       bg: 'bg-blue-500/15',
@@ -25,7 +26,7 @@ function MindPilotTopicItem({ status = 'pending', text, priority }) {
     },
     pending: {
       iconBg: 'bg-blue-500/10',
-      icon: '○',
+      icon: Circle,
       textColor: 'text-slate-500',
       borderColor: 'border-blue-500/20',
       bg: 'bg-slate-900/40',
@@ -33,6 +34,7 @@ function MindPilotTopicItem({ status = 'pending', text, priority }) {
   };
 
   const config = statusConfig[status];
+  const IconComponent = config.icon;
 
   const priorityColors = {
     high: 'bg-blue-500/20 text-blue-400',
@@ -49,11 +51,9 @@ function MindPilotTopicItem({ status = 'pending', text, priority }) {
         style={status === 'completed' ? { boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)' } : 
                status === 'active' ? { boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)' } : {}}
       >
-        {status === 'completed' || status === 'active' ? (
-          <span className="text-white">{config.icon}</span>
-        ) : (
-          <span className={config.textColor}>{config.icon}</span>
-        )}
+        <IconComponent 
+          className={`w-4 h-4 ${status === 'completed' || status === 'active' ? 'text-white' : config.textColor}`}
+        />
       </div>
       <div className={`flex-1 text-sm font-medium ${config.textColor}`}>
         {text}
