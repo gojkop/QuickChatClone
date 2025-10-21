@@ -144,8 +144,7 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
         charity_percentage: Number(formData.charity_percentage) || 0,
         selected_charity: formData.selected_charity || null,
         accepting_questions: formData.accepting_questions,
-        // ⚠️ Phase 2: Uncomment when backend is ready
-        // daily_digest_enabled: formData.daily_digest_enabled !== false
+        daily_digest_enabled: formData.daily_digest_enabled !== false
       };
 
       console.log('Saving payload:', payload);
