@@ -24,7 +24,19 @@ export function getDailyDigestTemplate(data) {
     totalEarningsCents = 0
   } = data;
 
-  const firstName = expertName ? expertName.split(' ')[0] : 'there';
+  // Extract first name intelligently
+  let firstName = 'there';
+  if (expertName && expertName.trim()) {
+    // If name contains spaces, it's likely a real name (e.g., "John Doe")
+    if (expertName.includes(' ')) {
+      firstName = expertName.split(' ')[0].trim();
+    }
+    // If it looks like an email prefix (has @ or .), it's a fallback
+    else if (!expertName.includes('@') && !expertName.includes('.')) {
+      firstName = expertName.trim();
+    }
+    // Otherwise use generic greeting
+  }
   const subject = `Your mindPick Daily Digest - ${totalPending} Pending Question${totalPending !== 1 ? 's' : ''}`;
 
   // Sort questions by urgency (most urgent first)
@@ -139,7 +151,7 @@ export function getDailyDigestTemplate(data) {
                         
                         <!-- Greeting -->
                         <p style="font-size: 16px; color: #111827; margin: 0 0 24px 0;">
-                          Good morning, ${firstName}! 👋
+                          Howdy, ${firstName}! 👋
                         </p>
                         
                         <!-- Summary Stats -->
@@ -192,21 +204,23 @@ export function getDailyDigestTemplate(data) {
                                     ` : ''}
                                   </div>
                                   
-                                  <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid ${isUrgent ? '#FEE2E2' : '#F3F4F6'};">
-                                    <div style="display: flex; gap: 16px; align-items: center;">
-                                      <div>
-                                        <div style="font-size: 11px; color: #9CA3AF; margin-bottom: 2px;">Price</div>
-                                        <div style="font-size: 16px; font-weight: 700; color: #10B981;">${formatPrice(q.price_cents)}</div>
-                                      </div>
-                                      <div>
-                                        <div style="font-size: 11px; color: #9CA3AF; margin-bottom: 2px;">Time Left</div>
-                                        <div style="font-size: 14px; font-weight: 600;">${formatTimeRemaining(q.time_remaining_seconds)}</div>
-                                      </div>
-                                    </div>
-                                    <a href="https://mindpick.me/expert#question-${q.id}" style="display: inline-block; padding: 10px 20px; background: #4F46E5; color: white; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);">
-                                      Answer Now →
-                                    </a>
-                                  </div>
+                                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="padding-top: 12px; border-top: 1px solid ${isUrgent ? '#FEE2E2' : '#F3F4F6'};">
+                                    <tr>
+                                      <td style="padding: 8px 12px 8px 0; vertical-align: middle; width: 80px;">
+                                        <div style="font-size: 11px; color: #9CA3AF; margin-bottom: 4px;">Price</div>
+                                        <div style="font-size: 16px; font-weight: 700; color: #10B981; white-space: nowrap;">${formatPrice(q.price_cents)}</div>
+                                      </td>
+                                      <td style="padding: 8px 12px; vertical-align: middle; width: 100px;">
+                                        <div style="font-size: 11px; color: #9CA3AF; margin-bottom: 4px;">Time Left</div>
+                                        <div style="font-size: 14px; font-weight: 600; white-space: nowrap;">${formatTimeRemaining(q.time_remaining_seconds)}</div>
+                                      </td>
+                                      <td style="padding: 8px 0 8px 12px; vertical-align: middle; text-align: right;">
+                                        <a href="https://mindpick.me/expert#question-${q.id}" style="display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3); white-space: nowrap;">
+                                          Answer Now →
+                                        </a>
+                                      </td>
+                                    </tr>
+                                  </table>
                                 </td>
                               </tr>
                             </table>
@@ -253,7 +267,7 @@ export function getDailyDigestTemplate(data) {
   const textBody = `
 YOUR MINDPICK DAILY DIGEST
 
-Hi ${firstName},
+Howdy, ${firstName}!
 
 You have ${totalPending} question${totalPending !== 1 ? 's' : ''} waiting for your expertise!
 
