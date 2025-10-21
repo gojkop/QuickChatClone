@@ -54,8 +54,10 @@ export default async function handler(req, res) {
     // Step 1: Fetch all pending questions with expert data (single optimized query)
     console.log('📦 Fetching pending questions from Xano...');
     
-    const questions = await xanoGet('/internal/digest/pending-questions', {
-      x_api_key: process.env.XANO_INTERNAL_API_KEY
+    const questions = await xanoGet('/internal/digest/pending-questions', {}, {
+      headers: {
+        'x-api-key': process.env.XANO_INTERNAL_API_KEY
+      }
     });
     
     console.log(`✅ Fetched ${questions.length} pending questions from database`);
@@ -77,24 +79,23 @@ export default async function handler(req, res) {
     const expertGroups = {};
     let skippedQuestions = 0;
     
-    for (const question of questions) {
-      const expertId = question.expert_id;
+    for (const item of questions) {
+      const question = item.question;
+      const expertEmail = item.user_email;
+      const expertName = item.user_name;
+      const expertHandle = item.expert_handle;
+      const expertId = question.expert_profile_id;
       
       // Validate expert ID exists
       if (!expertId) {
-        console.warn(`⚠️ Question ${question.id} has no expert_id, skipping`);
+        console.warn(`⚠️ Question ${question.id} has no expert_profile_id, skipping`);
         skippedQuestions++;
         continue;
       }
       
-      // Extract expert data from nested structure
-      const expertProfile = question.expert_profile || {};
-      const expertUser = expertProfile.user || {};
-      
       // Validate expert has email
-      const expertEmail = expertUser.email;
       if (!expertEmail) {
-        console.warn(`⚠️ Expert ${expertId} has no email, skipping their questions`);
+        console.warn(`⚠️ Question ${question.id} has no user_email, skipping`);
         skippedQuestions++;
         continue;
       }
@@ -104,8 +105,8 @@ export default async function handler(req, res) {
         expertGroups[expertId] = {
           expert_id: expertId,
           expert_email: expertEmail,
-          expert_name: expertUser.name || 'Expert',
-          expert_handle: expertProfile.handle || null,
+          expert_name: expertName || expertEmail.split('@')[0],
+          expert_handle: expertHandle || null,
           questions: [],
           total_pending: 0,
           urgent_count: 0,
@@ -144,7 +145,7 @@ export default async function handler(req, res) {
     
     console.log(`✅ Grouped into ${digests.length} expert digests`);
     if (skippedQuestions > 0) {
-      console.log(`⚠️ Skipped ${skippedQuestions} questions (missing expert_id or email)`);
+      console.log(`⚠️ Skipped ${skippedQuestions} questions (missing expert_profile_id or user_email)`);
     }
     
     // Log some stats
