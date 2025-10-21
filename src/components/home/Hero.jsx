@@ -1,3 +1,4 @@
+// src/components/home/Hero.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import AnimatedBackground from './AnimatedBackground';
@@ -45,16 +46,24 @@ function Hero() {
             <span className="block mt-2 font-semibold text-ink">No scheduling, no awkwardness, just value for value.</span>
           </p>
           
+          {/* UPDATED CTAs */}
           <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link 
-              to="/signin" 
-              className="group relative inline-flex items-center gap-2 bg-primary text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-indigo-700 transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-            >
-              Get Your Link
-              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
+            <div className="relative">
+              <Link 
+                to="/signin" 
+                className="group relative inline-flex items-center gap-2 bg-primary text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-indigo-700 transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+              >
+                {/* CHANGED: From "Get Your Link" to "Start Earning Today" */}
+                <span>Start Earning Today</span>
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+              {/* NEW: Added subtext */}
+              <p className="absolute -bottom-6 left-0 right-0 text-center text-xs text-gray-600 whitespace-nowrap">
+                Free • 5-min setup
+              </p>
+            </div>
             
             <a 
               href="#how-it-works" 
