@@ -157,14 +157,45 @@ export default function SignInPage() {
       {/* Main Content */}
       <div className="min-h-screen flex items-center justify-center px-4 py-16 md:py-20">
         <div className="w-full max-w-md">
-          {/* Header */}
+          {/* Enhanced Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-ink mb-2 tracking-tight">
-              Sign in to mindPick
+            {/* Quick Setup Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full 
+                  bg-indigo-50 border border-indigo-200 text-sm font-semibold text-indigo-700 mb-4">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>5-minute setup • No credit card required</span>
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-extrabold text-ink mb-3 tracking-tight">
+              Start Earning from Your Expertise
             </h1>
-            <p className="text-subtext text-sm md:text-base">
-              Access your expert dashboard
+            <p className="text-subtext text-base md:text-lg mb-6">
+              Create your expert page and start monetizing questions today
             </p>
+            
+            {/* Micro-Benefits */}
+            <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600 mb-2">
+              <div className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                </svg>
+                <span>Set your own price</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                </svg>
+                <span>No meetings needed</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                </svg>
+                <span>Get paid instantly</span>
+              </div>
+            </div>
           </div>
 
           {/* Sign-In Card */}
@@ -314,6 +345,37 @@ export default function SignInPage() {
                   Privacy Policy
                 </a>
               </p>
+            </div>
+          </div>
+
+          {/* What Happens Next Section */}
+          <div className="mt-8 bg-gray-50 rounded-xl border border-gray-200 p-6">
+            <h3 className="font-bold text-gray-900 mb-4 text-center">What happens after you sign in?</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs flex-shrink-0">1</div>
+                <div>
+                  <div className="font-semibold text-gray-900">Set your price & availability</div>
+                  <div className="text-gray-600">Choose how much you charge and when you'll respond</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs flex-shrink-0">2</div>
+                <div>
+                  <div className="font-semibold text-gray-900">Connect Stripe for payouts</div>
+                  <div className="text-gray-600">Secure payment processing, direct to your bank</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs flex-shrink-0">3</div>
+                <div>
+                  <div className="font-semibold text-gray-900">Share your unique link</div>
+                  <div className="text-gray-600">Add to your bio, email signature, or anywhere you like</div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+              ⏱️ Average setup time: <span className="font-semibold text-gray-700">4 minutes</span>
             </div>
           </div>
 
