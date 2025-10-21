@@ -98,18 +98,6 @@ export default function MarketingOverview({
     Attributed to campaigns
   </p>
 </div>
-{/* Revenue Info Tooltip */}
-<div className="col-span-2 sm:col-span-2 lg:col-span-4">
-  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
-    <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <p className="text-xs text-blue-800 font-medium">
-      <strong>Campaign Revenue</strong> tracks payments from questions attributed to your marketing campaigns. 
-      This shows which campaigns drive purchases, not fulfillment status.
-    </p>
-  </div>
-</div>
         {/* Conversion Rate */}
         <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-3 sm:p-6">
           <div className="flex items-center justify-between mb-2">
@@ -126,7 +114,18 @@ export default function MarketingOverview({
           </p>
         </div>
       </div>
-
+{/* Revenue Info Tooltip */}
+<div className="col-span-2 sm:col-span-2 lg:col-span-4">
+  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+    <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <p className="text-xs text-blue-800 font-medium">
+      <strong>Campaign Revenue</strong> tracks payments from questions attributed to your marketing campaigns. 
+      This shows which campaigns drive purchases, not fulfillment status.
+    </p>
+  </div>
+</div>
       {/* Rest of component... */}
       {/* Conversion Performance */}
       <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-6">
