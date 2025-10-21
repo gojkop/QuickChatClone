@@ -334,7 +334,7 @@ function PublicProfilePage() {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
-  // ⭐ FIXED: Track UTM visit on page load WITH localStorage storage
+ // ⭐ FIXED: Track UTM visit on page load WITH deduplication
   useEffect(() => {
     const trackVisit = async () => {
       if (!handle) return;
@@ -357,7 +357,34 @@ function PublicProfilePage() {
 
       // Only track if we have at least source and campaign
       if (utmSource && utmCampaign) {
-        console.log('✅ Valid UTM params, tracking visit...');
+        console.log('✅ Valid UTM params, checking for duplicates...');
+
+        // 🆕 DEDUPLICATION: Check for recent visit to avoid duplicates
+        const visitKey = `qc_visit_${handle}_${utmSource}_${utmCampaign}`;
+        const lastVisitTime = localStorage.getItem(visitKey);
+        const now = Date.now();
+        const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+        // Skip tracking if visited same campaign within last 30 minutes
+        if (lastVisitTime && (now - parseInt(lastVisitTime)) < thirtyMinutes) {
+          console.log('🔄 Visit already tracked recently (within 30 min), skipping duplicate');
+          
+          // Prepare UTM data object
+          const utmData = {
+            expert_handle: handle,
+            utm_source: utmSource,
+            utm_campaign: utmCampaign,
+            utm_medium: utmMedium || '',
+            utm_content: utmContent || ''
+          };
+          
+          // Still store UTM params for question attribution
+          localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
+          localStorage.setItem('qc_utm_timestamp', now.toString());
+          return;
+        }
+
+        console.log('✅ No recent duplicate, tracking visit...');
 
         // Prepare UTM data object
         const utmData = {
@@ -370,7 +397,7 @@ function PublicProfilePage() {
 
         try {
           // Call tracking API
-          const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/marketing/public/track-visit', {
+          const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/track-visit', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -381,11 +408,12 @@ function PublicProfilePage() {
           const result = await response.json();
           console.log('📊 Track visit response:', result);
 
-          // ⭐ CRITICAL FIX: Store in localStorage AFTER successful tracking
+          // ⭐ Store visit timestamp for deduplication
           if (result.tracked) {
-            console.log('💾 Storing UTM params in localStorage...');
+            console.log('💾 Storing visit timestamp and UTM params...');
+            localStorage.setItem(visitKey, now.toString());
             localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
-            localStorage.setItem('qc_utm_timestamp', Date.now().toString());
+            localStorage.setItem('qc_utm_timestamp', now.toString());
             
             // 🔍 DEBUG: Verify storage
             const stored = localStorage.getItem('qc_utm_params');
@@ -401,7 +429,7 @@ function PublicProfilePage() {
           // This ensures attribution still works if backend is temporarily down
           console.log('💾 Storing UTM params anyway (API failed)...');
           localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
-          localStorage.setItem('qc_utm_timestamp', Date.now().toString());
+          localStorage.setItem('qc_utm_timestamp', now.toString());
         }
       } else {
         console.log('ℹ️ No UTM params in URL, skipping tracking');
