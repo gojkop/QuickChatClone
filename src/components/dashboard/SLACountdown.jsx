@@ -2,6 +2,8 @@
 // ULTRA COMPACT MOBILE: Single line design, full info on desktop
 
 import React, { useState, useEffect } from 'react';
+import { Clock, AlertTriangle, AlertOctagon, Timer } from 'lucide-react';
+
 
 function SLACountdown({ question, expert, className = '' }) {
   const [timeLeft, setTimeLeft] = useState(null);
@@ -50,44 +52,44 @@ function SLACountdown({ question, expert, className = '' }) {
 
   if (!timeLeft) return null;
 
-  const statusConfig = {
-    normal: {
-      bg: 'from-blue-50 to-indigo-50',
-      border: 'border-blue-200',
-      icon: '⏰',
-      iconColor: 'text-blue-600',
-      textColor: 'text-blue-900',
-      badgeBg: 'bg-blue-100',
-      badgeText: 'text-blue-700'
-    },
-    warning: {
-      bg: 'from-amber-50 to-orange-50',
-      border: 'border-amber-200',
-      icon: '⚠️',
-      iconColor: 'text-amber-600',
-      textColor: 'text-amber-900',
-      badgeBg: 'bg-amber-100',
-      badgeText: 'text-amber-700'
-    },
-    urgent: {
-      bg: 'from-red-50 to-rose-50',
-      border: 'border-red-200',
-      icon: '🚨',
-      iconColor: 'text-red-600',
-      textColor: 'text-red-900',
-      badgeBg: 'bg-red-100',
-      badgeText: 'text-red-700'
-    },
-    overdue: {
-      bg: 'from-red-100 to-rose-100',
-      border: 'border-red-300',
-      icon: '⏱️',
-      iconColor: 'text-red-700',
-      textColor: 'text-red-900',
-      badgeBg: 'bg-red-200',
-      badgeText: 'text-red-800'
-    }
-  };
+ const statusConfig = {
+  normal: {
+    bg: 'from-blue-50 to-indigo-50',
+    border: 'border-blue-200',
+    icon: Clock,
+    iconColor: 'text-blue-600',
+    textColor: 'text-blue-900',
+    badgeBg: 'bg-blue-100',
+    badgeText: 'text-blue-700'
+  },
+  warning: {
+    bg: 'from-amber-50 to-orange-50',
+    border: 'border-amber-200',
+    icon: AlertTriangle,
+    iconColor: 'text-amber-600',
+    textColor: 'text-amber-900',
+    badgeBg: 'bg-amber-100',
+    badgeText: 'text-amber-700'
+  },
+  urgent: {
+    bg: 'from-red-50 to-rose-50',
+    border: 'border-red-200',
+    icon: AlertOctagon,
+    iconColor: 'text-red-600',
+    textColor: 'text-red-900',
+    badgeBg: 'bg-red-100',
+    badgeText: 'text-red-700'
+  },
+  overdue: {
+    bg: 'from-red-100 to-rose-100',
+    border: 'border-red-300',
+    icon: Timer,
+    iconColor: 'text-red-700',
+    textColor: 'text-red-900',
+    badgeBg: 'bg-red-200',
+    badgeText: 'text-red-800'
+  }
+};
 
   const config = statusConfig[status];
 
@@ -96,7 +98,7 @@ function SLACountdown({ question, expert, className = '' }) {
       {/* MOBILE: Ultra compact single line */}
       <div className="sm:hidden px-3 py-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm flex-shrink-0">{config.icon}</span>
+            <config.icon className={`w-4 h-4 flex-shrink-0 ${config.iconColor}`} />
           <span className={`text-xs font-bold ${config.textColor} truncate`}>
             {timeLeft.isOverdue ? 'SLA Overdue' : 'Due'}
           </span>
@@ -116,7 +118,7 @@ function SLACountdown({ question, expert, className = '' }) {
         <div className="flex items-center gap-3">
           {/* Icon */}
           <div className={`w-12 h-12 ${config.badgeBg} rounded-full flex items-center justify-center flex-shrink-0`}>
-            <span className="text-2xl">{config.icon}</span>
+            <config.icon className={`w-6 h-6 ${config.iconColor}`} />
           </div>
 
           {/* Content */}
