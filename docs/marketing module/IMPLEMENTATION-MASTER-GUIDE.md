@@ -35,7 +35,7 @@ Follow these guides in order:
 - `GET /marketing/traffic-sources` - Traffic breakdown
 - `GET /marketing/share-templates` - Pre-filled templates
 - `GET /marketing/insights` - Conversion insights
-- `POST /public/track-visit` - Track UTM visits (public)
+- `POST /marketing/public/track-visit` - Track UTM visits (public)
 
 ### [Step 4: Frontend Integration →](./IMPLEMENTATION-STEP-4-FRONTEND.md)
 **Time:** 2-4 hours
@@ -91,7 +91,7 @@ User visits /u/handle?utm_source=linkedin&utm_campaign=launch
     ↓
 Frontend detects UTM params
     ↓
-POST /public/track-visit (fire-and-forget)
+POST /marketing/public/track-visit (fire-and-forget)
     ↓
 Xano: Find or create campaign → Log visit → Update metrics
     ↓
@@ -184,7 +184,7 @@ GET /marketing/campaigns → Returns campaigns with metrics
 **Solution:** Check authentication middleware is added, verify JWT token is valid
 
 ### Issue: UTM tracking not logging visits
-**Solution:** Verify `/public/track-visit` has NO authentication, check CORS settings
+**Solution:** Verify `/marketing/public/track-visit` has NO authentication, check CORS settings
 
 ### Issue: Metrics stay at 0
 **Solution:** Test `update_campaign_metrics()` manually, check relationships are loaded

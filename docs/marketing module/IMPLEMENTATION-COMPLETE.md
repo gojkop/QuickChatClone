@@ -46,13 +46,13 @@ The Marketing Module is now fully implemented with backend APIs, frontend integr
 5. **GET /marketing/insights** - Performance insights & recommendations
 
 **Public Endpoint**:
-6. **POST /public/track-visit** - Track UTM visits (no auth required)
+6. **POST /marketing/public/track-visit** - Track UTM visits (no auth required)
 
 ### 4. Frontend Integration
 
 **PublicProfilePage.jsx:**
 - Automatically extracts UTM parameters from URL
-- Calls `/public/track-visit` on page load
+- Calls `/marketing/public/track-visit` on page load
 - Tracks: utm_source, utm_campaign, utm_medium, utm_content
 
 **useMarketing.js hook:**
@@ -109,7 +109,7 @@ Response:
 2. **Expert shares profile link** with UTM parameters
 3. **Visitor clicks link** → UTM params in URL
 4. **PublicProfilePage loads** → Extracts UTM params
-5. **Track visit** → POST /public/track-visit (no auth)
+5. **Track visit** → POST /marketing/public/track-visit (no auth)
 6. **Visit logged** → `campaign_visits` table
 7. **Metrics updated** → Via `update_campaign_metrics()`
 

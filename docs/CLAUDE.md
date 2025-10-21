@@ -325,7 +325,7 @@ The Marketing Module enables experts to track campaign performance, understand t
 2. Expert shares profile link with UTM parameters
 3. Visitor clicks link → PublicProfilePage loads
 4. Frontend extracts UTM params from URL
-5. POST /public/track-visit logs visit (no auth required)
+5. POST /marketing/public/track-visit logs visit (no auth required)
 6. Visit stored in `campaign_visits` table
 7. Metrics updated in `utm_campaigns` table
 
@@ -345,7 +345,7 @@ The Marketing Module enables experts to track campaign performance, understand t
 - GET /marketing/insights - Performance insights & recommendations
 
 **Public (no auth):**
-- POST /public/track-visit - Track UTM visits from public profile
+- POST /marketing/public/track-visit - Track UTM visits from public profile
 
 ### Xano Functions
 
@@ -362,7 +362,7 @@ The Marketing Module enables experts to track campaign performance, understand t
 
 **PublicProfilePage.jsx:**
 - Automatically extracts UTM parameters on page load
-- Calls `/public/track-visit` to log visit
+- Calls `/marketing/public/track-visit` to log visit
 - Supports: utm_source, utm_campaign, utm_medium, utm_content
 
 **useMarketing.js hook:**

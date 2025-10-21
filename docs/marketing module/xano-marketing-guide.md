@@ -609,7 +609,7 @@ return {
 
 1. **API** → **Add Endpoint**
 2. Method: **POST**
-3. Path: `/public/track-visit`
+3. Path: `/marketing/public/track-visit`
 4. Authentication: **NONE** (Public endpoint)
 5. **Add Inputs:**
    - `expert_handle` (Text, Required)
@@ -735,7 +735,7 @@ useEffect(() => {
   };
   
   if (utmParams.utm_source && utmParams.utm_campaign) {
-    apiClient.post('/public/track-visit', utmParams)
+    apiClient.post('/marketing/public/track-visit', utmParams)
       .catch(err => console.log('Tracking failed:', err));
     
     localStorage.setItem('utm_params', JSON.stringify(utmParams));
@@ -801,7 +801,7 @@ Expected: Array of campaigns
 
 **Test 3: Track Visit**
 ```
-POST /public/track-visit
+POST /marketing/public/track-visit
 {
   "expert_handle": "test-handle",
   "utm_source": "linkedin",
@@ -847,7 +847,7 @@ Expected: { tracked: true }
 → Ensure expert_profile exists for auth user
 
 **UTM tracking not working**
-→ Verify `/public/track-visit` has no auth required
+→ Verify `/marketing/public/track-visit` has no auth required
 
 **Conversion rate always 0**
 → Check `link_question_to_campaign` is called

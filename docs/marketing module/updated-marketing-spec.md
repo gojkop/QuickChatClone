@@ -315,7 +315,7 @@ useEffect(() => {
   
   if (utmParams.source && utmParams.campaign) {
     // Fire and forget
-    apiClient.post('/public/track-visit', {
+    apiClient.post('/marketing/public/track-visit', {
       expert_handle: handle,
       ...utmParams
     }).catch(err => console.log('Tracking failed', err));
@@ -613,7 +613,7 @@ Lands on /u/expert?utm_source=linkedin&utm_campaign=launch
     ↓
 Frontend detects UTM params
     ↓
-POST /public/track-visit (fire and forget)
+POST /marketing/public/track-visit (fire and forget)
     ↓
 Xano: track_campaign_visit()
     ↓

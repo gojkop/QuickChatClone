@@ -71,7 +71,7 @@ campaign_visits
 5. GET /marketing/insights
 
 **Public** (`api:BQW1GS7L`):
-6. POST /public/track-visit
+6. POST /marketing/public/track-visit
 
 ### Frontend Components
 
@@ -110,7 +110,7 @@ For future reference, the marketing module can be found by searching for:
 - "campaign_visits"
 - "UTM tracking"
 - "/marketing/campaigns"
-- "/public/track-visit"
+- "/marketing/public/track-visit"
 - "useMarketing"
 - "PublicProfilePage UTM"
 

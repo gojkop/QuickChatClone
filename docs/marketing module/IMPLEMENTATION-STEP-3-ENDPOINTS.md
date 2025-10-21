@@ -487,7 +487,7 @@ Track UTM visits from public profile page (no auth required).
 
 ### Configuration
 1. Method: **POST**
-2. Path: `/public/track-visit`
+2. Path: `/marketing/public/track-visit`
 3. **Authentication:** NONE (Public endpoint)
 
 ### Inputs
@@ -623,7 +623,7 @@ return {
 
 ### Testing
 ```bash
-POST /public/track-visit
+POST /marketing/public/track-visit
 Content-Type: application/json
 
 {

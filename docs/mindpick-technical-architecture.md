@@ -309,7 +309,7 @@ admin/
 3. Expert shares link → https://mindpick.me/u/handle?utm_source=...
 4. Visitor clicks → PublicProfilePage loads
 5. Frontend extracts → UTM params from URL
-6. Track visit → POST /public/track-visit (no auth)
+6. Track visit → POST /marketing/public/track-visit (no auth)
 7. Xano stores → campaign_visits table
 8. Update metrics → update_campaign_metrics()
 9. Expert views → GET /marketing/campaigns (with analytics)
@@ -706,7 +706,7 @@ Expert → POST /marketing/campaigns → utm_campaigns table
 
 Visit Tracking:
 Visitor → PublicProfilePage (with UTM params) →
-POST /public/track-visit → campaign_visits table →
+POST /marketing/public/track-visit → campaign_visits table →
 update_campaign_metrics() → utm_campaigns updated
 
 Analytics:
@@ -728,7 +728,7 @@ Returns campaigns with metrics (visits, conversions, revenue)
 
 ### Implementation Notes
 
-- **Public endpoint:** `/public/track-visit` requires no authentication
+- **Public endpoint:** `/marketing/public/track-visit` requires no authentication
 - **Auto-creation:** Campaigns auto-created if visitor arrives with new UTM combo
 - **Privacy:** IP addresses are hashed, not stored raw
 - **Metrics:** Updated via Xano function `update_campaign_metrics()`

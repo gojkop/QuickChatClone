@@ -39,7 +39,7 @@ useEffect(() => {
     if (utmParams.utm_source && utmParams.utm_campaign) {
       try {
         // Fire and forget (don't block page load)
-        await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/track-visit', {
+        await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/marketing/public/track-visit', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -296,7 +296,7 @@ catch (err) {
 ### UTM Tracking Not Working
 **Issue:** No visits logged in `campaign_visits`
 **Fix:**
-1. Check `/public/track-visit` endpoint has no auth
+1. Check `/marketing/public/track-visit` endpoint has no auth
 2. Verify CORS is enabled for your domain
 3. Check browser console for errors
 

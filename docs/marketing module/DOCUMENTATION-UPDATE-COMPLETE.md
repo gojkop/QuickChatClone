@@ -39,7 +39,7 @@ All project documentation has been comprehensively updated to include the Market
   - `GET /marketing/traffic-sources` - Traffic breakdown
   - `GET /marketing/share-templates` - Social templates
   - `GET /marketing/insights` - Performance insights
-  - `POST /public/track-visit` - Public UTM tracking
+  - `POST /marketing/public/track-visit` - Public UTM tracking
 - Added real response examples with actual data
 - Added `utm_campaigns` and `campaign_visits` table schemas (lines 875-911)
 - Updated Environment Variables section with:
@@ -104,7 +104,7 @@ All project documentation has been comprehensively updated to include the Market
    - Includes: Total metrics, best performer, actionable tips
 
 #### Public Endpoints (api:BQW1GS7L)
-6. **POST /public/track-visit**
+6. **POST /marketing/public/track-visit**
    - Tracks: UTM visits to expert profiles
    - No authentication required
    - Auto-creates campaigns if needed
@@ -157,7 +157,7 @@ const {
 
 **PublicProfilePage.jsx Integration:**
 - Automatically extracts UTM parameters from URL on page load
-- Calls `/public/track-visit` to log visit
+- Calls `/marketing/public/track-visit` to log visit
 - No user interaction required
 
 ### Environment Variables
@@ -254,7 +254,7 @@ For future reference, search for:
 - "campaign_visits"
 - "UTM tracking"
 - "/marketing/campaigns"
-- "/public/track-visit"
+- "/marketing/public/track-visit"
 - "useMarketing"
 - "update_campaign_metrics"
 - "link_question_to_campaign"

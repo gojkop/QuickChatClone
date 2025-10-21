@@ -842,7 +842,7 @@ Get performance insights and recommendations.
 - Provides actionable recommendations
 - Compares against platform benchmarks
 
-### `POST /public/track-visit`
+### `POST /marketing/public/track-visit`
 Track UTM visit to expert profile (public, no authentication).
 
 **API Group:** Public API (`api:BQW1GS7L`)
@@ -1170,7 +1170,7 @@ VITE_CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
 - ✅ Documented UTM tracking flow
 - ✅ Added Xano environment variables (`APP_URL`)
 - ✅ Updated endpoint specifications with real response examples
-- ✅ Added `/public/track-visit` public endpoint documentation
+- ✅ Added `/marketing/public/track-visit` public endpoint documentation
 - ✅ Removed redundant `XANO_MEDIA_BASE_URL` (same as `XANO_PUBLIC_API_URL`)
 
 ### 2025-10-13 (Updated)
