@@ -6,7 +6,7 @@ function FaqPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
-  // Comprehensive FAQ data
+  // Comprehensive FAQ data with CORRECTED payment flow
   const faqData = {
     'getting-started': {
       title: 'Getting Started',
@@ -51,16 +51,20 @@ function FaqPage() {
           a: "Payments are processed via Stripe Connect and sent directly to your bank account automatically. Stripe handles all payment processing securely. Payouts typically arrive within 2-7 business days depending on your bank and country."
         },
         {
+          q: "When is payment actually charged?",
+          a: "When an asker submits a question, their payment method is authorized and the funds are reserved (not charged yet). The actual charge only happens after you submit your answer. If you decline the question or miss your SLA, the reserved funds are released back to the asker automatically—they're never charged."
+        },
+        {
           q: "Can I change my price later?",
           a: "Yes! You can update your price per question anytime from your dashboard. Changes apply to new questions immediately. Existing pending questions keep their original price."
         },
         {
           q: "What if I miss my SLA (Service Level Agreement)?",
-          a: "If you don't answer within your stated timeframe (e.g., 24 hours, 48 hours), the asker receives an automatic full refund. This policy builds trust with your audience and keeps experts accountable. Set a realistic SLA you can consistently meet."
+          a: "If you don't answer within your stated timeframe (e.g., 24 hours, 48 hours), the payment reservation is automatically released and the asker is not charged. This policy builds trust with your audience and keeps experts accountable. Set a realistic SLA you can consistently meet."
         },
         {
-          q: "Can I offer refunds manually?",
-          a: "Yes, you can issue refunds from your dashboard if needed. However, the automatic SLA refund system ensures trust and fairness for both parties."
+          q: "Can I offer refunds after answering?",
+          a: "Once you've submitted an answer and the payment has been charged, refunds must be handled through support. However, you can always decline a question before answering to avoid charging the asker."
         }
       ]
     },
@@ -81,12 +85,16 @@ function FaqPage() {
           a: "You can record a video or voice response directly in your dashboard, or type a text answer if you prefer. Answer when it's convenient for you—that's the beauty of async! You control your schedule, no meetings required."
         },
         {
-          q: "Can I decline a question after it's paid?",
-          a: "Once payment is received, you're committed to answering (or the asker gets auto-refunded if you miss your SLA). However, you control your 'accepting questions' status in your dashboard. Turn it off when you're at capacity, on vacation, or unavailable."
+          q: "Can I decline a question after it's submitted?",
+          a: "Yes! You can manually decline any question before answering it. When you decline, the payment authorization is released and the asker is not charged. You can also let your SLA timer expire, which automatically releases the payment. Use the 'accepting questions' toggle in your dashboard to pause new questions when you're unavailable."
         },
         {
           q: "What happens if a question is outside my expertise?",
-          a: "If you receive a question you can't answer well, contact support immediately. We can help facilitate a refund. It's better to decline gracefully than provide poor advice. Consider clarifying your expertise areas in your bio to reduce off-topic questions."
+          a: "Simply decline the question from your dashboard. The asker won't be charged and they can ask someone else. It's better to decline than provide subpar advice. You can also clarify your expertise areas in your bio and use expertise tags to help askers understand what you're best suited to answer."
+        },
+        {
+          q: "What if I need more than my SLA time to answer?",
+          a: "If you need more time, you have two options: 1) Contact the asker directly (if they provided contact info) to let them know, or 2) Set a longer SLA in your settings to give yourself more breathing room. Remember, your SLA is a commitment, so choose a timeframe you can reliably meet."
         }
       ]
     },
@@ -99,16 +107,20 @@ function FaqPage() {
       ),
       questions: [
         {
+          q: "When am I charged for my question?",
+          a: "Your payment method is authorized when you submit your question, but you're only charged after the expert submits their answer. If the expert declines your question or doesn't answer within their SLA, you're not charged at all—the authorization is released automatically."
+        },
+        {
           q: "Is my payment secure?",
           a: "Yes. All payments are processed by Stripe, a global leader in online payments trusted by millions of businesses. mindPick never sees or stores your credit card information. Your payment data is encrypted and secure."
         },
         {
           q: "When will I get my answer?",
-          a: "Each expert sets their own SLA (Service Level Agreement), typically 24-48 hours. You'll see this clearly displayed on their profile before you pay. Most experts respond faster than their stated SLA."
+          a: "Each expert sets their own SLA (Service Level Agreement), typically 24-48 hours. You'll see this clearly displayed on their profile before you submit your question. Most experts respond faster than their stated SLA. If they don't respond in time, you won't be charged."
         },
         {
-          q: "What if the expert doesn't answer in time?",
-          a: "If the expert misses their stated SLA, you receive an automatic full refund to your original payment method. No action needed from you—the system handles it automatically."
+          q: "What if the expert doesn't answer?",
+          a: "If the expert declines your question or misses their SLA, the payment authorization is automatically released and you're not charged. You'll receive a notification and can ask another expert or resubmit your question."
         },
         {
           q: "Can I ask follow-up questions?",
