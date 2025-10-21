@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     console.log('Fetching expert profile...');
     
     const XANO_PUBLIC_BASE_URL = process.env.XANO_PUBLIC_BASE_URL || 
-                                   'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
+                                  'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
     
     const profileResponse = await fetch(
       `${XANO_PUBLIC_BASE_URL}/public/profile?handle=${encodeURIComponent(expertHandle)}`
@@ -290,9 +290,8 @@ export default async function handler(req, res) {
       });
       
       // Call Xano function to link question to campaign
-      const XANO_BASE_URL = process.env.XANO_BASE_URL || 
-                           'https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ';
-      
+      // Note: This endpoint should be on PUBLIC API (like /public/track-visit)
+      // because it's called during question creation before authentication
       const linkResponse = await fetch(
         `${XANO_PUBLIC_BASE_URL}/marketing/link-question`,
         {
@@ -317,7 +316,24 @@ export default async function handler(req, res) {
         }
       } else {
         const errorText = await linkResponse.text();
-        console.warn('⚠️ Campaign linking failed:', linkResponse.status, errorText);
+        
+        // Parse error to check if it's expected (no campaign) or unexpected
+        try {
+          const errorData = JSON.parse(errorText);
+          
+          // Expected errors (no campaign visit found) - log as info
+          if (linkResponse.status === 400 && 
+              (errorData.message?.includes('Missing param: campaign_id') || 
+               errorData.message?.includes('No recent visit found'))) {
+            console.log('ℹ️ No campaign attribution: User did not come from a UTM campaign link');
+          } else {
+            // Unexpected errors - log as warning
+            console.warn('⚠️ Campaign linking failed unexpectedly:', linkResponse.status, errorText);
+          }
+        } catch (parseError) {
+          // If we can't parse the error, log it as warning
+          console.warn('⚠️ Campaign linking failed:', linkResponse.status, errorText);
+        }
       }
       
     } catch (linkError) {
