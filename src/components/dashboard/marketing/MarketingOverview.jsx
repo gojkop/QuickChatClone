@@ -50,7 +50,7 @@ export default function MarketingOverview({
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Key Metrics - NOW ACCURATE */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Visits */}
         <div className="bg-surface rounded-xl shadow-elev-2 border border-gray-200 p-3 sm:p-6">
           <div className="flex items-center justify-between mb-2">
