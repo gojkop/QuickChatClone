@@ -2,7 +2,6 @@
 // Daily digest email for experts with pending questions
 // Runs daily at 8:00 AM UTC
 
-import { xanoGet } from '../lib/xano/client.js';
 import { sendDailyDigestEmail } from '../lib/zeptomail.js';
 
 /**
@@ -54,11 +53,37 @@ export default async function handler(req, res) {
     // Step 1: Fetch all pending questions with expert data (single optimized query)
     console.log('📦 Fetching pending questions from Xano...');
     
-    const questions = await xanoGet('/internal/digest/pending-questions', {}, {
+    const XANO_PUBLIC_API_URL = process.env.XANO_PUBLIC_API_URL;
+    const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
+    
+    if (!XANO_PUBLIC_API_URL) {
+      throw new Error('XANO_PUBLIC_API_URL not configured');
+    }
+    
+    if (!XANO_INTERNAL_API_KEY) {
+      throw new Error('XANO_INTERNAL_API_KEY not configured');
+    }
+    
+    const internalEndpoint = `${XANO_PUBLIC_API_URL}/internal/digest/pending-questions?x_api_key=${XANO_INTERNAL_API_KEY}`;
+    
+    console.log('📡 Calling endpoint:', `${XANO_PUBLIC_API_URL}/internal/digest/pending-questions`);
+    
+    const response = await fetch(internalEndpoint, {
+      method: 'GET',
       headers: {
-        'x-api-key': process.env.XANO_INTERNAL_API_KEY
-      }
+        'Content-Type': 'application/json',
+      },
     });
+    
+    console.log('📡 Xano response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Xano error response:', errorText);
+      throw new Error(`Failed to fetch pending questions from Xano: ${response.status} - ${errorText}`);
+    }
+    
+    const questions = await response.json();
     
     console.log(`✅ Fetched ${questions.length} pending questions from database`);
     
