@@ -75,6 +75,41 @@ export default async function handler(req, res) {
     const answerId = answer.id;
     console.log('✅ Answer created:', answerId);
 
+    // ==========================================
+    // NEW: Update question with answered_at timestamp
+    // ==========================================
+    console.log('Updating question answered_at timestamp...');
+    try {
+      const updateResponse = await fetch(
+        `${process.env.XANO_BASE_URL}/question/${question_id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(req.headers.authorization && {
+              Authorization: req.headers.authorization,
+            }),
+          },
+          body: JSON.stringify({
+            answered_at: Date.now(),
+            status: 'answered'
+          }),
+        }
+      );
+
+      if (updateResponse.ok) {
+        console.log('✅ Question updated with answered_at timestamp');
+      } else {
+        const errorText = await updateResponse.text();
+        console.error('❌ Failed to update question answered_at:', updateResponse.status, errorText);
+        // Don't fail the entire request - answer was created successfully
+      }
+    } catch (updateErr) {
+      console.error('❌ Error updating question answered_at:', updateErr.message);
+      // Don't fail the entire request - answer was created successfully
+    }
+    // ==========================================
+
     // 2. Extract question data from answer response (embedded by Xano)
     const questionData = answer.question || answer._question;
 
