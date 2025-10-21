@@ -321,7 +321,6 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                       <div>
                         <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
                           Daily Question Digest
-                          <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Phase 2</span>
                         </div>
                         <div className="text-xs text-gray-600">Get a daily email of pending questions (8 AM UTC)</div>
                       </div>
