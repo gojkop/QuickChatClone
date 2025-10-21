@@ -6,6 +6,7 @@ import CharitySelector from './CharitySelector';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
+import { Clock, DollarSign, Coins, Calendar, CalendarDays } from 'lucide-react';
 
 function SettingsModal({ isOpen, onClose, profile, onSave }) {
   const [formData, setFormData] = useState(profile);
@@ -548,16 +549,18 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
                 <span className="text-xs font-normal text-gray-500">(Optional)</span>
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  { key: 'twitter', placeholder: 'twitter.com/username', icon: '𝕏', label: 'Twitter / X' },
-                  { key: 'linkedin', placeholder: 'linkedin.com/in/username', icon: 'in', label: 'LinkedIn' },
-                  { key: 'github', placeholder: 'github.com/username', icon: '<>', label: 'GitHub' },
-                  { key: 'website', placeholder: 'yourwebsite.com', icon: '🌐', label: 'Website' }
-                ].map(({ key, placeholder, icon, label }) => (
+{[
+  { key: 'twitter', placeholder: 'twitter.com/username', icon: Twitter, label: 'Twitter / X' },
+  { key: 'linkedin', placeholder: 'linkedin.com/in/username', icon: Linkedin, label: 'LinkedIn' },
+  { key: 'github', placeholder: 'github.com/username', icon: Github, label: 'GitHub' },
+  { key: 'website', placeholder: 'yourwebsite.com', icon: Globe, label: 'Website' }
+].map(({ key, placeholder, icon: IconComponent, label }) => (
                   <div key={key}>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">{label}</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium w-5 text-center">{icon}</span>
+<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 flex items-center justify-center w-5">
+  <IconComponent className="w-4 h-4" />
+</span>
                       <input 
                         type="text" 
                         value={currentSocials[key] || ''} 
