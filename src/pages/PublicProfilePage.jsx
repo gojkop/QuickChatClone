@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Heart, Building2, BookOpen, Trees, Droplet, Sparkles } from 'lucide-react';
 import apiClient from '@/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -108,15 +109,15 @@ const SocialLink = ({ platform, url }) => {
 
 // Social Impact Card
 const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, currency }) => {
-  const charityInfo = {
-    'unicef': { name: 'UNICEF', icon: '💖' },
-    'doctors-without-borders': { name: 'Doctors Without Borders', icon: '🏥' },
-    'red-cross': { name: 'Red Cross', icon: '❤️' },
-    'world-wildlife': { name: 'World Wildlife Fund', icon: '🐼' },
-    'malala-fund': { name: 'Malala Fund', icon: '📚' },
-    'wwf': { name: 'WWF', icon: '🐼' },
-    'charity-water': { name: 'charity: water', icon: '💧' }
-  };
+const charityInfo = {
+  'unicef': { name: 'UNICEF', icon: Heart, color: 'text-pink-600' },
+  'doctors-without-borders': { name: 'Doctors Without Borders', icon: Building2, color: 'text-red-600' },
+  'red-cross': { name: 'Red Cross', icon: Heart, color: 'text-red-600' },
+  'world-wildlife': { name: 'World Wildlife Fund', icon: Trees, color: 'text-green-600' },
+  'malala-fund': { name: 'Malala Fund', icon: BookOpen, color: 'text-pink-600' },
+  'wwf': { name: 'WWF', icon: Trees, color: 'text-green-600' },
+  'charity-water': { name: 'charity: water', icon: Droplet, color: 'text-cyan-600' }
+};
 
   const charity = charityInfo[selectedCharity];
 
@@ -134,13 +135,13 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
         <div className="absolute bottom-0 left-0 w-14 h-14 bg-yellow-200/20 rounded-full -ml-7 -mb-7"></div>
         <div className="relative">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center text-lg">
-              {charity.icon}
+            <div className="flex-shrink-0 w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center">
+                {React.createElement(charity.icon, { className: `w-5 h-5 ${charity.color}` })}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-bold text-amber-900">100% Donation</span>
-                <span className="text-base">✨</span>
+                <Sparkles className="w-4 h-4 text-amber-600" />
               </div>
               <p className="text-xs text-amber-800 leading-relaxed font-medium">
                 All earnings ({formatPrice(donationAmount, currency)}) go to <span className="font-bold">{charity.name}</span>. Your payment directly supports their mission.
@@ -155,9 +156,9 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
   return (
     <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border border-orange-200 shadow-sm">
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center text-lg">
-          {charity.icon}
-        </div>
+            <div className="flex-shrink-0 w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center">
+             {React.createElement(charity.icon, { className: `w-5 h-5 ${charity.color}` })}
+            </div>
         <div className="flex-1">
           <p className="text-xs text-gray-700 leading-relaxed">
             A <span className="font-bold text-gray-900">{charityPercentage}% donation</span> ({formatPrice(donationAmount, currency)}) of your payment goes to <span className="font-bold text-gray-900">{charity.name}</span>.
@@ -188,7 +189,7 @@ const CharityHeroBadge = () => {
         <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
       </svg>
       <span className="text-xs font-bold text-amber-800">100% to Charity</span>
-      <span className="text-sm">✨</span>
+<Sparkles className="w-3.5 h-3.5 text-amber-600" />
     </div>
   );
 };
