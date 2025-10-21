@@ -91,6 +91,19 @@ export default async function handler(req, res) {
     console.log('🔍 Response keys:', Object.keys(responseData || {}));
     console.log('🔍 Sample response:', JSON.stringify(responseData).substring(0, 500));
     
+    // Handle Xano "Stop & Debug" responses (when no data found)
+    if (responseData.statement === 'Stop & Debug') {
+      console.log('⚠️ Xano debug statement triggered:', responseData.payload);
+      console.log('✨ No pending questions to send (no experts with daily_digest_enabled=true)');
+      return res.json({
+        success: true,
+        message: responseData.payload || 'No pending questions to send',
+        sent: 0,
+        failed: 0,
+        execution_time_seconds: Math.round((Date.now() - startTime) / 1000)
+      });
+    }
+    
     // Handle different Xano response formats
     let questions;
     if (Array.isArray(responseData)) {
@@ -280,7 +293,7 @@ export default async function handler(req, res) {
     console.error('');
     console.error('═══════════════════════════════════════');
     console.error('❌ Daily digest FAILED');
-    console.error(`⏱️  Execution time: ${executionTime}s`);
+    console.log(`⏱️  Execution time: ${executionTime}s`);
     console.error(`💥 Error: ${error.message}`);
     console.error('═══════════════════════════════════════');
     console.error('Stack trace:', error.stack);
