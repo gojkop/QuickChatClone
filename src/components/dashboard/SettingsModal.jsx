@@ -574,14 +574,14 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
             </div>
 
             {/* Charity */}
-            <div className="pt-6 border-t border-gray-200">
-              <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-1 h-5 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></span>
-                Give Back to Charity
-                <span className="text-xs font-normal text-gray-500">(Optional)</span>
-              </h4>
-              
-              <div className="space-y-4">
+<div>
+  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+    <span className="w-1 h-5 bg-gradient-to-b from-indigo-600 to-violet-600 rounded-full"></span>
+    Give Back to Charity
+    <span className="text-xs font-normal text-gray-500">(Optional)</span>
+  </h4>
+  
+  <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Donation Percentage</label>
                   <CharityDonationSelector 
