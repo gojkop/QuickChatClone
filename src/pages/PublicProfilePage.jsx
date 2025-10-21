@@ -941,11 +941,11 @@ function PublicProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 flex justify-center items-start sm:items-center p-4 pt-20 sm:p-6">
+<div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 flex justify-center items-start sm:items-center p-4 pt-8 sm:pt-20 sm:p-6">
       <div className="w-full max-w-lg">
         {renderContent()}
         
-        <div className="text-center mt-6 mb-6">
+        <div className="text-center mt-6 mb-6 pb-32 md:pb-0">
           <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors group">
             <span>Powered by</span>
             <span className="font-bold bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent">
