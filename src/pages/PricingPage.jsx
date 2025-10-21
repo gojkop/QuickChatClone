@@ -50,12 +50,10 @@ function PricingPage() {
                   </p>
                 </div>
 
-                {/* UPDATED CTA */}
                 <Link 
                   to={isAuthenticated ? "/expert" : "/signin"} 
                   className="block w-full text-center py-3 px-4 rounded-lg font-semibold transition-all duration-200 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
                 >
-                  {/* CHANGED: Added clarity and removed card requirement */}
                   {isAuthenticated ? "Go to Dashboard" : "Start Free • No Card Required"}
                 </Link>
 
@@ -115,12 +113,10 @@ function PricingPage() {
                   </p>
                 </div>
 
-                {/* UPDATED CTA */}
                 <Link 
                   to={isAuthenticated ? "/expert" : "/signin?plan=pro"} 
                   className="group block w-full text-center py-3 px-4 rounded-lg font-semibold transition duration-base ease-in-out bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
-                  {/* CHANGED: More action-oriented */}
                   {isAuthenticated ? "Upgrade to Pro" : "Start with Pro"}
                 </Link>
 
@@ -166,7 +162,7 @@ function PricingPage() {
         </div>
       </section>
 
-      {/* Comparison Table (Optional - Compact) */}
+      {/* Comparison Table */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
@@ -209,6 +205,56 @@ function PricingPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* NEW: Trust Badges Section */}
+      <section className="py-12 bg-white border-y border-gray-100">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            <p className="text-sm text-gray-600 mb-6 text-center font-medium">
+              Trusted payment processing and security
+            </p>
+            <div className="flex flex-wrap justify-center items-center gap-8">
+              {/* Stripe Logo */}
+              <div className="flex flex-col items-center gap-2">
+                <svg className="h-8 opacity-70 hover:opacity-100 transition-opacity" viewBox="0 0 60 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-4.7L32.37 0v3.36l-4.13.88V.88zm-4.32 9.35v9.79H19.8V5.57h3.7l.12 1.22c1-1.77 3.07-1.41 3.62-1.22v3.79c-.52-.17-2.29-.43-3.32.86zm-8.55 4.72c0 2.43 2.6 1.68 3.12 1.46v3.36c-.55.3-1.54.54-2.89.54a4.15 4.15 0 0 1-4.27-4.24l.01-13.17 4.02-.86v3.54h3.14V9.1h-3.13v5.85zm-4.91.7c0 2.97-2.31 4.66-5.73 4.66a11.2 11.2 0 0 1-4.46-.93v-3.93c1.38.75 3.1 1.31 4.46 1.31.92 0 1.53-.24 1.53-1C6.26 13.77 0 14.51 0 9.95 0 7.04 2.28 5.3 5.62 5.3c1.36 0 2.72.2 4.09.75v3.88a9.23 9.23 0 0 0-4.1-1.06c-.86 0-1.44.25-1.44.9 0 1.85 6.29.97 6.29 5.88z" fill="#6772E5"/>
+                </svg>
+                <span className="text-xs text-gray-500">Secure payments</span>
+              </div>
+
+              {/* Security Badges */}
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center justify-center w-12 h-12 bg-green-50 rounded-lg">
+                    <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600 font-medium">SSL Encrypted</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-50 rounded-lg">
+                    <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600 font-medium">GDPR Compliant</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center justify-center w-12 h-12 bg-indigo-50 rounded-lg">
+                    <svg className="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600 font-medium">Money-back SLA</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
