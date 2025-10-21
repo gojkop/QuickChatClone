@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import CampaignModal from './CampaignModal';
 import CampaignCard from './CampaignCard';
+import CampaignDetailsModal from './CampaignDetailsModal';
 
 export default function CampaignList({ campaigns, onCreate }) {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('active');
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const campaignsWithBadges = useMemo(() => {
     if (campaigns.length === 0) return [];
@@ -41,12 +44,20 @@ export default function CampaignList({ campaigns, onCreate }) {
 
   const handleArchive = (campaign) => {
     console.log('Archive campaign:', campaign.id);
-    alert('Archive functionality coming soon!');
+    // TODO: Call API to update campaign status to 'archived'
+    alert('Archive functionality: Update campaign status to "archived" via API');
+  };
+
+  const handlePause = (campaign) => {
+    console.log('Pause/Resume campaign:', campaign.id);
+    // TODO: Call API to toggle campaign status between 'active' and 'paused'
+    const newStatus = campaign.status === 'active' ? 'paused' : 'active';
+    alert(`Update campaign status to "${newStatus}" via API`);
   };
 
   const handleViewDetails = (campaign) => {
-    console.log('View details:', campaign);
-    alert('Campaign details view coming soon!');
+    setSelectedCampaign(campaign);
+    setShowDetailsModal(true);
   };
 
   return (
@@ -174,6 +185,17 @@ export default function CampaignList({ campaigns, onCreate }) {
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onCreate={onCreate}
+      />
+            {/* Campaign Details Modal */}
+      <CampaignDetailsModal
+        campaign={selectedCampaign}
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedCampaign(null);
+        }}
+        onArchive={handleArchive}
+        onPause={handlePause}
       />
     </div>
   );
