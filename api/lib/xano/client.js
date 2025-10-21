@@ -44,7 +44,11 @@ export { xanoClient, xanoPublicClient };
 export async function xanoGet(endpoint, params = {}, options = {}) {
   try {
     const client = options.usePublicApi ? xanoPublicClient : xanoClient;
-    const response = await client.get(endpoint, { params });
+    const config = { 
+      params,
+      ...(options.headers && { headers: options.headers })
+    };
+    const response = await client.get(endpoint, config);
     return response.data;
   } catch (error) {
     console.error(`Xano GET ${endpoint} error:`, error.response?.data || error.message);
