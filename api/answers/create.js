@@ -22,7 +22,6 @@ export default async function handler(req, res) {
     console.log('User ID:', user_id);
 
     // 1. Create answer record in Xano
-    // Use Array.isArray for explicit type checking
     const attachmentsString = Array.isArray(attachments) && attachments.length > 0
       ? JSON.stringify(attachments)
       : null;
@@ -43,7 +42,6 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Pass through authorization if present
           ...(req.headers.authorization && {
             Authorization: req.headers.authorization,
           }),
@@ -56,7 +54,6 @@ export default async function handler(req, res) {
       const errorText = await answerResponse.text();
       console.error('Xano answer creation failed:', errorText);
       
-      // Try to parse error as JSON, fallback to text
       let errorMessage = errorText;
       try {
         const errorJson = JSON.parse(errorText);
@@ -76,37 +73,50 @@ export default async function handler(req, res) {
     console.log('✅ Answer created:', answerId);
 
     // ==========================================
-    // NEW: Update question with answered_at timestamp
+    // UPDATE QUESTION WITH answered_at TIMESTAMP
     // ==========================================
-    console.log('Updating question answered_at timestamp...');
+    console.log('📝 Updating question answered_at timestamp...');
+    console.log('📝 Question ID to update:', question_id);
+
+    // Use PUBLIC API for question updates (not Authentication API!)
+    const publicApiUrl = process.env.XANO_PUBLIC_API_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
+    const updateUrl = `${publicApiUrl}/question/${question_id}`;
+    console.log('📝 Update URL:', updateUrl);
+
+    const updatePayload = {
+      answered_at: Date.now(),
+      status: 'answered'
+    };
+    console.log('📝 Update payload:', JSON.stringify(updatePayload));
+
     try {
-      const updateResponse = await fetch(
-        `${process.env.XANO_BASE_URL}/question/${question_id}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(req.headers.authorization && {
-              Authorization: req.headers.authorization,
-            }),
-          },
-          body: JSON.stringify({
-            answered_at: Date.now(),
-            status: 'answered'
+      const updateResponse = await fetch(updateUrl, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(req.headers.authorization && {
+            Authorization: req.headers.authorization,
           }),
-        }
-      );
+        },
+        body: JSON.stringify(updatePayload),
+      });
+
+      console.log('📝 Update response status:', updateResponse.status);
 
       if (updateResponse.ok) {
-        console.log('✅ Question updated with answered_at timestamp');
+        const updatedQuestion = await updateResponse.json();
+        console.log('✅ Question updated successfully');
+        console.log('✅ answered_at value:', updatedQuestion.answered_at);
+        console.log('✅ status value:', updatedQuestion.status);
       } else {
         const errorText = await updateResponse.text();
-        console.error('❌ Failed to update question answered_at:', updateResponse.status, errorText);
-        // Don't fail the entire request - answer was created successfully
+        console.error('❌ Failed to update question answered_at');
+        console.error('❌ Status code:', updateResponse.status);
+        console.error('❌ Error response:', errorText);
       }
     } catch (updateErr) {
-      console.error('❌ Error updating question answered_at:', updateErr.message);
-      // Don't fail the entire request - answer was created successfully
+      console.error('❌ Exception during question update:', updateErr.message);
+      console.error('❌ Error stack:', updateErr.stack);
     }
     // ==========================================
 
@@ -139,14 +149,13 @@ export default async function handler(req, res) {
             expertName,
             questionTitle,
             questionId: question_id,
-            reviewToken: reviewToken, // Pass review token for /r/{token} link
+            reviewToken: reviewToken,
             answerId: answerId,
           });
           console.log('✅ Answer notification sent successfully');
         } catch (emailErr) {
           console.error('❌ Failed to send answer notification:', emailErr.message);
           console.error('❌ Email error stack:', emailErr.stack);
-          // Don't fail the request if email fails
         }
       } else {
         console.warn('⚠️ No asker email found, skipping notification');
@@ -156,9 +165,8 @@ export default async function handler(req, res) {
 
       // Fallback: Fetch question directly if not embedded
       try {
-        
         const questionResponse = await fetch(
-          `${process.env.XANO_BASE_URL}/question/${question_id}`,
+          `${publicApiUrl}/question/${question_id}`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -172,7 +180,6 @@ export default async function handler(req, res) {
         if (questionResponse.ok) {
           const fetchedQuestionData = await questionResponse.json();
 
-          // Extract data for email
           const reviewToken = fetchedQuestionData.playback_token_hash;
           const expertData = await fetchUserData(user_id);
           const expertName = expertData?.name || 'Your Expert';
@@ -206,10 +213,8 @@ export default async function handler(req, res) {
 
     // 6. Return success response (sanitize sensitive data)
     try {
-      // Remove review token from response to protect asker privacy
       const sanitizedAnswer = JSON.parse(JSON.stringify(answer));
 
-      // Remove review token from embedded question data
       if (sanitizedAnswer.question?.playback_token_hash) {
         delete sanitizedAnswer.question.playback_token_hash;
       }
@@ -223,7 +228,6 @@ export default async function handler(req, res) {
       });
     } catch (sanitizeError) {
       console.error('❌ Error sanitizing response:', sanitizeError);
-      // Fallback: return without sanitization if it fails
       return res.status(200).json({
         success: true,
         data: {
