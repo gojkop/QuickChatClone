@@ -6,7 +6,7 @@ import CharitySelector from './CharitySelector';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
-import { Clock, DollarSign, Coins, Calendar, CalendarDays } from 'lucide-react';
+import { Twitter, Linkedin, Github, Globe } from 'lucide-react';
 
 function SettingsModal({ isOpen, onClose, profile, onSave }) {
   const [formData, setFormData] = useState(profile);
