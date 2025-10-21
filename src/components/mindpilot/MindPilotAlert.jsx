@@ -1,4 +1,5 @@
 import { MindPilotIcon } from './MindPilotIcon';
+import { CheckCircle2, Lightbulb, AlertTriangle, XCircle } from 'lucide-react';
 
 /**
  * MindPilotAlert - Alert box with icon and content
@@ -20,36 +21,41 @@ export function MindPilotAlert({
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/30',
       text: 'text-emerald-500',
-      icon: '✓',
+      icon: CheckCircle2,
     },
     info: {
       bg: 'bg-sky-500/10',
       border: 'border-sky-500/30',
       text: 'text-sky-500',
-      icon: '💡',
+      icon: Lightbulb,
     },
     warning: {
       bg: 'bg-amber-500/10',
       border: 'border-amber-500/30',
       text: 'text-amber-500',
-      icon: '⚠',
+      icon: AlertTriangle,
     },
     error: {
       bg: 'bg-red-500/10',
       border: 'border-red-500/30',
       text: 'text-red-500',
-      icon: '×',
+      icon: XCircle,
     },
   };
 
   const config = variants[variant];
+  const IconComponent = icon || config.icon;
 
   return (
     <div 
       className={`flex items-start gap-4 p-5 rounded-2xl border ${config.bg} ${config.border} ${className}`}
     >
-      <div className={`text-2xl ${config.text} flex-shrink-0`}>
-        {icon || config.icon}
+      <div className={`${config.text} flex-shrink-0`}>
+        {typeof IconComponent === 'function' ? (
+          <IconComponent className="w-6 h-6" />
+        ) : (
+          <span className="text-2xl">{IconComponent}</span>
+        )}
       </div>
       <div className="flex-1">
         <div className={`text-base font-semibold ${config.text} mb-1.5`}>
