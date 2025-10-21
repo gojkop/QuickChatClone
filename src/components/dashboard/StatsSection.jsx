@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import apiClient from '@/api';
 
 const formatCurrency = (cents, currency = 'USD') => {
   const symbols = { USD: '$', EUR: '€', GBP: '£' };
@@ -42,7 +43,7 @@ const StatCard = ({ label, value, subtitle, trend, icon, stars }) => {
         </div>
       )}
       
-      {stars && (
+      {stars !== undefined && stars !== null && (
         <div className="flex items-center gap-0.5 mt-1">
           {[...Array(5)].map((_, i) => (
             <svg
@@ -61,56 +62,158 @@ const StatCard = ({ label, value, subtitle, trend, icon, stars }) => {
 };
 
 const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
-  // ✅ FUTURE: Average response time calculation (currently disabled - using mock data)
-  // const avgResponseTime = useMemo(() => {
-  //   // Ensure we have an array to work with
-  //   const questions = Array.isArray(allQuestions) ? allQuestions : [];
-  //   
-  //   // Filter answered questions that have both timestamps
-  //   const answeredQuestions = questions.filter(q => 
-  //     q.answered_at && 
-  //     q.answered_at > 0 && 
-  //     q.created_at && 
-  //     q.created_at > 0
-  //   );
-  //   
-  //   // If no answered questions, return 0
-  //   if (answeredQuestions.length === 0) return 0;
-  //   
-  //   // Calculate total response time in hours
-  //   const totalResponseTime = answeredQuestions.reduce((sum, q) => {
-  //     // Handle both millisecond and second timestamps
-  //     const createdAt = q.created_at > 4102444800 ? q.created_at : q.created_at * 1000;
-  //     const answeredAt = q.answered_at > 4102444800 ? q.answered_at : q.answered_at * 1000;
-  //     
-  //     // Calculate hours
-  //     const responseTimeHours = (answeredAt - createdAt) / (1000 * 60 * 60);
-  //     
-  //     return sum + responseTimeHours;
-  //   }, 0);
-  //   
-  //   // Return average rounded to 1 decimal place
-  //   return totalResponseTime / answeredQuestions.length;
-  // }, [allQuestions]); // Only recalculates when allQuestions changes
+  const [ratings, setRatings] = useState([]);
+  const [isLoadingRatings, setIsLoadingRatings] = useState(true);
+  const [ratingsEndpointExists, setRatingsEndpointExists] = useState(true);
 
-  // 📊 Mock data for all stats (will be implemented later)
-  const mockStats = {
-    thisMonthEarnings: 280000,
-    allTimeEarnings: 1560000,
-    totalAnswered: 127,
-    avgResponseTime: 8.5,
-    avgRating: 4.8,
-    monthlyGrowth: 12
-  };
+  // Fetch ratings from backend (with fallback to mock data)
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const response = await apiClient.get('/me/answers');
+        setRatings(response.data || []);
+        setRatingsEndpointExists(true);
+        console.log('✅ Ratings fetched from backend:', response.data);
+      } catch (err) {
+        // If endpoint doesn't exist (404) or any error, use mock data
+        console.warn('⚠️ /me/answers endpoint not available, using mock data:', err.message);
+        setRatingsEndpointExists(false);
+        
+        // Mock ratings data (will be replaced when backend is ready)
+        const mockRatings = [
+          { question_id: 1, rating: 5, feedback_text: 'Excellent!', feedback_at: Date.now() },
+          { question_id: 2, rating: 4, feedback_text: 'Very helpful', feedback_at: Date.now() },
+          { question_id: 3, rating: 5, feedback_text: 'Great response', feedback_at: Date.now() },
+          { question_id: 4, rating: 4, feedback_text: 'Good answer', feedback_at: Date.now() },
+          { question_id: 5, rating: 5, feedback_text: 'Perfect!', feedback_at: Date.now() }
+        ];
+        setRatings(mockRatings);
+      } finally {
+        setIsLoadingRatings(false);
+      }
+    };
 
+    fetchRatings();
+  }, []);
+
+  // Calculate all stats from questions and ratings data
+  const stats = useMemo(() => {
+    // Ensure we have an array to work with
+    const questions = Array.isArray(allQuestions) ? allQuestions : [];
+    
+    // Filter answered questions (status: 'answered' or 'closed')
+    const answeredQuestions = questions.filter(q => 
+      q.status === 'answered' || q.status === 'closed'
+    );
+
+    // ==========================================
+    // 1. ALL TIME REVENUE
+    // ==========================================
+    const allTimeEarnings = answeredQuestions.reduce((sum, q) => 
+      sum + (q.price_cents || 0), 0
+    );
+
+    // ==========================================
+    // 2. THIS MONTH REVENUE
+    // ==========================================
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const thisMonthEarnings = answeredQuestions
+      .filter(q => {
+        if (!q.created_at) return false;
+        // Handle both millisecond and second timestamps
+        const timestamp = q.created_at > 4102444800 
+          ? q.created_at 
+          : q.created_at * 1000;
+        const date = new Date(timestamp);
+        return date.getMonth() === currentMonth && 
+               date.getFullYear() === currentYear;
+      })
+      .reduce((sum, q) => sum + (q.price_cents || 0), 0);
+
+    // ==========================================
+    // 3. MONTHLY GROWTH (compare to previous month)
+    // ==========================================
+    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    
+    const previousMonthEarnings = answeredQuestions
+      .filter(q => {
+        if (!q.created_at) return false;
+        const timestamp = q.created_at > 4102444800 
+          ? q.created_at 
+          : q.created_at * 1000;
+        const date = new Date(timestamp);
+        return date.getMonth() === previousMonth && 
+               date.getFullYear() === previousYear;
+      })
+      .reduce((sum, q) => sum + (q.price_cents || 0), 0);
+    
+    const monthlyGrowth = previousMonthEarnings > 0
+      ? Math.round(((thisMonthEarnings - previousMonthEarnings) / previousMonthEarnings) * 100)
+      : (thisMonthEarnings > 0 ? 100 : 0);
+
+    // ==========================================
+    // 4. AVERAGE RESPONSE TIME (in hours)
+    // ==========================================
+    const questionsWithResponseTime = answeredQuestions.filter(q => 
+      q.answered_at && 
+      q.answered_at > 0 && 
+      q.created_at && 
+      q.created_at > 0
+    );
+    
+    let avgResponseTime = 0;
+    if (questionsWithResponseTime.length > 0) {
+      const totalResponseTime = questionsWithResponseTime.reduce((sum, q) => {
+        // Handle both millisecond and second timestamps
+        const createdAt = q.created_at > 4102444800 
+          ? q.created_at 
+          : q.created_at * 1000;
+        const answeredAt = q.answered_at > 4102444800 
+          ? q.answered_at 
+          : q.answered_at * 1000;
+        
+        // Calculate hours
+        const responseHours = (answeredAt - createdAt) / (1000 * 60 * 60);
+        return sum + responseHours;
+      }, 0);
+      
+      avgResponseTime = totalResponseTime / questionsWithResponseTime.length;
+    }
+
+    // ==========================================
+    // 5. AVERAGE RATING (from ratings data)
+    // ==========================================
+    const ratedAnswers = ratings.filter(r => r.rating && r.rating > 0);
+    const avgRating = ratedAnswers.length > 0
+      ? ratedAnswers.reduce((sum, r) => sum + r.rating, 0) / ratedAnswers.length
+      : 0;
+
+    return {
+      thisMonthEarnings,
+      allTimeEarnings,
+      totalAnswered: answeredQuestions.length,
+      avgResponseTime,
+      avgRating,
+      totalRatings: ratedAnswers.length,
+      monthlyGrowth
+    };
+  }, [allQuestions, ratings]); // Recalculate when questions or ratings change
+
+  // ==========================================
+  // STATS DATA CONFIGURATION
+  // ==========================================
   const statsData = [
     {
       label: "This Month",
-      value: formatCurrency(mockStats.thisMonthEarnings),
-      trend: {
-        value: `+${mockStats.monthlyGrowth}%`,
-        isPositive: mockStats.monthlyGrowth > 0
-      },
+      value: formatCurrency(stats.thisMonthEarnings),
+      trend: stats.monthlyGrowth !== 0 ? {
+        value: `${stats.monthlyGrowth > 0 ? '+' : ''}${stats.monthlyGrowth}%`,
+        isPositive: stats.monthlyGrowth > 0
+      } : null,
       icon: (
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -119,8 +222,8 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
     },
     {
       label: "All Time",
-      value: formatCurrency(mockStats.allTimeEarnings),
-      subtitle: `${mockStats.totalAnswered} answered`,
+      value: formatCurrency(stats.allTimeEarnings),
+      subtitle: `${stats.totalAnswered} answered`,
       icon: (
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
@@ -129,7 +232,9 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
     },
     {
       label: "Avg Response",
-      value: mockStats.avgResponseTime > 0 ? `${mockStats.avgResponseTime.toFixed(1)}h` : '—',
+      value: stats.avgResponseTime > 0 
+        ? `${stats.avgResponseTime.toFixed(1)}h` 
+        : '—',
       subtitle: `Target: ${targetResponseTime}h`,
       icon: (
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,8 +244,19 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
     },
     {
       label: "Avg Rating",
-      value: mockStats.avgRating.toFixed(1),
-      stars: mockStats.avgRating,
+      value: isLoadingRatings 
+        ? '...' 
+        : stats.avgRating > 0 
+          ? stats.avgRating.toFixed(1) 
+          : '—',
+      subtitle: isLoadingRatings 
+        ? 'Loading...' 
+        : !ratingsEndpointExists
+          ? '📊 Mock data'
+          : stats.totalRatings > 0 
+            ? `${stats.totalRatings} ${stats.totalRatings === 1 ? 'rating' : 'ratings'}`
+            : 'No ratings yet',
+      stars: stats.avgRating > 0 ? stats.avgRating : undefined,
       icon: (
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -152,6 +268,16 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
   return (
     <div className="space-y-3">
       <h3 className="text-2xl font-bold text-gray-900">Performance</h3>
+      
+      {/* Development indicator - shows when using mock data */}
+      {!ratingsEndpointExists && !isLoadingRatings && (
+        <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-flex items-center gap-1">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+          Ratings using mock data - create <code className="font-mono bg-amber-100 px-1">/me/answers</code> endpoint to see real data
+        </div>
+      )}
       
       {/* Mobile: Horizontal scroll */}
       <div 
