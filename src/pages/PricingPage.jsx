@@ -223,26 +223,26 @@ function PricingPage() {
         </div>
       </section>
 
-      {/* ROI Calculator - NEW SECTION */}
-      <section className="py-20 bg-white">
+      {/* ROI Calculator - COMPACT VERSION */}
+      <section className="py-12 bg-white">
         <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-black text-gray-900 mb-3">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 When Does Pro Pay for Itself?
               </h2>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-600 text-sm">
                 Calculate your break-even point based on your pricing
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100 p-8 md:p-10">
+            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl border border-indigo-100 p-6">
               {/* Interactive Price Input */}
-              <div className="mb-10">
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+              <div className="mb-6">
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
                   Your price per question
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <input
                     type="range"
                     min="10"
@@ -252,43 +252,43 @@ function PricingPage() {
                     onChange={(e) => setPricePerQuestion(Number(e.target.value))}
                     className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                   />
-                  <div className="flex items-center gap-1 bg-white border-2 border-indigo-600 rounded-lg px-4 py-2 min-w-[100px]">
-                    <span className="text-gray-500 font-semibold">€</span>
+                  <div className="flex items-center gap-1 bg-white border-2 border-indigo-600 rounded-lg px-3 py-1.5 min-w-[90px]">
+                    <span className="text-gray-500 font-semibold text-sm">€</span>
                     <input
                       type="number"
                       min="10"
                       max="200"
                       value={pricePerQuestion}
                       onChange={(e) => setPricePerQuestion(Number(e.target.value))}
-                      className="w-full font-bold text-xl text-gray-900 focus:outline-none"
+                      className="w-full font-bold text-lg text-gray-900 focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Break-even Highlight */}
-              <div className="bg-white rounded-xl border-2 border-indigo-600 p-6 mb-8 text-center shadow-lg">
-                <div className="text-sm font-semibold text-gray-600 mb-2">Pro pays for itself after</div>
-                <div className="text-5xl font-black bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent mb-1">
+              <div className="bg-white rounded-lg border-2 border-indigo-600 p-4 mb-5 text-center shadow-md">
+                <div className="text-xs font-semibold text-gray-600 mb-1">Pro pays for itself after</div>
+                <div className="text-3xl font-black bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent mb-0.5">
                   {breakEvenQuestions}
                 </div>
-                <div className="text-lg font-semibold text-gray-700">
+                <div className="text-sm font-semibold text-gray-700">
                   {breakEvenQuestions === 1 ? 'question' : 'questions'} per month
                 </div>
-                <div className="mt-3 text-sm text-gray-500">
-                  You save <span className="font-bold text-indigo-600">€{savingsPerQuestion.toFixed(2)}</span> per question
+                <div className="mt-2 text-xs text-gray-500">
+                  Save <span className="font-bold text-indigo-600">€{savingsPerQuestion.toFixed(2)}</span> per question
                 </div>
               </div>
 
-              {/* Detailed Breakdown */}
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
+              {/* Detailed Breakdown - Compact */}
+              <div className="grid md:grid-cols-2 gap-4 mb-5">
                 {/* Starter Breakdown */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">Starter</h3>
-                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Free</span>
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-gray-900">Starter</h3>
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Free</span>
                   </div>
-                  <div className="space-y-3 text-sm">
+                  <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Platform fee</span>
                       <span className="font-semibold text-gray-900">10%</span>
@@ -297,20 +297,20 @@ function PricingPage() {
                       <span className="text-gray-600">Fee per question</span>
                       <span className="font-semibold text-gray-900">€{starterFeePerQuestion.toFixed(2)}</span>
                     </div>
-                    <div className="pt-3 border-t border-gray-200 flex justify-between">
-                      <span className="text-gray-600">Monthly ({exampleQuestions} questions)</span>
+                    <div className="pt-2 border-t border-gray-200 flex justify-between">
+                      <span className="text-gray-600">Monthly ({exampleQuestions}q)</span>
                       <span className="font-bold text-gray-900">€{starterMonthlyFees.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Pro Breakdown */}
-                <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl p-6 text-white shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold">Pro</h3>
-                    <span className="text-xs font-semibold bg-white/20 px-2 py-1 rounded">€15/mo</span>
+                <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg p-4 text-white shadow-md">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold">Pro</h3>
+                    <span className="text-xs font-semibold bg-white/20 px-2 py-0.5 rounded">€15/mo</span>
                   </div>
-                  <div className="space-y-3 text-sm">
+                  <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span className="text-white/90">Platform fee</span>
                       <span className="font-semibold">7%</span>
@@ -319,41 +319,41 @@ function PricingPage() {
                       <span className="text-white/90">Fee per question</span>
                       <span className="font-semibold">€{proFeePerQuestion.toFixed(2)}</span>
                     </div>
-                    <div className="pt-3 border-t border-white/20 flex justify-between">
-                      <span className="text-white/90">Monthly ({exampleQuestions} questions)</span>
+                    <div className="pt-2 border-t border-white/20 flex justify-between">
+                      <span className="text-white/90">Monthly ({exampleQuestions}q)</span>
                       <span className="font-bold">€{proMonthlyFees.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Savings Highlight */}
+              {/* Savings Highlight - Compact */}
               {monthlySavings > 0 && (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-                  <div className="text-sm font-semibold text-green-700 mb-1">
-                    Your monthly savings with Pro ({exampleQuestions} questions/month)
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center mb-5">
+                  <div className="text-xs font-semibold text-green-700 mb-0.5">
+                    Monthly savings with Pro ({exampleQuestions} questions/month)
                   </div>
-                  <div className="text-3xl font-black text-green-600">
+                  <div className="text-2xl font-black text-green-600">
                     €{monthlySavings.toFixed(2)}
                   </div>
-                  <div className="text-xs text-green-600 mt-2">
-                    That's €{(monthlySavings * 12).toFixed(2)} per year
+                  <div className="text-xs text-green-600 mt-1">
+                    €{(monthlySavings * 12).toFixed(2)}/year
                   </div>
                 </div>
               )}
 
-              {/* CTA */}
-              <div className="mt-8 text-center">
+              {/* CTA - Compact */}
+              <div className="text-center">
                 <Link
                   to={isAuthenticated ? "/expert" : "/signin?plan=pro"}
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-8 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-sm py-2.5 px-6 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                 >
                   <span>{isAuthenticated ? "Upgrade to Pro" : "Start with Pro"}</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </Link>
-                <p className="mt-3 text-xs text-gray-500">No card required • Cancel anytime</p>
+                <p className="mt-2 text-xs text-gray-500">No card required • Cancel anytime</p>
               </div>
             </div>
           </div>
