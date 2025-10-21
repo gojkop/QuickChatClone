@@ -197,11 +197,12 @@ export default function CampaignList({ campaigns, onCreate }) {
         onArchive={handleArchive}
         onPause={handlePause}
       />
-    </div>
+   
           <BetaFeatureModal
         isOpen={showBetaModal}
         onClose={() => setShowBetaModal(false)}
         featureName={betaFeatureName}
       />
+       </div>
   );
 }
