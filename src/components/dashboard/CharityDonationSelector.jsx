@@ -31,33 +31,31 @@ function CharityDonationSelector({ value, onChange }) {
   return (
     <div className="space-y-3">
       
-      <div className="grid grid-cols-5 gap-2">
-        {percentages.map((percentage) => (
-          <button
-            key={percentage}
-            type="button"
-            onClick={() => onChange(percentage)}
-            className={`relative py-2 px-2 rounded-lg border-2 transition-all ${
-              value === percentage 
-                ? `${getBorder(percentage)} bg-gradient-to-br ${getGradient(percentage)} shadow-md` 
-                : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}
-          >
-            <div className="text-center">
-              <div className={`text-lg font-bold ${value === percentage ? getTextColor(percentage) : 'text-gray-600'}`}>
-                {percentage}%
-              </div>
-              {value === percentage && (
-                <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              )}
-            </div>
-          </button>
-        ))}
+<div className="grid grid-cols-5 gap-2">
+  {percentages.map((percentage) => (
+    <button
+      key={percentage}
+      type="button"
+      onClick={() => onChange(percentage)}
+      className={`relative py-1.5 px-2 rounded-md border transition-all text-sm font-semibold ${
+        value === percentage 
+          ? `${getBorder(percentage)} bg-gradient-to-br ${getGradient(percentage)}` 
+          : 'border-gray-300 bg-white hover:border-gray-400'
+      }`}
+    >
+      <div className={`text-center ${value === percentage ? getTextColor(percentage) : 'text-gray-700'}`}>
+        {percentage}%
       </div>
+      {value === percentage && (
+        <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
+          <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      )}
+    </button>
+  ))}
+</div>
       
       {value > 0 && (
 <div className="mt-2 p-2 rounded-lg bg-gray-50 border border-gray-200">
