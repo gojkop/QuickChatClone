@@ -4,12 +4,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { Bug, Lightbulb, Smile, HelpCircle } from 'lucide-react';
+
 
 const FEEDBACK_TYPES = [
-  { id: 'bug', label: 'Bug', icon: '🐛' },
-  { id: 'feature', label: 'Feature', icon: '💡' },
-  { id: 'feedback', label: 'Feedback', icon: '😊' },
-  { id: 'question', label: 'Question', icon: '❓' },
+  { id: 'bug', label: 'Bug', icon: Bug, color: 'text-red-600' },
+  { id: 'feature', label: 'Feature', icon: Lightbulb, color: 'text-yellow-600' },
+  { id: 'feedback', label: 'Feedback', icon: Smile, color: 'text-green-600' },
+  { id: 'question', label: 'Question', icon: HelpCircle, color: 'text-blue-600' },
 ];
 
 const API_BASE = import.meta.env.VITE_ADMIN_API_URL || 'https://admin.mindpick.me/api';
@@ -383,7 +385,7 @@ function FeedbackWidget() {
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
-                        <span className="text-lg">{type.icon}</span>
+                            <type.icon className={`w-5 h-5 ${type.color}`} />
                         <span className="text-[10px] font-medium text-gray-700">{type.label}</span>
                       </button>
                     ))}
@@ -513,7 +515,7 @@ function FeedbackWidget() {
                     onClick={() => fileInputRef.current?.click()}
                     className="w-full py-1.5 px-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-xs text-gray-600 hover:text-indigo-700 font-medium"
                   >
-                    📎 Add screenshot or video
+                    Add screenshot or video
                   </button>
                   
                   {attachments.length > 0 && (
@@ -582,7 +584,7 @@ function FeedbackWidget() {
                 </div>
                 <h4 className="text-lg font-black text-gray-900 mb-1">Thank You!</h4>
                 <p className="text-xs text-gray-600">
-                  Your feedback helps us improve 🙏
+                    Your feedback helps us improve
                 </p>
               </div>
             )}
