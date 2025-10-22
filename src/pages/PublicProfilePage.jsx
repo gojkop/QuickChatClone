@@ -512,8 +512,39 @@ function PublicProfilePage() {
           socialsData = {};
         }
 
-        const acceptingQuestions = coercePublic(ep.accepting_questions);
-        
+        // accepting_questions should default to true (experts are accepting by default)
+        // Only set to false if explicitly set to false/0/"false" etc.
+        const acceptingQuestions = ep.accepting_questions === false ||
+                                   ep.accepting_questions === 0 ||
+                                   ep.accepting_questions === '0' ||
+                                   ep.accepting_questions === 'false'
+                                   ? false
+                                   : true;
+
+        // Build tiers object from tier fields
+        const tiers = {};
+
+        // Quick Consult (Tier 1)
+        if (ep.tier1_enabled !== false && ep.tier1_price_cents) {
+          tiers.quick_consult = {
+            enabled: true,
+            price_cents: ep.tier1_price_cents,
+            sla_hours: ep.tier1_sla_hours || 24,
+            description: ep.tier1_description || 'Quick consultation for immediate questions'
+          };
+        }
+
+        // Deep Dive (Tier 2)
+        if (ep.tier2_enabled && ep.tier2_min_price_cents && ep.tier2_max_price_cents) {
+          tiers.deep_dive = {
+            enabled: true,
+            min_price_cents: ep.tier2_min_price_cents,
+            max_price_cents: ep.tier2_max_price_cents,
+            sla_hours: ep.tier2_sla_hours || 48,
+            description: ep.tier2_description || 'In-depth analysis with comprehensive report'
+          };
+        }
+
         setProfile({
           ...ep,
           isPublic,
@@ -526,7 +557,8 @@ function PublicProfilePage() {
           selected_charity: ep.selected_charity ?? null,
           socials: socialsData,
           expertise: expertiseData,
-          accepting_questions: acceptingQuestions
+          accepting_questions: acceptingQuestions,
+          tiers: Object.keys(tiers).length > 0 ? tiers : null
         });
       } catch (err) {
         setError(err.message || 'Could not load profile.');
