@@ -105,9 +105,8 @@ const AppLayout = () => {
       {(import.meta.env.MODE === 'development' || 
         import.meta.env.VITE_SHOW_FEEDBACK === 'true') && (
         <FeedbackWidget />
-        <CookieConsentBanner /> 
-
       )}
+        <CookieConsentBanner /> 
     </div>
   );
 }
