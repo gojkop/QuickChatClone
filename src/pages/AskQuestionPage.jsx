@@ -327,11 +327,21 @@ function AskQuestionPage() {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
     <div className="text-xs sm:text-sm text-indigo-900">
-      <span className="font-semibold">Compose your question</span> (video/audio/text) 
-      <span className="mx-1">→</span> 
-      <span className="font-semibold">Pay {formatPrice(expert.price_cents, expert.currency)}</span> 
-      <span className="mx-1">→</span> 
-      <span className="font-semibold">Get answer</span> within {expert.sla_hours}h via email
+      <span className="font-semibold">Compose your question</span> (video/audio/text)
+      <span className="mx-1">→</span>
+      <span className="font-semibold">
+        Pay {
+          tierType === 'quick_consult'
+            ? formatPrice(tierConfig?.price_cents, expert.currency)
+            : tierType === 'deep_dive' && proposedPrice
+            ? `$${proposedPrice}`
+            : formatPrice(expert.price_cents, expert.currency)
+        }
+      </span>
+      <span className="mx-1">→</span>
+      <span className="font-semibold">Get answer</span> within {
+        tierConfig?.sla_hours || expert.sla_hours
+      }h via email
     </div>
   </div>
 </div>
