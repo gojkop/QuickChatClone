@@ -7,7 +7,6 @@ import Testimonials from '@/components/home/Testimonials.jsx';
 import FinalCTA from '@/components/home/FinalCTA.jsx';
 import { Link } from 'react-router-dom';
 
-// MOVED: "Ask Anyone" banner - now appears AFTER social proof
 const AskAnyoneBanner = () => {
   const [showDetails, setShowDetails] = React.useState(false);
 
@@ -37,25 +36,9 @@ const AskAnyoneBanner = () => {
             </div>
 
             {/* Description */}
-            <p className="text-gray-700 text-base md:text-lg leading-relaxed mb-6">
-              Whether it's a doctor across the world, a conference speaker, or an author you follow—send them an invitation and we'll help facilitate your question professionally.
+            <p className="text-gray-700 text-base md:text-lg leading-relaxed mb-8">
+              Send them an invitation and we'll help you reach them professionally—no awkward cold emails needed.
             </p>
-
-            {/* Example Use Cases */}
-            <div className="flex flex-wrap gap-3 mb-8">
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200">
-                <span>🩺</span>
-                <span>Medical specialist abroad</span>
-              </span>
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium border border-indigo-200">
-                <span>💡</span>
-                <span>Conference speaker you heard</span>
-              </span>
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-violet-50 text-violet-700 rounded-full text-sm font-medium border border-violet-200">
-                <span>📝</span>
-                <span>Author whose work you follow</span>
-              </span>
-            </div>
 
             {/* CTA Row */}
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -88,31 +71,26 @@ const AskAnyoneBanner = () => {
             {/* Expandable Details */}
             {showDetails && (
               <div className="mt-6 pt-6 border-t border-gray-200 animate-fade-in">
-                <div className="grid md:grid-cols-4 gap-4 text-sm">
+                <div className="grid md:grid-cols-3 gap-4 text-sm">
                   <div className="text-center md:text-left">
                     <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm mx-auto md:mx-0 mb-2">1</div>
-                    <div className="font-semibold text-gray-900 mb-1">You send details</div>
-                    <div className="text-gray-600 text-xs">Provide their name and contact</div>
+                    <div className="font-semibold text-gray-900 mb-1">Send details & record question</div>
+                    <div className="text-gray-600 text-xs">Provide their contact and record your question</div>
                   </div>
                   <div className="text-center md:text-left">
                     <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm mx-auto md:mx-0 mb-2">2</div>
                     <div className="font-semibold text-gray-900 mb-1">We invite them</div>
-                    <div className="text-gray-600 text-xs">Professional invitation sent</div>
+                    <div className="text-gray-600 text-xs">Professional invitation sent on your behalf</div>
                   </div>
                   <div className="text-center md:text-left">
                     <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm mx-auto md:mx-0 mb-2">3</div>
-                    <div className="font-semibold text-gray-900 mb-1">They decide</div>
-                    <div className="text-gray-600 text-xs">Optional for them to join</div>
-                  </div>
-                  <div className="text-center md:text-left">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm mx-auto md:mx-0 mb-2">4</div>
-                    <div className="font-semibold text-gray-900 mb-1">You connect</div>
-                    <div className="text-gray-600 text-xs">Ask your question directly</div>
+                    <div className="font-semibold text-gray-900 mb-1">They join & answer</div>
+                    <div className="text-gray-600 text-xs">Expert sets up their page and responds</div>
                   </div>
                 </div>
                 <div className="mt-4 text-center">
                   <p className="text-xs text-gray-500">
-                    No awkward cold emails. No uncertainty. Just a professional way to reach the expertise you need.
+                    A professional way to reach the expertise you need, without the awkwardness of cold outreach.
                   </p>
                 </div>
               </div>
