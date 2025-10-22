@@ -165,24 +165,9 @@ function PendingOffersSection({ onOfferUpdate }) {
     );
   }
 
+  // Don't render anything if there are no offers
   if (offers.length === 0) {
-    return (
-      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 p-6">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
-            <span className="text-white text-xl">🎯</span>
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">Pending Deep Dive Offers</h2>
-            <p className="text-sm text-gray-600">Review and respond to offers</p>
-          </div>
-        </div>
-        <div className="bg-white/60 rounded-lg p-6 text-center border border-purple-100">
-          <p className="text-gray-600 text-sm">No pending offers at the moment</p>
-          <p className="text-gray-500 text-xs mt-1">Deep Dive offers will appear here when askers submit them</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
