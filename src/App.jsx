@@ -25,7 +25,7 @@ import TestAICoachPage from '@/pages/TestAICoachPage';
 import FeedbackWidget from '@/components/common/FeedbackWidget';
 import FeedbackDashboardPage from '@/pages/FeedbackDashboardPage'; 
 import ExpertMarketingPage from '@/pages/ExpertMarketingPage';
-import HowItWorks from '@/pages/HowItWorksPage';
+import HowItWorksPage from '@/pages/HowItWorksPage';
 
 
 // Import Common Components
