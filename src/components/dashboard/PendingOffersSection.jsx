@@ -30,6 +30,7 @@ function PendingOffersSection({ onOfferUpdate }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [processingOfferId, setProcessingOfferId] = useState(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   const fetchPendingOffers = async () => {
     try {
@@ -57,6 +58,17 @@ function PendingOffersSection({ onOfferUpdate }) {
     const interval = setInterval(fetchPendingOffers, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Trigger fade-in animation when offers appear
+  useEffect(() => {
+    if (offers.length > 0 && !isLoading) {
+      // Small delay to ensure smooth transition
+      const timer = setTimeout(() => setIsVisible(true), 50);
+      return () => clearTimeout(timer);
+    } else {
+      setIsVisible(false);
+    }
+  }, [offers.length, isLoading]);
 
   const handleAccept = async (offerId) => {
     if (!window.confirm('Accept this Deep Dive offer? The SLA timer will start immediately.')) {
@@ -171,7 +183,11 @@ function PendingOffersSection({ onOfferUpdate }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <div
+      className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 transition-all duration-500 ease-in-out ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+      }`}
+    >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
