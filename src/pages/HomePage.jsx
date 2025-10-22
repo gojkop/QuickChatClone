@@ -8,49 +8,122 @@ import FinalCTA from '@/components/home/FinalCTA.jsx';
 import { Link } from 'react-router-dom';
 
 // MOVED: "Ask Anyone" banner - now appears AFTER social proof
-const AskAnyoneBanner = () => (
-  <section className="py-16 bg-gradient-to-r from-violet-50 to-purple-50 border-y border-violet-100">
-    <div className="container mx-auto px-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-violet-200 p-8 md:p-10 shadow-sm">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            {/* Icon */}
-            <div className="flex-shrink-0">
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
+const AskAnyoneBanner = () => {
+  const [showDetails, setShowDetails] = React.useState(false);
+
+  return (
+    <section className="py-16 bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50 border-y border-indigo-100">
+      <div className="container mx-auto px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl border border-indigo-200 shadow-lg p-8 md:p-10">
+            
+            {/* Header with Icon */}
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
+              {/* Icon */}
+              <div className="flex-shrink-0">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center shadow-md">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Title */}
+              <div className="flex-1">
+                <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">
+                  Need a Specific Expert Who's Not on mindPick Yet?
+                </h3>
               </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Have a Question for Someone?
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                Know someone with the perfect expertise? Ask them directly — we'll invite them to answer on mindPick.
-              </p>
+            {/* Description */}
+            <p className="text-gray-700 text-base md:text-lg leading-relaxed mb-6">
+              Whether it's a doctor across the world, a conference speaker, or an author you follow—send them an invitation and we'll help facilitate your question professionally.
+            </p>
+
+            {/* Example Use Cases */}
+            <div className="flex flex-wrap gap-3 mb-8">
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200">
+                <span>🩺</span>
+                <span>Medical specialist abroad</span>
+              </span>
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium border border-indigo-200">
+                <span>💡</span>
+                <span>Conference speaker you heard</span>
+              </span>
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-violet-50 text-violet-700 rounded-full text-sm font-medium border border-violet-200">
+                <span>📝</span>
+                <span>Author whose work you follow</span>
+              </span>
             </div>
 
-            {/* CTA Button */}
-            <div className="flex-shrink-0">
+            {/* CTA Row */}
+            <div className="flex flex-col sm:flex-row items-center gap-4">
               <Link
                 to="/invite"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
               >
-                <span>Ask Anyone</span>
+                <span>Invite a Specific Expert</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </Link>
+
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="inline-flex items-center gap-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors text-sm"
+              >
+                <span>How does this work?</span>
+                <svg 
+                  className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
             </div>
+
+            {/* Expandable Details */}
+            {showDetails && (
+              <div className="mt-6 pt-6 border-t border-gray-200 animate-fade-in">
+                <div className="grid md:grid-cols-4 gap-4 text-sm">
+                  <div className="text-center md:text-left">
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm mx-auto md:mx-0 mb-2">1</div>
+                    <div className="font-semibold text-gray-900 mb-1">You send details</div>
+                    <div className="text-gray-600 text-xs">Provide their name and contact</div>
+                  </div>
+                  <div className="text-center md:text-left">
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm mx-auto md:mx-0 mb-2">2</div>
+                    <div className="font-semibold text-gray-900 mb-1">We invite them</div>
+                    <div className="text-gray-600 text-xs">Professional invitation sent</div>
+                  </div>
+                  <div className="text-center md:text-left">
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm mx-auto md:mx-0 mb-2">3</div>
+                    <div className="font-semibold text-gray-900 mb-1">They decide</div>
+                    <div className="text-gray-600 text-xs">Optional for them to join</div>
+                  </div>
+                  <div className="text-center md:text-left">
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm mx-auto md:mx-0 mb-2">4</div>
+                    <div className="font-semibold text-gray-900 mb-1">You connect</div>
+                    <div className="text-gray-600 text-xs">Ask your question directly</div>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-xs text-gray-500">
+                    No awkward cold emails. No uncertainty. Just a professional way to reach the expertise you need.
+                  </p>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 // NEW: Inline Social Impact section (replaces full-page CTA diversion)
 const SocialImpactInline = () => (
