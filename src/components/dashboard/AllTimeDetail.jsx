@@ -47,19 +47,96 @@ const AllTimeDetail = ({ allQuestions = [] }) => {
 
     // Calculate milestones
     const milestones = [];
-    if (totalEarnings >= 100000) milestones.push({ label: 'First $1,000', icon: '🎯', achieved: true });
-    if (totalEarnings >= 500000) milestones.push({ label: '$5,000 Earned', icon: '🚀', achieved: true });
-    if (totalEarnings >= 1000000) milestones.push({ label: '$10,000 Club', icon: '💎', achieved: true });
-    if (totalCount >= 50) milestones.push({ label: '50 Questions', icon: '⭐', achieved: true });
-    if (totalCount >= 100) milestones.push({ label: '100 Questions', icon: '🏆', achieved: true });
+    if (totalEarnings >= 100000) {
+      milestones.push({
+        label: 'First $1,000',
+        icon: (
+          <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ),
+        achieved: true
+      });
+    }
+    if (totalEarnings >= 500000) {
+      milestones.push({
+        label: '$5,000 Earned',
+        icon: (
+          <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        ),
+        achieved: true
+      });
+    }
+    if (totalEarnings >= 1000000) {
+      milestones.push({
+        label: '$10,000 Club',
+        icon: (
+          <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+          </svg>
+        ),
+        achieved: true
+      });
+    }
+    if (totalCount >= 50) {
+      milestones.push({
+        label: '50 Questions',
+        icon: (
+          <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ),
+        achieved: true
+      });
+    }
+    if (totalCount >= 100) {
+      milestones.push({
+        label: '100 Questions',
+        icon: (
+          <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ),
+        achieved: true
+      });
+    }
 
     // Add next milestone
     if (totalEarnings < 100000) {
-      milestones.push({ label: 'First $1,000', icon: '🎯', achieved: false, progress: (totalEarnings / 100000) * 100 });
+      milestones.push({
+        label: 'First $1,000',
+        icon: (
+          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ),
+        achieved: false,
+        progress: (totalEarnings / 100000) * 100
+      });
     } else if (totalEarnings < 500000) {
-      milestones.push({ label: '$5,000 Earned', icon: '🚀', achieved: false, progress: (totalEarnings / 500000) * 100 });
+      milestones.push({
+        label: '$5,000 Earned',
+        icon: (
+          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        ),
+        achieved: false,
+        progress: (totalEarnings / 500000) * 100
+      });
     } else if (totalEarnings < 1000000) {
-      milestones.push({ label: '$10,000 Club', icon: '💎', achieved: false, progress: (totalEarnings / 1000000) * 100 });
+      milestones.push({
+        label: '$10,000 Club',
+        icon: (
+          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+          </svg>
+        ),
+        achieved: false,
+        progress: (totalEarnings / 1000000) * 100
+      });
     }
 
     return {
@@ -182,8 +259,8 @@ const AllTimeDetail = ({ allQuestions = [] }) => {
                     : 'bg-gray-50 border border-gray-200'
                 }`}
               >
-                <div className="text-2xl">{milestone.icon}</div>
-                <div className="flex-1">
+                <div className="flex-shrink-0">{milestone.icon}</div>
+                <div className="flex-1 min-w-0">
                   <div className={`text-sm font-semibold ${milestone.achieved ? 'text-green-900' : 'text-gray-700'}`}>
                     {milestone.label}
                   </div>
