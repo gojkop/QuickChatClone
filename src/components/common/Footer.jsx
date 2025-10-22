@@ -18,7 +18,7 @@ function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="/#how-it-works" className="text-gray-600 hover:text-indigo-600 transition-colors">
+                <a href="/how-it-works" className="text-gray-600 hover:text-indigo-600 transition-colors">
                   How It Works
                 </a>
               </li>
