@@ -210,16 +210,6 @@ const QuestionTable = ({
                   statusDisplay = { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' };
                 }
 
-                // Debug: Check tier field on all pages
-                console.log('🔍 Question on page:', {
-                  id: question.id,
-                  title: question.title?.substring(0, 30),
-                  question_tier: question.question_tier,
-                  tier_type: typeof question.question_tier,
-                  has_tier: !!question.question_tier,
-                  is_deep_dive: question.question_tier === 'deep_dive'
-                });
-
                 return (
                   <tr
                     key={question.id}
@@ -227,7 +217,7 @@ const QuestionTable = ({
                       isHidden ? 'opacity-50' : ''
                     } ${
                       question.question_tier === 'deep_dive'
-                        ? 'bg-purple-50/10 hover:bg-purple-50/15 border-l-2 border-l-purple-400'
+                        ? 'bg-purple-50 hover:bg-purple-100 border-l-[3px] border-l-purple-500'
                         : 'hover:bg-gray-50'
                     }`}
                     onClick={() => onQuestionClick?.(question)}
@@ -321,13 +311,6 @@ const QuestionTable = ({
               statusDisplay = { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' };
             }
 
-            // Debug: Check tier field on mobile
-            console.log('📱 Mobile question:', {
-              id: question.id,
-              question_tier: question.question_tier,
-              is_deep_dive: question.question_tier === 'deep_dive'
-            });
-
             return (
               <div
                 key={question.id}
@@ -335,7 +318,7 @@ const QuestionTable = ({
                   isHidden ? 'opacity-50' : ''
                 } ${
                   question.question_tier === 'deep_dive'
-                    ? 'bg-purple-50/10 hover:bg-purple-50/15 border-l-2 border-l-purple-400'
+                    ? 'bg-purple-50 hover:bg-purple-100 border-l-[3px] border-l-purple-500'
                     : 'hover:bg-gray-50'
                 }`}
                 onClick={() => onQuestionClick?.(question)}
