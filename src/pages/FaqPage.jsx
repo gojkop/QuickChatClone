@@ -1,6 +1,8 @@
 // src/pages/FaqPage.jsx
 import React, { useState } from 'react';
 import AccordionItem from '../components/common/AccordionItem';
+import SEO from '@/components/common/SEO';
+
 
 function FaqPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -181,6 +183,10 @@ function FaqPage() {
 
   return (
     <div className="container mx-auto px-6 py-16 pt-32 sm:pt-40">
+          <SEO
+        title="FAQ - mindPick"
+        description="Get answers to common questions about mindPick. Learn how experts get paid, how pricing works, SLA policies, refunds, and more. For both experts and askers."
+      />
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

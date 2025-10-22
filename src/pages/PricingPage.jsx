@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import SEO from '@/components/common/SEO';
+
 
 function PricingPage() {
   const { isAuthenticated } = useAuth();
@@ -27,6 +29,10 @@ function PricingPage() {
 
   return (
     <div className="bg-white">
+        <SEO
+      title="Pricing - mindPick"
+      description="Simple, transparent pricing for experts. Start free with a 10% platform fee or upgrade to Pro for just €15/month with reduced 7% fees. No hidden costs, no long-term contracts."
+    />
       {/* Hero Section */}
       <section className="pt-32 sm:pt-40 pb-16 text-center">
         <div className="container mx-auto px-6">
