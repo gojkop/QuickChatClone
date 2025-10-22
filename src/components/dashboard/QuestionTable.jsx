@@ -210,19 +210,6 @@ const QuestionTable = ({
                   statusDisplay = { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' };
                 }
 
-                // Debug: Log tier information
-                if (question.id && !window.__tierDebugLogged?.[question.id]) {
-                  console.log('🔍 Question tier debug:', {
-                    id: question.id,
-                    title: question.title?.substring(0, 30),
-                    question_tier: question.question_tier,
-                    pricing_status: question.pricing_status,
-                    proposed_price_cents: question.proposed_price_cents
-                  });
-                  window.__tierDebugLogged = window.__tierDebugLogged || {};
-                  window.__tierDebugLogged[question.id] = true;
-                }
-
                 return (
                   <tr
                     key={question.id}
@@ -230,27 +217,24 @@ const QuestionTable = ({
                       isHidden ? 'opacity-50' : ''
                     } ${
                       question.question_tier === 'deep_dive'
-                        ? 'bg-purple-50/20 hover:bg-purple-50/30 border-l-2 border-l-purple-400'
+                        ? 'bg-purple-50/10 hover:bg-purple-50/15 border-l-2 border-l-purple-400'
                         : 'hover:bg-gray-50'
                     }`}
                     onClick={() => onQuestionClick?.(question)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusDisplay.color}`}>
-                            {isPending && (
-                              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
-                            )}
-                            {statusDisplay.label}
-                          </span>
-                          {isHidden && (
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                            </svg>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusDisplay.color}`}>
+                          {isPending && (
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
                           )}
-                        </div>
-                        <TierBadge tier={question.question_tier} />
+                          {statusDisplay.label}
+                        </span>
+                        {isHidden && (
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                          </svg>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -334,7 +318,7 @@ const QuestionTable = ({
                   isHidden ? 'opacity-50' : ''
                 } ${
                   question.question_tier === 'deep_dive'
-                    ? 'bg-purple-50/20 hover:bg-purple-50/30 border-l-2 border-l-purple-400'
+                    ? 'bg-purple-50/10 hover:bg-purple-50/15 border-l-2 border-l-purple-400'
                     : 'hover:bg-gray-50'
                 }`}
                 onClick={() => onQuestionClick?.(question)}
@@ -349,7 +333,6 @@ const QuestionTable = ({
                         )}
                         {statusDisplay.label}
                       </span>
-                      <TierBadge tier={question.question_tier} />
                       {isPending && (
                         <span className="text-xs font-semibold text-gray-600">
                           {formatSLA(question.sla_hours_snapshot, question.created_at)}

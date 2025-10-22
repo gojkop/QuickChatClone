@@ -313,7 +313,7 @@ function AskQuestionPage() {
               </span>
             </h1>
             <p className="text-sm sm:text-base text-gray-600">
-              They will respond within <strong>{expert.sla_hours} hours</strong>
+              They will respond within <strong>{tierConfig?.sla_hours || expert.sla_hours} hours</strong>
             </p>
           </div>
 
