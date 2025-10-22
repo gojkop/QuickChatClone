@@ -67,12 +67,12 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </div>
               </div>
 
-              {/* Description */}
-              {quick_consult.description && (
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {quick_consult.description}
+              {/* Description - Fixed height to maintain alignment */}
+              <div className="mb-4 h-10">
+                <p className="text-sm text-gray-600 line-clamp-2">
+                  {quick_consult.description || '\u00A0'}
                 </p>
-              )}
+              </div>
 
               {/* CTA Button */}
               <button
@@ -137,12 +137,12 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </div>
               </div>
 
-              {/* Description */}
-              {deep_dive.description && (
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {deep_dive.description}
+              {/* Description - Fixed height to maintain alignment */}
+              <div className="mb-4 h-10">
+                <p className="text-sm text-gray-600 line-clamp-2">
+                  {deep_dive.description || '\u00A0'}
                 </p>
-              )}
+              </div>
 
               {/* CTA Button */}
               <button
