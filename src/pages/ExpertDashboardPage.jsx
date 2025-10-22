@@ -817,7 +817,7 @@ function ExpertDashboardPage() {
 
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
             {/* Pending Deep Dive Offers */}
-            <PendingOffersSection onOfferUpdate={fetchQuestions} />
+            <PendingOffersSection onOfferUpdate={refreshQuestions} />
 
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
