@@ -1,8 +1,22 @@
 // src/components/common/Footer.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useCookieConsent } from '@/context/CookieConsentContext';
+
 
 function Footer() {
+const { reopenBanner } = useCookieConsent();
+
+  // Listen for cookie settings event from footer link
+  useEffect(() => {
+    const handleOpenSettings = () => {
+      reopenBanner();
+    };
+
+    window.addEventListener('openCookieSettings', handleOpenSettings);
+    return () => window.removeEventListener('openCookieSettings', handleOpenSettings);
+  }, [reopenBanner]);
+
   return (
     <footer className="bg-gray-50 border-t border-gray-200">
       {/* Main Footer - More Compact */}
@@ -59,22 +73,33 @@ function Footer() {
             </ul>
           </div>
           
-          {/* Column 4: Legal */}
-          <div>
-            <h4 className="font-bold text-gray-900 mb-3 text-xs uppercase tracking-wider">Legal</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/terms" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Terms
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Privacy
-                </Link>
-              </li>
-            </ul>
-          </div>
+{/* Column 4: Legal */}
+<div>
+  <h4 className="font-bold text-gray-900 mb-3 text-xs uppercase tracking-wider">Legal</h4>
+  <ul className="space-y-2 text-sm">
+    <li>
+      <Link to="/terms" className="text-gray-600 hover:text-indigo-600 transition-colors">
+        Terms
+      </Link>
+    </li>
+    <li>
+      <Link to="/privacy" className="text-gray-600 hover:text-indigo-600 transition-colors">
+        Privacy
+      </Link>
+    </li>
+    <li>
+      <button
+        onClick={() => {
+          // Trigger cookie preferences modal
+          window.dispatchEvent(new CustomEvent('openCookieSettings'));
+        }}
+        className="text-gray-600 hover:text-indigo-600 transition-colors text-left"
+      >
+        Cookie Settings
+      </button>
+    </li>
+  </ul>
+</div>
           
           {/* Column 5: Connect */}
           <div>

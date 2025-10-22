@@ -26,6 +26,8 @@ import FeedbackWidget from '@/components/common/FeedbackWidget';
 import FeedbackDashboardPage from '@/pages/FeedbackDashboardPage'; 
 import ExpertMarketingPage from '@/pages/ExpertMarketingPage';
 import HowItWorksPage from '@/pages/HowItWorksPage';
+import CookieConsentBanner from '@/components/common/CookieConsentBanner';
+
 
 
 // Import Common Components
@@ -103,6 +105,8 @@ const AppLayout = () => {
       {(import.meta.env.MODE === 'development' || 
         import.meta.env.VITE_SHOW_FEEDBACK === 'true') && (
         <FeedbackWidget />
+        <CookieConsentBanner /> 
+
       )}
     </div>
   );
