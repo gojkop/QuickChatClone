@@ -108,11 +108,11 @@ const TierBadge = ({ tier }) => {
     },
     deep_dive: {
       icon: '🎯',
-      label: 'Deep Dive',
-      bgColor: 'bg-gradient-to-r from-purple-100 to-purple-200',
-      textColor: 'text-purple-800',
+      label: 'Deep',
+      bgColor: 'bg-purple-100',
+      textColor: 'text-purple-700',
       borderColor: 'border-purple-300',
-      size: 'text-xs font-bold'
+      size: 'text-xs'
     }
   };
 
@@ -230,7 +230,7 @@ const QuestionTable = ({
                       isHidden ? 'opacity-50' : ''
                     } ${
                       question.question_tier === 'deep_dive'
-                        ? 'bg-purple-50/30 hover:bg-purple-50/50 border-l-4 border-l-purple-500'
+                        ? 'bg-purple-50/20 hover:bg-purple-50/30 border-l-2 border-l-purple-400'
                         : 'hover:bg-gray-50'
                     }`}
                     onClick={() => onQuestionClick?.(question)}
@@ -334,7 +334,7 @@ const QuestionTable = ({
                   isHidden ? 'opacity-50' : ''
                 } ${
                   question.question_tier === 'deep_dive'
-                    ? 'bg-purple-50/30 hover:bg-purple-50/50 border-l-4 border-l-purple-500'
+                    ? 'bg-purple-50/20 hover:bg-purple-50/30 border-l-2 border-l-purple-400'
                     : 'hover:bg-gray-50'
                 }`}
                 onClick={() => onQuestionClick?.(question)}
