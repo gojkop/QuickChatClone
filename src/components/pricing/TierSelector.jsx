@@ -52,14 +52,14 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                   <Zap className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Quick Consult</h3>
+                  <h3 className="text-base font-bold text-gray-900">Quick Consult</h3>
                   <p className="text-sm text-gray-500">Fast & Focused</p>
                 </div>
               </div>
 
               {/* Price */}
               <div className="mb-4">
-                <div className="text-3xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-gray-900">
                   {formatPrice(quick_consult.price_cents)}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
@@ -122,14 +122,14 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                   <Target className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Deep Dive</h3>
+                  <h3 className="text-base font-bold text-gray-900">Deep Dive</h3>
                   <p className="text-sm text-gray-500">In-Depth Expert Review</p>
                 </div>
               </div>
 
               {/* Price Range */}
               <div className="mb-4">
-                <div className="text-3xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-gray-900">
                   {formatPrice(deep_dive.min_price_cents)} - {formatPrice(deep_dive.max_price_cents)}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
@@ -163,7 +163,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                   <svg className="w-4 h-4 text-purple-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
                   </svg>
-                  <span>Expert reviews your offer</span>
+                  <span>Deep reviews</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-purple-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
