@@ -47,7 +47,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
           <div className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all duration-200 overflow-hidden group cursor-pointer shadow-sm hover:shadow-lg flex flex-col">
             <div className="p-6 flex-grow">
               {/* Header */}
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-4 min-h-[60px]">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
                   <Zap className="w-6 h-6 text-white" />
                 </div>
@@ -117,7 +117,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
           <div className="bg-white rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all duration-200 overflow-hidden group cursor-pointer shadow-sm hover:shadow-lg flex flex-col">
             <div className="p-6 flex-grow">
               {/* Header */}
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-4 min-h-[60px]">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
                   <Target className="w-6 h-6 text-white" />
                 </div>
