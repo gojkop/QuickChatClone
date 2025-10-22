@@ -25,6 +25,8 @@ import TestAICoachPage from '@/pages/TestAICoachPage';
 import FeedbackWidget from '@/components/common/FeedbackWidget';
 import FeedbackDashboardPage from '@/pages/FeedbackDashboardPage'; 
 import ExpertMarketingPage from '@/pages/ExpertMarketingPage';
+import HowItWorks from '@/pages/HowItWorksPage';
+
 
 // Import Common Components
 import Navbar from '@/components/common/Navbar';
@@ -70,6 +72,8 @@ const AppLayout = () => {
           <Route path="/r/:token" element={<AnswerReviewPage />} />
           <Route path="/test-ai-coach" element={<TestAICoachPage />} />
           <Route path="/feedback-dashboard" element={<FeedbackDashboardPage />} /> 
+          <Route path="/how-it-works" element={<HowItWorksPage />} /> 
+
           
           {/* Auth Routes */}
           <Route path="/signin" element={<SignInPage />} />
