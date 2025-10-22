@@ -30,6 +30,7 @@ function PendingOffersSection({ onOfferUpdate }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [processingOfferId, setProcessingOfferId] = useState(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   const fetchPendingOffers = async () => {
     try {
@@ -57,6 +58,17 @@ function PendingOffersSection({ onOfferUpdate }) {
     const interval = setInterval(fetchPendingOffers, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Trigger fade-in animation when offers appear
+  useEffect(() => {
+    if (offers.length > 0 && !isLoading) {
+      // Small delay to ensure smooth transition
+      const timer = setTimeout(() => setIsVisible(true), 50);
+      return () => clearTimeout(timer);
+    } else {
+      setIsVisible(false);
+    }
+  }, [offers.length, isLoading]);
 
   const handleAccept = async (offerId) => {
     if (!window.confirm('Accept this Deep Dive offer? The SLA timer will start immediately.')) {
@@ -123,46 +135,14 @@ function PendingOffersSection({ onOfferUpdate }) {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white text-xl">🎯</span>
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">Pending Deep Dive Offers</h2>
-            <p className="text-sm text-gray-500">Review and respond to offers</p>
-          </div>
-        </div>
-        <div className="text-center py-8">
-          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-500 text-sm mt-3">Loading offers...</p>
-        </div>
-      </div>
-    );
+  // Hide during initial load - only show if we already have offers
+  if (isLoading && offers.length === 0) {
+    return null;
   }
 
-  if (error) {
-    return (
-      <div className="bg-white rounded-xl border border-red-200 shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-            <span className="text-red-600 text-xl">⚠️</span>
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">Error</h2>
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        </div>
-        <button
-          onClick={fetchPendingOffers}
-          className="text-sm text-purple-600 hover:text-purple-700 font-semibold"
-        >
-          Try Again
-        </button>
-      </div>
-    );
+  // Don't show error state if there are no offers - fail silently
+  if (error && offers.length === 0) {
+    return null;
   }
 
   // Don't render anything if there are no offers
@@ -171,7 +151,11 @@ function PendingOffersSection({ onOfferUpdate }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <div
+      className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 transition-all duration-500 ease-in-out ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+      }`}
+    >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">

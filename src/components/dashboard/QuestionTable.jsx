@@ -103,14 +103,16 @@ const TierBadge = ({ tier }) => {
       label: 'Quick',
       bgColor: 'bg-blue-100',
       textColor: 'text-blue-700',
-      borderColor: 'border-blue-200'
+      borderColor: 'border-blue-200',
+      size: 'text-xs'
     },
     deep_dive: {
       icon: '🎯',
-      label: 'Deep',
-      bgColor: 'bg-purple-100',
-      textColor: 'text-purple-700',
-      borderColor: 'border-purple-200'
+      label: 'Deep Dive',
+      bgColor: 'bg-gradient-to-r from-purple-100 to-purple-200',
+      textColor: 'text-purple-800',
+      borderColor: 'border-purple-300',
+      size: 'text-xs font-bold'
     }
   };
 
@@ -119,7 +121,7 @@ const TierBadge = ({ tier }) => {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${tierConfig.bgColor} ${tierConfig.textColor} ${tierConfig.borderColor}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${tierConfig.size} ${tierConfig.bgColor} ${tierConfig.textColor} ${tierConfig.borderColor}`}
       title={tier === 'quick_consult' ? 'Quick Consult - Fixed price' : 'Deep Dive - Negotiated price'}
     >
       <span>{tierConfig.icon}</span>
@@ -209,9 +211,15 @@ const QuestionTable = ({
                 }
 
                 return (
-                  <tr 
-                    key={question.id} 
-                    className={`hover:bg-gray-50 transition cursor-pointer ${isHidden ? 'opacity-50' : ''}`}
+                  <tr
+                    key={question.id}
+                    className={`transition cursor-pointer ${
+                      isHidden ? 'opacity-50' : ''
+                    } ${
+                      question.question_tier === 'deep_dive'
+                        ? 'bg-purple-50/30 hover:bg-purple-50/50 border-l-4 border-l-purple-500'
+                        : 'hover:bg-gray-50'
+                    }`}
                     onClick={() => onQuestionClick?.(question)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -307,9 +315,15 @@ const QuestionTable = ({
             }
 
             return (
-              <div 
-                key={question.id} 
-                className={`p-4 hover:bg-gray-50 transition cursor-pointer ${isHidden ? 'opacity-50' : ''}`}
+              <div
+                key={question.id}
+                className={`p-4 transition cursor-pointer ${
+                  isHidden ? 'opacity-50' : ''
+                } ${
+                  question.question_tier === 'deep_dive'
+                    ? 'bg-purple-50/30 hover:bg-purple-50/50 border-l-4 border-l-purple-500'
+                    : 'hover:bg-gray-50'
+                }`}
                 onClick={() => onQuestionClick?.(question)}
               >
                 {/* Header Row */}
