@@ -100,8 +100,8 @@ function Hero() {
                 </p>
               </div>
 
-              {/* CARD 2: YOUR EXPERTISE - SOFTER COLOR + SUBTLE HOVER */}
-              <div className="group relative bg-gradient-to-br from-indigo-400 via-indigo-500 to-purple-500 rounded-xl md:rounded-2xl border-3 md:border-4 border-indigo-300 p-4 md:p-5 shadow-xl transform scale-[1.03] md:scale-105 -my-3 md:-my-2 z-10 transition-all duration-300 hover:shadow-2xl hover:border-indigo-400">
+              {/* CARD 2: YOUR EXPERTISE - SOFTER COLOR + SUBTLE HOVER WITH LIFT */}
+              <div className="group relative bg-gradient-to-br from-indigo-400 via-indigo-500 to-purple-500 rounded-xl md:rounded-2xl border-3 md:border-4 border-indigo-300 p-4 md:p-5 shadow-xl transform scale-[1.03] md:scale-105 -my-3 md:-my-2 z-10 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-indigo-400">
                 
                 {/* "YOU ARE HERE" badge */}
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-indigo-600 text-xs font-black px-3 md:px-4 py-1 md:py-1.5 rounded-full shadow-lg border-2 md:border-3 border-indigo-100 whitespace-nowrap">
