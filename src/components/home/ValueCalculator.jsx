@@ -206,40 +206,46 @@ function ValueCalculator() {
   };
 
   return (
-    <section className="py-16 md:py-20 bg-gradient-to-b from-white to-gray-50">
+    // MOBILE OPTIMIZED: py-16 md:py-20 → py-12 md:py-16 lg:py-20
+    <section className="py-12 md:py-16 lg:py-20 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Header - more compact */}
-          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-gray-900 mb-2">
+          {/* Header - RESPONSIVE TEXT SIZES */}
+          <h2 className="text-3xl sm:text-3xl md:text-4xl font-black tracking-tight text-gray-900 mb-2">
             Your Potential Earnings
           </h2>
-          <p className="text-gray-600 text-sm mb-8">
+          <p className="text-gray-600 text-sm mb-6 md:mb-8">
             Calculate your earning potential based on your expertise
           </p>
 
-          {/* Calculator Card - tighter padding */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-7">
+          {/* Calculator Card - MOBILE OPTIMIZED PADDING: p-6 md:p-7 → p-5 md:p-7 */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 md:p-7">
             
-            {/* Industry Presets - more compact */}
+            {/* Industry Presets - HORIZONTAL SCROLL ON MOBILE */}
             <div className="mb-6">
               <label className="block text-xs font-semibold text-gray-700 mb-3 text-left uppercase tracking-wide">
                 Choose your expertise
               </label>
-              <div className="flex flex-wrap gap-2">
+              {/* MOBILE: Horizontal scroll, DESKTOP: Wrap */}
+              <div className="flex md:flex-wrap gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 -mx-5 px-5 md:mx-0 md:px-0 scrollbar-hide">
                 {presets.map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => applyPreset(preset)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex-shrink-0 md:flex-shrink inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       selectedPreset === preset.id
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                     }`}
                   >
                     {preset.icon}
-                    <span>{preset.label}</span>
+                    <span className="whitespace-nowrap">{preset.label}</span>
                   </button>
                 ))}
+              </div>
+              {/* Mobile scroll hint */}
+              <div className="md:hidden text-center mt-2">
+                <p className="text-xs text-gray-400">← Scroll for more →</p>
               </div>
             </div>
 
@@ -296,7 +302,7 @@ function ValueCalculator() {
               </div>
             </div>
 
-            {/* Time Horizon Tabs - more compact */}
+            {/* Time Horizon Tabs */}
             <div className="flex justify-center gap-2 mb-5">
               {['weekly', 'monthly', 'yearly'].map((horizon) => (
                 <button
@@ -313,7 +319,7 @@ function ValueCalculator() {
               ))}
             </div>
 
-            {/* Result Display - more compact */}
+            {/* Result Display */}
             <div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-xl p-5 mb-5 border border-indigo-100">
               <div className="text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">
                 Your potential revenue
@@ -325,7 +331,7 @@ function ValueCalculator() {
                 per {displayData.label}
               </div>
               
-              {/* Quick Stats - now dynamic */}
+              {/* Quick Stats - dynamic */}
               <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-600">
                 <div className="flex items-center gap-1.5 bg-white/60 px-2.5 py-1.5 rounded-lg">
                   <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -348,7 +354,7 @@ function ValueCalculator() {
               </div>
             </div>
 
-            {/* Expandable Breakdown - better spacing */}
+            {/* Expandable Breakdown */}
             <div className="mb-6">
               <button
                 onClick={() => setShowBreakdown(!showBreakdown)}
@@ -409,10 +415,10 @@ function ValueCalculator() {
               )}
             </div>
 
-            {/* Divider for better separation */}
+            {/* Divider */}
             <div className="border-t border-gray-200 pt-5 mb-5"></div>
 
-            {/* CTA - properly sized */}
+            {/* CTA */}
             <Link
               to="/signin"
               className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-3 px-6 rounded-lg transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"

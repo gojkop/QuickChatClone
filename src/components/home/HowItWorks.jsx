@@ -7,7 +7,8 @@ const HowItWorksStep = ({ icon, title, description, color, index, isLast }) => (
       <div className="hidden md:block absolute top-12 left-full w-full h-0.5 bg-gradient-to-r from-indigo-200 to-transparent -translate-x-4 z-0"></div>
     )}
     
-    <div className="relative bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-indigo-200 hover:-translate-y-2">
+    {/* MOBILE OPTIMIZED: Reduced padding p-8 → p-5 md:p-8 */}
+    <div className="relative bg-white p-5 md:p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-indigo-200 hover:-translate-y-2">
       {/* Step number */}
       <div className={`absolute -top-4 -left-4 w-12 h-12 rounded-full bg-gradient-to-br ${color} text-white font-bold flex items-center justify-center text-xl shadow-lg`}>
         {index}
@@ -18,8 +19,9 @@ const HowItWorksStep = ({ icon, title, description, color, index, isLast }) => (
         {icon}
       </div>
       
-      <h3 className="text-2xl font-bold text-gray-900 mb-3">{title}</h3>
-      <p className="text-gray-600 leading-relaxed">{description}</p>
+      {/* RESPONSIVE TEXT SIZES */}
+      <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">{title}</h3>
+      <p className="text-sm md:text-base text-gray-600 leading-relaxed">{description}</p>
     </div>
   </div>
 );
@@ -59,13 +61,15 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 md:py-32 bg-gradient-to-b from-gray-50 to-white">
+    // MOBILE OPTIMIZED: py-24 md:py-32 → py-12 md:py-24 lg:py-32
+    <section id="how-it-works" className="py-12 md:py-24 lg:py-32 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900">
+        {/* RESPONSIVE TEXT SIZES */}
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900">
             How It Works
           </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
+          <p className="mt-3 md:mt-4 max-w-2xl mx-auto text-base md:text-lg text-gray-600">
             Three simple steps to reclaim your time and monetize your expertise
           </p>
         </div>

@@ -12,10 +12,12 @@ const AskAnyoneBanner = () => {
   const [showDetails, setShowDetails] = React.useState(false);
 
   return (
-    <section className="py-16 bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50 border-y border-indigo-100">
+    // MOBILE OPTIMIZED: py-16 → py-12 md:py-16
+    <section className="py-12 md:py-16 bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50 border-y border-indigo-100">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl border border-indigo-200 shadow-lg p-8 md:p-10">
+          {/* MOBILE OPTIMIZED: p-8 md:p-10 → p-6 md:p-10 */}
+          <div className="bg-white rounded-2xl border border-indigo-200 shadow-lg p-6 md:p-10">
             
             {/* Header with Icon */}
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
@@ -28,22 +30,22 @@ const AskAnyoneBanner = () => {
                 </div>
               </div>
 
-              {/* Title */}
+              {/* Title - RESPONSIVE TEXT SIZE */}
               <div className="flex-1">
-                <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">
+                <h3 className="text-xl md:text-2xl lg:text-3xl font-black text-gray-900 mb-2">
                   Need a Specific Expert Who's Not on mindPick Yet?
                 </h3>
               </div>
             </div>
 
             {/* Description */}
-            <p className="text-gray-700 text-base leading-relaxed mb-6">
+            <p className="text-gray-700 text-sm md:text-base leading-relaxed mb-6">
               Send them an invitation and we'll help you reach them professionally—no awkward cold emails needed.
             </p>
 
-            {/* Example Badges */}
+            {/* Example Badges - CONSOLIDATED TO SINGLE COLOR (Fix #7) */}
             <div className="flex flex-wrap gap-3 mb-8">
-              <div className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-100">
+              <div className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium border border-indigo-100">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
@@ -55,7 +57,7 @@ const AskAnyoneBanner = () => {
                 </svg>
                 <span>Tech expert you follow</span>
               </div>
-              <div className="inline-flex items-center gap-2 px-3 py-2 bg-violet-50 text-violet-700 rounded-lg text-sm font-medium border border-violet-100">
+              <div className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium border border-indigo-100">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
@@ -126,46 +128,49 @@ const AskAnyoneBanner = () => {
   );
 };
 
-// NEW: Inline Social Impact section (replaces full-page CTA diversion)
+// SOCIAL IMPACT - FIXED COLORS (Fix #5)
 const SocialImpactInline = () => (
-  <section className="py-16 bg-gradient-to-br from-yellow-50 to-orange-50 border-y border-orange-100">
+  // MOBILE OPTIMIZED: py-16 → py-12 md:py-16
+  // COLOR FIX: from-yellow-50 to-orange-50 → from-rose-50 via-pink-50 to-violet-50
+  <section className="py-12 md:py-16 bg-gradient-to-br from-rose-50 via-pink-50 to-violet-50 border-y border-rose-100">
     <div className="container mx-auto px-6">
       <div className="max-w-3xl mx-auto text-center">
-        {/* Icon */}
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-400 shadow-xl mb-6">
+        {/* Icon - UPDATED GRADIENT */}
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 shadow-xl mb-6">
           <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="currentColor">
             <path fillRule="evenodd" clipRule="evenodd" d="M12.8781 5.16335C11.0031 3.48835 8.01609 3.61035 6.27309 5.35335C4.53009 7.09635 4.39909 10.0914 6.07109 11.9684L11.5351 17.4324C11.7951 17.6924 12.2051 17.6924 12.4651 17.4324L17.9291 11.9684C19.6011 10.0914 19.4701 7.09635 17.7271 5.35335C15.9841 3.61035 12.9971 3.48835 11.1221 5.16335L12.0001 6.04135L12.8781 5.16335Z"/>
           </svg>
         </div>
 
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+        {/* RESPONSIVE TEXT SIZE + UPDATED GRADIENT */}
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
           Turn Knowledge into{' '}
-          <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-violet-600 bg-clip-text text-transparent">
             Kindness
           </span>
         </h2>
         
-        <p className="text-gray-700 text-lg mb-6 leading-relaxed">
+        <p className="text-gray-700 text-base md:text-lg mb-6 leading-relaxed">
           Set aside a percentage of your earnings to automatically donate to verified charities. 
           Make an impact while you earn — support causes like UNICEF, Doctors Without Borders, 
           Malala Fund, and more.
         </p>
 
-        {/* Mini Stats */}
-        <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-sm rounded-full border border-orange-200 shadow-sm mb-6">
-          <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+        {/* Mini Stats - UPDATED BORDER COLOR */}
+        <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-sm rounded-full border border-rose-200 shadow-sm mb-6">
+          <svg className="w-5 h-5 text-rose-600" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
           </svg>
-          <span className="font-bold text-orange-900">
+          <span className="font-bold text-rose-900">
             6 verified charity partners
           </span>
         </div>
 
-        {/* CTA - Learn More (not diverting to separate page during funnel) */}
+        {/* CTA - UPDATED TEXT COLOR */}
         <div>
           <Link 
             to="/social-impact"
-            className="inline-flex items-center gap-2 text-orange-700 hover:text-orange-800 font-semibold transition-colors group"
+            className="inline-flex items-center gap-2 text-rose-700 hover:text-rose-800 font-semibold transition-colors group"
           >
             <span>Learn about our charity partners</span>
             <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,11 +183,11 @@ const SocialImpactInline = () => (
   </section>
 );
 
-// OPTIMIZED: HomePage flow now prioritizes expert conversion
+// OPTIMIZED: HomePage flow
 function HomePage() {
   return (
     <>
-          <SEO
+      <SEO
         title="mindPick - Monetize Your Expertise"
         description="Get paid for your expertise. mindPick connects you with people who need personalized answers AI can't provide. Set your price, share your link, earn from your knowledge—no meetings required."
       />
@@ -194,10 +199,10 @@ function HomePage() {
       {/* Social proof before any distractions */}
       <Testimonials />
       
-      {/* NEW: Inline social impact (doesn't break flow) */}
+      {/* Inline social impact (doesn't break flow) */}
       <SocialImpactInline />
       
-      {/* MOVED: Ask Anyone comes after social proof */}
+      {/* Ask Anyone comes after social proof */}
       <AskAnyoneBanner />
       
       {/* Final conversion push */}

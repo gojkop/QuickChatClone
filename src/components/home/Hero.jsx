@@ -5,7 +5,7 @@ import AnimatedBackground from './AnimatedBackground';
 function Hero() {
   return (
     <AnimatedBackground variant="hero">
-      <section className="relative pt-40 pb-32 text-center">
+      <section className="relative pt-20 pb-16 md:pt-40 md:pb-32 text-center">
         {/* Floating decorative elements */}
         <div className="pointer-events-none absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-2xl"></div>
         <div className="pointer-events-none absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-2xl"></div>
@@ -21,8 +21,8 @@ function Hero() {
             Where Human Expertise Gets Valued
           </div>
           
-          {/* Headline - Clear & Powerful */}
-          <h1 className="text-5xl md:text-7xl font-black leading-tight tracking-tighter">
+          {/* Headline - Clear & Powerful - RESPONSIVE TEXT SIZES */}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight tracking-tighter">
             Get Paid for{' '}
             <span className="relative inline-block">
               <span className="animated-gradient-text bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
@@ -41,41 +41,47 @@ function Hero() {
             </span>
           </h1>
           
-          {/* Subtext - Clean Flow */}
-          <p className="mt-8 max-w-2xl mx-auto text-xl text-gray-600 leading-relaxed">
+          {/* Subtext - Clean Flow - RESPONSIVE TEXT SIZES */}
+          <p className="mt-6 md:mt-8 max-w-2xl mx-auto text-lg md:text-xl text-gray-600 leading-relaxed">
             Your audience has already tried AI and Google. Now they need personalized expertise 
             that understands <span className="font-semibold text-gray-900">their</span> specific situation.
           </p>
-          <p className="mt-4 text-lg font-semibold text-gray-900">
+          <p className="mt-3 md:mt-4 text-base md:text-lg font-semibold text-gray-900">
             Share your link. Set your price. Get paid instantly. No meetings required.
           </p>
           
-          {/* THE INTELLIGENCE SPECTRUM - Stronger Messaging */}
-          <div className="mt-16 mb-12 max-w-4xl mx-auto">
+          {/* THE INTELLIGENCE SPECTRUM - MOBILE OPTIMIZED */}
+          <div className="mt-12 md:mt-16 mb-10 md:mb-12 max-w-4xl mx-auto">
             
-            {/* Section Header */}
-            <div className="mb-8 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">The Expertise Ladder</h2>
+            {/* Section Header - RESPONSIVE TEXT */}
+            <div className="mb-6 md:mb-8 text-center">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">The Expertise Ladder</h2>
               <p className="text-sm text-gray-600">From information to transformation</p>
             </div>
             
-            {/* Gradient Bar */}
-            <div className="relative h-3 bg-gradient-to-r from-gray-200 via-indigo-500 to-violet-600 rounded-full mb-10 shadow-sm">
+            {/* Gradient Bar - HIDDEN ON MOBILE (doesn't translate to vertical stack) */}
+            <div className="hidden md:block relative h-3 bg-gradient-to-r from-gray-200 via-indigo-500 to-violet-600 rounded-full mb-10 shadow-sm">
               <div className="absolute -top-8 left-0 text-xs text-gray-500 font-medium">Information</div>
               <div className="absolute -top-8 right-0 text-xs text-violet-600 font-bold">Transformation</div>
             </div>
             
-            {/* Three Stages - Stronger Positioning */}
-            <div className="grid md:grid-cols-3 gap-6">
+            {/* Three Stages - MOBILE: Horizontal scroll maintains progression, DESKTOP: Grid */}
+            <div className="md:grid md:grid-cols-3 md:gap-6 flex overflow-x-auto snap-x snap-mandatory md:overflow-visible gap-4 pb-4 md:pb-0 -mx-6 px-6 md:mx-0 md:px-0">
               
-              {/* Stage 1: AI Information Layer */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-all duration-300">
+              {/* Stage 1: AI Information Layer - MOBILE OPTIMIZED PADDING */}
+              <div className="min-w-[85%] sm:min-w-0 snap-center bg-white rounded-xl border border-gray-200 p-5 md:p-6 hover:shadow-md transition-all duration-300 flex-shrink-0">
+                {/* Mobile step indicator */}
+                <div className="md:hidden inline-flex items-center gap-2 mb-3 text-xs font-bold text-gray-500">
+                  <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">1</span>
+                  <span>FOUNDATION</span>
+                </div>
+                
                 <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center mb-4">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2 text-lg">Information</h3>
+                <h3 className="font-bold text-gray-900 mb-2 text-base md:text-lg">Information</h3>
                 <p className="text-sm text-gray-600 mb-3 leading-relaxed">
                   AI provides facts, patterns, and general knowledge. Brilliant for research and broad answers.
                 </p>
@@ -87,11 +93,19 @@ function Hero() {
                 </div>
               </div>
 
-              {/* Stage 2: Your Expertise (ELEVATED) */}
-              <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl border-2 border-indigo-400 p-6 shadow-xl transform md:scale-105 hover:shadow-2xl transition-all duration-300 relative">
-                {/* Premium Badge */}
-                <div className="absolute -top-3 -right-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                  You
+              {/* Stage 2: Your Expertise (ELEVATED) - MOBILE: Scale + badge position adjusted */}
+              <div className="min-w-[85%] sm:min-w-0 snap-center bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl border-2 border-indigo-400 p-5 md:p-6 shadow-lg md:shadow-xl transform scale-[1.02] md:scale-105 hover:shadow-2xl transition-all duration-300 relative flex-shrink-0">
+                {/* Premium Badge - MOBILE: Left side with step number */}
+                <div className="absolute -top-3 -left-3 md:-right-3 md:left-auto bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
+                  <span className="md:hidden">2</span>
+                  <span className="md:hidden">•</span>
+                  <span>You</span>
+                </div>
+                
+                {/* Mobile step indicator - visible only on small screens */}
+                <div className="md:hidden inline-flex items-center gap-2 mb-3 text-xs font-bold text-indigo-600">
+                  <span className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center">2</span>
+                  <span>YOUR EXPERTISE</span>
                 </div>
                 
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center mb-4 shadow-md">
@@ -99,7 +113,7 @@ function Hero() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2 text-lg">Personal Expertise</h3>
+                <h3 className="font-bold text-gray-900 mb-2 text-base md:text-lg">Personal Expertise</h3>
                 <p className="text-sm text-gray-700 mb-3 leading-relaxed">
                   You understand context, navigate nuance, and apply experience to their unique situation.
                 </p>
@@ -112,14 +126,20 @@ function Hero() {
                 </div>
               </div>
 
-              {/* Stage 3: Accountability & Trust */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-all duration-300">
+              {/* Stage 3: Accountability & Trust - MOBILE OPTIMIZED PADDING */}
+              <div className="min-w-[85%] sm:min-w-0 snap-center bg-white rounded-xl border border-gray-200 p-5 md:p-6 hover:shadow-md transition-all duration-300 flex-shrink-0">
+                {/* Mobile step indicator */}
+                <div className="md:hidden inline-flex items-center gap-2 mb-3 text-xs font-bold text-gray-500">
+                  <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">3</span>
+                  <span>TRANSFORMATION</span>
+                </div>
+                
                 <div className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mb-4">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2 text-lg">Accountability</h3>
+                <h3 className="font-bold text-gray-900 mb-2 text-base md:text-lg">Accountability</h3>
                 <p className="text-sm text-gray-600 mb-3 leading-relaxed">
                   Real person, real responsibility. Your reputation and expertise stand behind every answer.
                 </p>
@@ -133,25 +153,38 @@ function Hero() {
 
             </div>
 
+            {/* Mobile scroll hint - only visible on small screens with horizontal scroll */}
+            <div className="md:hidden text-center mt-4">
+              <p className="text-xs text-gray-500 flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                </svg>
+                <span>Swipe to see the progression</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </p>
+            </div>
+
             {/* Bottom Summary */}
-            <div className="mt-8 text-center">
+            <div className="mt-6 md:mt-8 text-center">
               <p className="text-sm text-gray-600">
                 <span className="font-semibold text-gray-900">AI gives information.</span> You provide insight, judgment, and accountability for their unique context.
               </p>
             </div>
           </div>
           
-          {/* CTA Buttons */}
+          {/* CTA Buttons - RESPONSIVE SIZING */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link 
-  to="/signin" 
-  className="group inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-8 rounded-xl transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
->
-  <span>Start Earning Today</span>
-  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-  </svg>
-</Link>
+              to="/signin" 
+              className="group inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-8 rounded-xl transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+            >
+              <span>Start Earning Today</span>
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
             
             <a 
               href="#how-it-works" 
@@ -169,7 +202,7 @@ function Hero() {
           </p>
           
           {/* Social proof */}
-          <div className="mt-16 flex flex-col items-center gap-3">
+          <div className="mt-12 md:mt-16 flex flex-col items-center gap-3">
             <div className="flex -space-x-2">
               {[1, 2, 3, 4, 5].map(i => (
                 <img 

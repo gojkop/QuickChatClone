@@ -396,7 +396,21 @@ html {
     background: rgba(255, 255, 255, 0.95) !important;
   }
 }
+/* ========================================
+   MOBILE OPTIMIZATIONS
+   ======================================== */
 
+/* Hide scrollbar for horizontal scroll containers while maintaining functionality */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center font-bold rounded-lg transition duration-base ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400;
