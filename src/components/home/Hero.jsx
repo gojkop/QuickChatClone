@@ -87,8 +87,8 @@ function Hero() {
                   <h3 className="font-bold text-gray-900 text-sm md:text-base">Information</h3>
                 </div>
                 
-                {/* COMPACT icon - 48px mobile, 52px desktop */}
-                <div className="w-12 h-12 md:w-13 md:h-13 rounded-lg md:rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center mb-3 mx-auto md:mx-0">
+                {/* COMPACT icon - CENTERED on both mobile and desktop */}
+                <div className="w-12 h-12 md:w-13 md:h-13 rounded-lg md:rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center mb-3 mx-auto">
                   <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -116,8 +116,8 @@ function Hero() {
                   <h3 className="font-black text-white text-base md:text-lg">Your Expertise</h3>
                 </div>
                 
-                {/* COMPACT icon with glow - 56px mobile, 64px desktop */}
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white/20 backdrop-blur text-white flex items-center justify-center mb-3 mx-auto md:mx-0 shadow-xl ring-2 md:ring-3 ring-white/30">
+                {/* COMPACT icon with glow - CENTERED on both mobile and desktop */}
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white/20 backdrop-blur text-white flex items-center justify-center mb-3 mx-auto shadow-xl ring-2 md:ring-3 ring-white/30">
                   <svg className="w-7 h-7 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
@@ -147,8 +147,8 @@ function Hero() {
                   <h3 className="font-bold text-gray-900 text-sm md:text-base">Accountability</h3>
                 </div>
                 
-                {/* COMPACT icon - 48px mobile, 52px desktop */}
-                <div className="w-12 h-12 md:w-13 md:h-13 rounded-lg md:rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mb-3 mx-auto md:mx-0">
+                {/* COMPACT icon - CENTERED on both mobile and desktop */}
+                <div className="w-12 h-12 md:w-13 md:h-13 rounded-lg md:rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mb-3 mx-auto">
                   <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
