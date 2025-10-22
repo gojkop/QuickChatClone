@@ -243,7 +243,7 @@ function FeedbackWidget() {
     return 'medium';
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   
   if (!formData.message.trim() || formData.message.length < 10) {
@@ -259,7 +259,17 @@ function FeedbackWidget() {
     const emailToSend = formData.email.trim() || extractUserEmail(user) || null;
     const userIdToSend = extractUserId(user);
     
-    // 🆕 Always send complete payload structure
+    // 🆕 Generate session_id - ephemeral if no consent, persistent if consent granted
+    let sessionId;
+    if (analyticsConsent) {
+      // With consent: use persistent session ID
+      sessionId = getSessionId(); // Stores in localStorage
+    } else {
+      // Without consent: generate ephemeral session ID (not stored)
+      sessionId = `fp_ephemeral_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+    
+    // 🆕 Always send complete payload with required fields
     const payload = {
       type: selectedType,
       message: formData.message.trim(),
@@ -269,46 +279,26 @@ function FeedbackWidget() {
       page_url: window.location.href,
       page_title: document.title,
       referrer: document.referrer || null,
+      session_id: sessionId, // ✅ Always present (required by backend)
+      user_agent: navigator.userAgent,
+      device_type: detectDeviceType(),
+      viewport: { width: window.innerWidth, height: window.innerHeight },
       user_id: userIdToSend,
       user_role: user?.role || (expertProfile ? 'expert' : 'guest'),
       is_authenticated: isAuthenticated,
+      journey_stage: detectJourneyStage(location.pathname, isAuthenticated),
+      previous_actions: analyticsConsent ? getPreviousActions() : [],
+      time_on_page: startTimeRef.current ? 
+        Math.floor((Date.now() - startTimeRef.current) / 1000) : 0,
+      scroll_depth: scrollDepthRef.current || 0,
+      interactions_count: interactionsRef.current || 0,
+      analytics_consent: analyticsConsent, // ✅ Always present (true or false)
       contact_consent: formData.wants_followup,
       screenshot_consent: attachments.length > 0,
     };
 
-    // 🆕 Conditionally populate analytics fields
-    if (analyticsConsent) {
-      console.log('[FeedbackWidget] ✅ Analytics consent granted - including real analytics data');
-      
-      payload.analytics_consent = true;
-      payload.session_id = getSessionId();
-      payload.user_agent = navigator.userAgent;
-      payload.device_type = detectDeviceType();
-      payload.viewport = { width: window.innerWidth, height: window.innerHeight };
-      payload.journey_stage = detectJourneyStage(location.pathname, isAuthenticated);
-      payload.previous_actions = getPreviousActions();
-      payload.time_on_page = startTimeRef.current ? 
-        Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
-      payload.scroll_depth = scrollDepthRef.current;
-      payload.interactions_count = interactionsRef.current;
-      
-      if (user?.created_at) {
-        payload.account_age_days = Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24));
-      }
-    } else {
-      console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - sending empty analytics fields');
-      
-      // Send empty/placeholder values for analytics fields
-      // DO NOT include analytics_consent field at all
-      payload.session_id = null;
-      payload.user_agent = null;
-      payload.device_type = null;
-      payload.viewport = null;
-      payload.journey_stage = null;
-      payload.previous_actions = [];
-      payload.time_on_page = 0;
-      payload.scroll_depth = 0;
-      payload.interactions_count = 0;
+    if (user?.created_at) {
+      payload.account_age_days = Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24));
     }
 
     // Type-specific fields
@@ -330,8 +320,7 @@ function FeedbackWidget() {
     console.log('[FeedbackWidget] Submitting feedback:', {
       email: emailToSend,
       analyticsConsent,
-      hasAnalyticsConsentField: 'analytics_consent' in payload,
-      payloadKeys: Object.keys(payload)
+      sessionIdType: analyticsConsent ? 'persistent' : 'ephemeral'
     });
 
     const response = await fetch(`${API_BASE}/feedback`, {
