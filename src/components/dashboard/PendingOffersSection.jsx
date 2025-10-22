@@ -62,9 +62,10 @@ function PendingOffersSection({ onOfferUpdate }) {
   // Trigger fade-in animation when offers appear
   useEffect(() => {
     if (offers.length > 0 && !isLoading) {
-      // Small delay to ensure smooth transition
-      const timer = setTimeout(() => setIsVisible(true), 50);
-      return () => clearTimeout(timer);
+      // Use requestAnimationFrame to ensure DOM is ready without visible delay
+      requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
     } else {
       setIsVisible(false);
     }
@@ -147,6 +148,11 @@ function PendingOffersSection({ onOfferUpdate }) {
 
   // Don't render anything if there are no offers
   if (offers.length === 0) {
+    return null;
+  }
+
+  // Don't render until animation is ready (prevents flash/blink)
+  if (!isVisible) {
     return null;
   }
 
