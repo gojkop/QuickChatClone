@@ -157,6 +157,7 @@ function AskQuestionPage() {
           ...basePayload,
           proposed_price_cents: Math.round(parseFloat(proposedPrice) * 100),
           asker_message: askerMessage || null,
+          stripe_payment_intent_id: 'pi_mock_' + Date.now(), // Mock for now
         };
         endpoint = '/api/questions/deep-dive';
       } else {
