@@ -1,12 +1,8 @@
-// src/components/common/FeedbackWidget.jsx
-// Updated to support auto-opening from deletion email link
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { hasConsent, CONSENT_CATEGORIES } from '@/utils/cookieConsent';
 import { Bug, Lightbulb, Smile, HelpCircle } from 'lucide-react';
-
 
 const FEEDBACK_TYPES = [
   { id: 'bug', label: 'Bug', icon: Bug, color: 'text-red-600' },
@@ -32,21 +28,15 @@ function detectDeviceType() {
   return 'desktop';
 }
 
-// 🆕 UPDATED: Only generate session ID if analytics consent granted
+// 🆕 Only generate session ID if analytics consent granted
 function getSessionId() {
-  // Check analytics consent
   const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
-  
-  if (!analyticsConsent) {
-    console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - no session ID');
-    return null;
-  }
+  if (!analyticsConsent) return null;
 
   let sessionId = localStorage.getItem('feedback_session_id');
   if (!sessionId) {
     sessionId = `fp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     localStorage.setItem('feedback_session_id', sessionId);
-    console.log('[FeedbackWidget] ✅ Generated session ID with consent');
   }
   return sessionId;
 }
@@ -60,10 +50,9 @@ function getPreviousActions() {
   }
 }
 
-// 🆕 UPDATED: Only track if analytics consent granted
+// 🆕 Only track if analytics consent granted
 function trackAction(action) {
   const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
-  
   if (!analyticsConsent) {
     console.log('[FeedbackWidget] ⚠️ Skipping action tracking - no analytics consent');
     return;
@@ -114,7 +103,6 @@ function FeedbackWidget() {
   const scrollDepthRef = useRef(0);
   const interactionsRef = useRef(0);
 
-  // NEW: Check URL parameters on mount for auto-opening from deletion email
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const feedbackType = params.get('feedback');
@@ -125,35 +113,28 @@ function FeedbackWidget() {
       setIsOpen(true);
       setSelectedType('feedback');
       
-      // Pre-fill email if provided in URL
       if (emailParam) {
         setFormData(prev => ({ 
           ...prev, 
           email: decodeURIComponent(emailParam),
-          // Optional: pre-fill a message template
           message: "I'd like to share why I deleted my account:\n\n"
         }));
       }
       
       trackAction('feedback_widget_opened_from_deletion_email');
-      
-      // Clean up URL to remove params (optional, keeps URL clean)
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
-  // 🆕 UPDATED: Only track scroll/interactions if analytics consent granted
+  // 🆕 Only track scroll/interactions if analytics consent granted
   useEffect(() => {
-    // Check analytics consent
     const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
-    
     if (!analyticsConsent) {
       console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - skipping scroll/interaction tracking');
       return;
     }
 
     console.log('[FeedbackWidget] ✅ Analytics consent granted - enabling tracking');
-
     startTimeRef.current = Date.now();
     
     const handleScroll = () => {
@@ -274,67 +255,99 @@ function FeedbackWidget() {
     trackAction('feedback_submit_started');
 
     try {
-      // 🆕 Check analytics consent
       const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
-      
       const emailToSend = formData.email.trim() || extractUserEmail(user) || null;
       const userIdToSend = extractUserId(user);
       
-      // Base payload (always included)
+      // 🆕 Build base payload (always included)
       const payload = {
         type: selectedType,
         message: formData.message.trim(),
-        rating: formData.rating || null,
         email: emailToSend,
-        wants_followup: formData.wants_followup,
         page_url: window.location.href,
         page_title: document.title,
-        referrer: document.referrer || null,
-        user_id: userIdToSend,
         user_role: user?.role || (expertProfile ? 'expert' : 'guest'),
         is_authenticated: isAuthenticated,
-        analytics_consent: analyticsConsent,
         contact_consent: formData.wants_followup,
         screenshot_consent: attachments.length > 0,
       };
 
-      // 🆕 CONDITIONALLY add analytics data if consent granted
+      // Add optional fields (only if they have values)
+      if (formData.rating > 0) {
+        payload.rating = formData.rating;
+      }
+
+      if (formData.wants_followup) {
+        payload.wants_followup = true;
+      }
+
+      if (document.referrer) {
+        payload.referrer = document.referrer;
+      }
+
+      if (userIdToSend) {
+        payload.user_id = userIdToSend;
+      }
+
+      // 🆕 Add analytics fields ONLY if consent granted
       if (analyticsConsent) {
-        console.log('[FeedbackWidget] ✅ Including analytics data (consent granted)');
-        const timeOnPage = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        console.log('[FeedbackWidget] ✅ Analytics consent granted - including analytics data');
         
-        payload.session_id = getSessionId();
+        payload.analytics_consent = true;
+        
+        const sessionId = getSessionId();
+        if (sessionId) payload.session_id = sessionId;
+        
         payload.user_agent = navigator.userAgent;
         payload.device_type = detectDeviceType();
         payload.viewport = { width: window.innerWidth, height: window.innerHeight };
-        payload.account_age_days = user?.created_at ? 
-          Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24)) : null;
         payload.journey_stage = detectJourneyStage(location.pathname, isAuthenticated);
         payload.previous_actions = getPreviousActions();
-        payload.time_on_page = timeOnPage;
+        
+        if (startTimeRef.current) {
+          payload.time_on_page = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        }
+        
         payload.scroll_depth = scrollDepthRef.current;
         payload.interactions_count = interactionsRef.current;
+        
+        if (user?.created_at) {
+          payload.account_age_days = Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24));
+        }
       } else {
-        console.log('[FeedbackWidget] ⚠️ Skipping analytics data (no consent)');
+        console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - omitting analytics data');
+        payload.analytics_consent = false;
       }
 
-      // Type-specific fields (always included)
+      // Type-specific fields
       if (selectedType === 'bug') {
-        payload.expected_behavior = formData.expected_behavior.trim() || null;
-        payload.actual_behavior = formData.actual_behavior.trim() || null;
+        if (formData.expected_behavior.trim()) {
+          payload.expected_behavior = formData.expected_behavior.trim();
+        }
+        if (formData.actual_behavior.trim()) {
+          payload.actual_behavior = formData.actual_behavior.trim();
+        }
         payload.bug_severity = inferBugSeverity(formData.message);
       }
 
       if (selectedType === 'feature') {
-        payload.problem_statement = formData.problem_statement.trim() || null;
-        payload.current_workaround = formData.current_workaround.trim() || null;
+        if (formData.problem_statement.trim()) {
+          payload.problem_statement = formData.problem_statement.trim();
+        }
+        if (formData.current_workaround.trim()) {
+          payload.current_workaround = formData.current_workaround.trim();
+        }
       }
 
       if (attachments.length > 0) {
         payload.attachments = await uploadAttachments(attachments);
       }
 
-      console.log('[FeedbackWidget] Submitting with email:', emailToSend);
+      console.log('[FeedbackWidget] Submitting feedback:', {
+        email: emailToSend,
+        analyticsConsent,
+        hasSessionId: analyticsConsent && !!getSessionId()
+      });
 
       const response = await fetch(`${API_BASE}/feedback`, {
         method: 'POST',
@@ -434,7 +447,7 @@ function FeedbackWidget() {
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
-                            <type.icon className={`w-5 h-5 ${type.color}`} />
+                        <type.icon className={`w-5 h-5 ${type.color}`} />
                         <span className="text-[10px] font-medium text-gray-700">{type.label}</span>
                       </button>
                     ))}
@@ -588,7 +601,7 @@ function FeedbackWidget() {
                 {/* Email Field */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Email {hasDetectedEmail && '✅'}
+                    Email {hasDetectedEmail ? '✅' : <span className="text-red-500">*</span>}
                   </label>
                   <input
                     type="email"
@@ -601,7 +614,13 @@ function FeedbackWidget() {
                     }`}
                     placeholder="your@email.com"
                     readOnly={emailFieldReadOnly}
+                    required={!hasDetectedEmail}
                   />
+                  {!hasDetectedEmail && (
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      Required so we can respond to your feedback
+                    </p>
+                  )}
                   {formData.email && (
                     <label className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-600">
                       <input
@@ -633,7 +652,7 @@ function FeedbackWidget() {
                 </div>
                 <h4 className="text-lg font-black text-gray-900 mb-1">Thank You!</h4>
                 <p className="text-xs text-gray-600">
-                    Your feedback helps us improve
+                  Your feedback helps us improve
                 </p>
               </div>
             )}
