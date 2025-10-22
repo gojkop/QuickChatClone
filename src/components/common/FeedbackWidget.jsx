@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { hasConsent, CONSENT_CATEGORIES } from '@/utils/cookieConsent';
 import { Bug, Lightbulb, Smile, HelpCircle } from 'lucide-react';
 
 
@@ -31,11 +32,21 @@ function detectDeviceType() {
   return 'desktop';
 }
 
+// 🆕 UPDATED: Only generate session ID if analytics consent granted
 function getSessionId() {
+  // Check analytics consent
+  const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
+  
+  if (!analyticsConsent) {
+    console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - no session ID');
+    return null;
+  }
+
   let sessionId = localStorage.getItem('feedback_session_id');
   if (!sessionId) {
     sessionId = `fp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     localStorage.setItem('feedback_session_id', sessionId);
+    console.log('[FeedbackWidget] ✅ Generated session ID with consent');
   }
   return sessionId;
 }
@@ -49,7 +60,15 @@ function getPreviousActions() {
   }
 }
 
+// 🆕 UPDATED: Only track if analytics consent granted
 function trackAction(action) {
+  const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
+  
+  if (!analyticsConsent) {
+    console.log('[FeedbackWidget] ⚠️ Skipping action tracking - no analytics consent');
+    return;
+  }
+
   try {
     const actions = JSON.parse(sessionStorage.getItem('user_actions') || '[]');
     actions.push({ action, timestamp: Date.now(), url: window.location.pathname });
@@ -123,8 +142,20 @@ function FeedbackWidget() {
     }
   }, []);
 
+  // 🆕 UPDATED: Only track scroll/interactions if analytics consent granted
   useEffect(() => {
+    // Check analytics consent
+    const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
+    
+    if (!analyticsConsent) {
+      console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - skipping scroll/interaction tracking');
+      return;
+    }
+
+    console.log('[FeedbackWidget] ✅ Analytics consent granted - enabling tracking');
+
     startTimeRef.current = Date.now();
+    
     const handleScroll = () => {
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
@@ -132,10 +163,13 @@ function FeedbackWidget() {
       const scrollPercentage = (scrollTop / (documentHeight - windowHeight)) * 100;
       scrollDepthRef.current = Math.max(scrollDepthRef.current, scrollPercentage);
     };
+    
     const handleInteraction = () => { interactionsRef.current += 1; };
+    
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('click', handleInteraction);
     window.addEventListener('keydown', handleInteraction);
+    
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('click', handleInteraction);
@@ -240,10 +274,13 @@ function FeedbackWidget() {
     trackAction('feedback_submit_started');
 
     try {
-      const timeOnPage = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      // 🆕 Check analytics consent
+      const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
+      
       const emailToSend = formData.email.trim() || extractUserEmail(user) || null;
       const userIdToSend = extractUserId(user);
       
+      // Base payload (always included)
       const payload = {
         type: selectedType,
         message: formData.message.trim(),
@@ -253,33 +290,45 @@ function FeedbackWidget() {
         page_url: window.location.href,
         page_title: document.title,
         referrer: document.referrer || null,
-        session_id: getSessionId(),
-        user_agent: navigator.userAgent,
-        device_type: detectDeviceType(),
-        viewport: { width: window.innerWidth, height: window.innerHeight },
         user_id: userIdToSend,
         user_role: user?.role || (expertProfile ? 'expert' : 'guest'),
         is_authenticated: isAuthenticated,
-        account_age_days: user?.created_at ? 
-          Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24)) : null,
-        journey_stage: detectJourneyStage(location.pathname, isAuthenticated),
-        previous_actions: getPreviousActions(),
-        time_on_page: timeOnPage,
-        scroll_depth: scrollDepthRef.current,
-        interactions_count: interactionsRef.current,
-        ...(selectedType === 'bug' && {
-          expected_behavior: formData.expected_behavior.trim() || null,
-          actual_behavior: formData.actual_behavior.trim() || null,
-          bug_severity: inferBugSeverity(formData.message),
-        }),
-        ...(selectedType === 'feature' && {
-          problem_statement: formData.problem_statement.trim() || null,
-          current_workaround: formData.current_workaround.trim() || null,
-        }),
-        analytics_consent: true,
+        analytics_consent: analyticsConsent,
         contact_consent: formData.wants_followup,
         screenshot_consent: attachments.length > 0,
       };
+
+      // 🆕 CONDITIONALLY add analytics data if consent granted
+      if (analyticsConsent) {
+        console.log('[FeedbackWidget] ✅ Including analytics data (consent granted)');
+        const timeOnPage = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        
+        payload.session_id = getSessionId();
+        payload.user_agent = navigator.userAgent;
+        payload.device_type = detectDeviceType();
+        payload.viewport = { width: window.innerWidth, height: window.innerHeight };
+        payload.account_age_days = user?.created_at ? 
+          Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24)) : null;
+        payload.journey_stage = detectJourneyStage(location.pathname, isAuthenticated);
+        payload.previous_actions = getPreviousActions();
+        payload.time_on_page = timeOnPage;
+        payload.scroll_depth = scrollDepthRef.current;
+        payload.interactions_count = interactionsRef.current;
+      } else {
+        console.log('[FeedbackWidget] ⚠️ Skipping analytics data (no consent)');
+      }
+
+      // Type-specific fields (always included)
+      if (selectedType === 'bug') {
+        payload.expected_behavior = formData.expected_behavior.trim() || null;
+        payload.actual_behavior = formData.actual_behavior.trim() || null;
+        payload.bug_severity = inferBugSeverity(formData.message);
+      }
+
+      if (selectedType === 'feature') {
+        payload.problem_statement = formData.problem_statement.trim() || null;
+        payload.current_workaround = formData.current_workaround.trim() || null;
+      }
 
       if (attachments.length > 0) {
         payload.attachments = await uploadAttachments(attachments);
