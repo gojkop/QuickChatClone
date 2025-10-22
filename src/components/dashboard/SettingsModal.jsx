@@ -217,9 +217,9 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       }
 
       const response = await apiClient.put('/me/profile', payload);
-      
+
       console.log('API response:', response.data);
-      
+
       // Also update accepting_questions using the dedicated endpoint
       try {
         await apiClient.post('/expert/profile/availability', {
@@ -229,15 +229,27 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       } catch (availabilityErr) {
         console.warn('Failed to update availability status:', availabilityErr);
       }
-      
+
       const updatedProfile = {
         ...response.data,
         charity_percentage: formData.charity_percentage,
         selected_charity: formData.selected_charity,
         accepting_questions: formData.accepting_questions,
-        daily_digest_enabled: formData.daily_digest_enabled // Preserve UI state
+        daily_digest_enabled: formData.daily_digest_enabled, // Preserve UI state
+        // Include tier fields from payload (in case Xano doesn't return them)
+        tier1_enabled: payload.tier1_enabled,
+        tier1_price_cents: payload.tier1_price_cents,
+        tier1_sla_hours: payload.tier1_sla_hours,
+        tier1_description: payload.tier1_description,
+        tier2_enabled: payload.tier2_enabled,
+        tier2_pricing_mode: payload.tier2_pricing_mode,
+        tier2_min_price_cents: payload.tier2_min_price_cents,
+        tier2_max_price_cents: payload.tier2_max_price_cents,
+        tier2_sla_hours: payload.tier2_sla_hours,
+        tier2_auto_decline_below_cents: payload.tier2_auto_decline_below_cents,
+        tier2_description: payload.tier2_description
       };
-      
+
       onSave(updatedProfile);
       onClose();
     } catch (err) {

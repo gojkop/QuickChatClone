@@ -488,6 +488,18 @@ function ExpertDashboardPage() {
       priceUsd: dollarsFromCents(updatedProfile.price_cents || updatedProfile.priceUsd * 100),
       slaHours: updatedProfile.sla_hours || updatedProfile.slaHours,
       isPublic: updatedProfile.public !== undefined ? updatedProfile.public : updatedProfile.isPublic,
+      // Tier 1 (Quick Consult) fields
+      tier1_enabled: updatedProfile.tier1_enabled !== false,
+      tier1_price_usd: updatedProfile.tier1_price_cents ? dollarsFromCents(updatedProfile.tier1_price_cents) : '',
+      tier1_sla_hours: updatedProfile.tier1_sla_hours || '',
+      tier1_description: updatedProfile.tier1_description || '',
+      // Tier 2 (Deep Dive) fields
+      tier2_enabled: updatedProfile.tier2_enabled || false,
+      tier2_min_price_usd: updatedProfile.tier2_min_price_cents ? dollarsFromCents(updatedProfile.tier2_min_price_cents) : '',
+      tier2_max_price_usd: updatedProfile.tier2_max_price_cents ? dollarsFromCents(updatedProfile.tier2_max_price_cents) : '',
+      tier2_sla_hours: updatedProfile.tier2_sla_hours || '',
+      tier2_auto_decline_below_usd: updatedProfile.tier2_auto_decline_below_cents ? dollarsFromCents(updatedProfile.tier2_auto_decline_below_cents) : '',
+      tier2_description: updatedProfile.tier2_description || ''
     };
     setProfile(processedProfile);
   };
