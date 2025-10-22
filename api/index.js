@@ -10,7 +10,7 @@ export default function handler(request, response) {
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>QuickChat - Coming Soon</title>
+      <title>mindPick - Coming Soon</title>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
       <style>
         body {
@@ -45,7 +45,7 @@ export default function handler(request, response) {
     </head>
     <body>
       <div class="container">
-        <h1>QuickChat</h1>
+        <h1>mindPick</h1>
         <p>Our new platform for experts is launching soon.</p>
         <p>This is a temporary page for hosting tests.</p>
       </div>

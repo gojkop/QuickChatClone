@@ -44,7 +44,7 @@ function CharitySelector({ value, onChange, donationPercentage }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
       {charities.map((charity) => {
         const IconComponent = charity.icon;
         return (
@@ -52,13 +52,13 @@ function CharitySelector({ value, onChange, donationPercentage }) {
             key={charity.id}
             type="button"
             onClick={() => onChange(charity.id)}
-            className={`relative p-4 rounded-lg border-2 transition-all text-left ${getColorClasses(charity.color, value === charity.id)}`}
+            className={`relative p-3 rounded-lg border-2 transition-all text-left ${getColorClasses(charity.color, value === charity.id)}`}
           >
-            <div className="flex items-center gap-3">
-              <IconComponent className={`w-6 h-6 ${getIconColorClass(charity.color)}`} />
-              <div className="flex-1">
-                <div className="font-semibold text-gray-900 text-sm">{charity.name}</div>
-              </div>
+<div className="flex items-center gap-2">
+  <IconComponent className={`w-5 h-5 ${getIconColorClass(charity.color)}`} />
+  <div className="flex-1">
+    <div className="font-medium text-gray-900 text-xs">{charity.name}</div>
+  </div>
               {value === charity.id && (
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0">
                   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,4 +1,5 @@
 // src/utils/timeHelpers.js
+import { Zap, Sun, Sunset, Sunrise, Calendar, Siren, AlertTriangle, Pin, Check } from 'lucide-react';
 
 /**
  * Estimate how long a question will take to answer
@@ -49,7 +50,8 @@ export function generateTimeSlots(question) {
         label: 'In 1 hour',
         sublabel: formatTime(inOneHour),
         priority: 100,
-        icon: '⚡'
+        icon: Zap,
+        iconColor: 'text-yellow-500'
       });
     }
     
@@ -63,7 +65,8 @@ export function generateTimeSlots(question) {
           label: 'This afternoon',
           sublabel: '2:00 PM',
           priority: 90,
-          icon: '☀️'
+          icon: Sun,
+          iconColor: 'text-orange-500'
         });
       }
     }
@@ -78,7 +81,8 @@ export function generateTimeSlots(question) {
           label: 'Before end of day',
           sublabel: '4:00 PM',
           priority: 80,
-          icon: '🌆'
+          icon: Sunset,
+          iconColor: 'text-pink-500'
         });
       }
     }
@@ -95,7 +99,8 @@ export function generateTimeSlots(question) {
       label: 'Tomorrow morning',
       sublabel: formatDateWithTime(tomorrow),
       priority: 75,
-      icon: '🌅'
+      icon: Sunrise,
+      iconColor: 'text-amber-500'
     });
   }
   
@@ -110,7 +115,8 @@ export function generateTimeSlots(question) {
       label: formatWeekday(dayAfter),
       sublabel: formatDateWithTime(dayAfter),
       priority: 60,
-      icon: '📅'
+      icon: Calendar,
+      iconColor: 'text-blue-500'
     });
   }
   
@@ -130,7 +136,8 @@ export function getUrgencyLevel(question) {
   if (hoursRemaining < 2) {
     return { 
       level: 'critical', 
-      label: '🚨 URGENT', 
+      label: 'URGENT', 
+      icon: Siren,
       color: 'red',
       bgColor: 'bg-red-50',
       borderColor: 'border-red-300',
@@ -141,7 +148,8 @@ export function getUrgencyLevel(question) {
   if (hoursRemaining < 6) {
     return { 
       level: 'high', 
-      label: '⚠️ High Priority', 
+      label: 'High Priority', 
+      icon: AlertTriangle,
       color: 'orange',
       bgColor: 'bg-orange-50',
       borderColor: 'border-orange-300',
@@ -152,7 +160,8 @@ export function getUrgencyLevel(question) {
   if (hoursRemaining < 24) {
     return { 
       level: 'medium', 
-      label: '📌 Due Soon', 
+      label: 'Due Soon', 
+      icon: Pin,
       color: 'yellow',
       bgColor: 'bg-yellow-50',
       borderColor: 'border-yellow-300',
@@ -162,7 +171,8 @@ export function getUrgencyLevel(question) {
   
   return { 
     level: 'low', 
-    label: '✓ On Track', 
+    label: 'On Track', 
+    icon: Check,
     color: 'green',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-300',

@@ -64,6 +64,50 @@ body {
   animation: slideDown 0.3s ease-out;
 }
 
+/* Cookie Consent Banner Animations */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-up {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+.animate-scale-up {
+  animation: scale-up 0.2s ease-out forwards;
+}
+
 
 /* ENGAGEMENT ELEMENT: Subtle Pulse on CTA Buttons */
 @keyframes subtle-pulse {
@@ -396,7 +440,21 @@ html {
     background: rgba(255, 255, 255, 0.95) !important;
   }
 }
+/* ========================================
+   MOBILE OPTIMIZATIONS
+   ======================================== */
 
+/* Hide scrollbar for horizontal scroll containers while maintaining functionality */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center font-bold rounded-lg transition duration-base ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400;

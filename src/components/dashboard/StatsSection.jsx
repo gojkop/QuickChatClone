@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import apiClient from '@/api';
+import StatDetailModal from './StatDetailModal';
+import ThisMonthDetail from './ThisMonthDetail';
+import AllTimeDetail from './AllTimeDetail';
+import ResponseTimeDetail from './ResponseTimeDetail';
+import RatingDetail from './RatingDetail';
 
 const formatCurrency = (cents, currency = 'USD') => {
   const symbols = { USD: '$', EUR: '€', GBP: '£' };
@@ -8,9 +13,15 @@ const formatCurrency = (cents, currency = 'USD') => {
   return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 };
 
-const StatCard = ({ label, value, subtitle, trend, icon, stars }) => {
+const StatCard = ({ label, value, subtitle, trend, icon, stars, onClick }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition flex-shrink-0 w-[160px] sm:w-auto">
+    <div 
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md hover:border-indigo-300 transition cursor-pointer flex-shrink-0 w-[160px] sm:w-auto"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+    >
       <div className="flex items-start justify-between mb-2">
         <span className="text-xs font-medium text-gray-600">{label}</span>
         {icon && (
@@ -65,6 +76,7 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
   const [ratings, setRatings] = useState([]);
   const [isLoadingRatings, setIsLoadingRatings] = useState(true);
   const [ratingsEndpointExists, setRatingsEndpointExists] = useState(true);
+  const [openModal, setOpenModal] = useState(null);
 
   // Fetch ratings from backend (with fallback to mock data)
   useEffect(() => {
@@ -230,7 +242,8 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-      )
+      ),
+      modalType: 'thisMonth'
     },
     {
       label: "All Time",
@@ -240,7 +253,8 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
         </svg>
-      )
+      ),
+      modalType: 'allTime'
     },
     {
       label: "Avg Response",
@@ -252,7 +266,8 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-      )
+      ),
+      modalType: 'responseTime'
     },
     {
       label: "Avg Rating",
@@ -273,7 +288,8 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
         <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
         </svg>
-      )
+      ),
+      modalType: 'rating'
     }
   ];
 
@@ -287,16 +303,69 @@ const StatsSection = ({ allQuestions = [], targetResponseTime = 24 }) => {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {statsData.map((stat, index) => (
-          <StatCard key={index} {...stat} />
+          <StatCard key={index} {...stat} onClick={() => setOpenModal(stat.modalType)} />
         ))}
       </div>
 
       {/* Desktop: 2x2 grid */}
       <div className="hidden lg:grid grid-cols-2 gap-3">
         {statsData.map((stat, index) => (
-          <StatCard key={index} {...stat} />
+          <StatCard key={index} {...stat} onClick={() => setOpenModal(stat.modalType)} />
         ))}
       </div>
+
+      {/* Modals */}
+      <StatDetailModal
+        isOpen={openModal === 'thisMonth'}
+        onClose={() => setOpenModal(null)}
+        title="This Month Revenue"
+        icon={
+          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        }
+      >
+        <ThisMonthDetail allQuestions={allQuestions} />
+      </StatDetailModal>
+
+      <StatDetailModal
+        isOpen={openModal === 'allTime'}
+        onClose={() => setOpenModal(null)}
+        title="All Time Performance"
+        icon={
+          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          </svg>
+        }
+      >
+        <AllTimeDetail allQuestions={allQuestions} />
+      </StatDetailModal>
+
+      <StatDetailModal
+        isOpen={openModal === 'responseTime'}
+        onClose={() => setOpenModal(null)}
+        title="Response Time Analysis"
+        icon={
+          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        }
+      >
+        <ResponseTimeDetail allQuestions={allQuestions} targetResponseTime={targetResponseTime} />
+      </StatDetailModal>
+
+      <StatDetailModal
+        isOpen={openModal === 'rating'}
+        onClose={() => setOpenModal(null)}
+        title="Rating Details"
+        icon={
+          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+          </svg>
+        }
+      >
+        <RatingDetail ratings={ratings} />
+      </StatDetailModal>
     </div>
   );
 };

@@ -227,7 +227,7 @@ function TermsPage() {
                 </SubSection>
                 
                 <SubSection title="7.2. &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; Service">
-                    <p>THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT ANY WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, QUICKCHAT B.V. DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:</p>
+                    <p>THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT ANY WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, mindPick B.V. DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:</p>
                     <ul className="list-disc pl-6 space-y-1 mt-2">
                       <li>Warranties of merchantability, fitness for a particular purpose, and non-infringement</li>
                       <li>Warranties regarding the accuracy, reliability, or completeness of any Content</li>
@@ -240,7 +240,7 @@ function TermsPage() {
                  <SubSection title="7.3. Limitation of Liability">
                     <p>TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW:</p>
                     <div className="bg-red-50 border border-red-200 p-4 rounded-lg mt-2">
-                      <p className="font-semibold text-gray-900">QUICKCHAT B.V., ITS AFFILIATES, AND THEIR RESPECTIVE OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR:</p>
+                      <p className="font-semibold text-gray-900">mindPick B.V., ITS AFFILIATES, AND THEIR RESPECTIVE OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR:</p>
                       <ul className="list-disc pl-6 space-y-2 mt-2 text-sm">
                         <li>Any indirect, incidental, special, consequential, or punitive damages</li>
                         <li>Any loss of profits, revenues, data, use, goodwill, or other intangible losses</li>
@@ -250,8 +250,8 @@ function TermsPage() {
                         <li>Any damages arising from reliance on Content provided by Experts</li>
                         <li>Any damages arising from unauthorized use or redistribution of Content in violation of license terms</li>
                       </ul>
-                      <p className="mt-3 font-semibold">WHETHER SUCH DAMAGES ARE BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), OR ANY OTHER LEGAL THEORY, AND WHETHER OR NOT QUICKCHAT HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
-                      <p className="mt-3">IN NO EVENT SHALL OUR TOTAL LIABILITY TO YOU FOR ALL DAMAGES, LOSSES, AND CAUSES OF ACTION EXCEED THE AMOUNT YOU PAID TO QUICKCHAT IN THE TWELVE (12) MONTHS PRIOR TO THE CLAIM, OR ONE HUNDRED EUROS (€100), WHICHEVER IS GREATER.</p>
+                      <p className="mt-3 font-semibold">WHETHER SUCH DAMAGES ARE BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), OR ANY OTHER LEGAL THEORY, AND WHETHER OR NOT mindPick HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+                      <p className="mt-3">IN NO EVENT SHALL OUR TOTAL LIABILITY TO YOU FOR ALL DAMAGES, LOSSES, AND CAUSES OF ACTION EXCEED THE AMOUNT YOU PAID TO mindPick IN THE TWELVE (12) MONTHS PRIOR TO THE CLAIM, OR ONE HUNDRED EUROS (€100), WHICHEVER IS GREATER.</p>
                     </div>
                     <p className="mt-3 text-sm">Some jurisdictions do not allow the exclusion of certain warranties or the limitation of liability for consequential damages. In such jurisdictions, our liability shall be limited to the maximum extent permitted by law.</p>
                 </SubSection>

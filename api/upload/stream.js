@@ -35,7 +35,7 @@ module.exports = async (req, res) => {
       });
 
       const metadata = {
-        name: fields.title || 'QuickChat Recording',
+        name: fields.title || 'mindPick Recording',
       };
       
       if (fields.userId) {

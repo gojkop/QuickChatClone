@@ -157,24 +157,22 @@ export default function SignInPage() {
       {/* Main Content */}
       <div className="min-h-screen flex items-center justify-center px-4 py-16 md:py-20">
         <div className="w-full max-w-md">
-          {/* Header */}
+          {/* Simplified Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-ink mb-2 tracking-tight">
-              Sign in to mindPick
+            <h1 className="text-3xl md:text-4xl font-extrabold text-ink mb-3 tracking-tight">
+              Start Earning from Your Expertise
             </h1>
-            <p className="text-subtext text-sm md:text-base">
-              Access your expert dashboard
+            <p className="text-subtext text-base">
+              Create your expert page in 5 minutes
             </p>
           </div>
 
           {/* Sign-In Card */}
           <div className="bg-surface rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
-            {/* Account Creation Note */}
-            <div className="mb-6 p-3.5 bg-indigo-50 border border-indigo-100 rounded-lg">
-              <p className="text-xs md:text-sm text-ink text-center">
-                <span className="font-semibold">First time here?</span> Your account will be created automatically.
-                <br className="hidden sm:block" />
-                <span className="text-subtext">Returning users will be signed in directly.</span>
+            {/* Simplified Account Creation Note */}
+            <div className="mb-6 text-center">
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold text-gray-900">New here?</span> Your account is created automatically.
               </p>
             </div>
 
@@ -302,31 +300,76 @@ export default function SignInPage() {
               </div>
             )}
 
-            {/* Terms */}
+            {/* Simplified Terms */}
             <div className="mt-6 pt-6 border-t border-gray-100">
-              <p className="text-xs text-center text-subtext leading-relaxed">
-                By signing in, you agree to our{' '}
-                <a href="/terms" className="text-primary hover:text-accent font-medium underline">
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a href="/privacy" className="text-primary hover:text-accent font-medium underline">
-                  Privacy Policy
-                </a>
+              <p className="text-xs text-center text-gray-500">
+                By continuing, you agree to our{' '}
+                <a href="/terms" className="text-primary hover:underline">Terms</a>
+                {' '}and{' '}
+                <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>
               </p>
             </div>
+          </div>
+
+          {/* Condensed What Happens Next - Collapsible */}
+          <details className="mt-6 group">
+            <summary className="cursor-pointer text-center text-sm font-semibold text-gray-700 hover:text-indigo-600 transition-colors list-none flex items-center justify-center gap-2">
+              <span>What happens after sign-in?</span>
+              <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            
+            <div className="mt-4 bg-gray-50 rounded-xl border border-gray-200 p-5">
+              <div className="space-y-3 text-sm">
+                <div className="flex gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">1</span>
+                  <span className="text-gray-700">Set your price & SLA</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">2</span>
+                  <span className="text-gray-700">Connect Stripe for payouts</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">3</span>
+                  <span className="text-gray-700">Share your expert link</span>
+                </div>
+              </div>
+              <p className="mt-4 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+                ⏱️ Setup takes ~4 minutes
+              </p>
+            </div>
+          </details>
+
+          {/* Minimal Trust Indicators */}
+          <div className="mt-6 flex flex-wrap justify-center items-center gap-3 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/>
+              </svg>
+              <span>Secure</span>
+            </div>
+            <span>•</span>
+            <div className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+              </svg>
+              <span>No card required</span>
+            </div>
+            <span>•</span>
+            <span>Powered by Stripe</span>
           </div>
 
           {/* Help Link */}
           <div className="text-center mt-6">
             <a 
               href="mailto:support@mindpick.me" 
-              className="text-sm text-subtext hover:text-ink transition-colors inline-flex items-center gap-1.5"
+              className="text-sm text-gray-500 hover:text-indigo-600 transition-colors inline-flex items-center gap-1.5"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Need help? Contact support
+              Need help?
             </a>
           </div>
         </div>
