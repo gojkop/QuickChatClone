@@ -35,14 +35,31 @@ const AskAnyoneBanner = () => {
               </div>
             </div>
 
-            {/* Description - unified style */}
-            <div className="text-gray-700 text-base leading-relaxed mb-8 space-y-2">
-              <p>
-                Send them an invitation and we'll help you reach them professionally—no awkward cold emails needed.
-              </p>
-              <p>
-                Whether it's a tax advisor, a medical specialist, or a lawyer you need to consult—invite them to answer your question.
-              </p>
+            {/* Description */}
+            <p className="text-gray-700 text-base leading-relaxed mb-6">
+              Send them an invitation and we'll help you reach them professionally—no awkward cold emails needed.
+            </p>
+
+            {/* Example Badges */}
+            <div className="flex flex-wrap gap-3 mb-8">
+              <div className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-100">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                <span>Medical specialist abroad</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium border border-indigo-100">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                <span>Tech expert you follow</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-2 bg-violet-50 text-violet-700 rounded-lg text-sm font-medium border border-violet-100">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Industry thought leader</span>
+              </div>
             </div>
 
             {/* CTA Row */}
