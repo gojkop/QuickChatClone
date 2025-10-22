@@ -15,7 +15,7 @@ function HowItWorksPage() {
       title: 'Sign Up & Connect Stripe',
       summary: 'Quick OAuth sign-in and secure payment setup',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
         </svg>
       ),
@@ -31,7 +31,7 @@ function HowItWorksPage() {
       title: 'Set Your Expertise & Price',
       summary: 'Define what you answer and how much you charge',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
@@ -47,7 +47,7 @@ function HowItWorksPage() {
       title: 'Get Your Personal Link',
       summary: 'Share your mindPick link anywhere',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
         </svg>
       ),
@@ -63,7 +63,7 @@ function HowItWorksPage() {
       title: 'Receive Question Notification',
       summary: 'Get notified when someone asks',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
       ),
@@ -79,7 +79,7 @@ function HowItWorksPage() {
       title: 'Review & Decide',
       summary: 'Accept or decline - your choice',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
@@ -95,7 +95,7 @@ function HowItWorksPage() {
       title: 'Answer & Get Paid',
       summary: 'Record your answer, earn money',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
       ),
@@ -115,7 +115,7 @@ function HowItWorksPage() {
       title: 'Find an Expert',
       summary: 'Browse profiles or invite someone specific',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       ),
@@ -131,7 +131,7 @@ function HowItWorksPage() {
       title: 'Submit Your Question',
       summary: 'Record and send your question',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
         </svg>
       ),
@@ -147,7 +147,7 @@ function HowItWorksPage() {
       title: 'Expert Reviews',
       summary: 'They decide whether to answer',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
         </svg>
       ),
@@ -163,7 +163,7 @@ function HowItWorksPage() {
       title: 'Receive Answer',
       summary: 'Get their expert response',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       ),
@@ -179,7 +179,7 @@ function HowItWorksPage() {
       title: 'Access & Review',
       summary: 'Watch, read, and save your answer',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
         </svg>
@@ -231,20 +231,20 @@ function HowItWorksPage() {
     <div className="bg-white min-h-screen">
       
       {/* HERO SECTION */}
-      <section className="pt-32 sm:pt-40 pb-16 bg-gradient-to-b from-gray-50 to-white">
+      <section className="pt-20 sm:pt-24 pb-10 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-6 text-center">
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 mb-4">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-gray-900 mb-3">
             How mindPick Works
           </h1>
-          <p className="text-lg text-gray-600 mb-10 max-w-2xl mx-auto">
+          <p className="text-base text-gray-600 mb-8 max-w-2xl mx-auto">
             The professional way to ask and answer questions—no scheduling, no awkwardness
           </p>
 
           {/* Persona Toggle */}
-          <div className="inline-flex items-center bg-white rounded-xl border-2 border-gray-200 p-1.5 shadow-sm">
+          <div className="inline-flex items-center bg-white rounded-lg border-2 border-gray-200 p-1 shadow-sm">
             <button
               onClick={() => setSelectedPersona('expert')}
-              className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                 selectedPersona === 'expert'
                   ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-50'
@@ -257,7 +257,7 @@ function HowItWorksPage() {
             </button>
             <button
               onClick={() => setSelectedPersona('asker')}
-              className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                 selectedPersona === 'asker'
                   ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-50'
@@ -273,14 +273,14 @@ function HowItWorksPage() {
       </section>
 
       {/* JOURNEY FLOW SECTION */}
-      <section className="py-16 md:py-20 bg-white">
+      <section className="py-10 md:py-12 bg-white">
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                 {selectedPersona === 'expert' ? 'The Expert Journey' : 'The Asker Journey'}
               </h2>
-              <p className="text-gray-600">
+              <p className="text-sm text-gray-600">
                 {selectedPersona === 'expert' 
                   ? 'From sign-up to earning—here\'s exactly how it works'
                   : 'From finding an expert to getting your answer'
@@ -289,33 +289,33 @@ function HowItWorksPage() {
             </div>
 
             {/* Steps - Desktop: Horizontal Timeline, Mobile: Vertical */}
-            <div className="space-y-6">
+            <div className="space-y-3">
               {currentSteps.map((step, index) => (
                 <div key={step.id} className="relative">
                   {/* Connector Line (except last item) */}
                   {index < currentSteps.length - 1 && (
-                    <div className="hidden md:block absolute top-20 left-12 w-0.5 h-full bg-gradient-to-b from-indigo-200 to-transparent"></div>
+                    <div className="hidden md:block absolute top-16 left-6 w-0.5 h-full bg-gradient-to-b from-indigo-100 to-transparent"></div>
                   )}
 
                   {/* Step Card */}
-                  <div className="relative bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-indigo-300 hover:shadow-lg transition-all duration-300">
-                    {/* Step Number Badge */}
-                    <div className="absolute -top-4 -left-4 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-bold flex items-center justify-center text-lg shadow-lg">
-                      {step.id}
-                    </div>
+                  <div className="relative bg-white border border-gray-200 rounded-lg p-4 hover:border-indigo-200 hover:shadow-md transition-all duration-200">
+                    <div className="flex items-start gap-3">
+                      {/* Step Number Badge - SUBTLE OUTLINED VERSION */}
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full border-2 border-indigo-300 bg-white text-indigo-600 font-semibold flex items-center justify-center text-sm">
+                        {step.id}
+                      </div>
 
-                    <div className="flex items-start gap-4">
-                      {/* Icon */}
-                      <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-100 to-violet-100 text-indigo-600 flex items-center justify-center">
+                      {/* Icon - SMALLER */}
+                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-50 to-violet-50 text-indigo-600 flex items-center justify-center">
                         {step.icon}
                       </div>
 
                       {/* Content */}
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        <h3 className="text-lg font-bold text-gray-900 mb-1">
                           {step.title}
                         </h3>
-                        <p className="text-gray-600 text-sm mb-3">
+                        <p className="text-gray-600 text-sm mb-2">
                           {step.summary}
                         </p>
 
@@ -337,7 +337,7 @@ function HowItWorksPage() {
 
                         {/* Expanded Details */}
                         {expandedStep === step.id && (
-                          <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="mt-3 pt-3 border-t border-gray-200">
                             <ul className="space-y-2">
                               {step.details.map((detail, idx) => (
                                 <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
@@ -361,14 +361,14 @@ function HowItWorksPage() {
       </section>
 
       {/* BEHIND THE SCENES SECTION */}
-      <section className="py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white">
+      <section className="py-10 md:py-12 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                 Behind the Scenes
               </h2>
-              <p className="text-gray-600">
+              <p className="text-sm text-gray-600">
                 Understanding the technology that makes it work
               </p>
             </div>
@@ -711,25 +711,25 @@ function HowItWorksPage() {
       </section>
 
       {/* AI FEATURES SPOTLIGHT */}
-      <section className="py-16 md:py-20 bg-white">
+      <section className="py-10 md:py-12 bg-white">
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
               Where AI Makes It Better
             </h2>
-            <p className="text-gray-600 mb-12">
+            <p className="text-sm text-gray-600 mb-8">
               Smart features that save time and add value
             </p>
 
             <div className="grid md:grid-cols-3 gap-6">
               {/* Feature 1 */}
-              <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl border border-purple-100 p-6 text-left hover:shadow-lg transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-purple-500 text-white flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-100 p-4 text-left hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 rounded-lg bg-purple-500 text-white flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Auto Transcripts</h3>
+                <h3 className="text-base font-bold text-gray-900 mb-2">Auto Transcripts</h3>
                 <p className="text-sm text-gray-700 mb-3">
                   Never lose details from audio/video answers. Every answer is automatically transcribed.
                 </p>
@@ -742,13 +742,13 @@ function HowItWorksPage() {
               </div>
 
               {/* Feature 2 */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-6 text-left hover:shadow-lg transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-4 text-left hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Smart Summaries</h3>
+                <h3 className="text-base font-bold text-gray-900 mb-2">Smart Summaries</h3>
                 <p className="text-sm text-gray-700 mb-3">
                   Get the TL;DR instantly. AI extracts key points from every answer.
                 </p>
@@ -761,13 +761,13 @@ function HowItWorksPage() {
               </div>
 
               {/* Feature 3 */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-100 p-6 text-left hover:shadow-lg transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-green-500 text-white flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 p-4 text-left hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 rounded-lg bg-green-500 text-white flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Searchable History</h3>
+                <h3 className="text-base font-bold text-gray-900 mb-2">Searchable History</h3>
                 <p className="text-sm text-gray-700 mb-3">
                   Find past answers in seconds. Search by keyword, topic, or expert.
                 </p>
@@ -784,14 +784,14 @@ function HowItWorksPage() {
       </section>
 
       {/* FAQ PREVIEW SECTION */}
-      <section className="py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white">
+      <section className="py-10 md:py-12 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                 Common Questions
               </h2>
-              <p className="text-gray-600">
+              <p className="text-sm text-gray-600">
                 Quick answers to frequently asked questions
               </p>
             </div>
@@ -838,15 +838,15 @@ function HowItWorksPage() {
       </section>
 
       {/* FINAL CTA SECTION */}
-      <section className="py-20 md:py-24 bg-gradient-to-br from-indigo-600 to-violet-600">
+      <section className="py-12 md:py-16 bg-gradient-to-br from-indigo-600 to-violet-600">
         <div className="container mx-auto px-6 text-center">
           <div className="max-w-3xl mx-auto">
             {selectedPersona === 'expert' ? (
               <>
-                <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+                <h2 className="text-2xl md:text-3xl font-black text-white mb-3">
                   Ready to Start Earning?
                 </h2>
-                <p className="text-indigo-100 text-lg mb-8">
+                <p className="text-indigo-100 text-base mb-6">
                   Create your expert page in 5 minutes and start monetizing your expertise
                 </p>
                 <Link
@@ -864,10 +864,10 @@ function HowItWorksPage() {
               </>
             ) : (
               <>
-                <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+                <h2 className="text-2xl md:text-3xl font-black text-white mb-3">
                   Need to Ask a Specific Expert?
                 </h2>
-                <p className="text-indigo-100 text-lg mb-8">
+                <p className="text-indigo-100 text-base mb-6">
                   Invite them to mindPick and ask your question professionally
                 </p>
                 <Link
