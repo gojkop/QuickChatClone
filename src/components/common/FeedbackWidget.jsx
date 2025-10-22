@@ -1,12 +1,8 @@
-// src/components/common/FeedbackWidget.jsx
-// Updated to support auto-opening from deletion email link
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { hasConsent, CONSENT_CATEGORIES } from '@/utils/cookieConsent';
 import { Bug, Lightbulb, Smile, HelpCircle } from 'lucide-react';
-
 
 const FEEDBACK_TYPES = [
   { id: 'bug', label: 'Bug', icon: Bug, color: 'text-red-600' },
@@ -34,7 +30,6 @@ function detectDeviceType() {
 
 // 🆕 UPDATED: Only generate session ID if analytics consent granted
 function getSessionId() {
-  // Check analytics consent
   const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
   
   if (!analyticsConsent) {
@@ -114,7 +109,6 @@ function FeedbackWidget() {
   const scrollDepthRef = useRef(0);
   const interactionsRef = useRef(0);
 
-  // NEW: Check URL parameters on mount for auto-opening from deletion email
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const feedbackType = params.get('feedback');
@@ -125,26 +119,21 @@ function FeedbackWidget() {
       setIsOpen(true);
       setSelectedType('feedback');
       
-      // Pre-fill email if provided in URL
       if (emailParam) {
         setFormData(prev => ({ 
           ...prev, 
           email: decodeURIComponent(emailParam),
-          // Optional: pre-fill a message template
           message: "I'd like to share why I deleted my account:\n\n"
         }));
       }
       
       trackAction('feedback_widget_opened_from_deletion_email');
-      
-      // Clean up URL to remove params (optional, keeps URL clean)
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
   // 🆕 UPDATED: Only track scroll/interactions if analytics consent granted
   useEffect(() => {
-    // Check analytics consent
     const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
     
     if (!analyticsConsent) {
@@ -274,49 +263,52 @@ function FeedbackWidget() {
     trackAction('feedback_submit_started');
 
     try {
-      // 🆕 Check analytics consent
       const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
       
       const emailToSend = formData.email.trim() || extractUserEmail(user) || null;
       const userIdToSend = extractUserId(user);
       
-      // Base payload (always included)
+      // 🆕 FIXED: Always include all fields (set to null if no consent)
+      const timeOnPage = analyticsConsent && startTimeRef.current 
+        ? Math.floor((Date.now() - startTimeRef.current) / 1000) 
+        : null;
+      
       const payload = {
+        // Core feedback data (always included)
         type: selectedType,
         message: formData.message.trim(),
         rating: formData.rating || null,
         email: emailToSend,
         wants_followup: formData.wants_followup,
+        
+        // Page context (always included)
         page_url: window.location.href,
         page_title: document.title,
         referrer: document.referrer || null,
+        
+        // User info (always included)
         user_id: userIdToSend,
         user_role: user?.role || (expertProfile ? 'expert' : 'guest'),
         is_authenticated: isAuthenticated,
+        
+        // Consent flags (always included)
         analytics_consent: analyticsConsent,
         contact_consent: formData.wants_followup,
         screenshot_consent: attachments.length > 0,
-      };
-
-      // 🆕 CONDITIONALLY add analytics data if consent granted
-      if (analyticsConsent) {
-        console.log('[FeedbackWidget] ✅ Including analytics data (consent granted)');
-        const timeOnPage = Math.floor((Date.now() - startTimeRef.current) / 1000);
         
-        payload.session_id = getSessionId();
-        payload.user_agent = navigator.userAgent;
-        payload.device_type = detectDeviceType();
-        payload.viewport = { width: window.innerWidth, height: window.innerHeight };
-        payload.account_age_days = user?.created_at ? 
-          Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24)) : null;
-        payload.journey_stage = detectJourneyStage(location.pathname, isAuthenticated);
-        payload.previous_actions = getPreviousActions();
-        payload.time_on_page = timeOnPage;
-        payload.scroll_depth = scrollDepthRef.current;
-        payload.interactions_count = interactionsRef.current;
-      } else {
-        console.log('[FeedbackWidget] ⚠️ Skipping analytics data (no consent)');
-      }
+        // Analytics fields (null if no consent)
+        session_id: analyticsConsent ? getSessionId() : null,
+        user_agent: analyticsConsent ? navigator.userAgent : null,
+        device_type: analyticsConsent ? detectDeviceType() : null,
+        viewport: analyticsConsent ? { width: window.innerWidth, height: window.innerHeight } : null,
+        account_age_days: analyticsConsent && user?.created_at ? 
+          Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24)) : null,
+        journey_stage: analyticsConsent ? detectJourneyStage(location.pathname, isAuthenticated) : null,
+        previous_actions: analyticsConsent ? getPreviousActions() : [],
+        time_on_page: timeOnPage,
+        scroll_depth: analyticsConsent ? scrollDepthRef.current : null,
+        interactions_count: analyticsConsent ? interactionsRef.current : null,
+      };
 
       // Type-specific fields (always included)
       if (selectedType === 'bug') {
@@ -334,7 +326,11 @@ function FeedbackWidget() {
         payload.attachments = await uploadAttachments(attachments);
       }
 
-      console.log('[FeedbackWidget] Submitting with email:', emailToSend);
+      console.log('[FeedbackWidget] Submitting feedback:', {
+        email: emailToSend,
+        analyticsConsent,
+        hasSessionId: !!payload.session_id
+      });
 
       const response = await fetch(`${API_BASE}/feedback`, {
         method: 'POST',
@@ -434,7 +430,7 @@ function FeedbackWidget() {
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
-                            <type.icon className={`w-5 h-5 ${type.color}`} />
+                        <type.icon className={`w-5 h-5 ${type.color}`} />
                         <span className="text-[10px] font-medium text-gray-700">{type.label}</span>
                       </button>
                     ))}
@@ -588,7 +584,7 @@ function FeedbackWidget() {
                 {/* Email Field */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Email {hasDetectedEmail && '✅'}
+                    Email {hasDetectedEmail ? '✅' : <span className="text-red-500">*</span>}
                   </label>
                   <input
                     type="email"
@@ -601,7 +597,13 @@ function FeedbackWidget() {
                     }`}
                     placeholder="your@email.com"
                     readOnly={emailFieldReadOnly}
+                    required={!hasDetectedEmail}
                   />
+                  {!hasDetectedEmail && (
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      Required so we can respond to your feedback
+                    </p>
+                  )}
                   {formData.email && (
                     <label className="flex items-center gap-1.5 mt-1.5 text-[10px] text-gray-600">
                       <input
@@ -633,7 +635,7 @@ function FeedbackWidget() {
                 </div>
                 <h4 className="text-lg font-black text-gray-900 mb-1">Thank You!</h4>
                 <p className="text-xs text-gray-600">
-                    Your feedback helps us improve
+                  Your feedback helps us improve
                 </p>
               </div>
             )}
