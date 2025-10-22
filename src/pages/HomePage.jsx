@@ -36,18 +36,21 @@ const AskAnyoneBanner = () => {
             </div>
 
             {/* Description */}
-            <p className="text-gray-700 text-base md:text-lg leading-relaxed mb-8">
+            <p className="text-gray-700 text-base md:text-lg leading-relaxed mb-2">
               Send them an invitation and we'll help you reach them professionally—no awkward cold emails needed.
+            </p>
+            <p className="text-gray-600 text-base leading-relaxed mb-8">
+              Whether it's a tax advisor, a medical specialist, or a lawyer you need to consult—invite them to answer your question.
             </p>
 
             {/* CTA Row */}
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Link
                 to="/invite"
-                className="inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                className="group inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-5 px-10 rounded-xl text-lg transition duration-base ease-in-out shadow-elev-2 hover:shadow-elev-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
               >
                 <span>Invite a Specific Expert</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </Link>
