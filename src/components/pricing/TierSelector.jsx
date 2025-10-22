@@ -123,7 +123,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">Deep Dive</h3>
-                  <p className="text-sm text-gray-500">Comprehensive Analysis</p>
+                  <p className="text-sm text-gray-500">In-Depth Expert Review</p>
                 </div>
               </div>
 

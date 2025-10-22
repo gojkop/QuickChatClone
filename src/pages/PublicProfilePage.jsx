@@ -854,53 +854,22 @@ function PublicProfilePage() {
                   </div>
                 </div>
               )}
-              
-              {/* Compact Price Card */}
-              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">
-                      {formatPrice(profile.price_cents, profile.currency)}
-                    </div>
-                    <div className="text-xs text-gray-500">per answer</div>
-                  </div>
-                  {isAcceptingQuestions ? (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 rounded-lg border border-green-200">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/>
-                      <span className="text-xs font-semibold text-green-700">{profile.sla_hours}h response</span>
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-yellow-50 rounded-lg border border-yellow-300">
-                      <svg className="w-3.5 h-3.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-xs font-semibold text-yellow-700">Not accepting</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2 text-xs text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-                    </svg>
-                    <span>Up to 90s video question</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-                    </svg>
-                    <span>Expert video/voice answer</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-                    </svg>
-                    <span>Money-back guarantee</span>
-                  </div>
-                </div>
 
-                {!isAcceptingQuestions && (
+              {/* Tier Selection */}
+              {profile.tiers && isAcceptingQuestions ? (
+                <TierSelector
+                  tiers={profile.tiers}
+                  expertName={profile.name}
+                  onSelectTier={handleSelectTier}
+                />
+              ) : !isAcceptingQuestions ? (
+                <div className="mt-6">
+                  <button
+                    disabled={true}
+                    className="w-full bg-gray-300 text-gray-500 cursor-not-allowed opacity-60 font-bold py-4 px-6 rounded-xl"
+                  >
+                    <span>Temporarily Not Accepting Questions</span>
+                  </button>
                   <div className="mt-3 pt-3 border-t border-gray-200">
                     <div className="flex items-start gap-2 text-xs text-gray-600">
                       <svg className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -909,8 +878,8 @@ function PublicProfilePage() {
                       <span>This expert is currently not accepting new questions. Check back later!</span>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : null}
 
               {/* Charity Donation Section */}
               {profile.charity_percentage > 0 && profile.selected_charity && (
@@ -923,51 +892,6 @@ function PublicProfilePage() {
               )}
             </div>
           </div>
-        
-          {/* Desktop Tier Selection */}
-          {profile.tiers && isAcceptingQuestions ? (
-            <div className="hidden md:block">
-              <TierSelector
-                tiers={profile.tiers}
-                expertName={profile.name}
-                onSelectTier={handleSelectTier}
-              />
-            </div>
-          ) : (
-            <div className="hidden md:block mt-6">
-              <button
-                disabled={true}
-                className="w-full bg-gray-300 text-gray-500 cursor-not-allowed opacity-60 font-bold py-4 px-6 rounded-xl"
-              >
-                <span>Temporarily Not Accepting Questions</span>
-              </button>
-            </div>
-          )}
-
-          {/* Mobile Tier Selection */}
-          {profile.tiers && isAcceptingQuestions && (
-            <div className="md:hidden mb-20">
-              <TierSelector
-                tiers={profile.tiers}
-                expertName={profile.name}
-                onSelectTier={handleSelectTier}
-              />
-            </div>
-          )}
-
-          {/* Mobile Sticky CTA - Only shown when not accepting questions */}
-          {!isAcceptingQuestions && (
-            <div className="fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-md border-t border-gray-200 shadow-2xl z-50 md:hidden">
-              <div className="p-4 max-w-md mx-auto">
-                <button
-                  disabled={true}
-                  className="w-full font-bold py-3.5 rounded-xl shadow-lg bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
-                >
-                  <span>Not Accepting Questions</span>
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Trust Indicators */}
           <div className="pt-8 pb-4">
