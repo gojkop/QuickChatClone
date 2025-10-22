@@ -35,7 +35,7 @@ function HowItWorks() {
         </svg>
       ),
       title: "Share Your Link",
-      description: "Sign up, connect Stripe, and set your price. Get a unique quick.chat/your-handle link to share in your bio, signature, and DMs.",
+      description: "Sign up, connect Stripe, and set your price. Get a unique mindpick.me/u/your-handle link to share in your bio, signature, and DMs.",
       color: "from-blue-500 to-indigo-500"
     },
     {
