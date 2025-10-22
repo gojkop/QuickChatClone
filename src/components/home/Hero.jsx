@@ -74,21 +74,21 @@ function Hero() {
               <span className="text-violet-600">VALUE</span>
             </div>
             
-            {/* COMPACT CARDS - With Interactive Effects */}
+            {/* COMPACT CARDS - Subtle Non-Clickable Hover */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
               
-              {/* CARD 1: AI Information Layer - INTERACTIVE */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-lg md:rounded-xl border border-gray-200 p-3 md:p-4 transition-all duration-300 opacity-85 md:opacity-100 hover:opacity-100 hover:shadow-lg hover:-translate-y-1 hover:border-gray-300 active:scale-[0.98] cursor-pointer">
+              {/* CARD 1: AI Information Layer - SUBTLE HOVER */}
+              <div className="bg-white/60 backdrop-blur-sm rounded-lg md:rounded-xl border border-gray-200 p-3 md:p-4 transition-all duration-300 opacity-85 md:opacity-100 hover:opacity-100 hover:shadow-lg hover:-translate-y-1 hover:border-gray-300">
                 {/* Step indicator + Title - COMPACT */}
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-base md:text-lg flex-shrink-0 transition-colors duration-300 group-hover:bg-gray-200">
+                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-base md:text-lg flex-shrink-0">
                     1
                   </div>
                   <h3 className="font-bold text-gray-900 text-sm md:text-base">Information</h3>
                 </div>
                 
-                {/* COMPACT icon - CENTERED - with hover effect */}
-                <div className="w-12 h-12 md:w-13 md:h-13 rounded-lg md:rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center mb-3 mx-auto transition-all duration-300 hover:bg-gray-200 hover:scale-110">
+                {/* COMPACT icon - CENTERED - NO individual hover */}
+                <div className="w-12 h-12 md:w-13 md:h-13 rounded-lg md:rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center mb-3 mx-auto transition-colors duration-300">
                   <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -100,25 +100,25 @@ function Hero() {
                 </p>
               </div>
 
-              {/* CARD 2: YOUR EXPERTISE - SOFTER COLOR + INTERACTIVE */}
-              <div className="group relative bg-gradient-to-br from-indigo-400 via-indigo-500 to-purple-500 rounded-xl md:rounded-2xl border-3 md:border-4 border-indigo-300 p-4 md:p-5 shadow-xl transform scale-[1.03] md:scale-105 -my-3 md:-my-2 z-10 transition-all duration-300 hover:shadow-2xl hover:scale-[1.05] md:hover:scale-110 hover:border-indigo-400 active:scale-[1.02] md:active:scale-[1.03] cursor-pointer">
+              {/* CARD 2: YOUR EXPERTISE - SOFTER COLOR + SUBTLE HOVER */}
+              <div className="group relative bg-gradient-to-br from-indigo-400 via-indigo-500 to-purple-500 rounded-xl md:rounded-2xl border-3 md:border-4 border-indigo-300 p-4 md:p-5 shadow-xl transform scale-[1.03] md:scale-105 -my-3 md:-my-2 z-10 transition-all duration-300 hover:shadow-2xl hover:border-indigo-400">
                 
-                {/* "YOU ARE HERE" badge - with pulse animation */}
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-indigo-600 text-xs font-black px-3 md:px-4 py-1 md:py-1.5 rounded-full shadow-lg border-2 md:border-3 border-indigo-100 whitespace-nowrap transition-all duration-300 group-hover:shadow-xl group-hover:border-indigo-200">
+                {/* "YOU ARE HERE" badge */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-indigo-600 text-xs font-black px-3 md:px-4 py-1 md:py-1.5 rounded-full shadow-lg border-2 md:border-3 border-indigo-100 whitespace-nowrap">
                   ← YOU
                 </div>
                 
                 {/* Step indicator + Title - COMPACT, WHITE text */}
                 <div className="flex items-center gap-2 mb-3 mt-1">
-                  <div className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center font-black text-lg md:text-xl flex-shrink-0 ring-2 md:ring-3 ring-white/30 transition-all duration-300 group-hover:ring-white/50 group-hover:bg-white/30">
+                  <div className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center font-black text-lg md:text-xl flex-shrink-0 ring-2 md:ring-3 ring-white/30">
                     2
                   </div>
                   <h3 className="font-black text-white text-base md:text-lg">Your Expertise</h3>
                 </div>
                 
-                {/* COMPACT icon with glow - CENTERED - with hover pulse */}
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white/20 backdrop-blur text-white flex items-center justify-center mb-3 mx-auto shadow-xl ring-2 md:ring-3 ring-white/30 transition-all duration-300 group-hover:ring-white/50 group-hover:scale-110 group-hover:bg-white/30">
-                  <svg className="w-7 h-7 md:w-8 md:h-8 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* COMPACT icon with glow - CENTERED - NO rotation/scale */}
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white/20 backdrop-blur text-white flex items-center justify-center mb-3 mx-auto shadow-xl ring-2 md:ring-3 ring-white/30 transition-all duration-300">
+                  <svg className="w-7 h-7 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
@@ -128,8 +128,8 @@ function Hero() {
                   You understand context, navigate nuance, and apply experience to their unique situation.
                 </p>
                 
-                {/* Value badge - COMPACT - with hover effect */}
-                <div className="inline-flex items-center gap-1.5 text-xs text-indigo-900 bg-white px-2.5 py-1 md:py-1.5 rounded-full font-bold shadow-md transition-all duration-300 group-hover:shadow-lg group-hover:scale-105">
+                {/* Value badge - COMPACT */}
+                <div className="inline-flex items-center gap-1.5 text-xs text-indigo-900 bg-white px-2.5 py-1 md:py-1.5 rounded-full font-bold shadow-md transition-all duration-300">
                   <svg className="w-3.5 h-3.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
                   </svg>
@@ -137,18 +137,18 @@ function Hero() {
                 </div>
               </div>
 
-              {/* CARD 3: Accountability - INTERACTIVE */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-lg md:rounded-xl border border-gray-200 p-3 md:p-4 transition-all duration-300 opacity-85 md:opacity-100 hover:opacity-100 hover:shadow-lg hover:-translate-y-1 hover:border-violet-300 active:scale-[0.98] cursor-pointer">
+              {/* CARD 3: Accountability - SUBTLE HOVER */}
+              <div className="bg-white/60 backdrop-blur-sm rounded-lg md:rounded-xl border border-gray-200 p-3 md:p-4 transition-all duration-300 opacity-85 md:opacity-100 hover:opacity-100 hover:shadow-lg hover:-translate-y-1 hover:border-violet-300">
                 {/* Step indicator + Title - COMPACT */}
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-base md:text-lg flex-shrink-0 transition-colors duration-300 group-hover:bg-violet-200">
+                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-base md:text-lg flex-shrink-0">
                     3
                   </div>
                   <h3 className="font-bold text-gray-900 text-sm md:text-base">Accountability</h3>
                 </div>
                 
-                {/* COMPACT icon - CENTERED - with hover effect */}
-                <div className="w-12 h-12 md:w-13 md:h-13 rounded-lg md:rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mb-3 mx-auto transition-all duration-300 hover:bg-violet-200 hover:scale-110">
+                {/* COMPACT icon - CENTERED - NO individual hover */}
+                <div className="w-12 h-12 md:w-13 md:h-13 rounded-lg md:rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mb-3 mx-auto transition-colors duration-300">
                   <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
