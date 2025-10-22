@@ -210,6 +210,19 @@ const QuestionTable = ({
                   statusDisplay = { label: 'Unpaid', color: 'bg-gray-100 text-gray-600' };
                 }
 
+                // Debug: Log tier information
+                if (question.id && !window.__tierDebugLogged?.[question.id]) {
+                  console.log('🔍 Question tier debug:', {
+                    id: question.id,
+                    title: question.title?.substring(0, 30),
+                    question_tier: question.question_tier,
+                    pricing_status: question.pricing_status,
+                    proposed_price_cents: question.proposed_price_cents
+                  });
+                  window.__tierDebugLogged = window.__tierDebugLogged || {};
+                  window.__tierDebugLogged[question.id] = true;
+                }
+
                 return (
                   <tr
                     key={question.id}
