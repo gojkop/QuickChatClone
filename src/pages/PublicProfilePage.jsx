@@ -335,58 +335,73 @@ function PublicProfilePage() {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
- // ⭐ FIXED: Track UTM visit on page load WITH deduplication
-  useEffect(() => {
-    const trackVisit = async () => {
-      if (!handle) return;
+ // ⭐ UPDATED: Track UTM visit on page load WITH consent check
+useEffect(() => {
+  const trackVisit = async () => {
+    if (!handle) return;
 
-      // Extract UTM parameters from URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const utmSource = urlParams.get('utm_source');
-      const utmCampaign = urlParams.get('utm_campaign');
-      const utmMedium = urlParams.get('utm_medium');
-      const utmContent = urlParams.get('utm_content');
+    // Extract UTM parameters from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const utmSource = urlParams.get('utm_source');
+    const utmCampaign = urlParams.get('utm_campaign');
+    const utmMedium = urlParams.get('utm_medium');
+    const utmContent = urlParams.get('utm_content');
 
-      // 🔍 DEBUG: Log what we found
-      console.log('🔍 UTM Parameters detected:', {
-        utm_source: utmSource,
-        utm_campaign: utmCampaign,
-        utm_medium: utmMedium,
-        utm_content: utmContent,
-        fullURL: window.location.href
-      });
+    // 🔍 DEBUG: Log what we found
+    console.log('🔍 UTM Parameters detected:', {
+      utm_source: utmSource,
+      utm_campaign: utmCampaign,
+      utm_medium: utmMedium,
+      utm_content: utmContent,
+      fullURL: window.location.href
+    });
 
-      // Only track if we have at least source and campaign
-      if (utmSource && utmCampaign) {
-        console.log('✅ Valid UTM params, checking for duplicates...');
+    // Only track if we have at least source and campaign
+    if (utmSource && utmCampaign) {
+      console.log('✅ Valid UTM params found');
 
-        // 🆕 DEDUPLICATION: Check for recent visit to avoid duplicates
-        const visitKey = `qc_visit_${handle}_${utmSource}_${utmCampaign}`;
-        const lastVisitTime = localStorage.getItem(visitKey);
-        const now = Date.now();
-        const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
-
-        // Skip tracking if visited same campaign within last 30 minutes
-        if (lastVisitTime && (now - parseInt(lastVisitTime)) < thirtyMinutes) {
-          console.log('🔄 Visit already tracked recently (within 30 min), skipping duplicate');
-          
-          // Prepare UTM data object
-          const utmData = {
-            expert_handle: handle,
-            utm_source: utmSource,
-            utm_campaign: utmCampaign,
-            utm_medium: utmMedium || '',
-            utm_content: utmContent || ''
-          };
-          
-          // Still store UTM params for question attribution
-          localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
-          localStorage.setItem('qc_utm_timestamp', now.toString());
-          return;
+      // 🆕 CONSENT CHECK: Only track if user consented to marketing
+      let hasMarketingConsent = false;
+      
+      try {
+        const storedConsent = localStorage.getItem('qc_cookie_consent');
+        if (storedConsent) {
+          const consentData = JSON.parse(storedConsent);
+          hasMarketingConsent = consentData?.preferences?.marketing === true;
         }
+      } catch (e) {
+        console.error('Failed to read consent:', e);
+      }
 
-        console.log('✅ No recent duplicate, tracking visit...');
+      if (!hasMarketingConsent) {
+        console.log('⚠️ Marketing consent not granted - skipping UTM tracking');
+        console.log('ℹ️ UTM params stored locally for potential question attribution');
+        
+        // Still store UTM params for question attribution (happens after user asks)
+        const utmData = {
+          expert_handle: handle,
+          utm_source: utmSource,
+          utm_campaign: utmCampaign,
+          utm_medium: utmMedium || '',
+          utm_content: utmContent || ''
+        };
+        localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
+        localStorage.setItem('qc_utm_timestamp', Date.now().toString());
+        return;
+      }
 
+      console.log('✅ Marketing consent granted - proceeding with tracking');
+
+      // 🆕 DEDUPLICATION: Check for recent visit to avoid duplicates
+      const visitKey = `qc_visit_${handle}_${utmSource}_${utmCampaign}`;
+      const lastVisitTime = localStorage.getItem(visitKey);
+      const now = Date.now();
+      const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+      // Skip tracking if visited same campaign within last 30 minutes
+      if (lastVisitTime && (now - parseInt(lastVisitTime)) < thirtyMinutes) {
+        console.log('🔄 Visit already tracked recently (within 30 min), skipping duplicate');
+        
         // Prepare UTM data object
         const utmData = {
           expert_handle: handle,
@@ -395,50 +410,67 @@ function PublicProfilePage() {
           utm_medium: utmMedium || '',
           utm_content: utmContent || ''
         };
+        
+        // Still store UTM params for question attribution
+        localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
+        localStorage.setItem('qc_utm_timestamp', now.toString());
+        return;
+      }
 
-        try {
-          // Call tracking API
-          const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/marketing/public/track-visit', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(utmData)
-          });
+      console.log('✅ No recent duplicate, tracking visit...');
 
-          const result = await response.json();
-          console.log('📊 Track visit response:', result);
+      // Prepare UTM data object
+      const utmData = {
+        expert_handle: handle,
+        utm_source: utmSource,
+        utm_campaign: utmCampaign,
+        utm_medium: utmMedium || '',
+        utm_content: utmContent || ''
+      };
 
-          // ⭐ Store visit timestamp for deduplication
-          if (result.tracked) {
-            console.log('💾 Storing visit timestamp and UTM params...');
-            localStorage.setItem(visitKey, now.toString());
-            localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
-            localStorage.setItem('qc_utm_timestamp', now.toString());
-            
-            // 🔍 DEBUG: Verify storage
-            const stored = localStorage.getItem('qc_utm_params');
-            console.log('✅ Verified localStorage:', stored);
-          } else {
-            console.warn('⚠️ Tracking response: tracked=false');
-          }
+      try {
+        // Call tracking API
+        const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/marketing/public/track-visit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(utmData)
+        });
 
-        } catch (err) {
-          console.error('❌ Failed to track UTM visit:', err);
-          
-          // ⭐ FALLBACK: Store in localStorage even if API fails
-          // This ensures attribution still works if backend is temporarily down
-          console.log('💾 Storing UTM params anyway (API failed)...');
+        const result = await response.json();
+        console.log('📊 Track visit response:', result);
+
+        // ⭐ Store visit timestamp for deduplication
+        if (result.tracked) {
+          console.log('💾 Storing visit timestamp and UTM params...');
+          localStorage.setItem(visitKey, now.toString());
           localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
           localStorage.setItem('qc_utm_timestamp', now.toString());
+          
+          // 🔍 DEBUG: Verify storage
+          const stored = localStorage.getItem('qc_utm_params');
+          console.log('✅ Verified localStorage:', stored);
+        } else {
+          console.warn('⚠️ Tracking response: tracked=false');
         }
-      } else {
-        console.log('ℹ️ No UTM params in URL, skipping tracking');
-      }
-    };
 
-    trackVisit();
-  }, [handle]);
+      } catch (err) {
+        console.error('❌ Failed to track UTM visit:', err);
+        
+        // ⭐ FALLBACK: Store in localStorage even if API fails
+        // This ensures attribution still works if backend is temporarily down
+        console.log('💾 Storing UTM params anyway (API failed)...');
+        localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
+        localStorage.setItem('qc_utm_timestamp', now.toString());
+      }
+    } else {
+      console.log('ℹ️ No UTM params in URL, skipping tracking');
+    }
+  };
+
+  trackVisit();
+}, [handle]);
 
   useEffect(() => {
     if (!handle) {
