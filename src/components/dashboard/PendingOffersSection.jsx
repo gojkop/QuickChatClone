@@ -35,6 +35,11 @@ function PendingOffersSection({ onOfferUpdate }) {
     try {
       setIsLoading(true);
       const response = await apiClient.get('/expert/pending-offers');
+      console.log('🔍 Pending offers response:', response.data);
+      console.log('🔍 Number of offers:', response.data.offers?.length);
+      if (response.data.offers?.length > 0) {
+        console.log('🔍 First offer details:', response.data.offers[0]);
+      }
       setOffers(response.data.offers || []);
       setError('');
     } catch (err) {
@@ -91,9 +96,11 @@ function PendingOffersSection({ onOfferUpdate }) {
 
     try {
       setProcessingOfferId(offerId);
-      await apiClient.post(`/offers/${offerId}/decline`, {
+      console.log('🔍 Declining offer:', offerId);
+      const response = await apiClient.post(`/offers/${offerId}/decline`, {
         decline_reason: reason || 'Expert declined'
       });
+      console.log('🔍 Decline response:', response.data);
 
       // Remove from pending offers list
       setOffers(prev => prev.filter(offer => offer.question_id !== offerId));
