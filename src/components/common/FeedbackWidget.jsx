@@ -259,58 +259,36 @@ function FeedbackWidget() {
     const emailToSend = formData.email.trim() || extractUserEmail(user) || null;
     const userIdToSend = extractUserId(user);
     
-    // 🆕 Build minimal payload (always included)
+    // 🆕 Always send complete payload structure
     const payload = {
       type: selectedType,
       message: formData.message.trim(),
+      rating: formData.rating || null,
       email: emailToSend,
+      wants_followup: formData.wants_followup,
       page_url: window.location.href,
       page_title: document.title,
+      referrer: document.referrer || null,
+      user_id: userIdToSend,
       user_role: user?.role || (expertProfile ? 'expert' : 'guest'),
       is_authenticated: isAuthenticated,
       contact_consent: formData.wants_followup,
       screenshot_consent: attachments.length > 0,
     };
 
-    // Add optional fields
-    if (formData.rating > 0) {
-      payload.rating = formData.rating;
-    }
-
-    if (formData.wants_followup) {
-      payload.wants_followup = true;
-    }
-
-    if (document.referrer) {
-      payload.referrer = document.referrer;
-    }
-
-    if (userIdToSend) {
-      payload.user_id = userIdToSend;
-    }
-
-    // 🆕 ONLY add analytics_consent field when TRUE
-    // When false, completely omit the field
+    // 🆕 Conditionally populate analytics fields
     if (analyticsConsent) {
-      console.log('[FeedbackWidget] ✅ Analytics consent granted - including analytics data');
+      console.log('[FeedbackWidget] ✅ Analytics consent granted - including real analytics data');
       
-      // Add the consent flag ONLY when true
       payload.analytics_consent = true;
-      
-      // Add all analytics fields
-      const sessionId = getSessionId();
-      if (sessionId) payload.session_id = sessionId;
-      
+      payload.session_id = getSessionId();
       payload.user_agent = navigator.userAgent;
       payload.device_type = detectDeviceType();
       payload.viewport = { width: window.innerWidth, height: window.innerHeight };
       payload.journey_stage = detectJourneyStage(location.pathname, isAuthenticated);
       payload.previous_actions = getPreviousActions();
-      
-      if (startTimeRef.current) {
-        payload.time_on_page = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      }
-      
+      payload.time_on_page = startTimeRef.current ? 
+        Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
       payload.scroll_depth = scrollDepthRef.current;
       payload.interactions_count = interactionsRef.current;
       
@@ -318,28 +296,31 @@ function FeedbackWidget() {
         payload.account_age_days = Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24));
       }
     } else {
-      console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - sending minimal feedback only');
-      // Don't add analytics_consent field at all
+      console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - sending empty analytics fields');
+      
+      // Send empty/placeholder values for analytics fields
+      // DO NOT include analytics_consent field at all
+      payload.session_id = null;
+      payload.user_agent = null;
+      payload.device_type = null;
+      payload.viewport = null;
+      payload.journey_stage = null;
+      payload.previous_actions = [];
+      payload.time_on_page = 0;
+      payload.scroll_depth = 0;
+      payload.interactions_count = 0;
     }
 
     // Type-specific fields
     if (selectedType === 'bug') {
-      if (formData.expected_behavior.trim()) {
-        payload.expected_behavior = formData.expected_behavior.trim();
-      }
-      if (formData.actual_behavior.trim()) {
-        payload.actual_behavior = formData.actual_behavior.trim();
-      }
+      payload.expected_behavior = formData.expected_behavior.trim() || null;
+      payload.actual_behavior = formData.actual_behavior.trim() || null;
       payload.bug_severity = inferBugSeverity(formData.message);
     }
 
     if (selectedType === 'feature') {
-      if (formData.problem_statement.trim()) {
-        payload.problem_statement = formData.problem_statement.trim();
-      }
-      if (formData.current_workaround.trim()) {
-        payload.current_workaround = formData.current_workaround.trim();
-      }
+      payload.problem_statement = formData.problem_statement.trim() || null;
+      payload.current_workaround = formData.current_workaround.trim() || null;
     }
 
     if (attachments.length > 0) {
@@ -349,7 +330,8 @@ function FeedbackWidget() {
     console.log('[FeedbackWidget] Submitting feedback:', {
       email: emailToSend,
       analyticsConsent,
-      hasAnalyticsConsentField: 'analytics_consent' in payload
+      hasAnalyticsConsentField: 'analytics_consent' in payload,
+      payloadKeys: Object.keys(payload)
     });
 
     const response = await fetch(`${API_BASE}/feedback`, {
@@ -360,6 +342,7 @@ function FeedbackWidget() {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('[FeedbackWidget] Backend error response:', errorData);
       throw new Error(errorData.message || 'Failed to submit feedback');
     }
 
