@@ -112,22 +112,28 @@ return true;
 
 #### Step 6: Get Payment Record (Optional - if payments table exists)
 - **Type:** Database Request → Get Record
-- **Table:** `payment`
+- **Table:** `payment` or `payment_table_structure`
 - **Filter:** `question_id = question.id`
 - **Return as:** `payment`
 - **Note:** Skip this if you don't have a payments table yet
 
-#### Step 7: Update Payment Status (Optional)
+#### Step 7: Conditional - Check if Payment Exists
+- **Type:** Conditional
+- **Condition:** `payment` **is not equal to** `null`
+- **Return as:** (no return needed)
+- **Note:** This prevents errors when no payment record exists
+
+#### Step 8: Update Payment Status (Inside "If True" branch of Step 7)
 - **Type:** Database Request → Edit Record
-- **Table:** `payment`
+- **Table:** `payment` or `payment_table_structure`
 - **Record:** `payment` (from Step 6)
 - **Fields:**
   - `payment_status` = `"refunded"`
   - `refunded_at` = `Date.now()`
 - **Return as:** `updated_payment`
-- **Note:** Skip this if you don't have a payments table yet
+- **Note:** Only runs if payment exists (inside conditional)
 
-#### Step 8: Response
+#### Step 9: Response
 - **Type:** Response
 - **Response Body:**
 ```json
@@ -172,6 +178,17 @@ return true;
 ---
 
 ## Common Errors
+
+### Error: "Unable to locate var: payment.id"
+**Cause:** The payment record doesn't exist for this question, so `payment` is `null`
+
+**Solution:** Add a Conditional check before editing the payment record:
+1. After "Get Record From payment_table_structure", add a **Conditional** step
+2. Set condition: `payment != null`
+3. Move "Edit Record In payment_table_structure" **inside** the "If True" branch
+4. This way, payment updates only happen when a payment record exists
+
+**Quick Fix:** If you're not using payments yet, simply delete steps 5 and 6 (payment steps)
 
 ### Error: "Offer not found"
 - The question ID doesn't exist in the database
