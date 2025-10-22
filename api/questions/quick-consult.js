@@ -1,6 +1,9 @@
 // api/questions/quick-consult.js
 // Quick Consult submission endpoint (Tier 1: Fixed price, immediate SLA)
 
+import { sendNewQuestionNotification, sendQuestionConfirmationNotification } from '../lib/zeptomail.js';
+import { fetchUserData } from '../lib/user-data.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -66,11 +69,62 @@ export default async function handler(req, res) {
 
     const result = await xanoResponse.json();
 
+    const questionId = result.question_id;
+    const reviewToken = result.playback_token_hash || result.review_token;
+
+    // Send email notifications
+    // 1. Send notification to expert
+    const userId = expertProfile.user_id || expertProfile._user?.id;
+
+    if (userId) {
+      try {
+        const expertData = await fetchUserData(userId);
+
+        if (expertData?.email) {
+          console.log('📧 Sending expert notification to:', expertData.email);
+
+          await sendNewQuestionNotification({
+            expertEmail: expertData.email,
+            expertName: expertData.name || 'Expert',
+            questionTitle: title,
+            questionText: text || '(Video/audio question)',
+            askerEmail: payerEmail,
+            questionId,
+          });
+          console.log('✅ Expert notification sent');
+        }
+      } catch (emailErr) {
+        console.error('❌ Failed to send expert notification:', emailErr.message);
+      }
+    }
+
+    // 2. Send confirmation to asker
+    if (payerEmail) {
+      const askerName = [payerFirstName, payerLastName].filter(Boolean).join(' ') || payerEmail.split('@')[0];
+
+      try {
+        await sendQuestionConfirmationNotification({
+          askerEmail: payerEmail,
+          askerName: askerName,
+          expertName: expertProfile.name || 'the expert',
+          questionTitle: title,
+          questionText: text || '(Video/audio question)',
+          questionId,
+          reviewToken: reviewToken,
+          slaHours: sla_hours_snapshot,
+        });
+        console.log('✅ Asker confirmation sent');
+      } catch (emailErr) {
+        console.error('❌ Failed to send asker confirmation:', emailErr.message);
+      }
+    }
+
     // Return success response
     return res.status(200).json({
       success: true,
       data: {
         questionId: result.question_id,
+        review_token: reviewToken,
         status: result.status,
         sla_deadline: result.sla_deadline,
         final_price_cents: result.final_price_cents
