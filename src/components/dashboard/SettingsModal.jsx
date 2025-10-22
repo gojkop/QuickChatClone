@@ -117,25 +117,87 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
       return;
     }
 
-    if (!formData.priceUsd || formData.priceUsd <= 0) {
-      setError('Consultation fee must be greater than $0');
+    // Tier validation: At least one tier must be enabled
+    if (!formData.tier1_enabled && !formData.tier2_enabled) {
+      setError('At least one pricing tier must be enabled');
       setIsLoading(false);
       return;
     }
 
-    if (!formData.slaHours || formData.slaHours <= 0) {
-      setError('Response time must be at least 1 hour');
-      setIsLoading(false);
-      return;
+    // Tier 1 (Quick Consult) validation
+    if (formData.tier1_enabled !== false) {
+      if (!formData.tier1_price_usd || formData.tier1_price_usd <= 0) {
+        setError('Quick Consult price must be greater than $0');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.tier1_sla_hours || formData.tier1_sla_hours <= 0) {
+        setError('Quick Consult response time must be at least 1 hour');
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // Tier 2 (Deep Dive) validation
+    if (formData.tier2_enabled) {
+      if (!formData.tier2_min_price_usd || formData.tier2_min_price_usd <= 0) {
+        setError('Deep Dive minimum price must be greater than $0');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.tier2_max_price_usd || formData.tier2_max_price_usd <= 0) {
+        setError('Deep Dive maximum price must be greater than $0');
+        setIsLoading(false);
+        return;
+      }
+      if (Number(formData.tier2_min_price_usd) >= Number(formData.tier2_max_price_usd)) {
+        setError('Deep Dive minimum price must be less than maximum price');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.tier2_sla_hours || formData.tier2_sla_hours <= 0) {
+        setError('Deep Dive response time must be at least 1 hour');
+        setIsLoading(false);
+        return;
+      }
+      // Auto-decline validation
+      if (formData.tier2_auto_decline_below_usd &&
+          Number(formData.tier2_auto_decline_below_usd) > Number(formData.tier2_min_price_usd)) {
+        setError('Auto-decline threshold must be less than or equal to minimum price');
+        setIsLoading(false);
+        return;
+      }
     }
 
     try {
       const payload = {
-        price_cents: Number(formData.priceUsd) * 100,
-        sla_hours: Number(formData.slaHours),
+        // Legacy fields for backward compatibility
+        price_cents: formData.tier1_enabled !== false
+          ? Number(formData.tier1_price_usd) * 100
+          : Number(formData.tier2_min_price_usd) * 100,
+        sla_hours: formData.tier1_enabled !== false
+          ? Number(formData.tier1_sla_hours)
+          : Number(formData.tier2_sla_hours),
         bio: formData.bio,
         public: formData.isPublic,
         handle: formData.handle,
+
+        // Tier 1 (Quick Consult) fields
+        tier1_enabled: formData.tier1_enabled !== false,
+        tier1_price_cents: formData.tier1_enabled !== false ? Number(formData.tier1_price_usd) * 100 : null,
+        tier1_sla_hours: formData.tier1_enabled !== false ? Number(formData.tier1_sla_hours) : null,
+        tier1_description: formData.tier1_enabled !== false ? (formData.tier1_description || null) : null,
+
+        // Tier 2 (Deep Dive) fields
+        tier2_enabled: formData.tier2_enabled || false,
+        tier2_pricing_mode: formData.tier2_enabled ? 'range' : null,
+        tier2_min_price_cents: formData.tier2_enabled ? Number(formData.tier2_min_price_usd) * 100 : null,
+        tier2_max_price_cents: formData.tier2_enabled ? Number(formData.tier2_max_price_usd) * 100 : null,
+        tier2_sla_hours: formData.tier2_enabled ? Number(formData.tier2_sla_hours) : null,
+        tier2_auto_decline_below_cents: formData.tier2_enabled && formData.tier2_auto_decline_below_usd
+          ? Number(formData.tier2_auto_decline_below_usd) * 100
+          : null,
+        tier2_description: formData.tier2_enabled ? (formData.tier2_description || null) : null,
         currency: 'USD',
         professional_title: formData.professional_title || '',
         tagline: formData.tagline || '',
@@ -341,53 +403,207 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
               </div>
             </div>
 
-            {/* Pricing */}
+            {/* Pricing Tiers */}
             <div>
               <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <span className="w-1 h-5 bg-gradient-to-b from-indigo-600 to-violet-600 rounded-full"></span>
-                Pricing & Response Time
+                Pricing Tiers
               </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Consultation Fee <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">$</span>
-                    <input 
-                      id="priceUsd" 
-                      type="number" 
-                      value={formData.priceUsd || ''} 
-                      onChange={handleChange} 
-                      min="1" 
-                      step="1" 
-                      placeholder="100"
-                      required
-                      className="w-full pl-9 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base font-semibold" 
-                    />
+
+              {/* Quick Consult (Tier 1) */}
+              <div className="mb-4 border-2 border-blue-200 rounded-lg p-4 bg-blue-50/50">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">⚡</span>
+                    <h5 className="font-bold text-gray-900">Quick Consult</h5>
                   </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Response Time <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input 
-                      id="slaHours" 
-                      type="number" 
-                      value={formData.slaHours || ''} 
-                      onChange={handleChange} 
-                      min="1" 
-                      step="1" 
-                      placeholder="48"
-                      required
-                      className="w-full pl-4 pr-16 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base font-semibold" 
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.tier1_enabled !== false}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tier1_enabled: e.target.checked }))}
+                      className="sr-only peer"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">hours</span>
-                  </div>
+                    <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-blue-700"></div>
+                  </label>
                 </div>
+
+                {formData.tier1_enabled !== false && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                          Fixed Price <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                          <input
+                            type="number"
+                            value={formData.tier1_price_usd || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, tier1_price_usd: e.target.value }))}
+                            min="1"
+                            step="1"
+                            placeholder="75"
+                            required={formData.tier1_enabled !== false}
+                            className="w-full pl-8 pr-3 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                          Response Time <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={formData.tier1_sla_hours || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, tier1_sla_hours: e.target.value }))}
+                            min="1"
+                            step="1"
+                            placeholder="48"
+                            required={formData.tier1_enabled !== false}
+                            className="w-full pl-3 pr-14 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-medium">hours</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Description (Optional)
+                      </label>
+                      <textarea
+                        value={formData.tier1_description || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, tier1_description: e.target.value }))}
+                        rows={2}
+                        placeholder="Best for quick, focused questions..."
+                        className="w-full px-3 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs resize-none"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
+
+              {/* Deep Dive (Tier 2) */}
+              <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50/50">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🎯</span>
+                    <h5 className="font-bold text-gray-900">Deep Dive</h5>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.tier2_enabled || false}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tier2_enabled: e.target.checked }))}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-purple-700"></div>
+                  </label>
+                </div>
+
+                {formData.tier2_enabled && (
+                  <>
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                          Min Price <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                          <input
+                            type="number"
+                            value={formData.tier2_min_price_usd || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, tier2_min_price_usd: e.target.value }))}
+                            min="1"
+                            step="1"
+                            placeholder="150"
+                            required={formData.tier2_enabled}
+                            className="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                          Max Price <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                          <input
+                            type="number"
+                            value={formData.tier2_max_price_usd || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, tier2_max_price_usd: e.target.value }))}
+                            min="1"
+                            step="1"
+                            placeholder="300"
+                            required={formData.tier2_enabled}
+                            className="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                          Response Time <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={formData.tier2_sla_hours || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, tier2_sla_hours: e.target.value }))}
+                            min="1"
+                            step="1"
+                            placeholder="48"
+                            required={formData.tier2_enabled}
+                            className="w-full pl-3 pr-10 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-medium">hrs</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Auto-Decline Below (Optional)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                        <input
+                          type="number"
+                          value={formData.tier2_auto_decline_below_usd || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, tier2_auto_decline_below_usd: e.target.value }))}
+                          min="0"
+                          step="1"
+                          placeholder="100"
+                          className="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">Automatically decline offers below this amount</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Description (Optional)
+                      </label>
+                      <textarea
+                        value={formData.tier2_description || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, tier2_description: e.target.value }))}
+                        rows={2}
+                        placeholder="Best for complex, in-depth questions..."
+                        className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-xs resize-none"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Validation Note */}
+              {!formData.tier1_enabled && !formData.tier2_enabled && (
+                <p className="text-xs text-red-600 mt-2">⚠️ At least one pricing tier must be enabled</p>
+              )}
             </div>
 
             {/* Professional Identity */}

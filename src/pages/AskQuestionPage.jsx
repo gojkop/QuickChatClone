@@ -21,9 +21,17 @@ function AskQuestionPage() {
   const navigate = useNavigate();
   const composerRef = useRef();
 
+  // Tier selection from navigation state
+  const tierInfo = location.state || {};
+  const { tierType, tierConfig } = tierInfo;
+
   // Modal state
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [questionData, setQuestionData] = useState(null);
+
+  // Deep Dive specific state
+  const [proposedPrice, setProposedPrice] = useState('');
+  const [askerMessage, setAskerMessage] = useState('');
 
   useEffect(() => {
     const fetchExpertProfile = async () => {
@@ -100,14 +108,30 @@ function AskQuestionPage() {
   const handleProceedToPayment = async (askerInfo) => {
     try {
       console.log("Starting question submission...");
-      
+
+      // Validate Deep Dive offer amount
+      if (tierType === 'deep_dive') {
+        const priceValue = parseFloat(proposedPrice);
+        if (!priceValue || priceValue <= 0) {
+          alert('Please enter a valid offer amount');
+          return;
+        }
+        const minPrice = (tierConfig?.min_price_cents || 0) / 100;
+        const maxPrice = (tierConfig?.max_price_cents || 0) / 100;
+        if (priceValue < minPrice || priceValue > maxPrice) {
+          alert(`Offer must be between ${formatPrice(tierConfig?.min_price_cents)} and ${formatPrice(tierConfig?.max_price_cents)}`);
+          return;
+        }
+      }
+
       const submitButton = document.querySelector('button[type="submit"]');
       if (submitButton) {
         submitButton.disabled = true;
         submitButton.textContent = 'Submitting...';
       }
 
-      const payload = {
+      // Base payload for both tiers
+      const basePayload = {
         expertHandle: expert.handle,
         title: questionData.title,
         text: questionData.text || null,
@@ -116,16 +140,37 @@ function AskQuestionPage() {
         payerLastName: askerInfo.lastName || null,
         recordingSegments: questionData.recordingSegments || [],
         attachments: questionData.attachments || [],
-        sla_hours_snapshot: expert.sla_hours
+        sla_hours_snapshot: tierConfig?.sla_hours || expert.sla_hours
       };
 
+      // Add tier-specific fields
+      let payload;
+      let endpoint;
+
+      if (tierType === 'deep_dive') {
+        payload = {
+          ...basePayload,
+          proposed_price_cents: Math.round(parseFloat(proposedPrice) * 100),
+          asker_message: askerMessage || null,
+        };
+        endpoint = '/api/questions/deep-dive';
+      } else {
+        // Quick Consult or legacy flow (default)
+        payload = {
+          ...basePayload,
+          stripe_payment_intent_id: 'pi_mock_' + Date.now(), // Mock for now
+        };
+        endpoint = '/api/questions/quick-consult';
+      }
+
       console.log('Submitting question with payload:', {
-        ...payload,
+        tierType: tierType || 'legacy',
+        endpoint,
         recordingSegments: payload.recordingSegments.length + ' segments',
         attachments: payload.attachments.length + ' attachments'
       });
-      
-      const response = await fetch('/api/questions/create', {
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -285,10 +330,49 @@ function AskQuestionPage() {
   </div>
 </div>
 
+          {/* Tier Information Banner */}
+          {tierType && (
+            <div className={`mb-6 p-4 rounded-lg border-2 ${
+              tierType === 'quick_consult'
+                ? 'bg-blue-50 border-blue-200'
+                : 'bg-purple-50 border-purple-200'
+            }`}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">
+                  {tierType === 'quick_consult' ? '⚡' : '🎯'}
+                </span>
+                <h3 className="font-bold text-gray-900">
+                  {tierType === 'quick_consult' ? 'Quick Consult' : 'Deep Dive'}
+                </h3>
+              </div>
+              <div className="text-sm text-gray-700">
+                {tierType === 'quick_consult' ? (
+                  <>
+                    <p className="font-semibold">
+                      Fixed Price: {formatPrice(tierConfig?.price_cents)}
+                    </p>
+                    <p className="text-gray-600">
+                      Your answer will be delivered within {tierConfig?.sla_hours} hours after payment
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold">
+                      Price Range: {formatPrice(tierConfig?.min_price_cents)} - {formatPrice(tierConfig?.max_price_cents)}
+                    </p>
+                    <p className="text-gray-600">
+                      Expert will review your offer. Answer delivered within {tierConfig?.sla_hours} hours after acceptance.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Question Composer */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 md:p-8">
-            <QuestionComposer 
-              ref={composerRef} 
+            <QuestionComposer
+              ref={composerRef}
               hideButton={true}
               expertId={expert.id}
               expertProfile={{
@@ -298,6 +382,56 @@ function AskQuestionPage() {
               }}
             />
           </div>
+
+          {/* Deep Dive: Price Offer & Message */}
+          {tierType === 'deep_dive' && (
+            <div className="mt-6 bg-purple-50 rounded-xl border-2 border-purple-200 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Make Your Offer</h3>
+
+              {/* Price Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Your Offer Amount *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    value={proposedPrice}
+                    onChange={(e) => setProposedPrice(e.target.value)}
+                    placeholder={`${(tierConfig?.min_price_cents || 0) / 100} - ${(tierConfig?.max_price_cents || 0) / 100}`}
+                    min={(tierConfig?.min_price_cents || 0) / 100}
+                    max={(tierConfig?.max_price_cents || 0) / 100}
+                    step="1"
+                    className="w-full pl-8 pr-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg font-semibold"
+                    required
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-600">
+                  Suggested range: {formatPrice(tierConfig?.min_price_cents)} - {formatPrice(tierConfig?.max_price_cents)}
+                </p>
+              </div>
+
+              {/* Message to Expert */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Message to Expert (Optional)
+                </label>
+                <textarea
+                  value={askerMessage}
+                  onChange={(e) => setAskerMessage(e.target.value)}
+                  placeholder="Explain why this question is urgent or important to you..."
+                  rows={3}
+                  className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm resize-none"
+                />
+                <p className="mt-1 text-xs text-gray-600">
+                  Help the expert understand the context and urgency of your question
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Continue Button */}
           <div className="mt-6">

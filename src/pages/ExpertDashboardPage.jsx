@@ -14,6 +14,7 @@ import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
 import MarketingPreview from '@/components/dashboard/MarketingPreview';
 import FirstQuestionCelebration from '@/components/dashboard/FirstQuestionCelebration';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
+import PendingOffersSection from '@/components/dashboard/PendingOffersSection';
 import { useMarketing } from '@/hooks/useMarketing';
 import { Clock, DollarSign, Coins, Calendar, CalendarDays } from 'lucide-react';
 
@@ -345,7 +346,19 @@ function ExpertDashboardPage() {
           charity_percentage: expertProfile.charity_percentage || 0,
           selected_charity: expertProfile.selected_charity || null,
           total_donated: expertProfile.total_donated || 0,
-          accepting_questions: expertProfile.accepting_questions ?? true
+          accepting_questions: expertProfile.accepting_questions ?? true,
+          // Tier 1 (Quick Consult) fields
+          tier1_enabled: expertProfile.tier1_enabled !== false,
+          tier1_price_usd: expertProfile.tier1_price_cents ? dollarsFromCents(expertProfile.tier1_price_cents) : '',
+          tier1_sla_hours: expertProfile.tier1_sla_hours || '',
+          tier1_description: expertProfile.tier1_description || '',
+          // Tier 2 (Deep Dive) fields
+          tier2_enabled: expertProfile.tier2_enabled || false,
+          tier2_min_price_usd: expertProfile.tier2_min_price_cents ? dollarsFromCents(expertProfile.tier2_min_price_cents) : '',
+          tier2_max_price_usd: expertProfile.tier2_max_price_cents ? dollarsFromCents(expertProfile.tier2_max_price_cents) : '',
+          tier2_sla_hours: expertProfile.tier2_sla_hours || '',
+          tier2_auto_decline_below_usd: expertProfile.tier2_auto_decline_below_cents ? dollarsFromCents(expertProfile.tier2_auto_decline_below_cents) : '',
+          tier2_description: expertProfile.tier2_description || ''
         };
         
         setProfile(processedProfile);
@@ -803,6 +816,9 @@ function ExpertDashboardPage() {
           </div>
 
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
+            {/* Pending Deep Dive Offers */}
+            <PendingOffersSection onOfferUpdate={fetchQuestions} />
+
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h2 className="text-2xl font-bold text-gray-900">Questions</h2>

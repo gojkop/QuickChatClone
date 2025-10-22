@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
+import TierSelector from '@/components/pricing/TierSelector';
 
 // Helper to format price from cents
 const formatPrice = (cents, currency = 'USD') => {
@@ -544,6 +545,22 @@ function PublicProfilePage() {
     navigate('/ask?expert=' + handle);
   };
 
+  const handleSelectTier = (tierType, tierConfig) => {
+    if (profile && !profile.accepting_questions) {
+      return;
+    }
+    // Navigate to question composer with tier information
+    navigate('/ask', {
+      state: {
+        expert: handle,
+        expertProfileId: profile.id,
+        expertName: profile.name,
+        tierType,
+        tierConfig
+      }
+    });
+  };
+
   const handleShare = () => {
     const url = window.location.href;
     const expertName = profile ? (profile.name || handle) : handle;
@@ -875,70 +892,50 @@ function PublicProfilePage() {
             </div>
           </div>
         
-          {/* Desktop CTA */}
-          <div className="hidden md:block mt-6">
-            <button
-              onClick={handleAskQuestion}
-              disabled={!isAcceptingQuestions}
-              className={`w-full group font-bold py-4 px-6 rounded-xl text-base flex items-center justify-center gap-2 transition-all duration-300 ${
-                isAcceptingQuestions
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:shadow-2xl hover:from-indigo-700 hover:to-indigo-800 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
-              }`}
-            >
-              <span>{isAcceptingQuestions ? 'Ask Your Question' : 'Temporarily Not Accepting Questions'}</span>
-              {isAcceptingQuestions && (
-                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                </svg>
-              )}
-            </button>
-          </div>
-
-          {/* Mobile Sticky CTA */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-md border-t border-gray-200 shadow-2xl z-50 md:hidden">
-            <div className="p-4 max-w-md mx-auto">
-              <div className="flex items-center gap-3 mb-3">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200" alt=""/>
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">{(profile.name || handle)[0]}</span>
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-gray-900 truncate">
-                    Ask {profile.name?.split(' ')[0] || handle}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {isAcceptingQuestions ? `Responds in ${profile.sla_hours}h` : 'Not accepting questions'}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-bold text-gray-900">
-                    {formatPrice(profile.price_cents, profile.currency)}
-                  </div>
-                </div>
-              </div>
-              
+          {/* Desktop Tier Selection */}
+          {profile.tiers && isAcceptingQuestions ? (
+            <div className="hidden md:block">
+              <TierSelector
+                tiers={profile.tiers}
+                expertName={profile.name}
+                onSelectTier={handleSelectTier}
+              />
+            </div>
+          ) : (
+            <div className="hidden md:block mt-6">
               <button
-                onClick={handleAskQuestion}
-                disabled={!isAcceptingQuestions}
-                className={`w-full font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
-                  isAcceptingQuestions
-                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white active:scale-[0.98]'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
-                }`}
+                disabled={true}
+                className="w-full bg-gray-300 text-gray-500 cursor-not-allowed opacity-60 font-bold py-4 px-6 rounded-xl"
               >
-                <span>{isAcceptingQuestions ? 'Ask Your Question' : 'Not Available'}</span>
-                {isAcceptingQuestions && (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                  </svg>
-                )}
+                <span>Temporarily Not Accepting Questions</span>
               </button>
             </div>
-          </div>
+          )}
+
+          {/* Mobile Tier Selection */}
+          {profile.tiers && isAcceptingQuestions && (
+            <div className="md:hidden mb-20">
+              <TierSelector
+                tiers={profile.tiers}
+                expertName={profile.name}
+                onSelectTier={handleSelectTier}
+              />
+            </div>
+          )}
+
+          {/* Mobile Sticky CTA - Only shown when not accepting questions */}
+          {!isAcceptingQuestions && (
+            <div className="fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-md border-t border-gray-200 shadow-2xl z-50 md:hidden">
+              <div className="p-4 max-w-md mx-auto">
+                <button
+                  disabled={true}
+                  className="w-full font-bold py-3.5 rounded-xl shadow-lg bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
+                >
+                  <span>Not Accepting Questions</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Trust Indicators */}
           <div className="pt-8 pb-4">

@@ -1,0 +1,2 @@
+question_id,stripe_payment_intent_id,amount_cents,currency,status,question_type,authorized_at,accepted_at,captured_at,refunded_at,capture_attempted,capture_failed,retry_count,error_message
+1,pi_example_123456789,7500,USD,captured,quick_consult,1729500000000,,,1729600000000,true,false,0,

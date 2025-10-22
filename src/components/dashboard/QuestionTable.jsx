@@ -93,6 +93,41 @@ const formatPrice = (cents, currency = 'USD') => {
   return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
 };
 
+// Tier Badge Component
+const TierBadge = ({ tier }) => {
+  if (!tier || tier === 'legacy') return null;
+
+  const config = {
+    quick_consult: {
+      icon: '⚡',
+      label: 'Quick',
+      bgColor: 'bg-blue-100',
+      textColor: 'text-blue-700',
+      borderColor: 'border-blue-200'
+    },
+    deep_dive: {
+      icon: '🎯',
+      label: 'Deep',
+      bgColor: 'bg-purple-100',
+      textColor: 'text-purple-700',
+      borderColor: 'border-purple-200'
+    }
+  };
+
+  const tierConfig = config[tier];
+  if (!tierConfig) return null;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${tierConfig.bgColor} ${tierConfig.textColor} ${tierConfig.borderColor}`}
+      title={tier === 'quick_consult' ? 'Quick Consult - Fixed price' : 'Deep Dive - Negotiated price'}
+    >
+      <span>{tierConfig.icon}</span>
+      <span>{tierConfig.label}</span>
+    </span>
+  );
+};
+
 const QuestionTable = ({ 
   questions, 
   onAnswer, 
@@ -180,18 +215,21 @@ const QuestionTable = ({
                     onClick={() => onQuestionClick?.(question)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusDisplay.color}`}>
-                          {isPending && (
-                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusDisplay.color}`}>
+                            {isPending && (
+                              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
+                            )}
+                            {statusDisplay.label}
+                          </span>
+                          {isHidden && (
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
                           )}
-                          {statusDisplay.label}
-                        </span>
-                        {isHidden && (
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                          </svg>
-                        )}
+                        </div>
+                        <TierBadge tier={question.question_tier} />
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -277,13 +315,14 @@ const QuestionTable = ({
                 {/* Header Row */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0 mr-3">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${statusDisplay.color}`}>
                         {isPending && (
                           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
                         )}
                         {statusDisplay.label}
                       </span>
+                      <TierBadge tier={question.question_tier} />
                       {isPending && (
                         <span className="text-xs font-semibold text-gray-600">
                           {formatSLA(question.sla_hours_snapshot, question.created_at)}
