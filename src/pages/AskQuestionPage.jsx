@@ -37,8 +37,13 @@ function AskQuestionPage() {
     const fetchExpertProfile = async () => {
       const params = new URLSearchParams(location.search);
       const handle = params.get('expert');
-      
+
+      console.log('🔍 AskQuestionPage - location.search:', location.search);
+      console.log('🔍 AskQuestionPage - handle from params:', handle);
+      console.log('🔍 AskQuestionPage - location.state:', location.state);
+
       if (!handle) {
+        console.error('❌ No expert handle found in URL params');
         setError('No expert specified.');
         setIsLoading(false);
         return;

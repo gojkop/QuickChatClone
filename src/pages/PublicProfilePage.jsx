@@ -578,11 +578,18 @@ function PublicProfilePage() {
   };
 
   const handleSelectTier = (tierType, tierConfig) => {
+    console.log('🔍 handleSelectTier called:', { tierType, tierConfig, handle, profileId: profile?.id });
+
     if (profile && !profile.accepting_questions) {
+      console.log('⚠️ Expert not accepting questions');
       return;
     }
+
+    const navUrl = `/ask?expert=${handle}`;
+    console.log('🚀 Navigating to:', navUrl);
+
     // Navigate to question composer with tier information
-    navigate(`/ask?expert=${handle}`, {
+    navigate(navUrl, {
       state: {
         expert: handle,
         expertProfileId: profile.id,
