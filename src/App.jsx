@@ -1,6 +1,7 @@
 // client/src/App.jsx
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { CookieConsentProvider } from './context/CookieConsentContext';  // ← FIRST
 import { AuthProvider } from './context/AuthContext';
 import { FeatureFlagsProvider } from './context/FeatureFlagsContext';
 
@@ -113,11 +114,13 @@ const AppLayout = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <FeatureFlagsProvider> 
-        <AppLayout />
-      </FeatureFlagsProvider>
-    </AuthProvider>
+    <CookieConsentProvider>          {/* ← OUTERMOST */}
+      <AuthProvider>
+        <FeatureFlagsProvider>
+          <AppLayout />              {/* Everything inside here has access */}
+        </FeatureFlagsProvider>
+      </AuthProvider>
+    </CookieConsentProvider>
   );
 }
 
