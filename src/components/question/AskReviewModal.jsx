@@ -19,13 +19,27 @@ const formatTime = (seconds) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProceedToPayment }) {
+function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProceedToPayment, tierType, tierConfig, proposedPrice }) {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen || !questionData || !expert) return null;
+
+  // Calculate display price based on tier
+  const getDisplayPrice = () => {
+    if (tierType === 'quick_consult' && tierConfig?.price_cents) {
+      return tierConfig.price_cents;
+    } else if (tierType === 'deep_dive' && proposedPrice) {
+      // Convert dollar amount to cents
+      return Math.round(parseFloat(proposedPrice) * 100);
+    }
+    // Fallback to expert's default price
+    return expert.price_cents;
+  };
+
+  const displayPriceCents = getDisplayPrice();
 
   const handleProceed = () => {
     if (!email || !email.includes('@')) {
@@ -93,10 +107,12 @@ function AskReviewModal({ isOpen, questionData, expert, onClose, onEdit, onProce
                 </div>
 
                 <div className="text-left sm:text-right">
-                  <div className="text-xs text-subtext mb-1">Total Price</div>
+                  <div className="text-xs text-subtext mb-1">
+                    {tierType === 'deep_dive' ? 'Your Offer' : 'Total Price'}
+                  </div>
                   <div className="inline-flex items-center gap-2 bg-surface/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-primary/20 shadow-sm">
                     <span className="font-bold text-ink text-2xl">
-                      {formatPrice(expert.price_cents, expert.currency)}
+                      {formatPrice(displayPriceCents, expert.currency)}
                     </span>
                   </div>
                 </div>

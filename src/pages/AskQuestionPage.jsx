@@ -479,6 +479,9 @@ function AskQuestionPage() {
         onProceedToPayment={handleProceedToPayment}
         questionData={questionData}
         expert={expert}
+        tierType={tierType}
+        tierConfig={tierConfig}
+        proposedPrice={proposedPrice}
       />
     </>
   );
