@@ -582,7 +582,7 @@ function PublicProfilePage() {
       return;
     }
     // Navigate to question composer with tier information
-    navigate('/ask', {
+    navigate(`/ask?expert=${handle}`, {
       state: {
         expert: handle,
         expertProfileId: profile.id,
