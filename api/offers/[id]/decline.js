@@ -38,8 +38,21 @@ export default async function handler(req, res) {
     );
 
     if (!xanoResponse.ok) {
-      const errorData = await xanoResponse.json();
-      throw new Error(errorData.message || 'Failed to decline offer');
+      const errorText = await xanoResponse.text();
+      console.error('Xano decline error:', {
+        status: xanoResponse.status,
+        statusText: xanoResponse.statusText,
+        body: errorText
+      });
+
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { message: errorText };
+      }
+
+      throw new Error(errorData.message || errorData.error || 'Failed to decline offer');
     }
 
     const result = await xanoResponse.json();

@@ -114,7 +114,10 @@ function PendingOffersSection({ onOfferUpdate }) {
 
     } catch (err) {
       console.error('Failed to decline offer:', err);
-      alert('Failed to decline offer: ' + (err.response?.data?.error || err.message));
+      console.error('🔍 Error response:', err.response);
+      console.error('🔍 Error data:', err.response?.data);
+      console.error('🔍 Error status:', err.response?.status);
+      alert('Failed to decline offer: ' + (err.response?.data?.message || err.response?.data?.error || err.message));
     } finally {
       setProcessingOfferId(null);
     }
