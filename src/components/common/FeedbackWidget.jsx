@@ -244,140 +244,143 @@ function FeedbackWidget() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  if (!formData.message.trim() || formData.message.length < 10) {
+    alert('Please provide at least 10 characters');
+    return;
+  }
+
+  setIsSubmitting(true);
+  trackAction('feedback_submit_started');
+
+  try {
+    const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
+    const emailToSend = formData.email.trim() || extractUserEmail(user) || null;
+    const userIdToSend = extractUserId(user);
     
-    if (!formData.message.trim() || formData.message.length < 10) {
-      alert('Please provide at least 10 characters');
-      return;
+    // 🆕 Build minimal payload (always included)
+    const payload = {
+      type: selectedType,
+      message: formData.message.trim(),
+      email: emailToSend,
+      page_url: window.location.href,
+      page_title: document.title,
+      user_role: user?.role || (expertProfile ? 'expert' : 'guest'),
+      is_authenticated: isAuthenticated,
+      contact_consent: formData.wants_followup,
+      screenshot_consent: attachments.length > 0,
+    };
+
+    // Add optional fields
+    if (formData.rating > 0) {
+      payload.rating = formData.rating;
     }
 
-    setIsSubmitting(true);
-    trackAction('feedback_submit_started');
-
-    try {
-      const analyticsConsent = hasConsent(CONSENT_CATEGORIES.ANALYTICS);
-      const emailToSend = formData.email.trim() || extractUserEmail(user) || null;
-      const userIdToSend = extractUserId(user);
-      
-      // 🆕 Build base payload (always included)
-      const payload = {
-        type: selectedType,
-        message: formData.message.trim(),
-        email: emailToSend,
-        page_url: window.location.href,
-        page_title: document.title,
-        user_role: user?.role || (expertProfile ? 'expert' : 'guest'),
-        is_authenticated: isAuthenticated,
-        contact_consent: formData.wants_followup,
-        screenshot_consent: attachments.length > 0,
-      };
-
-      // Add optional fields (only if they have values)
-      if (formData.rating > 0) {
-        payload.rating = formData.rating;
-      }
-
-      if (formData.wants_followup) {
-        payload.wants_followup = true;
-      }
-
-      if (document.referrer) {
-        payload.referrer = document.referrer;
-      }
-
-      if (userIdToSend) {
-        payload.user_id = userIdToSend;
-      }
-
-      // 🆕 Add analytics fields ONLY if consent granted
-      if (analyticsConsent) {
-        console.log('[FeedbackWidget] ✅ Analytics consent granted - including analytics data');
-        
-        payload.analytics_consent = true;
-        
-        const sessionId = getSessionId();
-        if (sessionId) payload.session_id = sessionId;
-        
-        payload.user_agent = navigator.userAgent;
-        payload.device_type = detectDeviceType();
-        payload.viewport = { width: window.innerWidth, height: window.innerHeight };
-        payload.journey_stage = detectJourneyStage(location.pathname, isAuthenticated);
-        payload.previous_actions = getPreviousActions();
-        
-        if (startTimeRef.current) {
-          payload.time_on_page = Math.floor((Date.now() - startTimeRef.current) / 1000);
-        }
-        
-        payload.scroll_depth = scrollDepthRef.current;
-        payload.interactions_count = interactionsRef.current;
-        
-        if (user?.created_at) {
-          payload.account_age_days = Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24));
-        }
-      } else {
-        console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - omitting analytics data');
-        payload.analytics_consent = false;
-      }
-
-      // Type-specific fields
-      if (selectedType === 'bug') {
-        if (formData.expected_behavior.trim()) {
-          payload.expected_behavior = formData.expected_behavior.trim();
-        }
-        if (formData.actual_behavior.trim()) {
-          payload.actual_behavior = formData.actual_behavior.trim();
-        }
-        payload.bug_severity = inferBugSeverity(formData.message);
-      }
-
-      if (selectedType === 'feature') {
-        if (formData.problem_statement.trim()) {
-          payload.problem_statement = formData.problem_statement.trim();
-        }
-        if (formData.current_workaround.trim()) {
-          payload.current_workaround = formData.current_workaround.trim();
-        }
-      }
-
-      if (attachments.length > 0) {
-        payload.attachments = await uploadAttachments(attachments);
-      }
-
-      console.log('[FeedbackWidget] Submitting feedback:', {
-        email: emailToSend,
-        analyticsConsent,
-        hasSessionId: analyticsConsent && !!getSessionId()
-      });
-
-      const response = await fetch(`${API_BASE}/feedback`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to submit feedback');
-      }
-
-      const result = await response.json();
-      console.log('[FeedbackWidget] ✅ Success:', result);
-
-      setSubmitted(true);
-      trackAction('feedback_submit_success');
-      
-      setTimeout(() => {
-        handleClose();
-      }, 3000);
-
-    } catch (error) {
-      console.error('[FeedbackWidget] ❌ Error:', error);
-      alert(`Failed to submit feedback: ${error.message}`);
-      trackAction('feedback_submit_error');
-    } finally {
-      setIsSubmitting(false);
+    if (formData.wants_followup) {
+      payload.wants_followup = true;
     }
-  };
+
+    if (document.referrer) {
+      payload.referrer = document.referrer;
+    }
+
+    if (userIdToSend) {
+      payload.user_id = userIdToSend;
+    }
+
+    // 🆕 ONLY add analytics_consent field when TRUE
+    // When false, completely omit the field
+    if (analyticsConsent) {
+      console.log('[FeedbackWidget] ✅ Analytics consent granted - including analytics data');
+      
+      // Add the consent flag ONLY when true
+      payload.analytics_consent = true;
+      
+      // Add all analytics fields
+      const sessionId = getSessionId();
+      if (sessionId) payload.session_id = sessionId;
+      
+      payload.user_agent = navigator.userAgent;
+      payload.device_type = detectDeviceType();
+      payload.viewport = { width: window.innerWidth, height: window.innerHeight };
+      payload.journey_stage = detectJourneyStage(location.pathname, isAuthenticated);
+      payload.previous_actions = getPreviousActions();
+      
+      if (startTimeRef.current) {
+        payload.time_on_page = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      }
+      
+      payload.scroll_depth = scrollDepthRef.current;
+      payload.interactions_count = interactionsRef.current;
+      
+      if (user?.created_at) {
+        payload.account_age_days = Math.floor((Date.now() - user.created_at) / (1000 * 60 * 60 * 24));
+      }
+    } else {
+      console.log('[FeedbackWidget] ⚠️ Analytics consent not granted - sending minimal feedback only');
+      // Don't add analytics_consent field at all
+    }
+
+    // Type-specific fields
+    if (selectedType === 'bug') {
+      if (formData.expected_behavior.trim()) {
+        payload.expected_behavior = formData.expected_behavior.trim();
+      }
+      if (formData.actual_behavior.trim()) {
+        payload.actual_behavior = formData.actual_behavior.trim();
+      }
+      payload.bug_severity = inferBugSeverity(formData.message);
+    }
+
+    if (selectedType === 'feature') {
+      if (formData.problem_statement.trim()) {
+        payload.problem_statement = formData.problem_statement.trim();
+      }
+      if (formData.current_workaround.trim()) {
+        payload.current_workaround = formData.current_workaround.trim();
+      }
+    }
+
+    if (attachments.length > 0) {
+      payload.attachments = await uploadAttachments(attachments);
+    }
+
+    console.log('[FeedbackWidget] Submitting feedback:', {
+      email: emailToSend,
+      analyticsConsent,
+      hasAnalyticsConsentField: 'analytics_consent' in payload
+    });
+
+    const response = await fetch(`${API_BASE}/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to submit feedback');
+    }
+
+    const result = await response.json();
+    console.log('[FeedbackWidget] ✅ Success:', result);
+
+    setSubmitted(true);
+    trackAction('feedback_submit_success');
+    
+    setTimeout(() => {
+      handleClose();
+    }, 3000);
+
+  } catch (error) {
+    console.error('[FeedbackWidget] ❌ Error:', error);
+    alert(`Failed to submit feedback: ${error.message}`);
+    trackAction('feedback_submit_error');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const hasDetectedEmail = Boolean(extractUserEmail(user));
   const emailFieldReadOnly = isAuthenticated && hasDetectedEmail;
