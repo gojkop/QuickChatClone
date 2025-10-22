@@ -304,27 +304,28 @@ function PricingPage() {
                   </div>
                 </div>
 
-{/* Pro Breakdown */}
-<div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-indigo-100 rounded-lg border-2 border-indigo-200 p-4 shadow-sm">
-  <div className="flex items-center justify-between mb-3">
-    <h3 className="text-sm font-bold text-gray-900">Pro</h3>
-    <span className="text-xs font-semibold bg-indigo-600 text-white px-2 py-0.5 rounded">€15/mo</span>
-  </div>
-  <div className="space-y-2 text-xs">
-    <div className="flex justify-between">
-      <span className="text-gray-600">Platform fee</span>
-      <span className="font-semibold text-gray-900">7%</span>
-    </div>
-    <div className="flex justify-between">
-      <span className="text-gray-600">Fee per question</span>
-      <span className="font-semibold text-gray-900">€{proFeePerQuestion.toFixed(2)}</span>
-    </div>
-    <div className="pt-2 border-t border-indigo-200 flex justify-between">
-      <span className="text-gray-600">Monthly ({exampleQuestions}q)</span>
-      <span className="font-bold text-indigo-600">€{proMonthlyFees.toFixed(2)}</span>
-    </div>
-  </div>
-</div>
+                {/* Pro Breakdown */}
+                <div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-indigo-100 rounded-lg border-2 border-indigo-200 p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-gray-900">Pro</h3>
+                    <span className="text-xs font-semibold bg-indigo-600 text-white px-2 py-0.5 rounded">€15/mo</span>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Platform fee</span>
+                      <span className="font-semibold text-gray-900">7%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Fee per question</span>
+                      <span className="font-semibold text-gray-900">€{proFeePerQuestion.toFixed(2)}</span>
+                    </div>
+                    <div className="pt-2 border-t border-indigo-200 flex justify-between">
+                      <span className="text-gray-600">Monthly ({exampleQuestions}q)</span>
+                      <span className="font-bold text-indigo-600">€{proMonthlyFees.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Savings Highlight - Compact */}
               {monthlySavings > 0 && (
