@@ -44,8 +44,8 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
       <div className={`grid gap-4 ${availableTiers.length === 2 ? 'md:grid-cols-2' : 'md:max-w-md'}`}>
         {/* Quick Consult Card */}
         {quick_consult?.enabled && (
-          <div className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all duration-200 overflow-hidden group cursor-pointer shadow-sm hover:shadow-lg">
-            <div className="p-6">
+          <div className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all duration-200 overflow-hidden group cursor-pointer shadow-sm hover:shadow-lg flex flex-col">
+            <div className="p-6 flex-grow">
               {/* Header */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
@@ -114,8 +114,8 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
 
         {/* Deep Dive Card */}
         {deep_dive?.enabled && (
-          <div className="bg-white rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all duration-200 overflow-hidden group cursor-pointer shadow-sm hover:shadow-lg">
-            <div className="p-6">
+          <div className="bg-white rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all duration-200 overflow-hidden group cursor-pointer shadow-sm hover:shadow-lg flex flex-col">
+            <div className="p-6 flex-grow">
               {/* Header */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
