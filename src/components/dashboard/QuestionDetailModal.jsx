@@ -51,7 +51,8 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
-  const isPending = question?.status === 'paid' && !question?.answered_at;
+  const isDeclined = question?.pricing_status === 'offer_declined' || question?.status === 'declined';
+  const isPending = question?.status === 'paid' && !question?.answered_at && !isDeclined;
   const isAnswered = question?.status === 'answered' || question?.status === 'closed' || !!question?.answered_at;
 
   useEffect(() => {
@@ -612,6 +613,28 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                         <p className="font-semibold text-green-900">Already Answered</p>
                         <p className="text-sm text-green-700">
                           Answered on {formatDate(question.answered_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Declined Offer Message */}
+                {isDeclined && (
+                  <div className="bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-6 mb-4">
+                    <div className="text-center">
+                      <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">Offer Declined</h3>
+                      <p className="text-sm text-gray-700 mb-3">
+                        {question?.decline_reason || 'This offer was automatically declined because it was below your minimum threshold.'}
+                      </p>
+                      <div className="bg-white/60 rounded-lg p-4">
+                        <p className="text-xs text-gray-600">
+                          You cannot answer this question as the offer has been declined. The asker has been notified.
                         </p>
                       </div>
                     </div>
