@@ -4,6 +4,8 @@ import AccordionSection from './AccordionSection';
 import { useFlowState } from '../hooks/useFlowState';
 import StepCompose from '../steps/StepCompose';
 import StepReview from '../steps/StepReview';  // ← This was missing
+import StepPayment from '../steps/StepPayment';  
+
 import '../../../styles/question-flow-v2.css';
 
 function FlowContainer({ expert, tierType, tierConfig }) {
@@ -83,29 +85,33 @@ function FlowContainer({ expert, tierType, tierConfig }) {
         </div>
       </AccordionSection>
 
-      {/* Step 3: Payment */}
-      <AccordionSection
-        step={3}
-        title="Payment & Submit"
-        icon="payment"
-        state={
-          currentStep === 3 ? 'active' :
-          completedSteps.includes(3) ? 'completed' :
-          'locked'
-        }
-        onEdit={() => actions.goToStep(3)}
-        isExpandable={false}
-      >
-        <div className="p-6">
-          <p className="text-gray-600 mb-4">Step 3 content will go here (Phase 5)</p>
-          <button
-            onClick={() => alert('Submit!')}
-            className="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition"
-          >
-            Submit Question →
-          </button>
-        </div>
-      </AccordionSection>
+{/* Step 3: Payment */}
+<AccordionSection
+  step={3}
+  title="Payment & Submit"
+  icon="payment"
+  state={
+    currentStep === 3 ? 'active' :
+    completedSteps.includes(3) ? 'completed' :
+    'locked'
+  }
+  onEdit={() => actions.goToStep(3)}
+  isExpandable={false}
+>
+  <div className="p-6">
+    <StepPayment
+      expert={expert}
+      tierType={tierType}
+      tierConfig={tierConfig}
+      composeData={state.compose}
+      reviewData={state.review}
+      onSubmit={() => {
+        // TODO: Navigate to success page
+        alert('Question submitted successfully! (Mock)');
+      }}
+    />
+  </div>
+</AccordionSection>
     </div>
   );
 }
