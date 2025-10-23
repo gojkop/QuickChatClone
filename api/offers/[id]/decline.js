@@ -43,6 +43,13 @@ export default async function handler(req, res) {
     const question = await questionResponse.json();
     const paymentIntentId = question.stripe_payment_intent_id;
 
+    console.log('🔍 Question data:', {
+      id: question.id,
+      hasPaymentIntentId: !!paymentIntentId,
+      paymentIntentId: paymentIntentId,
+      questionKeys: Object.keys(question)
+    });
+
     if (!paymentIntentId) {
       console.warn('⚠️ No payment intent ID found for question', id);
     }
