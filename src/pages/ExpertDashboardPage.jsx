@@ -252,8 +252,14 @@ function ExpertDashboardPage() {
       filtered = filtered.filter(q => !q.hidden);
     }
 
-    // Always filter out declined Deep Dive offers
-    filtered = filtered.filter(q => q.pricing_status !== 'offer_declined');
+    // Filter out Deep Dive offers that haven't been accepted yet
+    // - offer_pending: Should only appear in PendingOffersSection
+    // - offer_declined: Already declined, don't show
+    // - offer_accepted: Accepted, can appear in main list
+    filtered = filtered.filter(q =>
+      q.pricing_status !== 'offer_pending' &&
+      q.pricing_status !== 'offer_declined'
+    );
 
     return filtered;
   }, [sortedQuestions, showHidden]);
@@ -267,7 +273,8 @@ function ExpertDashboardPage() {
       pendingCount: safeAllQuestions.filter(q =>
         q.status === 'paid' &&
         !q.answered_at &&
-        q.pricing_status !== 'offer_declined'  // Exclude declined offers
+        q.pricing_status !== 'offer_pending' &&  // Exclude pending offers (shown in PendingOffersSection)
+        q.pricing_status !== 'offer_declined'     // Exclude declined offers
       ).length,
       answeredCount: safeAllQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length,
       hiddenCount: safeQuestions.filter(q => q.hidden === true).length

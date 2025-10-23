@@ -9,14 +9,26 @@ import rehypeSanitize from 'rehype-sanitize';
 import { Twitter, Linkedin, Github, Globe } from 'lucide-react';
 
 function SettingsModal({ isOpen, onClose, profile, onSave }) {
-  const [formData, setFormData] = useState(profile);
+  // Convert profile data (cents) to form data (dollars) for initial state
+  const convertProfileToFormData = (profile) => {
+    return {
+      ...profile,
+      // Convert tier prices from cents to dollars for form inputs
+      tier1_price_usd: profile.tier1_price_cents ? profile.tier1_price_cents / 100 : '',
+      tier2_min_price_usd: profile.tier2_min_price_cents ? profile.tier2_min_price_cents / 100 : '',
+      tier2_max_price_usd: profile.tier2_max_price_cents ? profile.tier2_max_price_cents / 100 : '',
+      tier2_auto_decline_below_usd: profile.tier2_auto_decline_below_cents ? profile.tier2_auto_decline_below_cents / 100 : ''
+    };
+  };
+
+  const [formData, setFormData] = useState(convertProfileToFormData(profile));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [expertiseInput, setExpertiseInput] = useState('');
   const [showBioPreview, setShowBioPreview] = useState(false);
 
   useEffect(() => {
-    setFormData(profile);
+    setFormData(convertProfileToFormData(profile));
   }, [profile]);
 
   if (!isOpen) {
@@ -184,20 +196,36 @@ function SettingsModal({ isOpen, onClose, profile, onSave }) {
 
         // Tier 1 (Quick Consult) fields
         tier1_enabled: formData.tier1_enabled !== false,
-        tier1_price_cents: formData.tier1_enabled !== false ? Number(formData.tier1_price_usd) * 100 : null,
-        tier1_sla_hours: formData.tier1_enabled !== false ? Number(formData.tier1_sla_hours) : null,
-        tier1_description: formData.tier1_enabled !== false ? (formData.tier1_description || null) : null,
+        // When enabled: use form values. When disabled: preserve existing database values
+        tier1_price_cents: formData.tier1_enabled !== false
+          ? Number(formData.tier1_price_usd) * 100
+          : (profile.tier1_price_cents || Number(formData.tier1_price_usd) * 100),
+        tier1_sla_hours: formData.tier1_enabled !== false
+          ? Number(formData.tier1_sla_hours)
+          : (profile.tier1_sla_hours || Number(formData.tier1_sla_hours)),
+        tier1_description: formData.tier1_enabled !== false
+          ? (formData.tier1_description || null)
+          : (profile.tier1_description || formData.tier1_description || null),
 
         // Tier 2 (Deep Dive) fields
         tier2_enabled: formData.tier2_enabled || false,
-        tier2_pricing_mode: formData.tier2_enabled ? 'range' : null,
-        tier2_min_price_cents: formData.tier2_enabled ? Number(formData.tier2_min_price_usd) * 100 : null,
-        tier2_max_price_cents: formData.tier2_enabled ? Number(formData.tier2_max_price_usd) * 100 : null,
-        tier2_sla_hours: formData.tier2_enabled ? Number(formData.tier2_sla_hours) : null,
-        tier2_auto_decline_below_cents: formData.tier2_enabled && formData.tier2_auto_decline_below_usd
-          ? Number(formData.tier2_auto_decline_below_usd) * 100
-          : null,
-        tier2_description: formData.tier2_enabled ? (formData.tier2_description || null) : null,
+        tier2_pricing_mode: 'range',
+        // When enabled: use form values. When disabled: preserve existing database values
+        tier2_min_price_cents: formData.tier2_enabled
+          ? (formData.tier2_min_price_usd ? Number(formData.tier2_min_price_usd) * 100 : null)
+          : (profile.tier2_min_price_cents || (formData.tier2_min_price_usd ? Number(formData.tier2_min_price_usd) * 100 : null)),
+        tier2_max_price_cents: formData.tier2_enabled
+          ? (formData.tier2_max_price_usd ? Number(formData.tier2_max_price_usd) * 100 : null)
+          : (profile.tier2_max_price_cents || (formData.tier2_max_price_usd ? Number(formData.tier2_max_price_usd) * 100 : null)),
+        tier2_sla_hours: formData.tier2_enabled
+          ? (formData.tier2_sla_hours ? Number(formData.tier2_sla_hours) : null)
+          : (profile.tier2_sla_hours || (formData.tier2_sla_hours ? Number(formData.tier2_sla_hours) : null)),
+        tier2_auto_decline_below_cents: formData.tier2_enabled
+          ? (formData.tier2_auto_decline_below_usd ? Number(formData.tier2_auto_decline_below_usd) * 100 : null)
+          : (profile.tier2_auto_decline_below_cents || (formData.tier2_auto_decline_below_usd ? Number(formData.tier2_auto_decline_below_usd) * 100 : null)),
+        tier2_description: formData.tier2_enabled
+          ? (formData.tier2_description || null)
+          : (profile.tier2_description || formData.tier2_description || null),
         currency: 'USD',
         professional_title: formData.professional_title || '',
         tagline: formData.tagline || '',
