@@ -758,28 +758,28 @@ function PublicProfilePage() {
               />
 
               {/* Expert info with enhanced typography */}
-              <div className="space-y-2.5">
-                <div className="flex items-start gap-2.5 flex-wrap">
-                  <h1 className="font-sans text-3xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-none">
-                    {profile.name || 'Expert'}
-                  </h1>
-                  {profile.charity_percentage === 100 ? (
-                    <CharityHeroBadge />
-                  ) : (
-                    <TrustBadge />
-                  )}
-                </div>
-                {profile.title && (
-                  <p className="font-sans text-lg md:text-2xl text-gray-600 font-medium leading-tight">
-                    {profile.title}
-                  </p>
-                )}
-                {profile.tagline && (
-                  <p className="font-sans text-sm md:text-lg text-gray-700 leading-relaxed">
-                    {profile.tagline}
-                  </p>
-                )}
-              </div>
+             <div className="space-y-2.5">
+  <div className="flex items-start gap-2.5 flex-wrap">
+    <h1 className="font-sans text-2xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
+      {profile.name || 'Expert'}
+    </h1>
+    {profile.charity_percentage === 100 ? (
+      <CharityHeroBadge />
+    ) : (
+      <TrustBadge />
+    )}
+  </div>
+  {profile.title && (
+    <p className="font-sans text-base md:text-xl text-gray-600 font-medium leading-tight">
+      {profile.title}
+    </p>
+  )}
+  {profile.tagline && (
+    <p className="font-sans text-sm md:text-base text-gray-700 leading-relaxed">
+      {profile.tagline}
+    </p>
+  )}
+</div>
 
               {/* Social links with enhanced hover */}
               {hasSocials && (

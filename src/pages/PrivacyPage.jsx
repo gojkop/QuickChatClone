@@ -44,13 +44,13 @@ function PrivacyPage() {
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Expert Account Information:</strong> When you register as an Expert, we collect your name, email address, and any other profile information you choose to provide, such as your bio, expertise, pricing, and Service Level Agreement (SLA).</li>
                   <li><strong>Asker Information:</strong> When you submit a question as an Asker, we collect your email address for the purpose of delivering the expert's answer and related communications.</li>
-                  <li><strong>Content:</strong> We collect and store the content you create and upload, including but not limited to question titles, text, audio/video recordings of questions and answers, and any attached files ("Content").</li>
+                  <li><strong>Content:</strong> We collect and store the content you create and upload, including but not limited to question titles, text, audio/video recordings of questions and answers, and any attached files ("Content"). For Deep Dive questions, we also collect the proposed price amount and any optional message explaining your pricing proposal.</li>
                   <li><strong>Communications:</strong> If you contact us directly for support or other inquiries, we may receive additional information about you such as your name, email address, the contents of the message, and any other information you may choose to provide.</li>
                 </ul>
               </SubSection>
               <SubSection title="2.2. Information We Collect Automatically">
                 <ul className="list-disc pl-6 space-y-2">
-                  <li><strong>Usage Data:</strong> We may automatically collect information about your interactions with our Service, such as your IP address, browser type, operating system, pages viewed, and the dates/times of your visits.</li>
+                  <li><strong>Usage Data:</strong> We may automatically collect information about your interactions with our Service, such as your IP address, browser type, operating system, pages viewed, question tier selections, and the dates/times of your visits.</li>
                   <li><strong>Cookies and Tracking Technologies:</strong> We use cookies and similar tracking technologies as detailed in Section 3 below. Please see our Cookie Policy for complete information about how we use cookies and your control options.</li>
                 </ul>
               </SubSection>
