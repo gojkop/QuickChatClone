@@ -7,6 +7,8 @@ import StepCompose from '@/components/question-flow-v2/steps/StepCompose';
 import StepReview from '@/components/question-flow-v2/steps/StepReview';
 import StepPayment from '@/components/question-flow-v2/steps/StepPayment';
 import { useFlowState } from '@/components/question-flow-v2/hooks/useFlowState';
+import ErrorBoundary from '@/components/question-flow-v2/shared/ErrorBoundary';
+
 
 function AskQuestionPageV2() {
   const location = useLocation();
@@ -297,6 +299,7 @@ function AskQuestionPageV2() {
   console.log('🔒 Safe expert data:', safeExpert);
 
   return (
+      <ErrorBoundary>
     <div className="min-h-screen bg-gray-50 pb-32 sm:pb-8">
       <FlowContainer>
         {/* Progress Dots */}
@@ -314,6 +317,7 @@ function AskQuestionPageV2() {
           isExpandable={true}
           onEdit={handleEditCompose}
         >
+        <ErrorBoundary>
           <StepCompose
             expert={safeExpert}
             tierType={tierType}
@@ -322,6 +326,7 @@ function AskQuestionPageV2() {
             onUpdate={actions.updateCompose}
             onContinue={handleComposeComplete}
           />
+        </ErrorBoundary>
         </AccordionSection>
 
         {/* Step 2: Review */}
@@ -333,6 +338,7 @@ function AskQuestionPageV2() {
           isExpandable={true}
           onEdit={() => actions.goToStep(2)}
         >
+      <ErrorBoundary>
           <StepReview
             expert={safeExpert}
             tierType={tierType}
@@ -343,6 +349,7 @@ function AskQuestionPageV2() {
             onContinue={handleReviewComplete}
             onEditCompose={handleEditCompose}
           />
+      </ErrorBoundary>
         </AccordionSection>
 
         {/* Step 3: Payment */}
@@ -353,6 +360,7 @@ function AskQuestionPageV2() {
           state={state.currentStep === 3 ? 'active' : 'locked'}
           isExpandable={false}
         >
+         <ErrorBoundary>
           <StepPayment
             expert={safeExpert}
             tierType={tierType}
@@ -360,6 +368,7 @@ function AskQuestionPageV2() {
             composeData={state.compose}
             reviewData={state.review}
           />
+       </ErrorBoundary>
         </AccordionSection>
       </FlowContainer>
 
@@ -386,6 +395,7 @@ function AskQuestionPageV2() {
         </div>
       )}
     </div>
+ </ErrorBoundary>
   );
 }
 
