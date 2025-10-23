@@ -52,6 +52,7 @@ function PaymentPlaceholder({
         amount,
         currency: expert.currency || 'usd',
         description,
+        captureMethod: tierType === 'deep_dive' ? 'manual' : 'automatic', // Hold for Deep Dive
         metadata: {
           expert_handle: expert.handle,
           tier_type: tierType,

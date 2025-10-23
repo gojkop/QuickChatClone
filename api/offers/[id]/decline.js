@@ -1,5 +1,7 @@
 // api/offers/[id]/decline.js
-// Decline a Deep Dive offer
+// Decline a Deep Dive offer and cancel/refund the payment
+
+import { cancelPaymentIntent } from '../../lib/stripe.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -22,7 +24,30 @@ export default async function handler(req, res) {
 
     const token = authHeader.replace('Bearer ', '');
 
-    // Call Xano endpoint
+    console.log(`🚫 Declining offer ${id} and canceling payment...`);
+
+    // Step 1: Get question details to find payment intent ID
+    const questionResponse = await fetch(
+      `${process.env.XANO_BASE_URL}/question/${id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      }
+    );
+
+    if (!questionResponse.ok) {
+      throw new Error('Failed to fetch question details');
+    }
+
+    const question = await questionResponse.json();
+    const paymentIntentId = question.stripe_payment_intent_id;
+
+    if (!paymentIntentId) {
+      console.warn('⚠️ No payment intent ID found for question', id);
+    }
+
+    // Step 2: Decline the offer in Xano
     const xanoResponse = await fetch(
       `${process.env.XANO_BASE_URL}/offers/${id}/decline`,
       {
@@ -57,11 +82,35 @@ export default async function handler(req, res) {
 
     const result = await xanoResponse.json();
 
+    // Step 3: Cancel/refund the payment (if not mock)
+    let paymentCanceled = false;
+    if (paymentIntentId && !paymentIntentId.startsWith('pi_mock_')) {
+      try {
+        console.log(`💳 Canceling payment intent: ${paymentIntentId}`);
+        const canceledPayment = await cancelPaymentIntent(paymentIntentId);
+        console.log(`✅ Payment canceled: ${canceledPayment.id}, status: ${canceledPayment.status}`);
+        paymentCanceled = true;
+      } catch (paymentError) {
+        console.error('❌ Failed to cancel payment:', paymentError.message);
+        // Payment cancellation failed, but offer was already declined
+        // Log this for manual review
+        console.error('⚠️ WARNING: Offer declined but payment cancellation failed!', {
+          questionId: id,
+          paymentIntentId,
+          error: paymentError.message
+        });
+        // Continue anyway - the offer is already declined
+      }
+    } else if (paymentIntentId?.startsWith('pi_mock_')) {
+      console.log('💳 [MOCK MODE] Skipping payment cancellation for mock payment intent');
+      paymentCanceled = true; // Mock payments don't need cancellation
+    }
+
     return res.status(200).json({
       success: true,
       question_id: result.question_id,
       status: result.status,
-      refund_status: result.refund_status
+      payment_canceled: paymentCanceled
     });
 
   } catch (error) {
