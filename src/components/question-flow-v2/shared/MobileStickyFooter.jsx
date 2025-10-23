@@ -13,8 +13,9 @@ function MobileStickyFooter({ children, show = true }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // ✅ FIX: Don't render wrapper at all on desktop, just return children directly
   if (!isMobile || !show) {
-    return <div className="mt-6">{children}</div>;
+    return <>{children}</>;
   }
 
   return (

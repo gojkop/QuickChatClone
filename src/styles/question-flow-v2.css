@@ -739,3 +739,78 @@ label.recording-option-btn {
     font-size: 14px;
   }
 }
+
+/* ===================================
+   MOBILE POLISH - V2 IMPROVEMENTS
+   =================================== */
+
+@media (max-width: 640px) {
+  /* Prevent horizontal scroll on mobile */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Better spacing for step sections */
+  .accordion-section {
+    margin-bottom: 12px;
+  }
+
+  /* Add bottom padding to content to prevent overlap with sticky footer */
+  .accordion-body {
+    padding-bottom: 120px; /* Increased from 80px to 120px for mobile safety */
+  }
+
+  /* Ensure sticky footer has proper styling and doesn't interfere */
+  .mobile-sticky-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.98); /* Slightly transparent for better UX */
+    backdrop-filter: blur(10px); /* Add blur for modern feel */
+    border-top: 2px solid #e5e7eb;
+    box-shadow: 0 -4px 12px -1px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+    z-index: 50;
+    animation: slideUpFooter 0.3s ease;
+  }
+
+  /* Better touch targets for mobile buttons */
+  .mobile-sticky-footer button {
+    min-height: 52px; /* Larger for easier tapping */
+    font-size: 16px;
+  }
+
+  /* Smooth transitions for better perceived performance */
+  .accordion-content {
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Price input better touch experience */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1; /* Make spinner buttons visible on mobile */
+  }
+
+  /* MindPilot panel more compact on mobile */
+  .border-purple-200 {
+    border-width: 1px; /* Thinner borders on mobile */
+  }
+
+  /* Ensure modals are truly fullscreen */
+  .fixed.inset-0 {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+  }
+}
+
+/* Tablet-specific optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .accordion-body {
+    padding-bottom: 32px; /* Less padding needed on tablet */
+  }
+}

@@ -103,22 +103,22 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
       />
 
       {/* Continue Button */}
-      <div className="pt-4 border-t">
-<MobileStickyFooter>
-  <button
-    onClick={handleContinue}
-    disabled={!canContinue}
-    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-  >
-    {!title.trim()
-      ? 'Enter a title to continue'
-      : title.length < 5
-      ? 'Title too short (min 5 characters)'
-      : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
-      ? 'Uploading...'
-      : 'Continue to Review →'}
-  </button>
-</MobileStickyFooter>
+      <div className="pt-6 sm:pt-4 border-t mt-6">
+        <MobileStickyFooter>
+          <button
+            onClick={handleContinue}
+            disabled={!canContinue}
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+          >
+            {!title.trim()
+              ? 'Enter a title to continue'
+              : title.length < 5
+              ? 'Title too short (min 5 characters)'
+              : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
+              ? 'Uploading...'
+              : 'Continue to Review →'}
+          </button>
+        </MobileStickyFooter>
       </div>
     </div>
   );

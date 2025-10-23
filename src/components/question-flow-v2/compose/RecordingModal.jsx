@@ -207,13 +207,20 @@ function RecordingModal({ mode, onComplete, onClose }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // ✅ Detect mobile
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm">
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+      <div className={`flex min-h-full items-center justify-center ${isMobile ? 'p-0' : 'p-4'}`}>
+        <div className={`relative bg-white overflow-hidden ${
+          isMobile 
+            ? 'w-full h-full flex flex-col' 
+            : 'rounded-2xl shadow-2xl max-w-2xl w-full'
+        }`}>
           {/* Header */}
-          <div className="bg-gray-50 px-6 py-4 border-b flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900">
+          <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center justify-between flex-shrink-0">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">
               {state === 'preview' && `Record ${mode === 'video' ? 'Video' : mode === 'screen' ? 'Screen' : 'Audio'}`}
               {state === 'recording' && 'Recording...'}
               {state === 'review' && 'Review Recording'}
@@ -228,38 +235,38 @@ function RecordingModal({ mode, onComplete, onClose }) {
             </button>
           </div>
 
-          {/* Content - FIXED HEIGHT to prevent layout shift */}
-          <div className="relative" style={{ minHeight: '400px' }}>
+          {/* Content - Mobile optimized */}
+          <div className={`relative ${isMobile ? 'flex-1 flex flex-col' : ''}`} style={{ minHeight: isMobile ? 'auto' : '400px' }}>
             {/* Preview State */}
             {state === 'preview' && (
               <>
                 {(mode === 'video' || mode === 'screen') ? (
                   <video
                     ref={videoRef}
-                    className="w-full bg-gray-900 aspect-video"
+                    className={`w-full bg-gray-900 ${isMobile ? 'flex-1 object-cover' : 'aspect-video'}`}
                     autoPlay
                     muted
                     playsInline
                   />
                 ) : (
-                  <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                  <div className={`w-full bg-gray-900 flex items-center justify-center ${isMobile ? 'flex-1' : 'aspect-video'}`}>
                     <div className="text-center">
                       <MicIcon className="w-16 h-16 text-white mx-auto mb-3" />
                       <p className="text-white font-semibold">Audio Ready</p>
                     </div>
                   </div>
                 )}
-                <div className="p-6 flex gap-3">
+                <div className="p-4 sm:p-6 flex gap-3 flex-shrink-0">
                   <button
                     onClick={onClose}
-                    className="px-6 py-3 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition"
+                    className="px-4 sm:px-6 py-3 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={startCountdown}
                     disabled={countdown !== null}
-                    className="flex-1 bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                    className="flex-1 bg-red-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
                   >
                     Start Recording
                   </button>
@@ -273,26 +280,26 @@ function RecordingModal({ mode, onComplete, onClose }) {
                 {(mode === 'video' || mode === 'screen') ? (
                   <video
                     ref={videoRef}
-                    className="w-full bg-gray-900 aspect-video"
+                    className={`w-full bg-gray-900 ${isMobile ? 'flex-1 object-cover' : 'aspect-video'}`}
                     autoPlay
                     muted
                     playsInline
                   />
                 ) : (
-                  <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                  <div className={`w-full bg-gray-900 flex items-center justify-center ${isMobile ? 'flex-1' : 'aspect-video'}`}>
                     <div className="text-center">
                       <div className="w-16 h-16 rounded-full bg-red-600 mx-auto mb-4 animate-pulse" />
                       <p className="text-white font-semibold">Recording {mode === 'screen' ? 'Screen' : 'Audio'}...</p>
                     </div>
                   </div>
                 )}
-                <div className="p-6 text-center">
-                  <div className="text-4xl font-black text-red-600 mb-4">
+                <div className="p-4 sm:p-6 text-center flex-shrink-0">
+                  <div className="text-3xl sm:text-4xl font-black text-red-600 mb-4">
                     {formatTime(timer)}
                   </div>
                   <button
                     onClick={stopRecording}
-                    className="px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
+                    className="px-6 sm:px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
                   >
                     Stop Recording
                   </button>
@@ -306,12 +313,12 @@ function RecordingModal({ mode, onComplete, onClose }) {
                 {(mode === 'video' || mode === 'screen') ? (
                   <video
                     ref={reviewVideoRef}
-                    className="w-full bg-black aspect-video"
+                    className={`w-full bg-black ${isMobile ? 'flex-1' : 'aspect-video'}`}
                     controls
                     playsInline
                   />
                 ) : (
-                  <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                  <div className={`w-full bg-gray-900 flex items-center justify-center ${isMobile ? 'flex-1' : 'aspect-video'}`}>
                     <audio
                       src={reviewBlobUrl || ''}
                       controls
@@ -319,20 +326,20 @@ function RecordingModal({ mode, onComplete, onClose }) {
                     />
                   </div>
                 )}
-                <div className="p-6 bg-green-50">
+                <div className="p-4 sm:p-6 bg-green-50 flex-shrink-0">
                   <p className="text-sm text-green-800 mb-4 text-center">
                     Duration: {formatTime(recordedDuration)}
                   </p>
                   <div className="flex gap-3">
                     <button
                       onClick={handleDiscard}
-                      className="px-6 py-3 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
+                      className="px-4 sm:px-6 py-3 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
                     >
                       🗑️ Delete
                     </button>
                     <button
                       onClick={handleSave}
-                      className="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700"
+                      className="flex-1 bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg hover:bg-green-700"
                     >
                       ✅ Save Recording
                     </button>
@@ -345,10 +352,10 @@ function RecordingModal({ mode, onComplete, onClose }) {
             {countdown !== null && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                 <div className="text-center">
-                  <div className="text-8xl font-black text-white mb-4 animate-bounce">
+                  <div className="text-6xl sm:text-8xl font-black text-white mb-4 animate-bounce">
                     {countdown}
                   </div>
-                  <div className="text-white text-xl font-semibold">Get ready...</div>
+                  <div className="text-white text-lg sm:text-xl font-semibold">Get ready...</div>
                 </div>
               </div>
             )}

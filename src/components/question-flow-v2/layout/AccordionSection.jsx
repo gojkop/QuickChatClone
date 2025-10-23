@@ -17,13 +17,23 @@ function AccordionSection({
     const shouldExpand = state === 'active';
     setIsExpanded(shouldExpand);
     
-    // Scroll to section when it becomes active
+    // ✅ FIX: Better scroll behavior - scroll to top of section on mobile, smooth on desktop
     if (shouldExpand && sectionRef.current) {
       setTimeout(() => {
-        const yOffset = -100;
         const element = sectionRef.current;
-        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
+        const isMobile = window.innerWidth < 640;
+        
+        if (isMobile) {
+          // Mobile: Scroll section to top of viewport with small offset
+          const headerHeight = 20; // Small offset from top
+          const y = element.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        } else {
+          // Desktop: Scroll with more offset for better context
+          const yOffset = -80;
+          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
       }, 150);
     }
   }, [state]);
