@@ -1,0 +1,294 @@
+import React, { useState, useRef, useEffect } from 'react';
+
+function RecordingModal({ mode, onComplete, onClose }) {
+  const [state, setState] = useState('preview'); // preview, recording, review
+  const [countdown, setCountdown] = useState(null);
+  const [timer, setTimer] = useState(90);
+  const [recordedBlob, setRecordedBlob] = useState(null);
+  const [recordedDuration, setRecordedDuration] = useState(0);
+
+  const videoRef = useRef(null);
+  const reviewVideoRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const streamRef = useRef(null);
+  const timerIntervalRef = useRef(null);
+  const startTimeRef = useRef(0);
+
+  // Initialize preview
+  useEffect(() => {
+    initializePreview();
+    return () => cleanup();
+  }, [mode]);
+
+  const initializePreview = async () => {
+    try {
+      const constraints = mode === 'video'
+        ? { audio: true, video: { facingMode: 'user' } }
+        : { audio: true, video: false };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+
+      if (mode === 'video' && videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Media permission error:', error);
+      alert('Camera/microphone permission denied');
+      onClose();
+    }
+  };
+
+  const cleanup = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+  };
+
+  const startCountdown = () => {
+    setCountdown(3);
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          startRecording();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const startRecording = () => {
+    setState('recording');
+    startTimeRef.current = Date.now();
+
+    const mimeType = mode === 'audio' ? 'audio/webm' : 'video/webm;codecs=vp8,opus';
+    mediaRecorderRef.current = new MediaRecorder(streamRef.current, { mimeType });
+    const chunks = [];
+
+    mediaRecorderRef.current.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    mediaRecorderRef.current.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType });
+      const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      
+      setRecordedBlob(blob);
+      setRecordedDuration(duration);
+      setState('review');
+      
+      if (mode === 'video' && reviewVideoRef.current) {
+        reviewVideoRef.current.src = URL.createObjectURL(blob);
+      }
+    };
+
+    mediaRecorderRef.current.start();
+
+    // Timer
+    timerIntervalRef.current = setInterval(() => {
+      setTimer(prev => {
+        if (prev <= 1) {
+          stopRecording();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    cleanup();
+  };
+
+  const handleSave = () => {
+    onComplete(recordedBlob, recordedDuration, mode);
+  };
+
+  const handleDiscard = () => {
+    if (recordedBlob) {
+      URL.revokeObjectURL(URL.createObjectURL(recordedBlob));
+    }
+    onClose();
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
+          {/* Header */}
+          <div className="bg-gray-50 px-6 py-4 border-b flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">
+              {state === 'preview' && `Record ${mode === 'video' ? 'Video' : 'Audio'}`}
+              {state === 'recording' && 'Recording...'}
+              {state === 'review' && 'Review Recording'}
+            </h3>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-200 rounded-lg transition"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-0">
+            {/* Preview State */}
+            {state === 'preview' && (
+              <>
+                {mode === 'video' ? (
+                  <video
+                    ref={videoRef}
+                    className="w-full bg-gray-900 aspect-video"
+                    autoPlay
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                    <div className="text-center">
+                      <MicIcon className="w-16 h-16 text-white mx-auto mb-3" />
+                      <p className="text-white font-semibold">Audio Ready</p>
+                    </div>
+                  </div>
+                )}
+                <div className="p-6 flex gap-3">
+                  <button
+                    onClick={onClose}
+                    className="px-6 py-3 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={startCountdown}
+                    disabled={countdown !== null}
+                    className="flex-1 bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                  >
+                    Start Recording
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Recording State */}
+            {state === 'recording' && (
+              <>
+                {mode === 'video' ? (
+                  <video
+                    ref={videoRef}
+                    className="w-full bg-gray-900 aspect-video"
+                    autoPlay
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 rounded-full bg-red-600 mx-auto mb-4 animate-pulse" />
+                      <p className="text-white font-semibold">Recording Audio...</p>
+                    </div>
+                  </div>
+                )}
+                <div className="p-6 text-center">
+                  <div className="text-4xl font-black text-red-600 mb-4">
+                    {formatTime(timer)}
+                  </div>
+                  <button
+                    onClick={stopRecording}
+                    className="px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
+                  >
+                    Stop Recording
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Review State */}
+            {state === 'review' && (
+              <>
+                {mode === 'video' ? (
+                  <video
+                    ref={reviewVideoRef}
+                    className="w-full bg-black aspect-video"
+                    controls
+                    playsInline
+                  />
+                ) : (
+                  <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                    <audio
+                      src={recordedBlob ? URL.createObjectURL(recordedBlob) : ''}
+                      controls
+                      className="w-full max-w-md px-4"
+                    />
+                  </div>
+                )}
+                <div className="p-6 bg-green-50">
+                  <p className="text-sm text-green-800 mb-4 text-center">
+                    Duration: {formatTime(recordedDuration)}
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleDiscard}
+                      className="px-6 py-3 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
+                    >
+                      🗑️ Delete
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      className="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700"
+                    >
+                      ✅ Save Recording
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Countdown Overlay */}
+            {countdown !== null && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-8xl font-black text-white mb-4 animate-bounce">
+                    {countdown}
+                  </div>
+                  <div className="text-white text-xl font-semibold">Get ready...</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Icon components (inline for modal)
+function MicIcon({ className }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+    </svg>
+  );
+}
+
+export default RecordingModal;

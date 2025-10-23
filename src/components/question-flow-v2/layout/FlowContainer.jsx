@@ -2,6 +2,7 @@ import React from 'react';
 import ProgressDots from './ProgressDots';
 import AccordionSection from './AccordionSection';
 import { useFlowState } from '../hooks/useFlowState';
+import StepCompose from '../steps/StepCompose';
 import '@/styles/question-flow-v2.css';
 
 function FlowContainer({ expert, tierType, tierConfig }) {
@@ -30,28 +31,29 @@ function FlowContainer({ expert, tierType, tierConfig }) {
       />
 
       {/* Step 1: Compose */}
-      <AccordionSection
-        step={1}
-        title="Your Question"
-        icon="compose"
-        state={
-          currentStep === 1 ? 'active' :
-          completedSteps.includes(1) ? 'completed' :
-          'locked'
-        }
-        onEdit={() => actions.goToStep(1)}
-        isExpandable={completedSteps.includes(1)}
-      >
-        <div className="p-6">
-          <p className="text-gray-600 mb-4">Step 1 content will go here (Phase 2)</p>
-          <button
-            onClick={() => actions.completeStep(1)}
-            className="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition"
-          >
-            Continue to Review →
-          </button>
-        </div>
-      </AccordionSection>
+<AccordionSection
+  step={1}
+  title="Your Question"
+  icon="compose"
+  state={
+    currentStep === 1 ? 'active' :
+    completedSteps.includes(1) ? 'completed' :
+    'locked'
+  }
+  onEdit={() => actions.goToStep(1)}
+  isExpandable={completedSteps.includes(1)}
+>
+  <div className="p-6">
+    <StepCompose
+      expert={expert}
+      tierType={tierType}
+      tierConfig={tierConfig}
+      composeData={state.compose}
+      onUpdate={actions.updateCompose}
+      onContinue={() => actions.completeStep(1)}
+    />
+  </div>
+</AccordionSection>
 
       {/* Step 2: Review */}
       <AccordionSection
