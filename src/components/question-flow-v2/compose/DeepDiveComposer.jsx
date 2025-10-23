@@ -18,6 +18,15 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
 
+  // Safety check
+  if (!expert) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">Loading expert information...</p>
+      </div>
+    );
+  }
+
   const handleTitleChange = (value) => {
     setTitle(value);
     onUpdate({ title: value });
@@ -114,24 +123,26 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
         />
       </div>
 
-      {/* mindPilot Panel */}
-      <MindPilotPanel
-        questionTitle={title}
-        questionText={text}
-        expertId={expert.id}
-        expertProfile={{
-          name: expert.name || expert.user?.name,
-          specialty: expert.specialty,
-          price: expert.price_cents
-        }}
-        onApplySuggestions={(suggestions) => {
-          if (suggestions.additionalContext) {
-            const newText = (text + suggestions.additionalContext).trim();
-            setText(newText);
-            onUpdate({ text: newText });
-          }
-        }}
-      />
+      {/* mindPilot Panel - with safety check */}
+      {expert && expert.id && (
+        <MindPilotPanel
+          questionTitle={title}
+          questionText={text}
+          expertId={expert.id}
+          expertProfile={{
+            name: expert.name || expert.user?.name || expert.handle || 'Expert',
+            specialty: expert.specialty || '',
+            price: expert.price_cents || 0
+          }}
+          onApplySuggestions={(suggestions) => {
+            if (suggestions && suggestions.additionalContext) {
+              const newText = (text + suggestions.additionalContext).trim();
+              setText(newText);
+              onUpdate({ text: newText });
+            }
+          }}
+        />
+      )}
 
       {/* Desktop-only Continue Button */}
       <div className="hidden sm:block pt-6 border-t mt-6">

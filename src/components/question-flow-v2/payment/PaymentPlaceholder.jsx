@@ -21,6 +21,15 @@ function PaymentPlaceholder({
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
   const [intentError, setIntentError] = useState(null);
 
+  // ✅ SAFETY CHECK - Add this at the top
+  if (!expert) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">Loading payment information...</p>
+      </div>
+    );
+  }
+
   // Initialize Stripe if enabled
   useEffect(() => {
     if (config.enabled && config.publicKey && !stripePromise) {
@@ -57,9 +66,9 @@ function PaymentPlaceholder({
         description,
         captureMethod, // Hold for Deep Dive
         metadata: {
-          expert_handle: expert.handle,
+          expert_handle: expert.handle || '',
           tier_type: tierType,
-          question_title: composeData.title
+          question_title: composeData.title || ''
         }
       });
 
@@ -89,6 +98,7 @@ function PaymentPlaceholder({
     console.log('💳 [MOCK MODE] Submitting with mock payment:', paymentIntentId);
     onSubmit(paymentIntentId);
   };
+
   const formatPrice = (cents, currency = 'USD') => {
     const symbols = { USD: '$', EUR: '€', GBP: '£' };
     const symbol = symbols[currency] || '$';
@@ -99,6 +109,9 @@ function PaymentPlaceholder({
   const displayPrice = tierType === 'deep_dive' && composeData.tierSpecific?.price
     ? `$${composeData.tierSpecific.price}`
     : formatPrice(tierConfig?.price_cents || expert.price_cents, expert.currency);
+
+  // ✅ Safe expert name
+  const expertName = expert.name || expert.user?.name || expert.handle || 'Expert';
 
   return (
     <div className="space-y-6">
@@ -122,7 +135,8 @@ function PaymentPlaceholder({
 
         <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-gray-700 font-medium">Question to {expert.name || expert.handle}</span>
+            {/* ✅ FIXED: Use safe expert name */}
+            <span className="text-gray-700 font-medium">Question to {expertName}</span>
             <span className="text-2xl font-black text-indigo-600">{displayPrice}</span>
           </div>
           
@@ -144,19 +158,19 @@ function PaymentPlaceholder({
         <div className="text-xs text-gray-600 space-y-2">
           <div className="flex items-start gap-2">
             <CheckCircleIcon className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-            <p>Email confirmation to: <strong>{reviewData.email}</strong></p>
+            <p>Email confirmation to: <strong>{reviewData?.email || 'Not provided'}</strong></p>
           </div>
           <div className="flex items-start gap-2">
             <CheckCircleIcon className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-            <p>Question: <strong>{composeData.title}</strong></p>
+            <p>Question: <strong>{composeData?.title || 'Untitled'}</strong></p>
           </div>
-          {composeData.recordings?.length > 0 && (
+          {composeData?.recordings?.length > 0 && (
             <div className="flex items-start gap-2">
               <CheckCircleIcon className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
               <p>Recordings: <strong>{composeData.recordings.length} segment(s)</strong></p>
             </div>
           )}
-          {composeData.attachments?.length > 0 && (
+          {composeData?.attachments?.length > 0 && (
             <div className="flex items-start gap-2">
               <CheckCircleIcon className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
               <p>Attachments: <strong>{composeData.attachments.length} file(s)</strong></p>
@@ -204,7 +218,7 @@ function PaymentPlaceholder({
         <Elements stripe={stripePromise} options={{ clientSecret }}>
           <StripePaymentForm
             clientSecret={clientSecret}
-            amount={tierType === 'deep_dive' && composeData.tierSpecific?.price
+            amount={tierType === 'deep_dive' && composeData?.tierSpecific?.price
               ? composeData.tierSpecific.price * 100
               : tierConfig?.price_cents || expert.price_cents || 0}
             currency={expert.currency || 'usd'}
