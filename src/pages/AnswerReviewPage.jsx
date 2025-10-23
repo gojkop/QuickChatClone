@@ -50,8 +50,8 @@ function AnswerReviewPage() {
           price_cents: rawData.price_cents,
           currency: rawData.currency,
           status: rawData.status,
-          pricing_status: rawData.pricing_status,
-          decline_reason: rawData.decline_reason,
+          pricing_status: rawData.pricing_status || null,
+          decline_reason: rawData.decline_reason || null,
           sla_hours_snapshot: rawData.sla_hours_snapshot,
           attachments: (() => {
             try {
