@@ -21,21 +21,26 @@ function StepPayment({
         review: reviewData
       });
 
-      // Build base payload with CORRECT field names
+      // Build base payload - CORRECT FORMAT FROM V1
       const basePayload = {
-        expertHandle: expert.handle, // NOT expert_handle
+        expertHandle: expert.handle,
         title: composeData.title,
-        text: composeData.text || '',
-        media_urls: (composeData.recordings || []).map(r => ({
+        text: composeData.text || null,
+        payerEmail: reviewData.email,
+        payerFirstName: reviewData.firstName || null,
+        payerLastName: reviewData.lastName || null,
+        recordingSegments: (composeData.recordings || []).map(r => ({
           uid: r.uid,
           url: r.playbackUrl,
           mode: r.mode,
           duration: r.duration
         })),
-        attachment_urls: (composeData.attachments || []).map(a => a.url || a.playbackUrl),
-        payerEmail: reviewData.email, // NOT asker_email
-        payerFirstName: reviewData.firstName || '',
-        payerLastName: reviewData.lastName || '',
+        attachments: (composeData.attachments || []).map(a => ({
+          name: a.name || a.filename,
+          url: a.url || a.playbackUrl,
+          size: a.size
+        })),
+        sla_hours_snapshot: tierConfig?.sla_hours || expert.sla_hours
       };
 
       // Add tier-specific fields
@@ -46,13 +51,14 @@ function StepPayment({
         payload = {
           ...basePayload,
           proposed_price_cents: Math.round(parseFloat(composeData.tierSpecific.proposedPrice) * 100),
-          expert_message: composeData.tierSpecific.askerMessage || ''
+          asker_message: composeData.tierSpecific.askerMessage || null,
+          stripe_payment_intent_id: 'pi_mock_' + Date.now()
         };
       } else {
         endpoint = '/api/questions/quick-consult';
         payload = {
           ...basePayload,
-          proposed_price_cents: tierConfig?.price_cents || expert.price_cents
+          stripe_payment_intent_id: 'pi_mock_' + Date.now()
         };
       }
 

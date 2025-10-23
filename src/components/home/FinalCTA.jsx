@@ -1,32 +1,33 @@
-// src/components/home/FinalCTA.jsx
+/ src/components/home/FinalCTA.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 
 function FinalCTA() {
   return (
-    // MOBILE OPTIMIZED: py-24 md:py-32 → py-12 md:py-24 lg:py-32
     <section className="py-12 md:py-24 lg:py-32 bg-white relative overflow-hidden">
       {/* Subtle grid pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
       
       <div className="container mx-auto px-6 text-center relative z-10">
         <div className="max-w-4xl mx-auto">
-          {/* RESPONSIVE TEXT SIZES: text-4xl md:text-6xl → text-3xl sm:text-4xl md:text-5xl lg:text-6xl */}
+          
+          {/* ENHANCED HEADLINE WITH AI POSITIONING */}
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-            Stop losing money.{' '}
+            Where AI Stops,{' '}
             <span className="relative inline-block">
               <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                Reclaim your time.
+                Your Expertise Begins
               </span>
             </span>
           </h2>
           
-          {/* RESPONSIVE TEXT SIZE */}
+          {/* ENHANCED SUBTEXT */}
           <p className="mt-5 md:mt-6 max-w-2xl mx-auto text-lg md:text-xl text-gray-600 leading-relaxed">
-            Turn inbound requests into a new revenue stream without adding a single meeting to your calendar.
+            Turn your <span className="font-bold text-gray-900">last-mile expertise</span> into a revenue stream. 
+            Get paid for the judgment, context, and accountability only you can provide—without adding meetings to your calendar.
           </p>
           
-          {/* CTAs - RESPONSIVE SIZING */}
+          {/* CTAs */}
           <div className="mt-10 md:mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link 
               to="/signin" 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TitleInput from './TitleInput';
 import RecordingOptions from './RecordingOptions';
+import RecordingSegmentList from './RecordingSegmentList';
 import AdvancedOptions from './AdvancedOptions';
 import MindPilotPanel from './MindPilotPanel';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
@@ -42,6 +43,7 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
     onContinue();
   };
 
+  const hasRecordings = segmentUpload.segments.length > 0;
   const canContinue = title.trim().length >= 5 && !segmentUpload.hasUploading && !attachmentUpload.uploads.some(u => u.uploading);
 
   return (
@@ -58,8 +60,19 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
           segmentUpload={segmentUpload}
           attachmentUpload={attachmentUpload}
           showScreenRecording={false}
+          showRecordingList={false}
         />
       </div>
+
+      {/* Recording Segment List - SEPARATE */}
+      {hasRecordings && (
+        <RecordingSegmentList
+          segments={segmentUpload.segments}
+          onRemove={segmentUpload.removeSegment}
+          onRetry={segmentUpload.retrySegment}
+          onReorder={segmentUpload.reorderSegments}
+        />
+      )}
 
       {/* Advanced Options (Includes Screen Recording AND Attach Files) */}
       <AdvancedOptions
