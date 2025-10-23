@@ -1,5 +1,5 @@
 // src/hooks/useAttachmentUpload.js
-// ENHANCED VERSION with Progress Tracking
+// FIXED VERSION - Uses FormData instead of JSON with base64
 
 import { useState, useCallback } from 'react';
 
@@ -27,34 +27,30 @@ export function useAttachmentUpload() {
     }]);
 
     try {
-      // Convert file to base64
+      // Update progress - preparing
       setUploads(prev => prev.map(u =>
-        u.id === uploadId ? { ...u, progress: 20 } : u
+        u.id === uploadId ? { ...u, progress: 10 } : u
       ));
 
-      const base64 = await fileToBase64(file);
+      console.log('📤 Uploading to backend using FormData...');
+
+      // ✅ FIX: Use FormData instead of JSON with base64
+      const formData = new FormData();
+      formData.append('file', file);  // Backend expects 'file' field
 
       setUploads(prev => prev.map(u =>
-        u.id === uploadId ? { ...u, progress: 50 } : u
+        u.id === uploadId ? { ...u, progress: 30 } : u
       ));
-
-      console.log('📤 Uploading to backend...');
 
       const response = await fetch('/api/media/upload-attachment', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: file.name,
-          type: file.type,
-          data: base64,
-        }),
+        // ✅ FIX: Don't set Content-Type - browser sets it with boundary
+        body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload failed with status ${response.status}`);
       }
 
       setUploads(prev => prev.map(u =>
@@ -62,14 +58,16 @@ export function useAttachmentUpload() {
       ));
 
       const result = await response.json();
-      console.log('✅ Attachment uploaded:', result.data);
+      console.log('✅ Attachment uploaded:', result);
 
+      // Build attachment result
       const attachmentResult = {
         name: file.name,
+        filename: file.name,  // Some backends use 'filename'
         type: file.type,
-        data: result.data.data || base64,
-        url: result.data.url,
         size: file.size,
+        url: result.url || result.data?.url,  // Handle different response formats
+        ...result.data,  // Include any other data from response
       };
 
       setUploads(prev => prev.map(u =>
@@ -131,17 +129,4 @@ export function useAttachmentUpload() {
     removeUpload,
     reset,
   };
-}
-
-// Helper function to convert file to base64
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = (error) => reject(error);
-  });
 }
