@@ -221,6 +221,30 @@ The `captureMethod` parameter flows through these files:
 4. Check the debug log: `🔍 Question data: {questionKeys: [...]}`
 5. If field name is different, update the accept/decline endpoints
 
+### Fix Attachments, Documents, Audio, Video Submission
+
+**After payment flow is working:**
+
+1. Test submitting a question with:
+   - Audio recording
+   - Video recording
+   - File attachments (PDF, images, etc.)
+   - Text + media combination
+
+2. Verify in browser console:
+   - Check the submission payload in `AskQuestionPage.jsx`
+   - Look for `recordingSegments` and `attachments` arrays
+
+3. Check Xano database:
+   - Verify media files are being stored
+   - Check if `media_asset_id` field is populated
+   - Verify `attachments` JSON is correct
+
+4. Investigate mapping between:
+   - Frontend: `questionData.recordingSegments` → Backend: `recordingSegments`
+   - Frontend: `questionData.attachments` → Backend: `attachments`
+   - Backend processing in `quick-consult.js` and `deep-dive.js`
+
 ---
 
 ## Known Issues
@@ -243,6 +267,18 @@ The `captureMethod` parameter flows through these files:
 - **How to Check**: Look for `🔍 Question data` log when declining
 - **Status**: Needs verification
 - **Priority**: MEDIUM
+
+### Issue 4: Attachments, Documents, Audio, Video Not Being Sent
+- **Symptom**: With new 2-tier workflow, media files are not being transmitted correctly
+- **Affected**: Both Quick Consult and Deep Dive question submissions
+- **Status**: Identified, not yet investigated
+- **Priority**: HIGH
+- **Files to Check**:
+  - `src/pages/AskQuestionPage.jsx` - Question submission payload
+  - `api/questions/quick-consult.js` - Quick Consult endpoint
+  - `api/questions/deep-dive.js` - Deep Dive endpoint
+  - Recording segments mapping
+  - Attachments array formatting
 
 ---
 
@@ -368,6 +404,12 @@ git log --oneline -5
    - Check Vercel logs when clicking "Decline"
    - Should see `🚫 Declining offer...` log
    - If not, frontend change didn't deploy
+
+4. **Why are attachments, documents, audio, and video not being transmitted?**
+   - Check the submission payload structure in `AskQuestionPage.jsx`
+   - Verify `recordingSegments` and `attachments` arrays are populated
+   - Compare with old workflow to see what changed
+   - Check if the data structure matches what Xano expects
 
 ---
 
