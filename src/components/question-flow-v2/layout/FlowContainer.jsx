@@ -56,29 +56,32 @@ function FlowContainer({ expert, tierType, tierConfig }) {
 </AccordionSection>
 
       {/* Step 2: Review */}
-      <AccordionSection
-        step={2}
-        title="Review Your Question"
-        icon="review"
-        state={
-          currentStep === 2 ? 'active' :
-          completedSteps.includes(2) ? 'completed' :
-          'locked'
-        }
-        onEdit={() => actions.goToStep(2)}
-        isExpandable={completedSteps.includes(2)}
-      >
-        <div className="p-6">
-          <p className="text-gray-600 mb-4">Step 2 content will go here (Phase 4)</p>
-          <button
-            onClick={() => actions.completeStep(2)}
-            className="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition"
-          >
-            Continue to Payment →
-          </button>
-        </div>
-      </AccordionSection>
-
+     {/* Step 2: Review */}
+<AccordionSection
+  step={2}
+  title="Review Your Question"
+  icon="review"
+  state={
+    currentStep === 2 ? 'active' :
+    completedSteps.includes(2) ? 'completed' :
+    'locked'
+  }
+  onEdit={() => actions.goToStep(2)}
+  isExpandable={completedSteps.includes(2)}
+>
+  <div className="p-6">
+    <StepReview
+      expert={expert}
+      tierType={tierType}
+      tierConfig={tierConfig}
+      composeData={state.compose}
+      reviewData={state.review}
+      onUpdate={actions.updateReview}
+      onContinue={() => actions.completeStep(2)}
+      onEditCompose={() => actions.goToStep(1)}
+    />
+  </div>
+</AccordionSection>
       {/* Step 3: Payment */}
       <AccordionSection
         step={3}
