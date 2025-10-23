@@ -1,6 +1,8 @@
 // api/lib/stripe.js
 // Stripe integration with feature flag for easy on/off toggling
 
+import Stripe from 'stripe';
+
 /**
  * Check if Stripe is enabled via environment variable
  * Set STRIPE_ENABLED=false to disable Stripe and use mock payment flow
@@ -12,6 +14,8 @@ const isStripeEnabled = () => {
 /**
  * Initialize Stripe client (only if enabled)
  */
+let stripeInstance = null;
+
 const getStripeClient = () => {
   if (!isStripeEnabled()) {
     return null;
@@ -22,9 +26,12 @@ const getStripeClient = () => {
     return null;
   }
 
-  // Lazy load stripe only when needed
-  const Stripe = require('stripe');
-  return new Stripe(process.env.STRIPE_SECRET_KEY);
+  // Singleton pattern - create once and reuse
+  if (!stripeInstance) {
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+  }
+
+  return stripeInstance;
 };
 
 /**

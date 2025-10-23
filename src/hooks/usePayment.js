@@ -2,7 +2,6 @@
 // Payment hook with Stripe integration and mock mode support
 
 import { useState, useCallback } from 'react';
-import apiClient from '@/api';
 
 /**
  * Check if Stripe is enabled from environment variable
@@ -40,14 +39,26 @@ export function usePayment() {
       console.log(`💳 Creating payment intent: $${(amount / 100).toFixed(2)}`);
       console.log(`   Stripe enabled: ${stripeEnabled}`);
 
-      const response = await apiClient.post('/payments/create-intent', {
-        amount,
-        currency,
-        description,
-        metadata
+      // Use fetch instead of apiClient because apiClient points to Xano
+      const response = await fetch('/api/payments/create-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount,
+          currency,
+          description,
+          metadata
+        })
       });
 
-      const intent = response.data;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create payment intent');
+      }
+
+      const intent = await response.json();
       setPaymentIntent(intent);
 
       if (intent.isMock) {
