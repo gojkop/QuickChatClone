@@ -2,7 +2,7 @@ import React from 'react';
 import ProgressDots from './ProgressDots';
 import AccordionSection from './AccordionSection';
 import { useFlowState } from '../hooks/useFlowState';
-import '../../../styles/question-flow-v2.css';
+import '@/styles/question-flow-v2.css';
 
 function FlowContainer({ expert, tierType, tierConfig }) {
   const { state, actions } = useFlowState();
