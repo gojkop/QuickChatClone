@@ -55,8 +55,8 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
         console.error('❌ Payment failed:', error.message);
         setCardError(error.message);
         onError?.(error);
-      } else if (paymentIntent.status === 'succeeded') {
-        console.log('✅ Payment succeeded:', paymentIntent.id);
+      } else if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture') {
+        console.log('✅ Payment confirmed:', paymentIntent.id, 'Status:', paymentIntent.status);
         onSuccess?.(paymentIntent);
       } else {
         console.warn('⚠️ Payment status:', paymentIntent.status);
