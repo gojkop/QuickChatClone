@@ -1,6 +1,9 @@
 import React from 'react';
 
 function ExpertMessageInput({ value, onChange, compact = false }) {
+  // ✅ FIX: Ensure value is always a string
+  const safeValue = value || '';
+
   if (compact) {
     return (
       <div>
@@ -11,7 +14,7 @@ function ExpertMessageInput({ value, onChange, compact = false }) {
         <textarea
           id="expert-message"
           name="message"
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Why is this question important or urgent?"
           rows={3}
@@ -21,7 +24,7 @@ function ExpertMessageInput({ value, onChange, compact = false }) {
           autoCapitalize="sentences"
           spellCheck="true"
         />
-        <div className="text-right text-xs text-gray-500 mt-1">{value.length} / 500</div>
+        <div className="text-right text-xs text-gray-500 mt-1">{safeValue.length} / 500</div>
       </div>
     );
   }
@@ -35,7 +38,7 @@ function ExpertMessageInput({ value, onChange, compact = false }) {
       <textarea
         id="expert-message"
         name="message"
-        value={value}
+        value={safeValue}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Why is this question urgent or important to you? Any specific context the expert should know?"
         rows={4}
@@ -49,7 +52,7 @@ function ExpertMessageInput({ value, onChange, compact = false }) {
         <p className="text-xs text-gray-600">
           Help the expert understand why you need their expertise
         </p>
-        <span className="text-xs text-gray-500 font-medium">{value.length} / 1000</span>
+        <span className="text-xs text-gray-500 font-medium">{safeValue.length} / 1000</span>
       </div>
     </div>
   );
