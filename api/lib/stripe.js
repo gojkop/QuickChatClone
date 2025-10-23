@@ -42,15 +42,17 @@ const getStripeClient = () => {
  * @param {string} params.currency - Currency code (default: 'usd')
  * @param {string} params.description - Payment description
  * @param {Object} params.metadata - Additional metadata
+ * @param {boolean} params.captureMethod - 'automatic' or 'manual' (default: 'automatic')
  * @returns {Promise<Object>} Payment intent object
  */
-export async function createPaymentIntent({ amount, currency = 'usd', description, metadata = {} }) {
+export async function createPaymentIntent({ amount, currency = 'usd', description, metadata = {}, captureMethod = 'automatic' }) {
   if (!isStripeEnabled()) {
     console.log('💳 [MOCK MODE] Creating mock payment intent:', {
       amount,
       currency,
       description,
-      metadata
+      metadata,
+      captureMethod
     });
 
     // Return mock payment intent
@@ -59,9 +61,10 @@ export async function createPaymentIntent({ amount, currency = 'usd', descriptio
       client_secret: `pi_mock_secret_${Date.now()}`,
       amount,
       currency,
-      status: 'succeeded', // Mock payments are always successful
+      status: captureMethod === 'manual' ? 'requires_capture' : 'succeeded',
       description,
       metadata,
+      capture_method: captureMethod,
       isMock: true
     };
   }
@@ -74,7 +77,8 @@ export async function createPaymentIntent({ amount, currency = 'usd', descriptio
   console.log('💳 [STRIPE] Creating payment intent:', {
     amount,
     currency,
-    description
+    description,
+    captureMethod
   });
 
   try {
@@ -83,10 +87,7 @@ export async function createPaymentIntent({ amount, currency = 'usd', descriptio
       currency,
       description,
       metadata,
-      // Automatically capture payment when confirmed
-      capture_method: 'automatic',
-      // For Deep Dive, we'll capture later when expert accepts
-      // For Quick Consult, capture immediately
+      capture_method: captureMethod, // 'automatic' for Quick Consult, 'manual' for Deep Dive
     });
 
     return paymentIntent;

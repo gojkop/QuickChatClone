@@ -13,7 +13,8 @@ export default async function handler(req, res) {
       amount, // in cents
       currency = 'usd',
       description,
-      metadata = {}
+      metadata = {},
+      captureMethod = 'automatic' // 'automatic' or 'manual'
     } = req.body;
 
     // Validation
@@ -30,6 +31,7 @@ export default async function handler(req, res) {
     }
 
     console.log(`💳 Creating payment intent: $${(amount / 100).toFixed(2)} ${currency.toUpperCase()}`);
+    console.log(`   Capture method: ${captureMethod}`);
     console.log(`   Stripe enabled: ${isEnabled()}`);
 
     // Create payment intent (real or mock depending on STRIPE_ENABLED flag)
@@ -37,6 +39,7 @@ export default async function handler(req, res) {
       amount,
       currency,
       description,
+      captureMethod,
       metadata: {
         ...metadata,
         created_at: new Date().toISOString()

@@ -1,5 +1,7 @@
 // api/offers/[id]/accept.js
-// Accept a Deep Dive offer
+// Accept a Deep Dive offer and capture the payment
+
+import { capturePaymentIntent } from '../../lib/stripe.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -21,7 +23,30 @@ export default async function handler(req, res) {
 
     const token = authHeader.replace('Bearer ', '');
 
-    // Call Xano endpoint
+    console.log(`💰 Accepting offer ${id} and capturing payment...`);
+
+    // Step 1: Get question details to find payment intent ID
+    const questionResponse = await fetch(
+      `${process.env.XANO_BASE_URL}/question/${id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      }
+    );
+
+    if (!questionResponse.ok) {
+      throw new Error('Failed to fetch question details');
+    }
+
+    const question = await questionResponse.json();
+    const paymentIntentId = question.stripe_payment_intent_id;
+
+    if (!paymentIntentId) {
+      console.warn('⚠️ No payment intent ID found for question', id);
+    }
+
+    // Step 2: Accept the offer in Xano
     const xanoResponse = await fetch(
       `${process.env.XANO_BASE_URL}/offers/${id}/accept`,
       {
@@ -40,11 +65,33 @@ export default async function handler(req, res) {
 
     const result = await xanoResponse.json();
 
+    // Step 3: Capture the payment (if not mock)
+    if (paymentIntentId && !paymentIntentId.startsWith('pi_mock_')) {
+      try {
+        console.log(`💳 Capturing payment intent: ${paymentIntentId}`);
+        const capturedPayment = await capturePaymentIntent(paymentIntentId);
+        console.log(`✅ Payment captured: ${capturedPayment.id}, status: ${capturedPayment.status}`);
+      } catch (paymentError) {
+        console.error('❌ Failed to capture payment:', paymentError.message);
+        // Payment capture failed, but offer was already accepted
+        // Log this for manual review
+        console.error('⚠️ CRITICAL: Offer accepted but payment capture failed!', {
+          questionId: id,
+          paymentIntentId,
+          error: paymentError.message
+        });
+        // Continue anyway - the offer is already accepted
+      }
+    } else if (paymentIntentId?.startsWith('pi_mock_')) {
+      console.log('💳 [MOCK MODE] Skipping payment capture for mock payment intent');
+    }
+
     return res.status(200).json({
       success: true,
       question_id: result.question_id,
       status: result.status,
-      sla_deadline: result.sla_deadline
+      sla_deadline: result.sla_deadline,
+      payment_captured: !!paymentIntentId
     });
 
   } catch (error) {
