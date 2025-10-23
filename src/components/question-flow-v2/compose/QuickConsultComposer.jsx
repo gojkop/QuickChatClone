@@ -16,6 +16,11 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
 
+console.log('🎯 QuickConsultComposer rendered');
+console.log('🎯 segmentUpload:', segmentUpload);
+console.log('🎯 segmentUpload.segments:', segmentUpload.segments);
+console.log('🎯 Has reorderSegments?', typeof segmentUpload.reorderSegments);
+
   const handleTitleChange = (value) => {
     setTitle(value);
     onUpdate({ title: value });

@@ -4,6 +4,7 @@
 import { useState, useCallback } from 'react';
 
 export function useRecordingSegmentUpload() {
+  console.log('🔥 HOOK LOADED - This should appear immediately!'); // ← ADD THIS    
   const [segments, setSegments] = useState([]);
 
   const uploadSegment = useCallback(async (blob, mode, segmentIndex, duration) => {
