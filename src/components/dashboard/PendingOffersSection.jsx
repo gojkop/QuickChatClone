@@ -27,14 +27,14 @@ const formatTimeRemaining = (expiresAt) => {
 
 function PendingOffersSection({ onOfferUpdate }) {
   const [offers, setOffers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [error, setError] = useState('');
   const [processingOfferId, setProcessingOfferId] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
 
   const fetchPendingOffers = async () => {
     try {
-      setIsLoading(true);
+      // Don't show loading state during background refresh (keeps panel stable)
       const response = await apiClient.get('/expert/pending-offers');
       console.log('🔍 Pending offers response:', response.data);
       console.log('🔍 Number of offers:', response.data.offers?.length);
@@ -47,7 +47,7 @@ function PendingOffersSection({ onOfferUpdate }) {
       console.error('Failed to fetch pending offers:', err);
       setError('Failed to load pending offers');
     } finally {
-      setIsLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -61,15 +61,16 @@ function PendingOffersSection({ onOfferUpdate }) {
 
   // Trigger fade-in animation when offers appear
   useEffect(() => {
-    if (offers.length > 0 && !isLoading) {
+    if (offers.length > 0 && !isInitialLoad) {
       // Use requestAnimationFrame to ensure DOM is ready without visible delay
       requestAnimationFrame(() => {
         setIsVisible(true);
       });
-    } else {
+    } else if (offers.length === 0 && !isInitialLoad) {
+      // Only hide when no offers AND initial load complete
       setIsVisible(false);
     }
-  }, [offers.length, isLoading]);
+  }, [offers.length, isInitialLoad]);
 
   const handleAccept = async (offerId) => {
     if (!window.confirm('Accept this Deep Dive offer? The SLA timer will start immediately.')) {
@@ -137,7 +138,7 @@ function PendingOffersSection({ onOfferUpdate }) {
   };
 
   // Hide during initial load - only show if we already have offers
-  if (isLoading && offers.length === 0) {
+  if (isInitialLoad && offers.length === 0) {
     return null;
   }
 
@@ -146,13 +147,13 @@ function PendingOffersSection({ onOfferUpdate }) {
     return null;
   }
 
-  // Don't render anything if there are no offers
-  if (offers.length === 0) {
+  // Don't render anything if there are no offers (after initial load)
+  if (offers.length === 0 && !isInitialLoad) {
     return null;
   }
 
-  // Don't render until animation is ready (prevents flash/blink)
-  if (!isVisible) {
+  // Don't render until animation is ready (prevents flash/blink on initial load)
+  if (!isVisible && isInitialLoad) {
     return null;
   }
 
