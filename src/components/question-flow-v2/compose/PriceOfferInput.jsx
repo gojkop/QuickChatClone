@@ -38,32 +38,43 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency }) {
   };
 
   return (
-    <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4">
-      <h3 className="text-base font-bold text-gray-900 mb-3">Your Offer</h3>
+    <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 sm:p-6">
+      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3">Your Offer</h3>
       
       <div className="mb-3">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <label htmlFor="price-offer" className="block text-sm font-semibold text-gray-700 mb-2">
           Offer Amount <span className="text-red-500">*</span>
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xl">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg sm:text-xl pointer-events-none">
             {getCurrencySymbol()}
           </span>
           <input
             type="number"
+            id="price-offer"
+            name="price"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={`${minDollars} - ${maxDollars}`}
             min={minDollars}
             max={maxDollars}
             step="1"
-            className="w-full pl-10 pr-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-xl font-bold"
+            inputMode="decimal"
+            className={`w-full pl-10 pr-4 py-3 sm:py-4 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg sm:text-xl font-bold ${
+              error ? 'border-red-300 bg-red-50' : 'border-purple-300'
+            }`}
             required
+            autoComplete="off"
           />
         </div>
         <div className="flex items-center justify-between mt-2">
           {error ? (
-            <span className="text-xs text-red-600 font-semibold">{error}</span>
+            <div className="flex items-center gap-1 text-xs text-red-600 font-semibold animate-fadeIn">
+              <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              {error}
+            </div>
           ) : (
             <span className="text-xs text-gray-600">
               Suggested range: ${minDollars} - ${maxDollars}
