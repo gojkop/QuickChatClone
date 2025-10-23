@@ -1,5 +1,4 @@
-// src/hooks/useAttachmentUpload.js
-// FIXED VERSION - Uses FormData instead of JSON with base64
+// ALTERNATIVE VERSION - Sends raw file (binary) like audio uploads
 
 import { useState, useCallback } from 'react';
 
@@ -27,30 +26,36 @@ export function useAttachmentUpload() {
     }]);
 
     try {
-      // Update progress - preparing
       setUploads(prev => prev.map(u =>
-        u.id === uploadId ? { ...u, progress: 10 } : u
+        u.id === uploadId ? { ...u, progress: 20 } : u
       ));
 
-      console.log('📤 Uploading to backend using FormData...');
+      console.log('📤 Uploading file as binary (like audio)...');
 
-      // ✅ FIX: Use FormData instead of JSON with base64
-      const formData = new FormData();
-      formData.append('file', file);  // Backend expects 'file' field
-
-      setUploads(prev => prev.map(u =>
-        u.id === uploadId ? { ...u, progress: 30 } : u
-      ));
-
+      // ✅ ALTERNATIVE: Send raw file (like audio upload does)
       const response = await fetch('/api/media/upload-attachment', {
         method: 'POST',
-        // ✅ FIX: Don't set Content-Type - browser sets it with boundary
-        body: formData,
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',  // Use file's MIME type
+          'X-File-Name': encodeURIComponent(file.name),              // Pass filename in header
+          'X-File-Size': file.size.toString(),                       // Pass size in header
+        },
+        body: file,  // ✅ Send raw file, not JSON or FormData
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+        const errorText = await response.text();
+        let errorMessage;
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || errorText;
+        } catch {
+          errorMessage = errorText;
+        }
+        
+        console.error('❌ Backend error response:', errorText);
+        throw new Error(errorMessage || `Upload failed with status ${response.status}`);
       }
 
       setUploads(prev => prev.map(u =>
@@ -60,14 +65,14 @@ export function useAttachmentUpload() {
       const result = await response.json();
       console.log('✅ Attachment uploaded:', result);
 
-      // Build attachment result
       const attachmentResult = {
         name: file.name,
-        filename: file.name,  // Some backends use 'filename'
+        filename: file.name,
         type: file.type,
         size: file.size,
-        url: result.url || result.data?.url,  // Handle different response formats
-        ...result.data,  // Include any other data from response
+        url: result.url || result.data?.url || result.playbackUrl,
+        data: result.data,
+        ...result,
       };
 
       setUploads(prev => prev.map(u =>

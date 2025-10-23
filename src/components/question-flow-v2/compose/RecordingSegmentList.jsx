@@ -132,17 +132,7 @@ function RecordingSegmentList({ segments, onRemove, onRetry, onReorder }) {
     }
   };
 
-  // Debug: Log segment data
-  console.log('🎬 RecordingSegmentList render:', {
-    segmentCount: segments.length,
-    segments: segments.map(s => ({
-      id: s.id,
-      mode: s.mode,
-      hasBlobUrl: !!s.blobUrl,
-      uploading: s.uploading,
-      hasResult: !!s.result
-    }))
-  });
+
 
   return (
     <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
