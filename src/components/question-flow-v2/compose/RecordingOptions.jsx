@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { VideoIcon, MicIcon, MonitorIcon, PaperclipIcon, CheckCircleIcon, TrashIcon } from '../shared/SVGIcons';
 import RecordingModal from './RecordingModal';
 
-function RecordingOptions({ segmentUpload, attachmentUpload }) {
+function RecordingOptions({ segmentUpload, attachmentUpload, canRecordMore = true, remainingTime = 90 }) {
   const [showModal, setShowModal] = useState(false);
   const [recordingMode, setRecordingMode] = useState(null);
 
   const handleStartRecording = (mode) => {
+    if (!canRecordMore) {
+      alert(`Only ${remainingTime} seconds remaining. Need at least 5 seconds to record.`);
+      return;
+    }
     setRecordingMode(mode);
     setShowModal(true);
   };
@@ -14,7 +18,8 @@ function RecordingOptions({ segmentUpload, attachmentUpload }) {
   const handleRecordingComplete = async (blob, duration, mode) => {
     try {
       const segmentIndex = segmentUpload.segments.length;
-      await segmentUpload.uploadSegment(blob, mode, segmentIndex, duration);
+      const blobUrl = URL.createObjectURL(blob);
+      await segmentUpload.uploadSegment(blob, mode, segmentIndex, duration, blobUrl);
       setShowModal(false);
     } catch (error) {
       console.error('Upload failed:', error);
@@ -66,7 +71,7 @@ function RecordingOptions({ segmentUpload, attachmentUpload }) {
   return (
     <div className="space-y-4">
       <label className="block text-sm font-semibold text-gray-900 mb-3">
-        Add Media & Files
+        {hasRecordings ? 'Add More Media & Files' : 'Add Media & Files'}
         <span className="text-gray-500 font-normal ml-2">(Choose all that apply)</span>
       </label>
 
@@ -75,7 +80,8 @@ function RecordingOptions({ segmentUpload, attachmentUpload }) {
         {/* Video */}
         <button
           onClick={() => handleStartRecording('video')}
-          className="recording-option-btn"
+          disabled={!canRecordMore}
+          className="recording-option-btn disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="recording-option-icon bg-blue-100">
             <VideoIcon className="w-6 h-6 text-blue-600" />
@@ -89,7 +95,8 @@ function RecordingOptions({ segmentUpload, attachmentUpload }) {
         {/* Audio */}
         <button
           onClick={() => handleStartRecording('audio')}
-          className="recording-option-btn"
+          disabled={!canRecordMore}
+          className="recording-option-btn disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="recording-option-icon bg-orange-100">
             <MicIcon className="w-6 h-6 text-orange-600" />
@@ -104,7 +111,8 @@ function RecordingOptions({ segmentUpload, attachmentUpload }) {
         {isScreenRecordingAvailable && (
           <button
             onClick={() => handleStartRecording('screen')}
-            className="recording-option-btn"
+            disabled={!canRecordMore}
+            className="recording-option-btn disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="recording-option-icon bg-purple-100">
               <MonitorIcon className="w-6 h-6 text-purple-600" />
@@ -137,21 +145,6 @@ function RecordingOptions({ segmentUpload, attachmentUpload }) {
         </label>
       </div>
 
-      {/* Recordings Display */}
-      {hasRecordings && (
-        <div className="bg-indigo-50 border-2 border-indigo-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircleIcon className="w-5 h-5 text-indigo-600" />
-            <span className="text-sm font-semibold text-indigo-900">
-              {segmentUpload.segments.length} recording{segmentUpload.segments.length > 1 ? 's' : ''} added
-            </span>
-          </div>
-          {segmentUpload.hasUploading && (
-            <p className="text-xs text-indigo-700 font-medium">Uploading in background...</p>
-          )}
-        </div>
-      )}
-
       {/* Attachments Display */}
       {hasAttachments && (
         <div className="space-y-2">
@@ -162,17 +155,27 @@ function RecordingOptions({ segmentUpload, attachmentUpload }) {
                 <span className="text-xs text-gray-500">{formatFileSize(upload.file.size)}</span>
               </div>
               <div className="flex items-center gap-2">
-                {upload.uploading && <span className="text-xs text-indigo-600 font-medium">Uploading...</span>}
+                {upload.uploading && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-indigo-600 transition-all duration-300"
+                        style={{ width: `${upload.progress || 0}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-indigo-600 font-medium">{upload.progress || 0}%</span>
+                  </div>
+                )}
                 {upload.error && <span className="text-xs text-red-600 font-medium">Failed</span>}
                 {upload.result && (
                   <CheckCircleIcon className="w-5 h-5 text-green-600" />
                 )}
                 <button
                   onClick={() => attachmentUpload.removeUpload(upload.id)}
-                  className="text-red-500 hover:text-red-700 px-2 py-1 hover:bg-red-50 rounded transition flex items-center gap-1"
+                  className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition"
+                  aria-label="Delete attachment"
                 >
                   <TrashIcon className="w-4 h-4" />
-                  <span className="text-xs font-semibold hidden sm:inline">Remove</span>
                 </button>
               </div>
             </div>

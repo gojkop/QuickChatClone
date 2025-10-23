@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency }) {
+function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compact = false }) {
   const [error, setError] = useState('');
 
   const minDollars = (minPrice || 0) / 100;
@@ -20,12 +20,12 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency }) {
     }
 
     if (numValue < minDollars) {
-      setError(`Minimum offer is $${minDollars}`);
+      setError(`Min $${minDollars}`);
       return;
     }
 
     if (numValue > maxDollars) {
-      setError(`Maximum offer is $${maxDollars}`);
+      setError(`Max $${maxDollars}`);
       return;
     }
 
@@ -37,6 +37,46 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency }) {
     return symbols[currency] || '$';
   };
 
+  if (compact) {
+    return (
+      <div>
+        <label htmlFor="price-offer" className="block text-sm font-semibold text-gray-700 mb-2">
+          Your Offer <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-base pointer-events-none">
+            {getCurrencySymbol()}
+          </span>
+          <input
+            type="number"
+            id="price-offer"
+            name="price"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={`${minDollars}-${maxDollars}`}
+            min={minDollars}
+            max={maxDollars}
+            step="1"
+            inputMode="decimal"
+            className={`w-full pl-8 pr-3 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base font-bold ${
+              error ? 'border-red-300 bg-red-50' : 'border-purple-300'
+            }`}
+            required
+            autoComplete="off"
+          />
+        </div>
+        {error ? (
+          <p className="text-xs text-red-600 font-medium mt-1">{error}</p>
+        ) : (
+          <p className="text-xs text-gray-600 mt-1">
+            Range: ${minDollars} - ${maxDollars}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Full version (same as before)
   return (
     <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 sm:p-6">
       <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3">Your Offer</h3>

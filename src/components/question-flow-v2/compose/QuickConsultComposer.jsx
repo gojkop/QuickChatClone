@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import TitleInput from './TitleInput';
-import QuickRecordButton from './QuickRecordButton';
+import RecordingOptions from './RecordingOptions';
 import AdvancedOptions from './AdvancedOptions';
 import MindPilotPanel from './MindPilotPanel';
 import RecordingSegmentList from './RecordingSegmentList';
@@ -74,52 +74,13 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
         />
       )}
 
-      {/* Quick Record Buttons */}
-      {canRecordMore && (
-        <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
-            {hasRecordings ? 'Record Another Segment' : 'Record Your Question'}
-          </label>
-          {!canRecordMore && remainingTime > 0 && (
-            <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-sm text-amber-800">
-                Only {remainingTime} seconds remaining. Need at least 5 seconds to record.
-              </p>
-            </div>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <QuickRecordButton
-              type="video"
-              onComplete={handleRecordingComplete}
-              segmentUpload={segmentUpload}
-              disabled={!canRecordMore}
-            />
-            <QuickRecordButton
-              type="audio"
-              onComplete={handleRecordingComplete}
-              segmentUpload={segmentUpload}
-              disabled={!canRecordMore}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Limit Reached Message */}
-      {!canRecordMore && remainingTime <= 0 && (
-        <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div>
-              <h4 className="font-semibold text-red-900 mb-1">Recording Limit Reached</h4>
-              <p className="text-sm text-red-700">
-                You've used all 90 seconds of recording time. You can delete a segment to record more.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Unified Recording Options (same as Deep Dive) */}
+      <RecordingOptions
+        segmentUpload={segmentUpload}
+        attachmentUpload={attachmentUpload}
+        canRecordMore={canRecordMore}
+        remainingTime={remainingTime}
+      />
 
       {/* Advanced Options (Collapsed) */}
       <AdvancedOptions

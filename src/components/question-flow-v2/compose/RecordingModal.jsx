@@ -30,6 +30,15 @@ function RecordingModal({ mode, onComplete, onClose }) {
     return () => cleanup();
   }, [mode]);
 
+  // Keep video connected to stream throughout preview and recording
+  useEffect(() => {
+    if (videoRef.current && streamRef.current && (state === 'preview' || state === 'recording')) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+    }
+  }, [state]);
+
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e) => {
@@ -113,9 +122,8 @@ function RecordingModal({ mode, onComplete, onClose }) {
         const systemSource = audioContext.createMediaStreamSource(
           new MediaStream(systemAudioTracks)
         );
-        // Create a gain node to control system audio volume
         const systemGain = audioContext.createGain();
-        systemGain.gain.value = 0.7; // Reduce system audio slightly
+        systemGain.gain.value = 0.7;
         systemSource.connect(systemGain);
         systemGain.connect(destination);
       }
@@ -124,9 +132,8 @@ function RecordingModal({ mode, onComplete, onClose }) {
       const micAudioTracks = micStream.getAudioTracks();
       if (micAudioTracks.length > 0) {
         const micSource = audioContext.createMediaStreamSource(micStream);
-        // Create a gain node to control mic volume
         const micGain = audioContext.createGain();
-        micGain.gain.value = 1.0; // Keep mic at full volume
+        micGain.gain.value = 1.0;
         micSource.connect(micGain);
         micGain.connect(destination);
       }
@@ -203,7 +210,6 @@ function RecordingModal({ mode, onComplete, onClose }) {
     } catch (error) {
       console.error('Camera flip error:', error);
       alert('Could not flip camera. Using current camera.');
-      // Restore original stream
       await initializePreview();
     } finally {
       setIsFlipping(false);
@@ -307,7 +313,6 @@ function RecordingModal({ mode, onComplete, onClose }) {
     <div 
       className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-md animate-fadeIn"
       onClick={(e) => {
-        // Close modal if clicking backdrop (but not during recording)
         if (e.target === e.currentTarget && state !== 'recording') {
           onClose();
         }
@@ -401,7 +406,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
               </>
             )}
 
-            {/* Recording State */}
+            {/* Recording State - KEEP VIDEO VISIBLE */}
             {state === 'recording' && (
               <>
                 {mode === 'video' || mode === 'screen' ? (
@@ -421,10 +426,6 @@ function RecordingModal({ mode, onComplete, onClose }) {
                     {/* Timer Overlay */}
                     <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-mono text-lg font-bold shadow-lg">
                       {formatTime(timer)}
-                    </div>
-                    {/* Recording Instructions Overlay */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm">
-                      Recording in progress...
                     </div>
                   </div>
                 ) : (
@@ -531,7 +532,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
   );
 }
 
-// Icon components (inline for modal)
+// Icon components
 function MicIcon({ className }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
