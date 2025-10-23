@@ -709,7 +709,7 @@ function PublicProfilePage() {
       return (
         <React.Fragment>
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden hover-lift">
-            <div className="relative h-40 md:h-48 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 overflow-hidden">
+              <div className="relative h-40 md:h-48 bg-gradient-to-br from-gray-100 via-indigo-50 to-indigo-100 overflow-hidden">
               <div className="absolute top-4 left-8 w-20 h-20 bg-white/10 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '0s' }}></div>
               <div className="absolute top-8 right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-float-shape" style={{ animationDelay: '2s' }}></div>
               <div className="absolute bottom-6 left-1/2 w-24 h-24 bg-white/10 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '4s' }}></div>

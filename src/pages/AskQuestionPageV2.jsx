@@ -10,16 +10,19 @@ function AskQuestionPageV2() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState('');
 
-  // Tier info from navigation state
-  const tierInfo = location.state || {};
-  const { tierType, tierConfig } = tierInfo;
+// Tier info from navigation state
+const tierInfo = location.state || {};
 
 // TESTING: Allow tier override via URL parameter
 const params = new URLSearchParams(location.search);
 const urlTierType = params.get('tier');
+
+// Determine actual tier to use
+let tierType = urlTierType || tierInfo.tierType;
+let tierConfig = tierInfo.tierConfig;
+
+// Mock tier config for testing if coming from URL
 if (urlTierType) {
-  tierType = urlTierType;
-  // Mock tier config for testing
   if (tierType === 'deep_dive') {
     tierConfig = {
       sla_hours: 48,
@@ -33,7 +36,6 @@ if (urlTierType) {
     };
   }
 }
-
   // Fetch expert profile
   React.useEffect(() => {
     const fetchExpertProfile = async () => {
