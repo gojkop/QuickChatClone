@@ -15,6 +15,29 @@ function RecordingModal({ mode, onComplete, onClose }) {
   const timerIntervalRef = useRef(null);
   const startTimeRef = useRef(0);
 
+  // ✅ Lock body scroll when modal is open
+  useEffect(() => {
+    // Save current scroll position
+    const scrollY = window.scrollY;
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    return () => {
+      // Restore body scroll
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      
+      // Restore scroll position
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   // Initialize preview
   useEffect(() => {
     initializePreview();
@@ -211,7 +234,10 @@ function RecordingModal({ mode, onComplete, onClose }) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+    <div 
+      className="fixed inset-0 overflow-hidden bg-black/60 backdrop-blur-sm"
+      style={{ zIndex: 9999 }}
+    >
       <div className={`flex min-h-full items-center justify-center ${isMobile ? 'p-0' : 'p-4'}`}>
         <div className={`relative bg-white overflow-hidden ${
           isMobile 
@@ -228,6 +254,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-200 rounded-lg transition"
+              aria-label="Close modal"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

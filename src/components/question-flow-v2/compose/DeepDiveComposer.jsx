@@ -7,7 +7,6 @@ import ExpertMessageInput from './ExpertMessageInput';
 import MindPilotPanel from './MindPilotPanel';
 import { useRecordingSegmentUpload } from '@/components/question-flow-v2/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/components/question-flow-v2/hooks/useAttachmentUpload';
-import MobileStickyFooter from '../shared/MobileStickyFooter';
 
 
 function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
@@ -49,59 +48,10 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
     });
   };
 
-  const handleContinue = () => {
-    // Validate title
-    if (!title.trim() || title.length < 5) {
-      alert('Please enter a question title (at least 5 characters)');
-      return;
-    }
-
-    // Validate price
-    const priceValue = parseFloat(proposedPrice);
-    if (!priceValue || priceValue <= 0) {
-      alert('Please enter a valid offer amount');
-      return;
-    }
-
-    const minPrice = (tierConfig?.min_price_cents || 0) / 100;
-    const maxPrice = (tierConfig?.max_price_cents || 0) / 100;
-    
-    if (priceValue < minPrice || priceValue > maxPrice) {
-      alert(`Offer must be between $${minPrice} and $${maxPrice}`);
-      return;
-    }
-
-    // Check uploads
-    if (segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)) {
-      alert('Please wait for uploads to complete');
-      return;
-    }
-
-    const questionData = {
-      title,
-      text,
-      recordings: segmentUpload.getSuccessfulSegments(),
-      attachments: attachmentUpload.uploads.filter(u => u.result).map(u => u.result),
-      tierSpecific: {
-        proposedPrice,
-        askerMessage
-      }
-    };
-
-    onUpdate(questionData);
-    onContinue();
-  };
-
   const hasRecordings = segmentUpload.segments.length > 0;
-  const canContinue = 
-    title.trim().length >= 5 && 
-    proposedPrice && 
-    parseFloat(proposedPrice) > 0 &&
-    !segmentUpload.hasUploading && 
-    !attachmentUpload.uploads.some(u => u.uploading);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 sm:pb-6">
       {/* Title Input */}
       <TitleInput value={title} onChange={handleTitleChange} />
 
@@ -183,25 +133,15 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
         }}
       />
 
-      {/* Continue Button */}
-      <div className="pt-6 sm:pt-4 border-t mt-6">
-        <MobileStickyFooter>
-          <button
-            onClick={handleContinue}
-            disabled={!canContinue}
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-          >
-            {!title.trim()
-              ? 'Enter a title to continue'
-              : title.length < 5
-              ? 'Title too short (min 5 characters)'
-              : !proposedPrice || parseFloat(proposedPrice) <= 0
-              ? 'Enter your offer amount'
-              : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
-              ? 'Uploading...'
-              : 'Continue to Review →'}
-          </button>
-        </MobileStickyFooter>
+      {/* Desktop-only Continue Button */}
+      <div className="hidden sm:block pt-6 border-t mt-6">
+        <button
+          onClick={onContinue}
+          disabled={!title.trim() || title.length < 5 || !proposedPrice || parseFloat(proposedPrice) <= 0}
+          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Continue to Review →
+        </button>
       </div>
     </div>
   );

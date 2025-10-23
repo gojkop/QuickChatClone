@@ -44,9 +44,12 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
           Your Offer <span className="text-red-500">*</span>
         </label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-base pointer-events-none z-10">
-            {getCurrencySymbol()}
-          </span>
+          {/* Only show $ when user has entered a value */}
+          {value && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-base pointer-events-none z-10">
+              {getCurrencySymbol()}
+            </span>
+          )}
           <input
             type="number"
             id="price-offer"
@@ -58,9 +61,12 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
             max={maxDollars}
             step="1"
             inputMode="decimal"
-            className={`w-full pl-9 pr-3 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base font-bold ${
+            className={`w-full pr-3 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base font-bold ${
               error ? 'border-red-300 bg-red-50' : 'border-purple-300'
             }`}
+            style={{
+              paddingLeft: value ? '2rem' : '0.75rem'
+            }}
             required
             autoComplete="off"
           />
@@ -82,16 +88,18 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
       <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3">Your Offer</h3>
       
       <div className="mb-3">
-        <label htmlFor="price-offer" className="block text-sm font-semibold text-gray-700 mb-2">
+        <label htmlFor="price-offer-full" className="block text-sm font-semibold text-gray-700 mb-2">
           Offer Amount <span className="text-red-500">*</span>
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg sm:text-xl pointer-events-none">
-            {getCurrencySymbol()}
-          </span>
+          {value && (
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg sm:text-xl pointer-events-none">
+              {getCurrencySymbol()}
+            </span>
+          )}
           <input
             type="number"
-            id="price-offer"
+            id="price-offer-full"
             name="price"
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -100,9 +108,12 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
             max={maxDollars}
             step="1"
             inputMode="decimal"
-            className={`w-full pl-10 pr-4 py-3 sm:py-4 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg sm:text-xl font-bold ${
+            className={`w-full pr-4 py-3 sm:py-4 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg sm:text-xl font-bold ${
               error ? 'border-red-300 bg-red-50' : 'border-purple-300'
             }`}
+            style={{
+              paddingLeft: value ? '2.5rem' : '1rem'
+            }}
             required
             autoComplete="off"
           />

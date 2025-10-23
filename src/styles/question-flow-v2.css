@@ -814,3 +814,42 @@ label.recording-option-btn {
     padding-bottom: 32px; /* Less padding needed on tablet */
   }
 }
+
+/* ===================================
+   PERSISTENT MOBILE FOOTER
+   =================================== */
+
+@media (max-width: 640px) {
+  /* Ensure content doesn't hide behind persistent footer */
+  .accordion-body {
+    padding-bottom: 100px !important;
+  }
+
+  /* Persistent footer styling */
+  .fixed.bottom-0 {
+    animation: slideUpFooter 0.3s ease;
+  }
+
+  @keyframes slideUpFooter {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Lock scroll when modal is open */
+  body.modal-open {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+  }
+}

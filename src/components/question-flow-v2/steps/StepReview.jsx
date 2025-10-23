@@ -2,7 +2,6 @@ import React from 'react';
 import QuestionSummaryCard from '../review/QuestionSummaryCard';
 import PriceCard from '../review/PriceCard';
 import ContactForm from '../review/ContactForm';
-import MobileStickyFooter from '../shared/MobileStickyFooter';
 
 function StepReview({ 
   expert, 
@@ -31,7 +30,7 @@ function StepReview({
   const canContinue = reviewData.email && reviewData.email.includes('@');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-24 sm:pb-6">
       {/* Question Summary */}
       <QuestionSummaryCard
         composeData={composeData}
@@ -52,21 +51,19 @@ function StepReview({
         onChange={handleContactChange}
       />
 
-      {/* Continue Button */}
-      <div className="pt-3 border-t">
-<MobileStickyFooter>
-  <button
-    onClick={handleContinue}
-    disabled={!canContinue}
-    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-  >
-    {!reviewData.email
-      ? 'Enter your email to continue'
-      : !reviewData.email.includes('@')
-      ? 'Please enter a valid email'
-      : 'Continue to Payment →'}
-  </button>
-</MobileStickyFooter>
+      {/* Continue Button - will be shown in persistent footer */}
+      <div className="hidden sm:block pt-3 border-t">
+        <button
+          onClick={handleContinue}
+          disabled={!canContinue}
+          className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+        >
+          {!reviewData.email
+            ? 'Enter your email to continue'
+            : !reviewData.email.includes('@')
+            ? 'Please enter a valid email'
+            : 'Continue to Payment →'}
+        </button>
       </div>
     </div>
   );
