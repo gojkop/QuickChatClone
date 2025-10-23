@@ -2,6 +2,7 @@ import React from 'react';
 import QuestionSummaryCard from '../review/QuestionSummaryCard';
 import PriceCard from '../review/PriceCard';
 import ContactForm from '../review/ContactForm';
+import MobileStickyFooter from '../shared/MobileStickyFooter';
 
 function StepReview({ 
   expert, 
@@ -53,17 +54,19 @@ function StepReview({
 
       {/* Continue Button */}
       <div className="pt-4 border-t">
-        <button
-          onClick={handleContinue}
-          disabled={!canContinue}
-          className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-        >
-          {!reviewData.email
-            ? 'Enter your email to continue'
-            : !reviewData.email.includes('@')
-            ? 'Please enter a valid email'
-            : 'Continue to Payment →'}
-        </button>
+<MobileStickyFooter>
+  <button
+    onClick={handleContinue}
+    disabled={!canContinue}
+    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+  >
+    {!reviewData.email
+      ? 'Enter your email to continue'
+      : !reviewData.email.includes('@')
+      ? 'Please enter a valid email'
+      : 'Continue to Payment →'}
+  </button>
+</MobileStickyFooter>
       </div>
     </div>
   );

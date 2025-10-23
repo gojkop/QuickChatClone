@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import MobileStickyFooter from '../shared/MobileStickyFooter';
+
 
 function PaymentPlaceholder({ 
   expert, 
@@ -132,24 +134,26 @@ function PaymentPlaceholder({
 
       {/* Submit Button */}
       <div className="pt-4 border-t">
-        <button
-          onClick={handleSubmit}
-          disabled={!agreedToTerms || isSubmitting}
-          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-        >
-          {isSubmitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Processing...
-            </span>
-          ) : !agreedToTerms ? (
-            'Please agree to Terms & Conditions'
-          ) : isDeepDive ? (
-            'Submit Offer →'
-          ) : (
-            'Pay & Submit Question →'
-          )}
-        </button>
+<MobileStickyFooter>
+  <button
+    onClick={handleSubmit}
+    disabled={!agreedToTerms || isSubmitting}
+    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+  >
+    {isSubmitting ? (
+      <span className="flex items-center justify-center gap-2">
+        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        Processing...
+      </span>
+    ) : !agreedToTerms ? (
+      'Please agree to Terms & Conditions'
+    ) : isDeepDive ? (
+      'Submit Offer →'
+    ) : (
+      'Pay & Submit Question →'
+    )}
+  </button>
+</MobileStickyFooter>
       </div>
 
       {/* Help Text */}

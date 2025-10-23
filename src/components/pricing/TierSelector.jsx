@@ -61,12 +61,13 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
   };
 
   return (
-    <div className="mt-8">
-      <div className="mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 text-center">
+    <div className="mt-6">
+      {/* Compact header with smaller text */}
+      <div className="mb-5">
+        <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-2 text-center tracking-tight">
           Choose Your Question Type
         </h2>
-        <p className="text-base text-gray-600 text-center max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xs md:text-sm text-gray-600 text-center max-w-2xl mx-auto leading-relaxed">
           Not sure? Quick Consult is perfect for focused questions. Deep Dive is for comprehensive analysis where you propose the price.
         </p>
       </div>
@@ -104,7 +105,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </p>
               </div>
 
-              {/* CTA Button */}
+              {/* CTA Button with enhanced shimmer */}
               <button
                 onClick={() => handleTierSelect('quick_consult', quick_consult)}
                 disabled={loadingTier === 'quick_consult'}
@@ -126,9 +127,9 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                   </>
                 )}
                 
-                {/* Shimmer effect */}
+                {/* Enhanced shimmer effect */}
                 {loadingTier !== 'quick_consult' && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
                 )}
               </button>
             </div>
@@ -191,7 +192,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </p>
               </div>
 
-              {/* CTA Button */}
+              {/* CTA Button with enhanced shimmer */}
               <button
                 onClick={() => handleTierSelect('deep_dive', deep_dive)}
                 disabled={loadingTier === 'deep_dive'}
@@ -213,9 +214,9 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                   </>
                 )}
                 
-                {/* Shimmer effect */}
+                {/* Enhanced shimmer effect */}
                 {loadingTier !== 'deep_dive' && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
                 )}
               </button>
             </div>

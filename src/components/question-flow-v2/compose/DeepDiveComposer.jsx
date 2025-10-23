@@ -6,6 +6,8 @@ import ExpertMessageInput from './ExpertMessageInput';
 import MindPilotPanel from './MindPilotPanel';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
+import MobileStickyFooter from '../shared/MobileStickyFooter';
+
 
 function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
   const [title, setTitle] = useState(data.title || '');
@@ -171,21 +173,23 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
 
       {/* Continue Button */}
       <div className="pt-4 border-t">
-        <button
-          onClick={handleContinue}
-          disabled={!canContinue}
-          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-        >
-          {!title.trim()
-            ? 'Enter a title to continue'
-            : title.length < 5
-            ? 'Title too short (min 5 characters)'
-            : !proposedPrice || parseFloat(proposedPrice) <= 0
-            ? 'Enter your offer amount'
-            : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
-            ? 'Uploading...'
-            : 'Continue to Review →'}
-        </button>
+<MobileStickyFooter>
+  <button
+    onClick={handleContinue}
+    disabled={!canContinue}
+    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+  >
+    {!title.trim()
+      ? 'Enter a title to continue'
+      : title.length < 5
+      ? 'Title too short (min 5 characters)'
+      : !proposedPrice || parseFloat(proposedPrice) <= 0
+      ? 'Enter your offer amount'
+      : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
+      ? 'Uploading...'
+      : 'Continue to Review →'}
+  </button>
+</MobileStickyFooter>
       </div>
     </div>
   );

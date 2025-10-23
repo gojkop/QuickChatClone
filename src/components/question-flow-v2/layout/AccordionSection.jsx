@@ -5,15 +5,27 @@ function AccordionSection({
   step, 
   title, 
   icon, 
-  state, // 'active' | 'completed' | 'locked'
+  state,
   children,
   onEdit,
   isExpandable 
 }) {
   const [isExpanded, setIsExpanded] = React.useState(state === 'active');
+  const sectionRef = React.useRef(null);
 
   React.useEffect(() => {
-    setIsExpanded(state === 'active');
+    const shouldExpand = state === 'active';
+    setIsExpanded(shouldExpand);
+    
+    // Scroll to section when it becomes active
+    if (shouldExpand && sectionRef.current) {
+      setTimeout(() => {
+        const yOffset = -100;
+        const element = sectionRef.current;
+        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }, 150);
+    }
   }, [state]);
 
   const handleHeaderClick = () => {
@@ -42,13 +54,18 @@ function AccordionSection({
   };
 
   return (
-    <div className={`accordion-section ${state}`}>
+    <div ref={sectionRef} className={`accordion-section ${state}`}>
       {/* Header */}
       <div 
         className="accordion-header"
         onClick={handleHeaderClick}
         role="button"
         tabIndex={state === 'locked' ? -1 : 0}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleHeaderClick();
+          }
+        }}
       >
         {/* Step Number & Icon */}
         <div className={`accordion-icon ${getStateColor()}`}>
@@ -71,6 +88,7 @@ function AccordionSection({
                 onEdit();
               }}
               className="accordion-edit-btn"
+              aria-label="Edit this step"
             >
               <EditIcon className="w-4 h-4" />
               <span className="hidden sm:inline">Edit</span>
