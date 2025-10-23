@@ -31,13 +31,14 @@ export function usePayment() {
   /**
    * Create a payment intent
    */
-  const createPaymentIntent = useCallback(async ({ amount, currency = 'usd', description, metadata = {} }) => {
+  const createPaymentIntent = useCallback(async ({ amount, currency = 'usd', description, metadata = {}, captureMethod = 'automatic' }) => {
     setIsLoading(true);
     setError(null);
 
     try {
       console.log(`💳 Creating payment intent: $${(amount / 100).toFixed(2)}`);
       console.log(`   Stripe enabled: ${stripeEnabled}`);
+      console.log(`   Capture method: ${captureMethod}`);
 
       // Use fetch instead of apiClient because apiClient points to Xano
       const response = await fetch('/api/payments/create-intent', {
@@ -49,7 +50,8 @@ export function usePayment() {
           amount,
           currency,
           description,
-          metadata
+          metadata,
+          captureMethod
         })
       });
 

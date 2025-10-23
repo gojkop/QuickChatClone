@@ -81,13 +81,25 @@ export async function createPaymentIntent({ amount, currency = 'usd', descriptio
     captureMethod
   });
 
+  const createParams = {
+    amount,
+    currency,
+    description,
+    metadata,
+    capture_method: captureMethod, // 'automatic' for Quick Consult, 'manual' for Deep Dive
+  };
+
+  console.log('📤 [STRIPE] Sending to Stripe API:', JSON.stringify(createParams, null, 2));
+
   try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency,
-      description,
-      metadata,
-      capture_method: captureMethod, // 'automatic' for Quick Consult, 'manual' for Deep Dive
+    const paymentIntent = await stripe.paymentIntents.create(createParams);
+
+    console.log('📥 [STRIPE] Response from Stripe:', {
+      id: paymentIntent.id,
+      status: paymentIntent.status,
+      capture_method: paymentIntent.capture_method,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency
     });
 
     return paymentIntent;

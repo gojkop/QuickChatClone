@@ -44,6 +44,8 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
     try {
       const cardElement = elements.getElement(CardElement);
 
+      console.log('🔍 [STRIPE FORM] Confirming payment with client secret:', clientSecret.substring(0, 20) + '...');
+
       // Confirm the payment
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
@@ -51,12 +53,19 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
         },
       });
 
+      console.log('🔍 [STRIPE FORM] Payment confirmation result:', {
+        error: error?.message,
+        paymentIntentId: paymentIntent?.id,
+        status: paymentIntent?.status,
+        captureMethod: paymentIntent?.capture_method
+      });
+
       if (error) {
         console.error('❌ Payment failed:', error.message);
         setCardError(error.message);
         onError?.(error);
-      } else if (paymentIntent.status === 'succeeded') {
-        console.log('✅ Payment succeeded:', paymentIntent.id);
+      } else if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture') {
+        console.log('✅ Payment confirmed:', paymentIntent.id, 'Status:', paymentIntent.status);
         onSuccess?.(paymentIntent);
       } else {
         console.warn('⚠️ Payment status:', paymentIntent.status);
