@@ -21,9 +21,9 @@ function StepPayment({
         review: reviewData
       });
 
-      // Build payload
+      // Build base payload with CORRECT field names
       const basePayload = {
-        expert_handle: expert.handle,
+        expertHandle: expert.handle, // NOT expert_handle
         title: composeData.title,
         text: composeData.text || '',
         media_urls: (composeData.recordings || []).map(r => ({
@@ -33,23 +33,28 @@ function StepPayment({
           duration: r.duration
         })),
         attachment_urls: (composeData.attachments || []).map(a => a.url || a.playbackUrl),
-        asker_email: reviewData.email,
-        asker_first_name: reviewData.firstName || '',
-        asker_last_name: reviewData.lastName || '',
+        payerEmail: reviewData.email, // NOT asker_email
+        payerFirstName: reviewData.firstName || '',
+        payerLastName: reviewData.lastName || '',
       };
 
       // Add tier-specific fields
-      const endpoint = tierType === 'deep_dive' 
-        ? '/api/questions/deep-dive'
-        : '/api/questions/quick-consult';
+      let endpoint, payload;
 
-      const payload = tierType === 'deep_dive'
-        ? {
-            ...basePayload,
-            proposed_price_cents: Math.round(parseFloat(composeData.tierSpecific.proposedPrice) * 100),
-            expert_message: composeData.tierSpecific.expertMessage || ''
-          }
-        : basePayload;
+      if (tierType === 'deep_dive') {
+        endpoint = '/api/questions/deep-dive';
+        payload = {
+          ...basePayload,
+          proposed_price_cents: Math.round(parseFloat(composeData.tierSpecific.proposedPrice) * 100),
+          expert_message: composeData.tierSpecific.askerMessage || ''
+        };
+      } else {
+        endpoint = '/api/questions/quick-consult';
+        payload = {
+          ...basePayload,
+          proposed_price_cents: tierConfig?.price_cents || expert.price_cents
+        };
+      }
 
       console.log('📡 Sending to:', endpoint, payload);
 

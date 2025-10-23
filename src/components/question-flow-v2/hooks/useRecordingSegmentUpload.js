@@ -200,6 +200,10 @@ export function useRecordingSegmentUpload() {
     setSegments(prev => prev.filter(s => s.id !== segmentId));
   }, [segments]);
 
+const reorderSegments = useCallback((newSegments) => {
+  setSegments(newSegments);
+}, []);
+
   const getSuccessfulSegments = useCallback(() => {
     return segments
       .filter(s => s.result)
@@ -223,6 +227,7 @@ export function useRecordingSegmentUpload() {
     uploadSegment,
     retrySegment,
     removeSegment,
+    reorderSegments,
     getSuccessfulSegments,
     reset,
     hasUploading,
