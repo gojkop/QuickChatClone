@@ -37,9 +37,6 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
 
   return (
     <div className="mt-8">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">
-        Choose Your Question Type
-      </h2>
 
       {/* ⭐ PHASE 1 CHANGE: Reduced gap from gap-4 to gap-3 sm:gap-4 for tighter mobile spacing */}
       <div className={`grid gap-3 sm:gap-4 ${availableTiers.length === 2 ? 'md:grid-cols-2' : 'md:max-w-md'}`}>
