@@ -14,11 +14,12 @@ function RecordingSegmentList({ segments, onRemove, onRetry }) {
   };
 
   const totalDuration = segments
-    .filter(s => s.result)
-    .reduce((sum, s) => sum + (s.result.duration || 0), 0);
+    .filter(s => s.result || s.duration)
+    .reduce((sum, s) => sum + ((s.result?.duration || s.duration) || 0), 0);
 
   const handlePlay = async (segment) => {
-    if (!segment.result) return;
+    // Can play from blobUrl even if upload isn't complete
+    if (!segment.blobUrl) return;
 
     if (playingId === segment.id) {
       // Pause
@@ -95,9 +96,9 @@ function RecordingSegmentList({ segments, onRemove, onRetry }) {
                 <span className="text-sm font-semibold text-gray-900 capitalize">
                   {segment.mode} {segment.segmentIndex + 1}
                 </span>
-                {segment.result && (
+                {(segment.result || segment.duration) && (
                   <span className="text-xs text-gray-600">
-                    ({formatTime(segment.result.duration)})
+                    ({formatTime(segment.result?.duration || segment.duration)})
                   </span>
                 )}
               </div>
@@ -121,8 +122,8 @@ function RecordingSegmentList({ segments, onRemove, onRetry }) {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
-              {/* Play Button (only if uploaded successfully) */}
-              {segment.result && (
+              {/* Play Button (available as soon as we have blobUrl) */}
+              {segment.blobUrl && (
                 <button
                   onClick={() => handlePlay(segment)}
                   className="p-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg transition"
@@ -159,13 +160,13 @@ function RecordingSegmentList({ segments, onRemove, onRetry }) {
         ))}
       </div>
 
-      {/* Hidden audio/video players */}
-      {playingId && segments.find(s => s.id === playingId)?.result && (
+      {/* Audio/Video Player - USE BLOB URL */}
+      {playingId && segments.find(s => s.id === playingId)?.blobUrl && (
         <div className="mt-3">
           {segments.find(s => s.id === playingId)?.mode === 'audio' ? (
             <audio
               ref={audioRef}
-              src={segments.find(s => s.id === playingId)?.result?.playbackUrl}
+              src={segments.find(s => s.id === playingId)?.blobUrl}
               autoPlay
               onEnded={() => setPlayingId(null)}
               controls
@@ -174,7 +175,7 @@ function RecordingSegmentList({ segments, onRemove, onRetry }) {
           ) : (
             <video
               ref={videoRef}
-              src={segments.find(s => s.id === playingId)?.result?.playbackUrl}
+              src={segments.find(s => s.id === playingId)?.blobUrl}
               autoPlay
               onEnded={() => setPlayingId(null)}
               controls

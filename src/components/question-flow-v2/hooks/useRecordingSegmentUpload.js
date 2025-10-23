@@ -1,13 +1,14 @@
 // src/hooks/useRecordingSegmentUpload.js
-// ENHANCED VERSION with Progress & Reordering
+// COMPLETE VERSION - Video to Stream, Audio to R2
 
 import { useState, useCallback } from 'react';
 
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
 
-  const uploadSegment = useCallback(async (blob, mode, segmentIndex, duration, blobUrl) => {
+  const uploadSegment = useCallback(async (blob, mode, segmentIndex, duration) => {
     const segmentId = `${Date.now()}-${segmentIndex}`;
+    const blobUrl = URL.createObjectURL(blob); // Store for playback
 
     console.log('🚀 Starting upload:', {
       segmentId,
@@ -23,11 +24,11 @@ export function useRecordingSegmentUpload() {
       throw new Error('Invalid blob - size is 0 bytes');
     }
 
-    // Add to segments list with blobUrl for preview
+    // Add to segments list with blob URL for immediate playback
     setSegments(prev => [...prev, {
       id: segmentId,
       blob,
-      blobUrl: blobUrl || URL.createObjectURL(blob),
+      blobUrl, // For local playback
       mode,
       segmentIndex,
       duration,
@@ -44,7 +45,7 @@ export function useRecordingSegmentUpload() {
         console.log('🎤 Uploading audio to R2...');
         
         setSegments(prev => prev.map(s =>
-          s.id === segmentId ? { ...s, progress: 30 } : s
+          s.id === segmentId ? { ...s, progress: 10 } : s
         ));
 
         const uploadResponse = await fetch('/api/media/upload-audio', {
@@ -58,12 +59,8 @@ export function useRecordingSegmentUpload() {
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
           console.error('❌ R2 audio upload error:', errorText);
-          throw new Error(`Audio upload failed: ${uploadResponse.status}`);
+          throw new Error(`Audio upload failed: ${uploadResponse.status} - ${errorText}`);
         }
-
-        setSegments(prev => prev.map(s =>
-          s.id === segmentId ? { ...s, progress: 80 } : s
-        ));
 
         const audioResult = await uploadResponse.json();
         console.log('✅ Audio uploaded to R2:', audioResult.data);
@@ -71,6 +68,7 @@ export function useRecordingSegmentUpload() {
         const result = {
           uid: audioResult.data.uid,
           playbackUrl: audioResult.data.playbackUrl,
+          blobUrl, // Keep blob URL for playback
           duration,
           mode: 'audio',
           size: blob.size,
@@ -87,12 +85,9 @@ export function useRecordingSegmentUpload() {
         return result;
       }
 
-      // === VIDEO/SCREEN UPLOAD TO STREAM ===
+      // === VIDEO/SCREEN UPLOAD TO STREAM (EXISTING CODE - UNCHANGED) ===
+      // Step 1: Get upload URL from backend
       console.log('📡 Requesting upload URL...');
-      
-      setSegments(prev => prev.map(s =>
-        s.id === segmentId ? { ...s, progress: 10 } : s
-      ));
       
       const urlResponse = await fetch('/api/media/get-upload-url', {
         method: 'POST',
@@ -112,30 +107,32 @@ export function useRecordingSegmentUpload() {
 
       console.log('✅ Got upload URL:', { uid });
 
+      // Step 2: Upload to Cloudflare using FormData
+      console.log('📤 Uploading to Cloudflare...');
+      
       setSegments(prev => prev.map(s =>
-        s.id === segmentId ? { ...s, progress: 30 } : s
+        s.id === segmentId ? { ...s, progress: 10 } : s
       ));
 
+      // ✅ CRITICAL: Cloudflare expects FormData with 'file' field
       const formData = new FormData();
       formData.append('file', blob, `segment-${segmentIndex}.webm`);
 
       const uploadResponse = await fetch(uploadURL, {
         method: 'POST',
         body: formData,
+        // ⚠️ DO NOT set Content-Type - browser sets it with boundary
       });
 
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text();
         console.error('❌ Cloudflare error:', errorText);
-        throw new Error(`Upload failed: ${uploadResponse.status}`);
+        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
       }
-
-      setSegments(prev => prev.map(s =>
-        s.id === segmentId ? { ...s, progress: 90 } : s
-      ));
 
       console.log('✅ Upload successful!');
 
+      // Step 3: Build result
       const accountId = import.meta.env.VITE_CLOUDFLARE_ACCOUNT_ID;
       
       const result = {
@@ -143,6 +140,7 @@ export function useRecordingSegmentUpload() {
         playbackUrl: accountId 
           ? `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`
           : null,
+        blobUrl, // Keep blob URL for immediate playback
         duration,
         mode,
         size: blob.size,
@@ -187,7 +185,7 @@ export function useRecordingSegmentUpload() {
     ));
 
     try {
-      await uploadSegment(segment.blob, segment.mode, segment.segmentIndex, segment.duration, segment.blobUrl);
+      await uploadSegment(segment.blob, segment.mode, segment.segmentIndex, segment.duration);
     } catch (error) {
       console.error('❌ Retry failed:', error);
     }
@@ -195,13 +193,12 @@ export function useRecordingSegmentUpload() {
 
   const removeSegment = useCallback((segmentId) => {
     console.log('🗑️ Removing segment:', segmentId);
+    const segment = segments.find(s => s.id === segmentId);
+    if (segment?.blobUrl) {
+      URL.revokeObjectURL(segment.blobUrl);
+    }
     setSegments(prev => prev.filter(s => s.id !== segmentId));
-  }, []);
-
-  const reorderSegments = useCallback((newSegments) => {
-    console.log('↕️ Reordering segments');
-    setSegments(newSegments);
-  }, []);
+  }, [segments]);
 
   const getSuccessfulSegments = useCallback(() => {
     return segments
@@ -212,8 +209,11 @@ export function useRecordingSegmentUpload() {
 
   const reset = useCallback(() => {
     console.log('🔄 Reset all segments');
+    segments.forEach(s => {
+      if (s.blobUrl) URL.revokeObjectURL(s.blobUrl);
+    });
     setSegments([]);
-  }, []);
+  }, [segments]);
 
   const hasUploading = segments.some(s => s.uploading);
   const hasErrors = segments.some(s => s.error);
@@ -223,7 +223,6 @@ export function useRecordingSegmentUpload() {
     uploadSegment,
     retrySegment,
     removeSegment,
-    reorderSegments,
     getSuccessfulSegments,
     reset,
     hasUploading,

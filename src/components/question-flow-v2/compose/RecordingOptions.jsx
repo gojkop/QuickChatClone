@@ -1,26 +1,24 @@
 import React, { useState } from 'react';
-import { VideoIcon, MicIcon, MonitorIcon, PaperclipIcon, CheckCircleIcon, TrashIcon } from '../shared/SVGIcons';
+import { VideoIcon, MicIcon, MonitorIcon, PaperclipIcon } from '../shared/SVGIcons';
 import RecordingModal from './RecordingModal';
 
-function RecordingOptions({ segmentUpload, attachmentUpload, canRecordMore = true, remainingTime = 90 }) {
+function RecordingOptions({ segmentUpload, attachmentUpload, showScreenRecording = true }) {
   const [showModal, setShowModal] = useState(false);
   const [recordingMode, setRecordingMode] = useState(null);
 
   const handleStartRecording = (mode) => {
-    if (!canRecordMore) {
-      alert(`Only ${remainingTime} seconds remaining. Need at least 5 seconds to record.`);
-      return;
-    }
     setRecordingMode(mode);
     setShowModal(true);
   };
 
   const handleRecordingComplete = async (blob, duration, mode) => {
+    // Close modal immediately
+    setShowModal(false);
+    
+    // Start upload in background
     try {
       const segmentIndex = segmentUpload.segments.length;
-      const blobUrl = URL.createObjectURL(blob);
-      await segmentUpload.uploadSegment(blob, mode, segmentIndex, duration, blobUrl);
-      setShowModal(false);
+      await segmentUpload.uploadSegment(blob, mode, segmentIndex, duration);
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Upload failed. Please try again.');
@@ -68,20 +66,19 @@ function RecordingOptions({ segmentUpload, attachmentUpload, canRecordMore = tru
   const isScreenRecordingAvailable = typeof navigator !== 'undefined' && 
     navigator.mediaDevices?.getDisplayMedia;
 
+  // Determine grid layout based on whether screen recording is shown
+  const gridCols = showScreenRecording && isScreenRecordingAvailable 
+    ? 'grid-cols-1 sm:grid-cols-3' 
+    : 'grid-cols-1 sm:grid-cols-2';
+
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-semibold text-gray-900 mb-3">
-        {hasRecordings ? 'Add More Media & Files' : 'Add Media & Files'}
-        <span className="text-gray-500 font-normal ml-2">(Choose all that apply)</span>
-      </label>
-
       {/* Recording Options Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className={`grid ${gridCols} gap-3`}>
         {/* Video */}
         <button
           onClick={() => handleStartRecording('video')}
-          disabled={!canRecordMore}
-          className="recording-option-btn disabled:opacity-50 disabled:cursor-not-allowed"
+          className="recording-option-btn"
         >
           <div className="recording-option-icon bg-blue-100">
             <VideoIcon className="w-6 h-6 text-blue-600" />
@@ -95,8 +92,7 @@ function RecordingOptions({ segmentUpload, attachmentUpload, canRecordMore = tru
         {/* Audio */}
         <button
           onClick={() => handleStartRecording('audio')}
-          disabled={!canRecordMore}
-          className="recording-option-btn disabled:opacity-50 disabled:cursor-not-allowed"
+          className="recording-option-btn"
         >
           <div className="recording-option-icon bg-orange-100">
             <MicIcon className="w-6 h-6 text-orange-600" />
@@ -107,12 +103,11 @@ function RecordingOptions({ segmentUpload, attachmentUpload, canRecordMore = tru
           </div>
         </button>
 
-        {/* Screen */}
-        {isScreenRecordingAvailable && (
+        {/* Screen - Only if showScreenRecording is true */}
+        {showScreenRecording && isScreenRecordingAvailable && (
           <button
             onClick={() => handleStartRecording('screen')}
-            disabled={!canRecordMore}
-            className="recording-option-btn disabled:opacity-50 disabled:cursor-not-allowed"
+            className="recording-option-btn"
           >
             <div className="recording-option-icon bg-purple-100">
               <MonitorIcon className="w-6 h-6 text-purple-600" />
@@ -149,33 +144,30 @@ function RecordingOptions({ segmentUpload, attachmentUpload, canRecordMore = tru
       {hasAttachments && (
         <div className="space-y-2">
           {attachmentUpload.uploads.map((upload) => (
-            <div key={upload.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-2 border-gray-200">
+            <div key={upload.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex-1 min-w-0 mr-3">
-                <span className="text-sm text-gray-700 truncate block font-medium">{upload.file.name}</span>
+                <span className="text-sm text-gray-700 truncate block">{upload.file.name}</span>
                 <span className="text-xs text-gray-500">{formatFileSize(upload.file.size)}</span>
               </div>
               <div className="flex items-center gap-2">
                 {upload.uploading && (
                   <div className="flex items-center gap-2">
                     <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div
+                      <div 
                         className="h-full bg-indigo-600 transition-all duration-300"
                         style={{ width: `${upload.progress || 0}%` }}
                       />
                     </div>
-                    <span className="text-xs text-indigo-600 font-medium">{upload.progress || 0}%</span>
+                    <span className="text-xs text-indigo-600">{upload.progress || 0}%</span>
                   </div>
                 )}
-                {upload.error && <span className="text-xs text-red-600 font-medium">Failed</span>}
-                {upload.result && (
-                  <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                )}
+                {upload.error && <span className="text-xs text-red-600">Failed</span>}
+                {upload.result && <span className="text-xs text-green-600 font-semibold">✓</span>}
                 <button
                   onClick={() => attachmentUpload.removeUpload(upload.id)}
-                  className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition"
-                  aria-label="Delete attachment"
+                  className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1"
                 >
-                  <TrashIcon className="w-4 h-4" />
+                  Remove
                 </button>
               </div>
             </div>

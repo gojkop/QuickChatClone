@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import TitleInput from './TitleInput';
-import QuickRecordButton from './QuickRecordButton';
+import RecordingOptions from './RecordingOptions';
 import AdvancedOptions from './AdvancedOptions';
 import MindPilotPanel from './MindPilotPanel';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
@@ -20,12 +20,6 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
   const handleTitleChange = (value) => {
     setTitle(value);
     onUpdate({ title: value });
-  };
-
-  const handleRecordingComplete = (recordingData) => {
-    const newRecordings = [...recordings, recordingData];
-    setRecordings(newRecordings);
-    onUpdate({ recordings: newRecordings });
   };
 
   const handleTextChange = (value) => {
@@ -51,7 +45,6 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
   };
 
   const hasRecordings = segmentUpload.segments.length > 0;
-  const hasAttachments = attachmentUpload.uploads.length > 0;
   const canContinue = title.trim().length >= 5 && !segmentUpload.hasUploading && !attachmentUpload.uploads.some(u => u.uploading);
 
   return (
@@ -59,33 +52,26 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
       {/* Title Input */}
       <TitleInput value={title} onChange={handleTitleChange} />
 
-      {/* Quick Record Buttons - Only Video and Audio */}
+      {/* Recording Options - SAME AS DEEP DIVE but without Screen Recording */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-3">
           Record Your Question
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <QuickRecordButton
-            type="video"
-            onComplete={handleRecordingComplete}
-            segmentUpload={segmentUpload}
-          />
-          <QuickRecordButton
-            type="audio"
-            onComplete={handleRecordingComplete}
-            segmentUpload={segmentUpload}
-          />
-        </div>
-
-        {/* Recording Segment List with Play buttons */}
-        {hasRecordings && (
-          <RecordingSegmentList
-            segments={segmentUpload.segments}
-            onRemove={segmentUpload.removeSegment}
-            onRetry={segmentUpload.retrySegment}
-          />
-        )}
+        <RecordingOptions
+          segmentUpload={segmentUpload}
+          attachmentUpload={attachmentUpload}
+          showScreenRecording={false}
+        />
       </div>
+
+      {/* Recording Segment List with Play buttons */}
+      {hasRecordings && (
+        <RecordingSegmentList
+          segments={segmentUpload.segments}
+          onRemove={segmentUpload.removeSegment}
+          onRetry={segmentUpload.retrySegment}
+        />
+      )}
 
       {/* Advanced Options (Includes Screen Recording) */}
       <AdvancedOptions
@@ -93,7 +79,6 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
         onTextChange={handleTextChange}
         attachmentUpload={attachmentUpload}
         segmentUpload={segmentUpload}
-        onRecordingComplete={handleRecordingComplete}
       />
 
       {/* mindPilot Panel */}

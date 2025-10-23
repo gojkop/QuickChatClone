@@ -20,6 +20,16 @@ function RecordingModal({ mode, onComplete, onClose }) {
     return () => cleanup();
   }, [mode]);
 
+  // CRITICAL FIX: Keep video element connected to stream during preview AND recording
+  useEffect(() => {
+    if (videoRef.current && streamRef.current && (state === 'preview' || state === 'recording')) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch(e => console.warn('Video play failed:', e));
+      }
+    }
+  }, [state]);
+
   const initializePreview = async () => {
     try {
       let stream;
@@ -76,6 +86,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
 
       if ((mode === 'video' || mode === 'screen') && videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(e => console.warn('Video play failed:', e));
       }
     } catch (error) {
       console.error('Media permission error:', error);
