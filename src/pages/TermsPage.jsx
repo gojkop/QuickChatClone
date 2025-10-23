@@ -1,3 +1,4 @@
+// src/pages/TermsPage.jsx
 import React from 'react';
 
 const Section = ({ title, children }) => (
@@ -35,14 +36,15 @@ function TermsPage() {
                 <li><strong>Expert:</strong> A User who offers their expertise by answering questions for a Fee.</li>
                 <li><strong>Asker:</strong> A User who submits a question to an Expert and authorizes payment of the Fee.</li>
                 <li><strong>Content:</strong> Any information, data, text, audio, video, files, or other materials created, uploaded, or transmitted by Users through the Service.</li>
-                <li><strong>Fee:</strong> The amount specified by an Expert for answering a question.</li>
+                <li><strong>Fee:</strong> The amount paid for answering a question. For Quick Consult questions, the Fee is a fixed price set by the Expert. For Deep Dive questions, the Fee is proposed by the Asker and accepted or declined by the Expert.</li>
+                <li><strong>Question Tier:</strong> The type of question service offered. Quick Consult questions have fixed pricing set by the Expert with immediate SLA start. Deep Dive questions allow Askers to propose pricing, with Expert acceptance required before the SLA starts.</li>
                 <li><strong>SLA:</strong> The Service Level Agreement, which is the response time an Expert commits to.</li>
               </ul>
             </Section>
 
             <Section title="2. The Service: A Platform for Connection">
               <p><strong>Core Function:</strong> mindPick provides a platform to facilitate transactions between Experts and Askers. We are not a party to the direct interaction between Users and we do not hire, employ, or endorse any Expert. Each Expert operates as an independent service provider.</p>
-              <p>The Service allows Experts to create a public profile and set a Fee and SLA for answering questions. Askers can submit questions to Experts, who then provide answers asynchronously via audio, video, or text.</p>
+              <p>The Service allows Experts to create a public profile and configure one or both question tiers: Quick Consult (fixed Fee) and Deep Dive (negotiated Fee). Experts set response time commitments (SLA) for each tier. Askers can submit questions to Experts according to the available tier options. Experts provide answers asynchronously via audio, video, or text.</p>
             </Section>
 
             <Section title="3. User Accounts">
@@ -61,10 +63,22 @@ function TermsPage() {
                     <p>All payments are processed securely through our third-party payment processor, Stripe. mindPick does not store your credit card or bank account information. By using the Service, you agree to be bound by Stripe's Services Agreement and Privacy Policy.</p>
                 </SubSection>
                 <SubSection title="4.2. Authorization & Capture">
-                    <p>When an Asker submits a question, the full Fee is <strong>authorized</strong> on their payment method (a temporary "hold" is placed). The Fee is only <strong>captured</strong> (charged) if and when the Expert provides an answer within their stated SLA. This authorization typically expires after 7 days if not captured.</p>
+                    <p>When an Asker submits a question, the full Fee is <strong>authorized</strong> on their payment method (a temporary "hold" is placed). The Fee is only <strong>captured</strong> (charged) if and when the Expert provides an answer within their stated SLA.</p>
+                    
+                    <p className="mt-2"><strong>For Quick Consult questions:</strong> The SLA timer starts immediately upon question submission. The Expert must answer within their committed SLA timeframe or the authorization is released.</p>
+                    
+                    <p className="mt-2"><strong>For Deep Dive questions:</strong> The Expert has 24 hours to review and accept or decline the Asker's price offer. If the Expert accepts, the SLA timer starts at that moment. If the Expert declines or does not respond within 24 hours, the authorization is immediately released and the Asker is not charged.</p>
+                    
+                    <p className="mt-2">Payment authorizations typically expire after 7 days if not captured.</p>
                 </SubSection>
                 <SubSection title="4.3. Automatic Cancellation for SLA Non-Compliance">
-                    <p>If an Expert fails to provide an answer within their committed SLA, the payment authorization is automatically canceled, and the Asker is not charged. The question data is handled according to our Privacy Policy's data retention schedule.</p>
+                    <p>Payment authorization is automatically canceled in the following scenarios:</p>
+                    <ul className="list-disc pl-6 space-y-2 mt-2">
+                      <li><strong>Quick Consult:</strong> If the Expert fails to provide an answer within their committed SLA (measured from question submission time).</li>
+                      <li><strong>Deep Dive - Offer Not Accepted:</strong> If the Expert does not accept or decline the offer within 24 hours of submission, the offer expires and authorization is canceled.</li>
+                      <li><strong>Deep Dive - SLA Non-Compliance:</strong> If the Expert accepts the offer but fails to provide an answer within their committed SLA (measured from offer acceptance time).</li>
+                    </ul>
+                    <p className="mt-3">In all cases where authorization is canceled, the Asker is not charged and question data is handled according to our Privacy Policy's data retention schedule.</p>
                 </SubSection>
                 <SubSection title="4.4. Refund Policy">
                     <p><strong>Before Answer Delivery:</strong> If you are an Asker and change your mind before receiving an answer, you may request cancellation within the first 2 hours after question submission, subject to the Expert not having started work. The authorization will be released.</p>
@@ -189,7 +203,7 @@ function TermsPage() {
                     <p>As an Expert, you agree to:</p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li><strong>Accurate Representation:</strong> Truthfully represent your qualifications, expertise, and credentials</li>
-                      <li><strong>SLA Compliance:</strong> Make good-faith efforts to respond within your stated SLA. Consistent SLA violations may result in account restrictions</li>
+                      <li><strong>SLA Compliance:</strong> Make good-faith efforts to respond within your stated SLA. For Quick Consult, the SLA starts immediately upon question submission. For Deep Dive, the SLA starts when you accept the offer. You must respond to Deep Dive offers (accept or decline) within 24 hours of submission. Consistent SLA violations may result in account restrictions</li>
                       <li><strong>Quality Standards:</strong> Provide substantive, good-faith answers to questions you accept</li>
                       <li><strong>Professional Boundaries:</strong> Maintain appropriate professional boundaries and include necessary disclaimers (see Section 7)</li>
                       <li><strong>Tax Compliance:</strong> You are an independent contractor responsible for your own tax obligations</li>
@@ -205,6 +219,16 @@ function TermsPage() {
                       <li><strong>License Compliance:</strong> Use Expert answers only as permitted under Section 5.2</li>
                       <li><strong>Professional Boundaries:</strong> Understand that answers are informational and do not constitute formal professional relationships (see Section 7)</li>
                     </ul>
+                </SubSection>
+
+                <SubSection title="6.3. Deep Dive Offer Review (for Experts)">
+                  <p>For Deep Dive questions, you agree to:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><strong>Timely Review:</strong> Review and respond to all Deep Dive offers within 24 hours of submission</li>
+                    <li><strong>Good Faith Evaluation:</strong> Evaluate offers based on the scope of work, complexity, and your availability</li>
+                    <li><strong>Clear Communication:</strong> If declining, provide a clear explanation (e.g., "This scope requires €X minimum") to help the Asker understand</li>
+                    <li><strong>Commitment Honor:</strong> Once you accept an offer, you commit to answering within your stated SLA or the authorization will be canceled</li>
+                  </ul>
                 </SubSection>
             </Section>
 

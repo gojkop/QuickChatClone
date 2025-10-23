@@ -8,7 +8,7 @@ function FaqPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
-  // Comprehensive FAQ data with CORRECTED payment flow
+  // Comprehensive FAQ data with two-tier system updates
   const faqData = {
     'getting-started': {
       title: 'Getting Started',
@@ -33,6 +33,10 @@ function FaqPage() {
         {
           q: "What's the difference between Starter and Pro plans?",
           a: "Starter is free with a 10% platform fee. Pro costs €15/month with a reduced 7% fee, plus you get AI transcripts, remove 'Powered by mindPick' branding, custom branding options, social share kits, and priority support. Pro pays for itself after about 20 questions per month."
+        },
+        {
+          q: "What's the difference between Quick Consult and Deep Dive?",
+          a: "Experts can offer two question types. Quick Consult (⚡) is for tactical, focused questions with a fixed price set by the expert (e.g., €75 for 24h response). Deep Dive (🎯) is for comprehensive analysis where you propose a price within the expert's suggested range (e.g., €150-300). The expert reviews Deep Dive offers within 24h and accepts or declines. If accepted, they answer within their longer SLA (typically 48-72h). Both types pre-reserve funds and only charge after answer delivery."
         }
       ]
     },
@@ -54,15 +58,15 @@ function FaqPage() {
         },
         {
           q: "When is payment actually charged?",
-          a: "When an asker submits a question, their payment method is authorized and the funds are reserved (not charged yet). The actual charge only happens after you submit your answer. If you decline the question or miss your SLA, the reserved funds are released back to the asker automatically—they're never charged."
+          a: "When an asker submits a question, their payment method is authorized and funds are reserved (not charged yet). For Quick Consult, the charge happens after you submit your answer. For Deep Dive, the charge happens after you accept the offer AND submit your answer. If you decline a Deep Dive offer, the funds are released immediately. If you don't respond to a Deep Dive offer within 24h or miss your SLA, the asker is automatically refunded—they're never charged."
         },
         {
           q: "Can I change my price later?",
-          a: "Yes! You can update your price per question anytime from your dashboard. Changes apply to new questions immediately. Existing pending questions keep their original price."
+          a: "Yes! You can update your pricing anytime from your dashboard. For Quick Consult, you set a fixed price. For Deep Dive, you set a suggested price range (e.g., €150-300) that guides askers, and you can optionally set an auto-decline threshold for offers below your minimum. Changes apply to new questions immediately. Existing pending questions keep their original pricing."
         },
         {
           q: "What if I miss my SLA (Service Level Agreement)?",
-          a: "If you don't answer within your stated timeframe (e.g., 24 hours, 48 hours), the payment reservation is automatically released and the asker is not charged. This policy builds trust with your audience and keeps experts accountable. Set a realistic SLA you can consistently meet."
+          a: "If you don't answer within your stated SLA, the payment reservation is automatically released and the asker is not charged. Note: For Quick Consult, the SLA starts immediately when the question is submitted. For Deep Dive, the SLA starts only after you accept the offer. Set a realistic SLA you can consistently meet to build trust with your audience."
         },
         {
           q: "Can I offer refunds after answering?",
@@ -88,7 +92,7 @@ function FaqPage() {
         },
         {
           q: "Can I decline a question after it's submitted?",
-          a: "Yes! You can manually decline any question before answering it. When you decline, the payment authorization is released and the asker is not charged. You can also let your SLA timer expire, which automatically releases the payment. Use the 'accepting questions' toggle in your dashboard to pause new questions when you're unavailable."
+          a: "Yes! For Quick Consult questions, you can decline before answering or let the SLA expire. For Deep Dive offers, you have 24 hours to review and accept or decline. When you decline either type, the payment authorization is released and the asker is not charged. If you don't respond to a Deep Dive offer within 24h, it automatically expires and the asker is refunded. Use the 'accepting questions' toggle to pause new questions when unavailable."
         },
         {
           q: "What happens if a question is outside my expertise?",
@@ -97,6 +101,10 @@ function FaqPage() {
         {
           q: "What if I need more than my SLA time to answer?",
           a: "If you need more time, you have two options: 1) Contact the asker directly (if they provided contact info) to let them know, or 2) Set a longer SLA in your settings to give yourself more breathing room. Remember, your SLA is a commitment, so choose a timeframe you can reliably meet."
+        },
+        {
+          q: "How does Deep Dive offer review work?",
+          a: "When an asker submits a Deep Dive question, they propose a price based on your suggested range. You have 24 hours to review the full question (including video, attachments, and their price justification) and either accept or decline. If you accept, your SLA countdown starts and you commit to answering within your stated timeframe (typically 48-72h). If you decline, you can provide a message explaining why (e.g., 'This scope requires €220 minimum'), and the asker is instantly refunded. They can then resubmit at a different price or find another expert."
         }
       ]
     },
@@ -110,7 +118,7 @@ function FaqPage() {
       questions: [
         {
           q: "When am I charged for my question?",
-          a: "Your payment method is authorized when you submit your question, but you're only charged after the expert submits their answer. If the expert declines your question or doesn't answer within their SLA, you're not charged at all—the authorization is released automatically."
+          a: "Your payment method is authorized when you submit your question, but you're only charged after the expert delivers their answer. For Quick Consult, this is straightforward—submit, wait for answer, get charged. For Deep Dive, you first wait for the expert to accept your offer (24h max). If they accept, they answer within their SLA and you're charged. If they decline or don't respond to your offer, you're instantly refunded. If they accept but miss their SLA, you're also refunded."
         },
         {
           q: "Is my payment secure?",
@@ -127,6 +135,10 @@ function FaqPage() {
         {
           q: "Can I ask follow-up questions?",
           a: "Each payment covers one question/answer exchange. For follow-ups, you can submit a new question (and pay again). Some experts offer discounts for repeat askers—check their profile or ask them directly."
+        },
+        {
+          q: "How do I know what price to propose for a Deep Dive?",
+          a: "Experts provide a suggested price range (e.g., €150-300) to guide your offer. You can propose within this range, or outside it if you think your question warrants it. Consider the complexity of your question, the attachments you're providing, and the expert's expertise level. Most offers within the suggested range are accepted within a few hours. If your offer is declined, the expert may provide feedback on what price would work, and you can resubmit."
         }
       ]
     },

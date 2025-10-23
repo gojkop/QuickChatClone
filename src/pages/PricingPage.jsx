@@ -1,3 +1,4 @@
+3. UPDATED: src/pages/PricingPage.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -89,7 +90,7 @@ function PricingPage() {
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckIcon />
-                      <span>Pay → record → answer flow</span>
+                      <span>Quick Consult & Deep Dive question types</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckIcon />
@@ -414,7 +415,7 @@ function PricingPage() {
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
                 <h3 className="font-semibold text-gray-900 mb-2">When do I get paid?</h3>
                 <p className="text-gray-600 text-sm">
-                  Payments are processed via Stripe Connect and sent directly to your bank account automatically.
+                  For both Quick Consult and Deep Dive questions, payment is captured immediately when you submit your answer and transferred via Stripe Connect to your bank account within 2-7 business days.
                 </p>
               </div>
               
@@ -428,7 +429,7 @@ function PricingPage() {
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
                 <h3 className="font-semibold text-gray-900 mb-2">What if I miss my SLA?</h3>
                 <p className="text-gray-600 text-sm">
-                  If you don't answer within your stated timeframe, the payment authorization is released and the asker is not charged.
+                  If you don't answer within your stated SLA, the payment authorization is released and the asker is not charged. For Quick Consult, the SLA starts immediately. For Deep Dive, the SLA starts only after you accept the offer.
                 </p>
               </div>
             </div>

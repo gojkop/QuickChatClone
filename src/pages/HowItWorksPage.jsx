@@ -28,18 +28,18 @@ function HowItWorksPage() {
     },
     {
       id: 2,
-      title: 'Set Your Expertise & Price',
-      summary: 'Define what you answer and how much you charge',
+      title: 'Set Your Expertise & Pricing',
+      summary: 'Choose question types and set your rates',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
       details: [
-        'Set your price per question (€25-€200+)',
-        'Choose your SLA (response time commitment)',
-        'Define your areas of expertise',
-        'Update anytime from your dashboard'
+        'Enable Quick Consult (fixed price, €25-€200+) for tactical questions',
+        'Enable Deep Dive (askers propose price) for comprehensive analysis',
+        'Set your SLA (response time) for each question type',
+        'Define your areas of expertise and update anytime'
       ]
     },
     {
@@ -69,9 +69,9 @@ function HowItWorksPage() {
       ),
       details: [
         'Email + dashboard notification',
-        'Question recorded (audio/video)',
-        'Payment authorized (not charged yet)',
-        'SLA timer starts counting down'
+        'Quick Consult: SLA timer starts immediately',
+        'Deep Dive: Review offer within 24h (SLA starts after you accept)',
+        'Payment authorized (asker not charged yet)'
       ]
     },
     {
@@ -84,10 +84,10 @@ function HowItWorksPage() {
         </svg>
       ),
       details: [
-        'Listen to the question in your dashboard',
-        'Decide: Answer or Decline',
+        'Quick Consult: Answer within your SLA or let it expire',
+        'Deep Dive: Accept or decline offer within 24h',
         'If you decline: payment released, asker not charged',
-        'No commitment until you record your answer'
+        'Deep Dive accepted: SLA countdown starts (typically 48-72h)'
       ]
     },
     {
@@ -121,25 +121,25 @@ function HowItWorksPage() {
       ),
       details: [
         'Browse expert profiles by expertise',
-        'See their price and response time (SLA)',
-        'Or invite a specific expert not yet on mindPick',
-        'Review their profile and past topics'
+        'See their question types: Quick Consult (fixed price) or Deep Dive (you propose)',
+        'Review pricing and response time (SLA) for each type',
+        'Or invite a specific expert not yet on mindPick'
       ]
     },
     {
       id: 2,
       title: 'Submit Your Question',
-      summary: 'Record and send your question',
+      summary: 'Choose question type and submit',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
         </svg>
       ),
       details: [
+        'Quick Consult: Pay fixed price, expert answers in 24h',
+        'Deep Dive: Propose your price, expert reviews offer in 24h',
         'Record your question (audio or video)',
-        'Payment method authorized (not charged)',
-        'Question sent to expert',
-        'Receive confirmation and estimated response time'
+        'Payment authorized (not charged until answer delivered)'
       ]
     },
     {
@@ -152,10 +152,10 @@ function HowItWorksPage() {
         </svg>
       ),
       details: [
-        'Expert listens to your question',
-        'They can accept or decline',
-        'If declined: no charge, you can ask someone else',
-        'Track status in your dashboard'
+        'Quick Consult: Expert starts answering immediately',
+        'Deep Dive: Expert accepts or declines your offer within 24h',
+        'If declined or offer expires: instant refund, no charge',
+        'If accepted: Expert answers within their SLA, then you\'re charged'
       ]
     },
     {
@@ -196,16 +196,16 @@ function HowItWorksPage() {
   // FAQ Preview Data
   const faqPreview = [
     {
+      q: 'What\'s the difference between Quick Consult and Deep Dive?',
+      a: 'Quick Consult (⚡) has a fixed price set by the expert and they answer within 24h. Deep Dive (🎯) lets you propose a price for complex questions. The expert reviews your offer within 24h, and if they accept, they answer within 48-72h. Both types pre-reserve funds and only charge after the answer is delivered.'
+    },
+    {
       q: 'When am I actually charged?',
-      a: 'For askers: Your payment is authorized when you submit a question, but you\'re only charged after the expert submits their answer. If they decline or miss their SLA, you\'re not charged. For experts: Payment is transferred to you immediately when you submit your answer.'
+      a: 'For both question types, payment is authorized when you submit, but you\'re only charged after the expert delivers the answer. For Deep Dive, if the expert declines your offer or doesn\'t respond within 24h, you\'re refunded instantly. For Quick Consult, if the expert misses their SLA, you\'re refunded automatically.'
     },
     {
-      q: 'Can experts decline questions after payment is authorized?',
-      a: 'Yes! Experts can decline any question before answering. When declined, the payment authorization is released and the asker is never charged. This gives experts full control over what they choose to answer.'
-    },
-    {
-      q: 'What happens if the expert misses their SLA?',
-      a: 'If an expert doesn\'t answer within their stated SLA timeframe, the payment authorization is automatically released and you\'re not charged. You can then ask another expert or request a refund if you were charged.'
+      q: 'How does Deep Dive pricing work?',
+      a: 'You propose a price based on the expert\'s suggested range (e.g., €150-300). The expert reviews your offer within 24h. If accepted, their SLA countdown starts and they answer your question. If declined, you\'re instantly refunded and can resubmit at a different amount or find another expert.'
     },
     {
       q: 'How long should answers be?',
@@ -438,11 +438,15 @@ function HowItWorksPage() {
                         <div className="hidden md:block text-2xl text-indigo-400">↓</div>
                       </div>
 
-                      {/* Step 3 - Fork */}
+                      {/* Step 3 - Question Type Branch */}
                       <div className="flex items-center gap-4">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-500 text-white flex items-center justify-center text-sm font-bold">3</div>
                         <div className="flex-1">
-                          <div className="font-semibold text-gray-900">Expert answers OR declines/misses SLA</div>
+                          <div className="font-semibold text-gray-900">Question type determines flow</div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            ⚡ Quick Consult → Expert answers directly<br/>
+                            🎯 Deep Dive → Expert accepts/declines offer (24h) → If accepted, answers
+                          </div>
                         </div>
                         <div className="hidden md:block text-2xl text-violet-400">⤵</div>
                       </div>
@@ -466,7 +470,7 @@ function HowItWorksPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                             <div>
-                              <div className="font-bold text-gray-900 mb-1">Declined / SLA Missed</div>
+                              <div className="font-bold text-gray-900 mb-1">Declined / SLA Missed / Offer Expired</div>
                               <div className="text-sm text-gray-700">Authorization released, asker not charged</div>
                             </div>
                           </div>
@@ -501,7 +505,7 @@ function HowItWorksPage() {
                       </svg>
                       <div>
                         <div className="font-semibold text-gray-900">Zero Risk for Askers</div>
-                        <div className="text-sm text-gray-600">You're only charged if the expert delivers an answer. Declined questions or missed SLAs result in zero charge.</div>
+                        <div className="text-sm text-gray-600">You're only charged if the expert delivers an answer. Declined questions, expired offers, or missed SLAs result in zero charge.</div>
                       </div>
                     </div>
                   </div>
