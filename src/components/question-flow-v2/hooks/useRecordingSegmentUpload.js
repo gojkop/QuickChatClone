@@ -4,7 +4,6 @@
 import { useState, useCallback } from 'react';
 
 export function useRecordingSegmentUpload() {
-  console.log('🔥 HOOK LOADED - This should appear immediately!'); // ← ADD THIS    
   const [segments, setSegments] = useState([]);
 
   const uploadSegment = useCallback(async (blob, mode, segmentIndex, duration) => {
@@ -33,7 +32,7 @@ export function useRecordingSegmentUpload() {
       const newSegment = {
         id: segmentId,
         blob,
-        blobUrl,  // ← CRITICAL: Add blobUrl here
+        blobUrl,
         mode,
         segmentIndex,
         duration,
@@ -76,7 +75,7 @@ export function useRecordingSegmentUpload() {
         const result = {
           uid: audioResult.data.uid,
           playbackUrl: audioResult.data.playbackUrl,
-          blobUrl,  // ← Keep blobUrl in result
+          blobUrl,
           duration,
           mode: 'audio',
           size: blob.size,
@@ -85,7 +84,7 @@ export function useRecordingSegmentUpload() {
 
         setSegments(prev => prev.map(s =>
           s.id === segmentId
-            ? { ...s, uploading: false, progress: 100, result, blobUrl }  // ← Keep blobUrl in segment
+            ? { ...s, uploading: false, progress: 100, result, blobUrl }
             : s
         ));
 
@@ -148,7 +147,7 @@ export function useRecordingSegmentUpload() {
         playbackUrl: accountId 
           ? `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`
           : null,
-        blobUrl,  // ← Keep blobUrl in result
+        blobUrl,
         duration,
         mode,
         size: blob.size,
@@ -157,7 +156,7 @@ export function useRecordingSegmentUpload() {
 
       setSegments(prev => prev.map(s =>
         s.id === segmentId
-          ? { ...s, uploading: false, progress: 100, result, blobUrl }  // ← Keep blobUrl in segment
+          ? { ...s, uploading: false, progress: 100, result, blobUrl }
           : s
       ));
 
@@ -169,7 +168,7 @@ export function useRecordingSegmentUpload() {
       
       setSegments(prev => prev.map(s =>
         s.id === segmentId
-          ? { ...s, uploading: false, error: error.message, blobUrl }  // ← Keep blobUrl even on error
+          ? { ...s, uploading: false, error: error.message, blobUrl }
           : s
       ));
       
