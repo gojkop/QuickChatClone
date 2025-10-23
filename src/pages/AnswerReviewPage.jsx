@@ -6,6 +6,25 @@ import logo from '@/assets/images/logo-mindpick.svg';
 
 const XANO_BASE_URL = import.meta.env.VITE_XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
 
+// Helper function to format time remaining for offers
+const formatOfferTimeRemaining = (expiresAt) => {
+  if (!expiresAt) return null;
+
+  const now = Date.now();
+  const expiry = new Date(expiresAt).getTime();
+  const diff = expiry - now;
+
+  if (diff <= 0) return 'Expired';
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+};
+
 function AnswerReviewPage() {
   const { token } = useParams();
   const [data, setData] = useState(null);
@@ -53,6 +72,7 @@ function AnswerReviewPage() {
           status: rawData.status,
           pricing_status: rawData.pricing_status || null,
           decline_reason: rawData.decline_reason || null,
+          offer_expires_at: rawData.offer_expires_at || null,
           sla_hours_snapshot: rawData.sla_hours_snapshot,
           attachments: (() => {
             try {
@@ -739,8 +759,33 @@ function AnswerReviewPage() {
               <span className="text-xs text-gray-500">For personal use only</span>
             </div>
           </div>
+        ) : data.pricing_status === 'offer_pending' ? (
+          // Pending offer: Expert is reviewing
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Awaiting Expert Review</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                {expertName} is reviewing your Deep Dive offer.
+              </p>
+              {data.offer_expires_at && formatOfferTimeRemaining(data.offer_expires_at) && (
+                <p className="text-sm text-gray-500">
+                  Expert will respond within <span className="font-semibold text-purple-600">{formatOfferTimeRemaining(data.offer_expires_at)}</span>
+                </p>
+              )}
+              <div className="mt-4 bg-purple-50 rounded-lg p-4 max-w-md mx-auto">
+                <p className="text-xs text-gray-600">
+                  You'll receive an email notification once the expert accepts or declines your offer.
+                </p>
+              </div>
+            </div>
+          </div>
         ) : data.pricing_status !== 'offer_declined' ? (
-          // Only show "Answer In Progress" if the question is NOT declined
+          // Answer in progress: Expert is working on answer
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
             <div className="text-center">
               <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
