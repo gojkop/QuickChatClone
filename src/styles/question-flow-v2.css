@@ -290,3 +290,59 @@
     height: 56px;
   }
 }
+
+/* Recording Options (Deep Dive) */
+.recording-option-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-height: 100px;
+}
+
+.recording-option-btn:hover {
+  border-color: #6366f1;
+  background: #f0f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.recording-option-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.recording-option-btn:hover .recording-option-icon {
+  transform: scale(1.1);
+}
+
+/* File upload label as button */
+label.recording-option-btn {
+  flex-direction: row;
+  justify-content: flex-start;
+  min-height: auto;
+}
+
+@media (max-width: 640px) {
+  .recording-option-btn {
+    padding: 12px;
+    min-height: 88px;
+  }
+  
+  .recording-option-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
