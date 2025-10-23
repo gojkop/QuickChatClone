@@ -252,13 +252,12 @@ function ExpertDashboardPage() {
       filtered = filtered.filter(q => !q.hidden);
     }
 
-    // Filter out Deep Dive offers that haven't been accepted yet
-    // - offer_pending: Should only appear in PendingOffersSection
-    // - offer_declined: Already declined, don't show
-    // - offer_accepted: Accepted, can appear in main list
+    // Filter out Deep Dive offers that are still pending
+    // - offer_pending: Should only appear in PendingOffersSection (not in main list)
+    // - offer_declined: Show in main list (expert can see what was declined)
+    // - offer_accepted: Show in main list (expert can answer these)
     filtered = filtered.filter(q =>
-      q.pricing_status !== 'offer_pending' &&
-      q.pricing_status !== 'offer_declined'
+      q.pricing_status !== 'offer_pending'
     );
 
     return filtered;
@@ -273,8 +272,8 @@ function ExpertDashboardPage() {
       pendingCount: safeAllQuestions.filter(q =>
         q.status === 'paid' &&
         !q.answered_at &&
-        q.pricing_status !== 'offer_pending' &&  // Exclude pending offers (shown in PendingOffersSection)
-        q.pricing_status !== 'offer_declined'     // Exclude declined offers
+        q.pricing_status !== 'offer_pending'  // Exclude only pending offers (shown in PendingOffersSection)
+        // Include declined offers in count (they appear in main list)
       ).length,
       answeredCount: safeAllQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length,
       hiddenCount: safeQuestions.filter(q => q.hidden === true).length
@@ -553,6 +552,20 @@ function ExpertDashboardPage() {
     setSelectedQuestion(question);
     setShowQuestionDetailModal(true);
     navigate(`#question-${question.id}`, { replace: false });
+  };
+
+  const handleViewPendingOfferDetails = (questionId) => {
+    // Find question in allQuestions (pending offers are included there)
+    const question = allQuestions.find(q => q.id === questionId);
+
+    if (question) {
+      setSelectedQuestion(question);
+      setShowQuestionDetailModal(true);
+      navigate(`#question-${questionId}`, { replace: false });
+    } else {
+      console.error('Question not found in allQuestions:', questionId);
+      alert('Failed to load question details. Please refresh the page and try again.');
+    }
   };
   
   const handleCopyProfileLink = () => {
@@ -848,7 +861,10 @@ function ExpertDashboardPage() {
 
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
             {/* Pending Deep Dive Offers */}
-            <PendingOffersSection onOfferUpdate={refreshQuestions} />
+            <PendingOffersSection
+              onOfferUpdate={refreshQuestions}
+              onViewDetails={handleViewPendingOfferDetails}
+            />
 
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
