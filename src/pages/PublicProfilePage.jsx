@@ -550,6 +550,7 @@ useEffect(() => {
             min_price_cents: ep.tier2_min_price_cents,
             max_price_cents: ep.tier2_max_price_cents,
             sla_hours: ep.tier2_sla_hours || 48,
+            auto_decline_below_cents: ep.tier2_auto_decline_below_cents || null,
             description: ep.tier2_description || 'In-depth analysis with comprehensive report'
           };
         }

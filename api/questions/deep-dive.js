@@ -67,6 +67,7 @@ export default async function handler(req, res) {
           text: text || null,
           attachments: attachments.length > 0 ? JSON.stringify(attachments) : null,
           media_asset_id: recordingSegments.length > 0 ? recordingSegments[0].mediaAssetId : null,
+          sla_hours_snapshot,
           stripe_payment_intent_id
         })
       }

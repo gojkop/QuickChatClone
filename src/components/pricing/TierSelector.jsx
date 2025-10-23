@@ -131,13 +131,13 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </div>
               </div>
 
-              {/* Price Range */}
+              {/* Suggested Price Range */}
               <div className="mb-4">
                 <div className="text-2xl font-bold text-gray-900">
                   {formatPrice(deep_dive.min_price_cents)} - {formatPrice(deep_dive.max_price_cents)}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  You propose • {deep_dive.sla_hours}h after acceptance
+                  Suggested range • You propose • {deep_dive.sla_hours}h after acceptance
                 </div>
               </div>
 

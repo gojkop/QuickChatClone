@@ -143,26 +143,21 @@ const { tierType, tierConfig } = tierInfo;
 #### Validation (Deep Dive only):
 
 ```jsx
-// Lines 118-130
+// Lines 117-126
 if (tierType === 'deep_dive') {
   const priceValue = parseFloat(proposedPrice);
 
-  // Validate offer amount exists
+  // Validate offer amount is a valid positive number
+  // Min/max prices are suggestions only, not enforced
+  // Auto-decline threshold is the only hard limit (checked after submission)
   if (!priceValue || priceValue <= 0) {
     alert('Please enter a valid offer amount');
     return;
   }
-
-  // Validate offer within min/max range
-  const minPrice = (tierConfig?.min_price_cents || 0) / 100;
-  const maxPrice = (tierConfig?.max_price_cents || 0) / 100;
-
-  if (priceValue < minPrice || priceValue > maxPrice) {
-    alert(`Offer must be between ${formatPrice(tierConfig?.min_price_cents)} and ${formatPrice(tierConfig?.max_price_cents)}`);
-    return;
-  }
 }
 ```
+
+**Important:** Min and max prices are displayed as **suggestions** to guide the user, but are **not enforced** as hard limits. The only hard limit is the auto-decline threshold - offers below this threshold are automatically declined after submission.
 
 #### Base Payload (both tiers):
 
