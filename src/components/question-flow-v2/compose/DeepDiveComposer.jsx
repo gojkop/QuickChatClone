@@ -10,54 +10,71 @@ import { useAttachmentUpload } from '@/components/question-flow-v2/hooks/useAtta
 
 
 function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
-  const [title, setTitle] = useState(data.title || '');
-  const [text, setText] = useState(data.text || '');
-  const [proposedPrice, setProposedPrice] = useState(data.tierSpecific?.proposedPrice || '');
-  const [askerMessage, setAskerMessage] = useState(data.tierSpecific?.askerMessage || '');
+  const [title, setTitle] = useState(data?.title || '');
+  const [text, setText] = useState(data?.text || '');
+  const [proposedPrice, setProposedPrice] = useState(data?.tierSpecific?.proposedPrice || '');
+  const [askerMessage, setAskerMessage] = useState(data?.tierSpecific?.askerMessage || '');
   
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
 
-  // Safety check
-  if (!expert) {
+  // ✅ COMPREHENSIVE SAFETY CHECK
+  if (!expert || !tierConfig) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-12">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
         <p className="text-gray-500">Loading expert information...</p>
       </div>
     );
   }
 
+  // ✅ Create completely safe expert object
+  const safeExpert = {
+    id: expert.id || expert._id || null,
+    name: expert.name || expert.user?.name || expert.handle || 'Expert',
+    handle: expert.handle || '',
+    currency: expert.currency || 'USD',
+    price_cents: expert.price_cents || 0,
+    sla_hours: expert.sla_hours || 48,
+    specialty: expert.specialty || '',
+    user: expert.user || { name: expert.name || expert.handle || 'Expert' }
+  };
+
   const handleTitleChange = (value) => {
     setTitle(value);
-    onUpdate({ title: value });
+    if (onUpdate) onUpdate({ title: value });
   };
 
   const handleTextChange = (value) => {
     setText(value);
-    onUpdate({ text: value });
+    if (onUpdate) onUpdate({ text: value });
   };
 
   const handlePriceChange = (value) => {
     setProposedPrice(value);
-    onUpdate({ 
-      tierSpecific: { 
-        ...data.tierSpecific, 
-        proposedPrice: value 
-      } 
-    });
+    if (onUpdate) {
+      onUpdate({ 
+        tierSpecific: { 
+          ...data?.tierSpecific, 
+          proposedPrice: value 
+        } 
+      });
+    }
   };
 
   const handleMessageChange = (value) => {
     setAskerMessage(value);
-    onUpdate({ 
-      tierSpecific: { 
-        ...data.tierSpecific, 
-        askerMessage: value 
-      } 
-    });
+    if (onUpdate) {
+      onUpdate({ 
+        tierSpecific: { 
+          ...data?.tierSpecific, 
+          askerMessage: value 
+        } 
+      });
+    }
   };
 
-  const hasRecordings = segmentUpload.segments.length > 0;
+  const hasRecordings = segmentUpload.segments && segmentUpload.segments.length > 0;
 
   return (
     <div className="space-y-6 pb-24 sm:pb-6">
@@ -112,7 +129,7 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
           onChange={handlePriceChange}
           minPrice={tierConfig?.min_price_cents || 0}
           maxPrice={tierConfig?.max_price_cents || 0}
-          currency={expert.currency || 'USD'}
+          currency={safeExpert.currency}
           compact={true}
         />
 
@@ -123,22 +140,22 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
         />
       </div>
 
-      {/* mindPilot Panel - with safety check */}
-      {expert && expert.id && (
+      {/* mindPilot Panel - with maximum safety */}
+      {safeExpert.id && title && title.length >= 5 && (
         <MindPilotPanel
           questionTitle={title}
           questionText={text}
-          expertId={expert.id}
+          expertId={safeExpert.id}
           expertProfile={{
-            name: expert.name || expert.user?.name || expert.handle || 'Expert',
-            specialty: expert.specialty || '',
-            price: expert.price_cents || 0
+            name: safeExpert.name,
+            specialty: safeExpert.specialty,
+            price: safeExpert.price_cents
           }}
           onApplySuggestions={(suggestions) => {
             if (suggestions && suggestions.additionalContext) {
               const newText = (text + suggestions.additionalContext).trim();
               setText(newText);
-              onUpdate({ text: newText });
+              if (onUpdate) onUpdate({ text: newText });
             }
           }}
         />
