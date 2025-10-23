@@ -114,17 +114,20 @@ function FlowContainer({ expert, tierType, tierConfig }) {
         isExpandable={false}
       >
         <div className="p-4 sm:p-6">
-          <StepPayment
-            expert={expert}
-            tierType={tierType}
-            tierConfig={tierConfig}
-            composeData={state.compose}
-            reviewData={state.review}
-            onSubmit={() => {
-              // TODO: Navigate to success page
-              alert('Question submitted successfully! (Mock)');
-            }}
-          />
+          {/* ONLY RENDER WHEN STEP 3 IS ACTIVE OR COMPLETED */}
+          {(currentStep === 3 || completedSteps.includes(3)) && (
+            <StepPayment
+              expert={expert}
+              tierType={tierType}
+              tierConfig={tierConfig}
+              composeData={state.compose}
+              reviewData={state.review}
+              onSubmit={() => {
+                // TODO: Navigate to success page
+                alert('Question submitted successfully! (Mock)');
+              }}
+            />
+          )}
         </div>
       </AccordionSection>
     </div>
