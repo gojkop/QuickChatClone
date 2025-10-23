@@ -243,39 +243,60 @@ function ExpertDashboardPage() {
     }
   }, [questions, sortBy]);
 
-  // ✅ OPTIMIZED: Filter questions with useMemo
+  // ✅ OPTIMIZED: Filter questions with useMemo (tab-aware filtering)
   const filteredQuestions = useMemo(() => {
     let filtered = sortedQuestions;
 
-    // Filter out hidden questions (unless showHidden is true)
-    if (!showHidden) {
-      filtered = filtered.filter(q => !q.hidden);
+    // Always filter out pending Deep Dive offers (they appear in PendingOffersSection)
+    filtered = filtered.filter(q => q.pricing_status !== 'offer_pending');
+
+    // Tab-specific filtering
+    if (activeTab === 'pending') {
+      // Pending tab: Only unanswered questions (exclude declined, expired, hidden)
+      filtered = filtered.filter(q => {
+        const isDeclined = q.pricing_status === 'offer_declined' || q.status === 'declined';
+        const isHidden = q.hidden === true;
+        return !isDeclined && !isHidden;
+      });
+    } else if (activeTab === 'answered') {
+      // Answered tab: Only answered questions (backend already filters, but ensure here)
+      // No additional filtering needed
+    } else if (activeTab === 'all') {
+      // All tab: Show everything including declined, expired, hidden
+      // Only filter out hidden if showHidden is false
+      if (!showHidden) {
+        filtered = filtered.filter(q => !q.hidden);
+      }
     }
 
-    // Filter out Deep Dive offers that are still pending
-    // - offer_pending: Should only appear in PendingOffersSection (not in main list)
-    // - offer_declined: Show in main list (expert can see what was declined)
-    // - offer_accepted: Show in main list (expert can answer these)
-    filtered = filtered.filter(q =>
-      q.pricing_status !== 'offer_pending'
-    );
-
     return filtered;
-  }, [sortedQuestions, showHidden]);
+  }, [sortedQuestions, showHidden, activeTab]);
 
   // ✅ OPTIMIZED: Calculate counts with useMemo
-  const { pendingCount, answeredCount, hiddenCount } = useMemo(() => {
+  const { pendingCount, answeredCount, allCount, hiddenCount } = useMemo(() => {
     const safeAllQuestions = Array.isArray(allQuestions) ? allQuestions : [];
     const safeQuestions = Array.isArray(questions) ? questions : [];
 
     return {
-      pendingCount: safeAllQuestions.filter(q =>
-        q.status === 'paid' &&
-        !q.answered_at &&
-        q.pricing_status !== 'offer_pending'  // Exclude only pending offers (shown in PendingOffersSection)
-        // Include declined offers in count (they appear in main list)
+      // Pending: Only unanswered, non-declined, non-hidden questions
+      pendingCount: safeAllQuestions.filter(q => {
+        const isUnanswered = q.status === 'paid' && !q.answered_at;
+        const isNotPendingOffer = q.pricing_status !== 'offer_pending';
+        const isNotDeclined = q.pricing_status !== 'offer_declined' && q.status !== 'declined';
+        const isNotHidden = q.hidden !== true;
+        return isUnanswered && isNotPendingOffer && isNotDeclined && isNotHidden;
+      }).length,
+
+      // Answered: Only answered questions
+      answeredCount: safeAllQuestions.filter(q =>
+        q.status === 'closed' || q.status === 'answered' || q.answered_at
       ).length,
-      answeredCount: safeAllQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length,
+
+      // All: Everything except pending offers (includes declined, expired, hidden)
+      allCount: safeAllQuestions.filter(q =>
+        q.pricing_status !== 'offer_pending'
+      ).length,
+
       hiddenCount: safeQuestions.filter(q => q.hidden === true).length
     };
   }, [allQuestions, questions]);
@@ -902,7 +923,7 @@ function ExpertDashboardPage() {
                     }`}
                     type="button"
                   >
-                    All
+                    All {allCount > 0 && `(${allCount})`}
                   </button>
                 </div>
               </div>

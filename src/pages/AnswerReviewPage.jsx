@@ -404,12 +404,15 @@ function AnswerReviewPage() {
   }
 
   const hasAnswer = data?.answer && (
-    (data.answer.media_assets && data.answer.media_assets.length > 0) || 
+    (data.answer.media_assets && data.answer.media_assets.length > 0) ||
     (data.answer.text && data.answer.text.trim().length > 0)
   );
   const expertName = data.expert_profile?.user?.name || 'Expert';
   const expertAvatar = data.expert_profile?.avatar_url;
   const expertHandle = data.expert_profile?.handle;
+
+  // Track if avatar failed to load
+  const [avatarError, setAvatarError] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
@@ -446,15 +449,16 @@ function AnswerReviewPage() {
           <div className="flex items-start gap-4">
             {/* Clickable Avatar */}
             {expertHandle ? (
-              <a 
+              <a
                 href={`/u/${expertHandle}`}
                 className="relative flex-shrink-0 group"
                 title="View expert profile"
               >
-                {expertAvatar ? (
-                  <img 
-                    src={expertAvatar} 
+                {expertAvatar && !avatarError ? (
+                  <img
+                    src={expertAvatar}
                     alt={expertName}
+                    onError={() => setAvatarError(true)}
                     className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-indigo-100 group-hover:ring-indigo-300 transition-all cursor-pointer"
                   />
                 ) : (
@@ -472,10 +476,11 @@ function AnswerReviewPage() {
               </a>
             ) : (
               <div className="relative flex-shrink-0">
-                {expertAvatar ? (
-                  <img 
-                    src={expertAvatar} 
+                {expertAvatar && !avatarError ? (
+                  <img
+                    src={expertAvatar}
                     alt={expertName}
+                    onError={() => setAvatarError(true)}
                     className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover ring-2 ring-indigo-100"
                   />
                 ) : (
