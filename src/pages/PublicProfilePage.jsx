@@ -137,7 +137,7 @@ const SocialLink = ({ platform, url }) => {
       href={formattedUrl} 
       target="_blank" 
       rel="noopener noreferrer" 
-      className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-lg transition-all transform hover:scale-110 shadow-sm hover:shadow-md"
+      className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-lg transition-all transform hover:scale-110 hover:-translate-y-0.5 active:scale-100 shadow-sm hover:shadow-md"
       title={config.label}
     >
       {config.icon}
@@ -208,10 +208,10 @@ const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, curr
   );
 };
 
-// Trust Badge Component
+// Trust Badge Component with shimmer effect
 const TrustBadge = () => {
   return (
-    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-200 rounded-full shadow-sm">
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-200 rounded-full shadow-sm relative overflow-hidden badge-shimmer">
       <svg className="w-3.5 h-3.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
       </svg>
@@ -278,14 +278,15 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
   } : {};
 
   return (
-    <div className="flex items-start gap-4 -mt-20 md:-mt-24 relative z-10">
+    <div className="flex items-start gap-4 -mt-16 md:-mt-20 relative z-10">
       <div 
         ref={avatarRef}
         className="relative flex-shrink-0 group"
         onMouseEnter={() => !isMobile && setIsHovering(true)}
         onMouseLeave={() => !isMobile && setIsHovering(false)}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full blur-3xl opacity-30 group-hover:opacity-40 transition-opacity duration-500 animate-pulse-glow scale-110"/>
+        {/* Enhanced glow with multi-color gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-3xl opacity-25 group-hover:opacity-50 group-hover:scale-125 transition-all duration-700 animate-pulse-glow scale-110"/>
         
         <div 
           className="relative living-breath-avatar"
@@ -293,7 +294,7 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
         >
           {avatarUrl ? (
             <img 
-              className="relative w-32 h-32 md:w-40 md:h-40 rounded-full object-cover ring-4 ring-white shadow-2xl" 
+              className="relative w-24 h-24 md:w-40 md:h-40 rounded-full object-cover ring-4 ring-white shadow-2xl" 
               src={avatarUrl}
               alt={(name || 'Expert') + "'s avatar"}
               onError={function(e) {
@@ -303,14 +304,15 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
             />
           ) : null}
           <div 
-            className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0" 
+            className="relative w-24 h-24 md:w-40 md:h-40 flex-shrink-0" 
             style={{ display: avatarUrl ? 'none' : 'block' }}
           >
             <DefaultAvatar size={160} />
           </div>
         </div>
         
-        <div className={`absolute -bottom-1 -right-1 w-11 h-11 rounded-full border-4 border-white shadow-lg flex items-center justify-center living-status ${
+        {/* Status indicator */}
+        <div className={`absolute -bottom-1 -right-1 w-10 h-10 md:w-11 md:h-11 rounded-full border-4 border-white shadow-lg flex items-center justify-center living-status ${
           isAcceptingQuestions 
             ? 'bg-gradient-to-br from-green-400 to-green-500' 
             : 'bg-gradient-to-br from-yellow-400 to-yellow-500'
@@ -326,6 +328,7 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
           )}
         </div>
 
+        {/* Hover ring animation */}
         {!isMobile && isHovering && (
           <div className="absolute inset-0 rounded-full border-2 border-indigo-400/30 animate-ping" style={{ animationDuration: '2s' }} />
         )}
@@ -618,7 +621,6 @@ function PublicProfilePage() {
               </svg>
             </div>
             
-            {/* ⭐ Brand-aligned typography with tracking-tight */}
             <h2 className="font-sans text-2xl md:text-3xl font-bold text-gray-900 mb-3 tracking-tight">Expert Not Found</h2>
             <p className="font-sans text-base md:text-lg text-gray-600 mb-2">
               <span className="font-semibold text-gray-900">@{handle}</span> is not on mindPick yet.
@@ -661,7 +663,6 @@ function PublicProfilePage() {
               </svg>
             </div>
             
-            {/* ⭐ Brand-aligned typography with tracking-tight */}
             <h2 className="font-sans text-2xl md:text-3xl font-bold text-gray-900 mb-3 tracking-tight">Profile is Private</h2>
             <p className="font-sans text-base md:text-lg text-gray-600 mb-6">
               This expert has set their profile to private.
@@ -688,7 +689,6 @@ function PublicProfilePage() {
             </svg>
           </div>
           
-          {/* ⭐ Brand-aligned typography with tracking-tight */}
           <h2 className="font-sans text-2xl md:text-3xl font-bold text-gray-900 mb-3 tracking-tight">Oops!</h2>
           <p className="font-sans text-base md:text-lg text-gray-600 mb-6">{error}</p>
           
@@ -711,9 +711,12 @@ function PublicProfilePage() {
       
       return (
         <React.Fragment>
-          {/* ⭐ UPDATED: Professional soft indigo header banner */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden hover-lift">
-            <div className="relative h-40 md:h-48 bg-gradient-to-br from-gray-100 via-indigo-50 to-indigo-100 overflow-hidden">
+          {/* Professional header banner with gradient border on hover */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden hover-lift relative group">
+            {/* Gradient border overlay effect */}
+            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.05), rgba(236, 72, 153, 0.1))', padding: '1px' }}></div>
+            
+            <div className="relative h-32 md:h-48 bg-gradient-to-br from-gray-100 via-indigo-50 to-indigo-100 overflow-hidden">
               {/* Subtle floating shapes with softer colors */}
               <div className="absolute top-4 left-8 w-20 h-20 bg-indigo-200/20 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '0s' }}></div>
               <div className="absolute top-8 right-12 w-32 h-32 bg-indigo-300/15 rounded-full blur-2xl animate-float-shape" style={{ animationDelay: '2s' }}></div>
@@ -746,7 +749,7 @@ function PublicProfilePage() {
               </div>
             </div>
 
-            <div className="px-5 md:px-6 pb-8 md:pb-6 space-y-5">
+            <div className="relative px-4 md:px-6 pb-6 md:pb-6 space-y-4 md:space-y-5">
               <LivingAvatar 
                 avatarUrl={profile.avatar_url}
                 name={profile.name}
@@ -754,10 +757,10 @@ function PublicProfilePage() {
                 isAcceptingQuestions={isAcceptingQuestions}
               />
 
-              {/* ⭐ Brand-aligned typography with Inter font and tracking-tight */}
+              {/* Expert info with enhanced typography */}
               <div className="space-y-2.5">
                 <div className="flex items-start gap-2.5 flex-wrap">
-                  <h1 className="font-sans text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-none">
+                  <h1 className="font-sans text-3xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-none">
                     {profile.name || 'Expert'}
                   </h1>
                   {profile.charity_percentage === 100 ? (
@@ -767,17 +770,18 @@ function PublicProfilePage() {
                   )}
                 </div>
                 {profile.title && (
-                  <p className="font-sans text-xl md:text-2xl text-gray-600 font-medium leading-tight">
+                  <p className="font-sans text-lg md:text-2xl text-gray-600 font-medium leading-tight">
                     {profile.title}
                   </p>
                 )}
                 {profile.tagline && (
-                  <p className="font-sans text-base md:text-lg text-gray-700 leading-relaxed">
+                  <p className="font-sans text-sm md:text-lg text-gray-700 leading-relaxed">
                     {profile.tagline}
                   </p>
                 )}
               </div>
 
+              {/* Social links with enhanced hover */}
               {hasSocials && (
                 <div className="flex items-center gap-2 flex-wrap pt-1">
                   {profile.socials.twitter && (
@@ -798,14 +802,16 @@ function PublicProfilePage() {
                 </div>
               )}
 
+              {/* Bio section with enhanced depth */}
               {profile.bio && (
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-4 border border-gray-200/50 shadow-sm hover-lift">
-                  <div className="prose prose-gray prose-sm max-w-none">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-4 border border-gray-200/50 shadow-sm hover-lift relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent pointer-events-none"></div>
+                  <div className="relative prose prose-gray prose-sm max-w-none">
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeSanitize]}
                       components={{
-                        p: ({node, ...props}) => <p className="font-sans text-gray-700 leading-relaxed text-base md:text-lg mb-3 last:mb-0" {...props} />,
+                        p: ({node, ...props}) => <p className="font-sans text-gray-700 leading-relaxed text-sm md:text-base mb-3 last:mb-0" {...props} />,
                         strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
                         em: ({node, ...props}) => <em className="italic" {...props} />,
                         a: ({node, ...props}) => (
@@ -818,7 +824,7 @@ function PublicProfilePage() {
                         ),
                         ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3 text-gray-700" {...props} />,
                         ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-1 mb-3 text-gray-700" {...props} />,
-                        li: ({node, ...props}) => <li className="font-sans text-gray-700 text-base md:text-lg" {...props} />,
+                        li: ({node, ...props}) => <li className="font-sans text-gray-700 text-sm md:text-base" {...props} />,
                       }}
                     >
                       {profile.bio}
@@ -827,6 +833,7 @@ function PublicProfilePage() {
                 </div>
               )}
 
+              {/* Expertise section with enhanced tags */}
               {profile.expertise && profile.expertise.length > 0 && (
                 <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-xl p-5 border border-indigo-200/50 shadow-sm hover-lift">
                   <div className="flex items-center gap-2 mb-4">
@@ -835,15 +842,14 @@ function PublicProfilePage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
                     </div>
-                    {/* ⭐ Brand-aligned heading with tracking-tight */}
-                    <h3 className="font-sans text-xl md:text-2xl font-bold text-gray-900 tracking-tight">Areas of Expertise</h3>
+                    <h3 className="font-sans text-lg md:text-xl font-bold text-gray-900 tracking-tight">Areas of Expertise</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {profile.expertise.slice(0, 6).map(function(field, index) {
                       return (
                         <span 
                           key={index} 
-                          className="group inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-indigo-700 bg-white/80 backdrop-blur-sm border border-indigo-200 rounded-lg hover:border-indigo-400 hover:bg-white hover:text-indigo-800 hover:shadow-md transition-all cursor-default transform hover:scale-105"
+                          className="group inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-indigo-700 bg-white/80 backdrop-blur-sm border border-indigo-200 rounded-lg hover:border-indigo-400 hover:bg-white hover:text-indigo-800 hover:shadow-md transition-all cursor-default transform hover:scale-105 hover:-translate-y-0.5 active:scale-100"
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 group-hover:bg-indigo-600 transition-colors"/>
                           {field}
@@ -854,6 +860,7 @@ function PublicProfilePage() {
                 </div>
               )}
 
+              {/* Tier Selector with compact sizing */}
               {profile.tiers && isAcceptingQuestions ? (
                 <TierSelector
                   tiers={profile.tiers}
@@ -879,6 +886,7 @@ function PublicProfilePage() {
                 </div>
               ) : null}
 
+              {/* Charity impact card */}
               {profile.charity_percentage > 0 && profile.selected_charity && (
                 <SocialImpactCard
                   charityPercentage={profile.charity_percentage}
@@ -891,7 +899,7 @@ function PublicProfilePage() {
           </div>
 
           {/* Trust Indicators */}
-          <div className="pt-8 pb-4">
+          <div className="pt-6 pb-4">
             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
