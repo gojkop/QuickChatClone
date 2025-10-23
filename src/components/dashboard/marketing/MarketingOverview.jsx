@@ -12,6 +12,7 @@ export default function MarketingOverview({
   const totalQuestions = trafficSources.reduce((sum, s) => sum + (s.questions || 0), 0);
   const totalRevenue = trafficSources.reduce((sum, s) => sum + (s.revenue || 0), 0);
   const overallConversionRate = totalVisits > 0 ? ((totalQuestions / totalVisits) * 100).toFixed(1) : '0.0';
+  const [isConsentNoticeExpanded, setIsConsentNoticeExpanded] = useState(false);
 
   // ✅ FIX: Use trafficSources data, not insights data (which pulls from overall profile)
   const yourConversionRate = overallConversionRate;
@@ -49,38 +50,67 @@ export default function MarketingOverview({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="bg-amber-50 border-l-4 border-amber-500 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0">
-            <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      <div className="bg-amber-50 border border-amber-200 rounded-lg overflow-hidden">
+        {/* Collapsed Header - Always Visible */}
+        <button
+          onClick={() => setIsConsentNoticeExpanded(!isConsentNoticeExpanded)}
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-amber-100 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm font-bold text-amber-900">
+              About Your Campaign Analytics
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-amber-700 font-medium hidden sm:inline">
+              {isConsentNoticeExpanded ? 'Hide details' : 'Learn more'}
+            </span>
+            <svg 
+              className={`w-5 h-5 text-amber-600 transition-transform duration-200 ${
+                isConsentNoticeExpanded ? 'rotate-180' : ''
+              }`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
             </svg>
           </div>
-          <div className="flex-1">
-            <h4 className="text-sm font-bold text-amber-900 mb-1">
-              About Your Campaign Analytics
-            </h4>
-            <p className="text-xs text-amber-800 leading-relaxed mb-2">
+        </button>
+
+        {/* Expanded Content */}
+        {isConsentNoticeExpanded && (
+          <div className="px-4 pb-4 pt-1 border-t border-amber-200 bg-amber-50">
+            <p className="text-xs text-amber-800 leading-relaxed mb-3">
               Your campaign tracking respects visitor privacy through <strong>cookie consent</strong>. 
               When visitors arrive via your campaign links, they choose whether to allow marketing cookies:
             </p>
-            <ul className="text-xs text-amber-800 space-y-1 ml-4 list-disc">
-              <li><strong>Accept:</strong> Visit is tracked and attributed to your campaign (shown in analytics above)</li>
-              <li><strong>Reject:</strong> Visit is <em>not</em> tracked; if they ask a question, it won't be linked to your campaign</li>
+            <ul className="text-xs text-amber-800 space-y-2 ml-4 list-disc mb-3">
+              <li>
+                <strong>Accept:</strong> Visit is tracked and attributed to your campaign (shown in analytics above)
+              </li>
+              <li>
+                <strong>Reject:</strong> Visit is <em>not</em> tracked; if they ask a question, it won't be linked to your campaign
+              </li>
             </ul>
-            <p className="text-xs text-amber-800 leading-relaxed mt-2">
-              <strong>What this means:</strong> The numbers above represent visitors who <em>consented</em> to marketing tracking. 
-              Your actual reach may be higher, but we only count visitors who opted in to comply with GDPR privacy laws.
-            </p>
-            <div className="mt-3 pt-3 border-t border-amber-200">
-              <p className="text-xs text-amber-700 font-medium">
+            <div className="bg-amber-100 rounded-lg p-3 mb-3">
+              <p className="text-xs text-amber-900 leading-relaxed">
+                <strong>What this means:</strong> The numbers above represent visitors who <em>consented</em> to marketing tracking. 
+                Your actual reach may be higher, but we only count visitors who opted in to comply with GDPR privacy laws.
+              </p>
+            </div>
+            <div className="bg-white border border-amber-200 rounded-lg p-3">
+              <p className="text-xs text-amber-800">
                 💡 <strong>Tip:</strong> High-quality content and clear calls-to-action help convert visitors regardless of tracking. 
                 Focus on providing value, and those who consent will be accurately measured here.
               </p>
             </div>
           </div>
-        </div>
-        </div>
+        )}
+      </div>
       {/* Key Metrics - NOW ACCURATE */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Visits */}
