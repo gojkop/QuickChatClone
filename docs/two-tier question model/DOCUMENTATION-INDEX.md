@@ -214,6 +214,39 @@ These documents detail specific fixes implemented during development:
 
 ---
 
+### 13. Cleanup & Maintenance Guide ⭐ NEW
+**File:** `CLEANUP-LEGACY-CODE.md`
+**Purpose:** Guide for cleaning up legacy single-tier code after two-tier deployment
+**Contents:**
+- Database field analysis (keep vs remove)
+- API endpoint evaluation
+- Frontend code review
+- Safe removal checklist
+- Migration strategy for legacy questions
+
+**When to use:** After two-tier system is fully deployed and stable
+
+**Status:** ✅ Created (Oct 22, 2025)
+
+---
+
+### 14. Tier Flow Explanation ⭐ NEW
+**File:** `TIER-FLOW-EXPLANATION.md`
+**Purpose:** Explains how tier information flows from selection to submission
+**Contents:**
+- Step-by-step flow diagram
+- Code examples from each step
+- Navigation state structure
+- Backend endpoint payloads
+- Debugging tips
+- Common issues and solutions
+
+**When to use:** When understanding or debugging tier selection and submission flow
+
+**Status:** ✅ Created (Oct 22, 2025)
+
+---
+
 ## 📂 Migration SQL Files (Reference Only)
 
 **Location:** `migrations/` folder

@@ -245,18 +245,30 @@ function ExpertDashboardPage() {
 
   // ✅ OPTIMIZED: Filter questions with useMemo
   const filteredQuestions = useMemo(() => {
-    return showHidden 
-      ? sortedQuestions 
-      : sortedQuestions.filter(q => !q.hidden);
+    let filtered = sortedQuestions;
+
+    // Filter out hidden questions (unless showHidden is true)
+    if (!showHidden) {
+      filtered = filtered.filter(q => !q.hidden);
+    }
+
+    // Always filter out declined Deep Dive offers
+    filtered = filtered.filter(q => q.pricing_status !== 'offer_declined');
+
+    return filtered;
   }, [sortedQuestions, showHidden]);
 
   // ✅ OPTIMIZED: Calculate counts with useMemo
   const { pendingCount, answeredCount, hiddenCount } = useMemo(() => {
     const safeAllQuestions = Array.isArray(allQuestions) ? allQuestions : [];
     const safeQuestions = Array.isArray(questions) ? questions : [];
-    
+
     return {
-      pendingCount: safeAllQuestions.filter(q => q.status === 'paid' && !q.answered_at).length,
+      pendingCount: safeAllQuestions.filter(q =>
+        q.status === 'paid' &&
+        !q.answered_at &&
+        q.pricing_status !== 'offer_declined'  // Exclude declined offers
+      ).length,
       answeredCount: safeAllQuestions.filter(q => q.status === 'closed' || q.status === 'answered' || q.answered_at).length,
       hiddenCount: safeQuestions.filter(q => q.hidden === true).length
     };
