@@ -5,8 +5,8 @@ import RecordingSegmentList from './RecordingSegmentList';
 import PriceOfferInput from './PriceOfferInput';
 import ExpertMessageInput from './ExpertMessageInput';
 import MindPilotPanel from './MindPilotPanel';
-import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
-import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
+import { useRecordingSegmentUpload } from '@/components/question-flow-v2/hooks/useRecordingSegmentUpload';
+import { useAttachmentUpload } from '@/components/question-flow-v2/hooks/useAttachmentUpload';
 import MobileStickyFooter from '../shared/MobileStickyFooter';
 
 
