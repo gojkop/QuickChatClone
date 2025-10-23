@@ -1,4 +1,5 @@
 import React from 'react';
+import { PaymentIcon, CheckCircleIcon, InformationIcon, LockIcon } from '../shared/SVGIcons';
 
 function PaymentPlaceholder({ 
   expert, 
@@ -25,10 +26,8 @@ function PaymentPlaceholder({
       {/* Payment Info Card */}
       <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl p-6 border-2 border-indigo-200">
         <div className="flex items-start gap-4 mb-4">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0">
-            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
+          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+            <PaymentIcon className="w-6 h-6 text-indigo-600" />
           </div>
           <div className="flex-1">
             <h3 className="text-xl font-bold text-gray-900 mb-1">
@@ -42,7 +41,7 @@ function PaymentPlaceholder({
           </div>
         </div>
 
-        <div className="bg-white rounded-lg p-4 mb-4">
+        <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
           <div className="flex justify-between items-center mb-3">
             <span className="text-gray-700 font-medium">Question to {expert.name || expert.handle}</span>
             <span className="text-2xl font-black text-indigo-600">{displayPrice}</span>
@@ -63,14 +62,26 @@ function PaymentPlaceholder({
           )}
         </div>
 
-        <div className="text-xs text-gray-500 space-y-1">
-          <p>✓ Email confirmation to: <strong>{reviewData.email}</strong></p>
-          <p>✓ Question: <strong>{composeData.title}</strong></p>
+        <div className="text-xs text-gray-600 space-y-2">
+          <div className="flex items-start gap-2">
+            <CheckCircleIcon className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+            <p>Email confirmation to: <strong>{reviewData.email}</strong></p>
+          </div>
+          <div className="flex items-start gap-2">
+            <CheckCircleIcon className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+            <p>Question: <strong>{composeData.title}</strong></p>
+          </div>
           {composeData.recordings?.length > 0 && (
-            <p>✓ Recordings: <strong>{composeData.recordings.length} segment(s)</strong></p>
+            <div className="flex items-start gap-2">
+              <CheckCircleIcon className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <p>Recordings: <strong>{composeData.recordings.length} segment(s)</strong></p>
+            </div>
           )}
           {composeData.attachments?.length > 0 && (
-            <p>✓ Attachments: <strong>{composeData.attachments.length} file(s)</strong></p>
+            <div className="flex items-start gap-2">
+              <CheckCircleIcon className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <p>Attachments: <strong>{composeData.attachments.length} file(s)</strong></p>
+            </div>
           )}
         </div>
       </div>
@@ -78,9 +89,7 @@ function PaymentPlaceholder({
       {/* Stripe Integration Notice */}
       <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <InformationIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="font-semibold text-amber-900 mb-1">Payment Integration Coming Soon</p>
             <p className="text-amber-700">
@@ -111,9 +120,10 @@ function PaymentPlaceholder({
 
       {/* Security Notice */}
       <div className="text-center text-xs text-gray-500">
-        <p>
-          🔒 Secure submission • Your information is encrypted
-        </p>
+        <div className="flex items-center justify-center gap-1">
+          <LockIcon className="w-3 h-3" />
+          <p>Secure submission - Your information is encrypted</p>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { VideoIcon, MicIcon, MonitorIcon, PaperclipIcon } from '../shared/SVGIcons';
+import { VideoIcon, MicIcon, MonitorIcon, PaperclipIcon, CheckCircleIcon, TrashIcon } from '../shared/SVGIcons';
 import RecordingModal from './RecordingModal';
 
 function RecordingOptions({ segmentUpload, attachmentUpload }) {
@@ -139,17 +139,15 @@ function RecordingOptions({ segmentUpload, attachmentUpload }) {
 
       {/* Recordings Display */}
       {hasRecordings && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+        <div className="bg-indigo-50 border-2 border-indigo-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
-            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <CheckCircleIcon className="w-5 h-5 text-indigo-600" />
             <span className="text-sm font-semibold text-indigo-900">
               {segmentUpload.segments.length} recording{segmentUpload.segments.length > 1 ? 's' : ''} added
             </span>
           </div>
           {segmentUpload.hasUploading && (
-            <p className="text-xs text-indigo-700">Uploading in background...</p>
+            <p className="text-xs text-indigo-700 font-medium">Uploading in background...</p>
           )}
         </div>
       )}
@@ -158,20 +156,23 @@ function RecordingOptions({ segmentUpload, attachmentUpload }) {
       {hasAttachments && (
         <div className="space-y-2">
           {attachmentUpload.uploads.map((upload) => (
-            <div key={upload.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div key={upload.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-2 border-gray-200">
               <div className="flex-1 min-w-0 mr-3">
-                <span className="text-sm text-gray-700 truncate block">{upload.file.name}</span>
+                <span className="text-sm text-gray-700 truncate block font-medium">{upload.file.name}</span>
                 <span className="text-xs text-gray-500">{formatFileSize(upload.file.size)}</span>
               </div>
               <div className="flex items-center gap-2">
-                {upload.uploading && <span className="text-xs text-indigo-600">Uploading...</span>}
-                {upload.error && <span className="text-xs text-red-600">Failed</span>}
-                {upload.result && <span className="text-xs text-green-600 font-semibold">✓</span>}
+                {upload.uploading && <span className="text-xs text-indigo-600 font-medium">Uploading...</span>}
+                {upload.error && <span className="text-xs text-red-600 font-medium">Failed</span>}
+                {upload.result && (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                )}
                 <button
                   onClick={() => attachmentUpload.removeUpload(upload.id)}
-                  className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1"
+                  className="text-red-500 hover:text-red-700 px-2 py-1 hover:bg-red-50 rounded transition flex items-center gap-1"
                 >
-                  Remove
+                  <TrashIcon className="w-4 h-4" />
+                  <span className="text-xs font-semibold hidden sm:inline">Remove</span>
                 </button>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, MonitorIcon, PaperclipIcon } from '../shared/SVGIcons';
+import { ChevronDownIcon, ChevronUpIcon, MonitorIcon, PaperclipIcon, SettingsIcon } from '../shared/SVGIcons';
 import RecordingModal from './RecordingModal';
 
 function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, onRecordingComplete }) {
@@ -75,10 +75,7 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
           className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition flex items-center justify-between"
         >
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+            <SettingsIcon className="w-5 h-5 text-gray-700" />
             <span className="font-semibold text-gray-900">Advanced Options</span>
             {hasContent && !isExpanded && (
               <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">
@@ -124,7 +121,7 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
               <textarea
                 value={text}
                 onChange={(e) => onTextChange(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-sm"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-sm resize-none"
                 rows="3"
                 maxLength="5000"
                 placeholder="Add context, links, or background info..."
@@ -143,20 +140,20 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
                 onChange={handleFileChange}
                 multiple
                 disabled={attachmentUpload.uploads.length >= 3}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               
               {attachmentUpload.uploads.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {attachmentUpload.uploads.map((upload) => (
-                    <div key={upload.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
+                    <div key={upload.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm border border-gray-200">
                       <div className="flex-1 min-w-0 mr-3">
-                        <span className="text-gray-700 truncate block">{upload.file.name}</span>
+                        <span className="text-gray-700 truncate block font-medium">{upload.file.name}</span>
                         <span className="text-xs text-gray-500">{formatFileSize(upload.file.size)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {upload.uploading && <span className="text-xs text-indigo-600">Uploading...</span>}
-                        {upload.error && <span className="text-xs text-red-600">Failed</span>}
+                        {upload.uploading && <span className="text-xs text-indigo-600 font-medium">Uploading...</span>}
+                        {upload.error && <span className="text-xs text-red-600 font-medium">Failed</span>}
                         {upload.result && (
                           <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -164,7 +161,7 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
                         )}
                         <button
                           onClick={() => attachmentUpload.removeUpload(upload.id)}
-                          className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                          className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 hover:bg-red-50 rounded transition"
                         >
                           Remove
                         </button>
