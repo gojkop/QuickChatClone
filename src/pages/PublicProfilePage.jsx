@@ -1,12 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Heart, Building2, BookOpen, Trees, Droplet, Sparkles } from 'lucide-react';
 import apiClient from '@/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import TierSelector from '@/components/pricing/TierSelector';
+import { Toast } from '@/components/common/Toast';
+
+// ⭐ INLINE SVG ICONS - No external dependencies
+const HeartIcon = ({ className }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+  </svg>
+);
+
+const Building2Icon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M9 8h1m-1 4h1m-1 4h1m4-8h1m-1 4h1m-1 4h1M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 21v-4a2 2 0 012-2h2a2 2 0 012 2v4"/>
+  </svg>
+);
+
+const BookOpenIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+  </svg>
+);
+
+const TreesIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L8 8h8l-4-6zM12 8L8 14h8l-4-6zM12 14v8M8 14H4l4-6M16 14h4l-4-6"/>
+  </svg>
+);
+
+const DropletIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+  </svg>
+);
+
+const SparklesIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+  </svg>
+);
 
 // Helper to format price from cents
 const formatPrice = (cents, currency = 'USD') => {
@@ -110,15 +147,15 @@ const SocialLink = ({ platform, url }) => {
 
 // Social Impact Card
 const SocialImpactCard = ({ charityPercentage, selectedCharity, priceCents, currency }) => {
-const charityInfo = {
-  'unicef': { name: 'UNICEF', icon: Heart, color: 'text-pink-600' },
-  'doctors-without-borders': { name: 'Doctors Without Borders', icon: Building2, color: 'text-red-600' },
-  'red-cross': { name: 'Red Cross', icon: Heart, color: 'text-red-600' },
-  'world-wildlife': { name: 'World Wildlife Fund', icon: Trees, color: 'text-green-600' },
-  'malala-fund': { name: 'Malala Fund', icon: BookOpen, color: 'text-pink-600' },
-  'wwf': { name: 'WWF', icon: Trees, color: 'text-green-600' },
-  'charity-water': { name: 'charity: water', icon: Droplet, color: 'text-cyan-600' }
-};
+  const charityInfo = {
+    'unicef': { name: 'UNICEF', icon: HeartIcon, color: 'text-pink-600' },
+    'doctors-without-borders': { name: 'Doctors Without Borders', icon: Building2Icon, color: 'text-red-600' },
+    'red-cross': { name: 'Red Cross', icon: HeartIcon, color: 'text-red-600' },
+    'world-wildlife': { name: 'World Wildlife Fund', icon: TreesIcon, color: 'text-green-600' },
+    'malala-fund': { name: 'Malala Fund', icon: BookOpenIcon, color: 'text-pink-600' },
+    'wwf': { name: 'WWF', icon: TreesIcon, color: 'text-green-600' },
+    'charity-water': { name: 'charity: water', icon: DropletIcon, color: 'text-cyan-600' }
+  };
 
   const charity = charityInfo[selectedCharity];
 
@@ -128,6 +165,7 @@ const charityInfo = {
 
   const donationAmount = (priceCents * charityPercentage) / 100;
   const is100Percent = charityPercentage === 100;
+  const IconComponent = charity.icon;
 
   if (is100Percent) {
     return (
@@ -137,12 +175,12 @@ const charityInfo = {
         <div className="relative">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center">
-                {React.createElement(charity.icon, { className: `w-5 h-5 ${charity.color}` })}
+              <IconComponent className={`w-5 h-5 ${charity.color}`} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-bold text-amber-900">100% Donation</span>
-                <Sparkles className="w-4 h-4 text-amber-600" />
+                <SparklesIcon className="w-4 h-4 text-amber-600" />
               </div>
               <p className="text-xs text-amber-800 leading-relaxed font-medium">
                 All earnings ({formatPrice(donationAmount, currency)}) go to <span className="font-bold">{charity.name}</span>. Your payment directly supports their mission.
@@ -157,9 +195,9 @@ const charityInfo = {
   return (
     <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border border-orange-200 shadow-sm">
       <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center">
-             {React.createElement(charity.icon, { className: `w-5 h-5 ${charity.color}` })}
-            </div>
+        <div className="flex-shrink-0 w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center">
+          <IconComponent className={`w-5 h-5 ${charity.color}`} />
+        </div>
         <div className="flex-1">
           <p className="text-xs text-gray-700 leading-relaxed">
             A <span className="font-bold text-gray-900">{charityPercentage}% donation</span> ({formatPrice(donationAmount, currency)}) of your payment goes to <span className="font-bold text-gray-900">{charity.name}</span>.
@@ -190,12 +228,12 @@ const CharityHeroBadge = () => {
         <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
       </svg>
       <span className="text-xs font-bold text-amber-800">100% to Charity</span>
-<Sparkles className="w-3.5 h-3.5 text-amber-600" />
+      <SparklesIcon className="w-3.5 h-3.5 text-amber-600" />
     </div>
   );
 };
 
-// ⭐ PHASE 1 CHANGE: Enhanced Living Avatar Component with larger size and improved animations
+// Living Avatar Component with breathing animation and particle field
 const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
@@ -203,7 +241,6 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Detect if touch device (mobile)
     const checkMobile = () => {
       setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
     };
@@ -213,7 +250,7 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
   }, []);
 
   useEffect(() => {
-    if (isMobile) return; // Skip mouse tracking on mobile
+    if (isMobile) return;
 
     const handleMouseMove = (e) => {
       if (!avatarRef.current) return;
@@ -222,11 +259,9 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       
-      // Calculate distance from center (normalized to -1 to 1)
       const deltaX = (e.clientX - centerX) / (rect.width / 2);
       const deltaY = (e.clientY - centerY) / (rect.height / 2);
       
-      // Apply subtle parallax (max 12px movement)
       setMousePosition({
         x: deltaX * 12,
         y: deltaY * 12
@@ -250,10 +285,8 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
         onMouseEnter={() => !isMobile && setIsHovering(true)}
         onMouseLeave={() => !isMobile && setIsHovering(false)}
       >
-        {/* ⭐ PHASE 1: Enhanced ambient glow with stronger effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full blur-3xl opacity-30 group-hover:opacity-40 transition-opacity duration-500 living-breath scale-110"/>
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full blur-3xl opacity-30 group-hover:opacity-40 transition-opacity duration-500 animate-pulse-glow scale-110"/>
         
-        {/* ⭐ PHASE 1: Larger avatar container (128px → 160px) */}
         <div 
           className="relative living-breath-avatar"
           style={parallaxStyle}
@@ -277,7 +310,6 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
           </div>
         </div>
         
-        {/* ⭐ PHASE 1: Larger status indicator (36px → 44px) */}
         <div className={`absolute -bottom-1 -right-1 w-11 h-11 rounded-full border-4 border-white shadow-lg flex items-center justify-center living-status ${
           isAcceptingQuestions 
             ? 'bg-gradient-to-br from-green-400 to-green-500' 
@@ -294,7 +326,6 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
           )}
         </div>
 
-        {/* Hover ring effect (desktop only) */}
         {!isMobile && isHovering && (
           <div className="absolute inset-0 rounded-full border-2 border-indigo-400/30 animate-ping" style={{ animationDuration: '2s' }} />
         )}
@@ -309,145 +340,96 @@ function PublicProfilePage() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showShareMenu, setShowShareMenu] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [toast, setToast] = useState(null);
 
- // ⭐ UPDATED: Track UTM visit on page load WITH consent check
-useEffect(() => {
-  const trackVisit = async () => {
-    if (!handle) return;
+  useEffect(() => {
+    const trackVisit = async () => {
+      if (!handle) return;
 
-    // Extract UTM parameters from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const utmSource = urlParams.get('utm_source');
-    const utmCampaign = urlParams.get('utm_campaign');
-    const utmMedium = urlParams.get('utm_medium');
-    const utmContent = urlParams.get('utm_content');
+      const urlParams = new URLSearchParams(window.location.search);
+      const utmSource = urlParams.get('utm_source');
+      const utmCampaign = urlParams.get('utm_campaign');
+      const utmMedium = urlParams.get('utm_medium');
+      const utmContent = urlParams.get('utm_content');
 
-    // 🔍 DEBUG: Log what we found
-    console.log('🔍 UTM Parameters detected:', {
-      utm_source: utmSource,
-      utm_campaign: utmCampaign,
-      utm_medium: utmMedium,
-      utm_content: utmContent,
-      fullURL: window.location.href
-    });
-
-    // Only track if we have at least source and campaign
-    if (utmSource && utmCampaign) {
-      console.log('✅ Valid UTM params found');
-
-      // 🆕 CONSENT CHECK: Only track if user consented to marketing
-      let hasMarketingConsent = false;
-      
-      try {
-        const storedConsent = localStorage.getItem('qc_cookie_consent');
-        if (storedConsent) {
-          const consentData = JSON.parse(storedConsent);
-          hasMarketingConsent = consentData?.preferences?.marketing === true;
+      if (utmSource && utmCampaign) {
+        let hasMarketingConsent = false;
+        
+        try {
+          const storedConsent = localStorage.getItem('qc_cookie_consent');
+          if (storedConsent) {
+            const consentData = JSON.parse(storedConsent);
+            hasMarketingConsent = consentData?.preferences?.marketing === true;
+          }
+        } catch (e) {
+          console.error('Failed to read consent:', e);
         }
-      } catch (e) {
-        console.error('Failed to read consent:', e);
-      }
 
-      if (!hasMarketingConsent) {
-        console.log('⚠️ Marketing consent not granted - skipping UTM tracking');
-        console.log('ℹ️ UTM params stored locally for potential question attribution');
-        
-        // Still store UTM params for question attribution (happens after user asks)
-        const utmData = {
-          expert_handle: handle,
-          utm_source: utmSource,
-          utm_campaign: utmCampaign,
-          utm_medium: utmMedium || '',
-          utm_content: utmContent || ''
-        };
-        localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
-        localStorage.setItem('qc_utm_timestamp', Date.now().toString());
-        return;
-      }
+        if (!hasMarketingConsent) {
+          const utmData = {
+            expert_handle: handle,
+            utm_source: utmSource,
+            utm_campaign: utmCampaign,
+            utm_medium: utmMedium || '',
+            utm_content: utmContent || ''
+          };
+          localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
+          localStorage.setItem('qc_utm_timestamp', Date.now().toString());
+          return;
+        }
 
-      console.log('✅ Marketing consent granted - proceeding with tracking');
+        const visitKey = `qc_visit_${handle}_${utmSource}_${utmCampaign}`;
+        const lastVisitTime = localStorage.getItem(visitKey);
+        const now = Date.now();
+        const thirtyMinutes = 30 * 60 * 1000;
 
-      // 🆕 DEDUPLICATION: Check for recent visit to avoid duplicates
-      const visitKey = `qc_visit_${handle}_${utmSource}_${utmCampaign}`;
-      const lastVisitTime = localStorage.getItem(visitKey);
-      const now = Date.now();
-      const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
-
-      // Skip tracking if visited same campaign within last 30 minutes
-      if (lastVisitTime && (now - parseInt(lastVisitTime)) < thirtyMinutes) {
-        console.log('🔄 Visit already tracked recently (within 30 min), skipping duplicate');
-        
-        // Prepare UTM data object
-        const utmData = {
-          expert_handle: handle,
-          utm_source: utmSource,
-          utm_campaign: utmCampaign,
-          utm_medium: utmMedium || '',
-          utm_content: utmContent || ''
-        };
-        
-        // Still store UTM params for question attribution
-        localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
-        localStorage.setItem('qc_utm_timestamp', now.toString());
-        return;
-      }
-
-      console.log('✅ No recent duplicate, tracking visit...');
-
-      // Prepare UTM data object
-      const utmData = {
-        expert_handle: handle,
-        utm_source: utmSource,
-        utm_campaign: utmCampaign,
-        utm_medium: utmMedium || '',
-        utm_content: utmContent || ''
-      };
-
-      try {
-        // Call tracking API
-        const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/marketing/public/track-visit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(utmData)
-        });
-
-        const result = await response.json();
-        console.log('📊 Track visit response:', result);
-
-        // ⭐ Store visit timestamp for deduplication
-        if (result.tracked) {
-          console.log('💾 Storing visit timestamp and UTM params...');
-          localStorage.setItem(visitKey, now.toString());
+        if (lastVisitTime && (now - parseInt(lastVisitTime)) < thirtyMinutes) {
+          const utmData = {
+            expert_handle: handle,
+            utm_source: utmSource,
+            utm_campaign: utmCampaign,
+            utm_medium: utmMedium || '',
+            utm_content: utmContent || ''
+          };
           localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
           localStorage.setItem('qc_utm_timestamp', now.toString());
-          
-          // 🔍 DEBUG: Verify storage
-          const stored = localStorage.getItem('qc_utm_params');
-          console.log('✅ Verified localStorage:', stored);
-        } else {
-          console.warn('⚠️ Tracking response: tracked=false');
+          return;
         }
 
-      } catch (err) {
-        console.error('❌ Failed to track UTM visit:', err);
-        
-        // ⭐ FALLBACK: Store in localStorage even if API fails
-        // This ensures attribution still works if backend is temporarily down
-        console.log('💾 Storing UTM params anyway (API failed)...');
-        localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
-        localStorage.setItem('qc_utm_timestamp', now.toString());
-      }
-    } else {
-      console.log('ℹ️ No UTM params in URL, skipping tracking');
-    }
-  };
+        const utmData = {
+          expert_handle: handle,
+          utm_source: utmSource,
+          utm_campaign: utmCampaign,
+          utm_medium: utmMedium || '',
+          utm_content: utmContent || ''
+        };
 
-  trackVisit();
-}, [handle]);
+        try {
+          const response = await fetch('https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/marketing/public/track-visit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(utmData)
+          });
+
+          const result = await response.json();
+
+          if (result.tracked) {
+            localStorage.setItem(visitKey, now.toString());
+            localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
+            localStorage.setItem('qc_utm_timestamp', now.toString());
+          }
+        } catch (err) {
+          localStorage.setItem('qc_utm_params', JSON.stringify(utmData));
+          localStorage.setItem('qc_utm_timestamp', now.toString());
+        }
+      }
+    };
+
+    trackVisit();
+  }, [handle]);
 
   useEffect(() => {
     if (!handle) {
@@ -521,8 +503,6 @@ useEffect(() => {
           socialsData = {};
         }
 
-        // accepting_questions should default to true (experts are accepting by default)
-        // Only set to false if explicitly set to false/0/"false" etc.
         const acceptingQuestions = ep.accepting_questions === false ||
                                    ep.accepting_questions === 0 ||
                                    ep.accepting_questions === '0' ||
@@ -530,10 +510,8 @@ useEffect(() => {
                                    ? false
                                    : true;
 
-        // Build tiers object from tier fields
         const tiers = {};
 
-        // Quick Consult (Tier 1)
         if (ep.tier1_enabled !== false && ep.tier1_price_cents) {
           tiers.quick_consult = {
             enabled: true,
@@ -543,14 +521,12 @@ useEffect(() => {
           };
         }
 
-        // Deep Dive (Tier 2)
         if (ep.tier2_enabled && ep.tier2_min_price_cents && ep.tier2_max_price_cents) {
           tiers.deep_dive = {
             enabled: true,
             min_price_cents: ep.tier2_min_price_cents,
             max_price_cents: ep.tier2_max_price_cents,
             sla_hours: ep.tier2_sla_hours || 48,
-            auto_decline_below_cents: ep.tier2_auto_decline_below_cents || null,
             description: ep.tier2_description || 'In-depth analysis with comprehensive report'
           };
         }
@@ -580,25 +556,13 @@ useEffect(() => {
     fetchPublicProfile();
   }, [handle]);
 
-  const handleAskQuestion = () => {
-    if (profile && !profile.accepting_questions) {
-      return;
-    }
-    navigate('/ask?expert=' + handle);
-  };
-
   const handleSelectTier = (tierType, tierConfig) => {
-    console.log('🔍 handleSelectTier called:', { tierType, tierConfig, handle, profileId: profile?.id });
-
     if (profile && !profile.accepting_questions) {
-      console.log('⚠️ Expert not accepting questions');
       return;
     }
 
     const navUrl = `/ask?expert=${handle}`;
-    console.log('🚀 Navigating to:', navUrl);
 
-    // Navigate to question composer with tier information
     navigate(navUrl, {
       state: {
         expert: handle,
@@ -623,11 +587,10 @@ useEffect(() => {
     } else {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(url).then(function() {
-          setShowShareMenu(true);
-          setTimeout(function() {
-            setShowShareMenu(false);
-          }, 2000);
-        }).catch(function() {});
+          setToast({ message: 'Link copied to clipboard!', type: 'success' });
+        }).catch(function() {
+          setToast({ message: 'Failed to copy link', type: 'error' });
+        });
       }
     }
   };
@@ -655,11 +618,11 @@ useEffect(() => {
               </svg>
             </div>
             
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Expert Not Found</h2>
-            <p className="text-gray-600 mb-2">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Expert Not Found</h2>
+            <p className="text-base md:text-lg text-gray-600 mb-2">
               <span className="font-semibold text-gray-900">@{handle}</span> is not on mindPick yet.
             </p>
-            <p className="text-gray-600 mb-6">
+            <p className="text-base md:text-lg text-gray-600 mb-6">
               But you can invite them to join!
             </p>
             
@@ -697,8 +660,8 @@ useEffect(() => {
               </svg>
             </div>
             
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Profile is Private</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Profile is Private</h2>
+            <p className="text-base md:text-lg text-gray-600 mb-6">
               This expert has set their profile to private.
             </p>
             
@@ -723,8 +686,8 @@ useEffect(() => {
             </svg>
           </div>
           
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Oops!</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Oops!</h2>
+          <p className="text-base md:text-lg text-gray-600 mb-6">{error}</p>
           
           <a 
             href="/"
@@ -745,25 +708,15 @@ useEffect(() => {
       
       return (
         <React.Fragment>
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden">
-            {/* ⭐ PHASE 1 CHANGE: Enhanced Hero Section with vibrant gradient and floating shapes */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden hover-lift">
             <div className="relative h-40 md:h-48 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 overflow-hidden">
-              {/* Floating shape 1 - top left */}
               <div className="absolute top-4 left-8 w-20 h-20 bg-white/10 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '0s' }}></div>
-              
-              {/* Floating shape 2 - top right */}
               <div className="absolute top-8 right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-float-shape" style={{ animationDelay: '2s' }}></div>
-              
-              {/* Floating shape 3 - bottom center */}
               <div className="absolute bottom-6 left-1/2 w-24 h-24 bg-white/10 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '4s' }}></div>
               
-              {/* Gradient overlay for depth */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-              
-              {/* Bottom edge glow */}
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
               
-              {/* Share & QR Buttons */}
               <div className="absolute top-3 right-3 flex gap-2">
                 <button
                   onClick={() => setIsQRModalOpen(true)}
@@ -783,17 +736,10 @@ useEffect(() => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
                   </svg>
                 </button>
-                {showShareMenu && (
-                  <div className="absolute top-full right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl whitespace-nowrap">
-                    Link copied!
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* ⭐ PHASE 1 CHANGE: Reduced mobile padding from pb-28 to pb-8 */}
             <div className="px-5 md:px-6 pb-8 md:pb-6 space-y-5">
-              {/* ⭐ PHASE 1: Enhanced Living Avatar (larger size) */}
               <LivingAvatar 
                 avatarUrl={profile.avatar_url}
                 name={profile.name}
@@ -801,10 +747,9 @@ useEffect(() => {
                 isAcceptingQuestions={isAcceptingQuestions}
               />
 
-              {/* Name, Title, Tagline */}
               <div className="space-y-2.5">
                 <div className="flex items-start gap-2.5 flex-wrap">
-                  <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
+                  <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-none">
                     {profile.name || 'Expert'}
                   </h1>
                   {profile.charity_percentage === 100 ? (
@@ -814,18 +759,17 @@ useEffect(() => {
                   )}
                 </div>
                 {profile.title && (
-                  <p className="text-lg md:text-xl text-gray-600 font-medium leading-tight">
+                  <p className="text-xl md:text-2xl text-gray-600 font-medium leading-tight">
                     {profile.title}
                   </p>
                 )}
                 {profile.tagline && (
-                  <p className="text-base text-gray-700 leading-relaxed">
+                  <p className="text-base md:text-lg text-gray-700 leading-relaxed">
                     {profile.tagline}
                   </p>
                 )}
               </div>
 
-              {/* ⭐ PHASE 1 CHANGE: Social Links repositioned prominently below name/tagline */}
               {hasSocials && (
                 <div className="flex items-center gap-2 flex-wrap pt-1">
                   {profile.socials.twitter && (
@@ -846,15 +790,14 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* ⭐ PHASE 1 CHANGE: Enhanced Bio Section with card styling */}
               {profile.bio && (
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-4 border border-gray-200/50 shadow-sm">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-4 border border-gray-200/50 shadow-sm hover-lift">
                   <div className="prose prose-gray prose-sm max-w-none">
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeSanitize]}
                       components={{
-                        p: ({node, ...props}) => <p className="text-gray-700 leading-relaxed text-base mb-3 last:mb-0" {...props} />,
+                        p: ({node, ...props}) => <p className="text-gray-700 leading-relaxed text-base md:text-lg mb-3 last:mb-0" {...props} />,
                         strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
                         em: ({node, ...props}) => <em className="italic" {...props} />,
                         a: ({node, ...props}) => (
@@ -867,7 +810,7 @@ useEffect(() => {
                         ),
                         ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3 text-gray-700" {...props} />,
                         ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-1 mb-3 text-gray-700" {...props} />,
-                        li: ({node, ...props}) => <li className="text-gray-700 text-base" {...props} />,
+                        li: ({node, ...props}) => <li className="text-gray-700 text-base md:text-lg" {...props} />,
                       }}
                     >
                       {profile.bio}
@@ -876,16 +819,15 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* ⭐ PHASE 1 CHANGE: Enhanced Expertise Section with colored background and icon */}
               {profile.expertise && profile.expertise.length > 0 && (
-                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-xl p-5 border border-indigo-200/50 shadow-sm">
+                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-xl p-5 border border-indigo-200/50 shadow-sm hover-lift">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
                     </div>
-                    <h3 className="text-base font-bold text-gray-900">Areas of Expertise</h3>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900">Areas of Expertise</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {profile.expertise.slice(0, 6).map(function(field, index) {
@@ -903,7 +845,6 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* Tier Selection */}
               {profile.tiers && isAcceptingQuestions ? (
                 <TierSelector
                   tiers={profile.tiers}
@@ -929,7 +870,6 @@ useEffect(() => {
                 </div>
               ) : null}
 
-              {/* Charity Donation Section */}
               {profile.charity_percentage > 0 && profile.selected_charity && (
                 <SocialImpactCard
                   charityPercentage={profile.charity_percentage}
@@ -941,7 +881,6 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* Trust Indicators */}
           <div className="pt-8 pb-4">
             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 text-sm text-gray-500">
               <div className="flex items-center gap-2">
@@ -971,7 +910,7 @@ useEffect(() => {
   };
 
   return (
-<div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 flex justify-center items-start sm:items-center p-4 pt-8 sm:pt-20 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 flex justify-center items-start sm:items-center p-4 pt-8 sm:pt-20 sm:p-6">
       <div className="w-full max-w-lg">
         {renderContent()}
         
@@ -985,7 +924,6 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* QR Code Modal */}
       {profile && (
         <QRCodeModal
           isOpen={isQRModalOpen}
@@ -993,6 +931,14 @@ useEffect(() => {
           profileUrl={window.location.href.split('?')[0]}
           expertName={profile.name || 'Expert'}
           handle={handle}
+        />
+      )}
+
+      {toast && (
+        <Toast 
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>
