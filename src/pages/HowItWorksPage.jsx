@@ -10,212 +10,213 @@ function HowItWorksPage() {
 
   // Expert Journey Steps
   const expertSteps = [
-    {
-      id: 1,
-      title: 'Sign Up & Connect Stripe',
-      summary: 'Quick OAuth sign-in and secure payment setup',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+  {
+    id: 1,
+    title: 'Sign Up & Connect Stripe',
+    summary: 'Quick OAuth sign-in and secure payment setup',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+      </svg>
+    ),
+    details: [
+      'Sign in with Google or LinkedIn (30 seconds)',
+      'Connect Stripe for secure payouts',
+      'Complete profile with expertise areas',
+      'Total setup time: ~5 minutes'
+    ]
+  },
+  {
+    id: 2,
+    title: 'Set Your Expertise & Pricing',
+    summary: 'Choose question types and set your rates',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    details: [
+      'Enable Quick Consult (fixed price) for tactical questions',
+      'Enable Deep Dive (askers propose price) for comprehensive analysis',
+      'Set your SLA (response time) for each question type',
+      'Define your areas of expertise and update anytime'
+    ]
+  },
+  {
+    id: 3,
+    title: 'Get Your Personal Link',
+    summary: 'Share your mindPick link anywhere',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
         </svg>
-      ),
-      details: [
-        'Sign in with Google or LinkedIn (30 seconds)',
-        'Connect Stripe for secure payouts',
-        'Complete profile with expertise areas',
-        'Total setup time: ~5 minutes'
-      ]
-    },
-    {
-      id: 2,
-      title: 'Set Your Expertise & Pricing',
-      summary: 'Choose question types and set your rates',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      details: [
-        'Enable Quick Consult (fixed price, €25-€200+) for tactical questions',
-        'Enable Deep Dive (askers propose price) for comprehensive analysis',
-        'Set your SLA (response time) for each question type',
-        'Define your areas of expertise and update anytime'
-      ]
-    },
-    {
-      id: 3,
-      title: 'Get Your Personal Link',
-      summary: 'Share your mindPick link anywhere',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
-      ),
-      details: [
-        'Your unique URL: mindpick.me/yourname',
-        'Add to email signature, LinkedIn bio, Twitter',
-        'Share in communities and DMs',
-        'Works anywhere you have an audience'
-      ]
-    },
-    {
-      id: 4,
-      title: 'Receive Question Notification',
-      summary: 'Get notified when someone asks',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-      ),
-      details: [
-        'Email + dashboard notification',
-        'Quick Consult: SLA timer starts immediately',
-        'Deep Dive: Review offer within 24h (SLA starts after you accept)',
-        'Payment authorized (asker not charged yet)'
-      ]
-    },
-    {
-      id: 5,
-      title: 'Review & Decide',
-      summary: 'Accept or decline - your choice',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      details: [
-        'Quick Consult: Answer within your SLA or let it expire',
-        'Deep Dive: Accept or decline offer within 24h',
-        'If you decline: payment released, asker not charged',
-        'Deep Dive accepted: SLA countdown starts (typically 48-72h)'
-      ]
-    },
-    {
-      id: 6,
-      title: 'Answer & Get Paid',
-      summary: 'Record your answer, earn money',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      ),
-      details: [
-        'Record audio or video answer',
-        'Submit → payment charged & transferred to you',
-        'AI generates transcript & summary (Pro)',
-        'Answer delivered to asker instantly'
-      ]
-    }
-  ];
+    ),
+    details: [
+      'Your unique URL: mindpick.me/yourname',
+      'Add to email signature, LinkedIn bio, Twitter',
+      'Share in communities and DMs',
+      'Works anywhere you have an audience'
+    ]
+  },
+  {
+    id: 4,
+    title: 'Receive Question Notification',
+    summary: 'Get notified when someone asks',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+    details: [
+      'Email + dashboard notification',
+      'Quick Consult: SLA timer starts immediately',
+      'Deep Dive: Review offer within 24h (SLA starts after you accept)',
+      'Payment authorized (asker not charged yet)'
+    ]
+  },
+  {
+    id: 5,
+    title: 'Review & Decide',
+    summary: 'Accept or decline - your choice',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    details: [
+      'Quick Consult: Answer within your SLA or let it expire',
+      'Deep Dive: Accept or decline offer within 24h',
+      'If you decline: payment released, asker not charged',
+      'Deep Dive accepted: SLA countdown starts (your configured response time)'
+    ]
+  },
+  {
+    id: 6,
+    title: 'Answer & Get Paid',
+    summary: 'Record your answer, earn money',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+    ),
+    details: [
+      'Record audio or video answer',
+      'Submit → payment charged & transferred to you',
+      'AI generates transcript & summary (Pro)',
+      'Answer delivered to asker instantly'
+    ]
+  }
+];
 
   // Asker Journey Steps
-  const askerSteps = [
-    {
-      id: 1,
-      title: 'Find an Expert',
-      summary: 'Browse profiles or invite someone specific',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-      ),
-      details: [
-        'Browse expert profiles by expertise',
-        'See their question types: Quick Consult (fixed price) or Deep Dive (you propose)',
-        'Review pricing and response time (SLA) for each type',
-        'Or invite a specific expert not yet on mindPick'
-      ]
-    },
-    {
-      id: 2,
-      title: 'Submit Your Question',
-      summary: 'Choose question type and submit',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-        </svg>
-      ),
-      details: [
-        'Quick Consult: Pay fixed price, expert answers in 24h',
-        'Deep Dive: Propose your price, expert reviews offer in 24h',
-        'Record your question (audio or video)',
-        'Payment authorized (not charged until answer delivered)'
-      ]
-    },
-    {
-      id: 3,
-      title: 'Expert Reviews',
-      summary: 'They decide whether to answer',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-        </svg>
-      ),
-      details: [
-        'Quick Consult: Expert starts answering immediately',
-        'Deep Dive: Expert accepts or declines your offer within 24h',
-        'If declined or offer expires: instant refund, no charge',
-        'If accepted: Expert answers within their SLA, then you\'re charged'
-      ]
-    },
-    {
-      id: 4,
-      title: 'Receive Answer',
-      summary: 'Get their expert response',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      ),
-      details: [
-        'Expert records their answer',
-        'Payment charged only now (not before)',
-        'Answer delivered via email + dashboard',
-        'SLA guarantee: refunded if they miss deadline'
-      ]
-    },
-    {
-      id: 5,
-      title: 'Access & Review',
-      summary: 'Watch, read, and save your answer',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </svg>
-      ),
-      details: [
-        'Watch or listen to full answer',
-        'AI transcript for easy reading (Pro)',
-        'AI summary for quick TL;DR (Pro)',
-        'Searchable in your question history'
-      ]
-    }
-  ];
+  // Asker Journey Steps
+const askerSteps = [
+  {
+    id: 1,
+    title: 'Find an Expert',
+    summary: 'Browse profiles or invite someone specific',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    ),
+    details: [
+      'Browse expert profiles by expertise',
+      'See their question types: Quick Consult (fixed price) or Deep Dive (you propose)',
+      'Review pricing and response time (SLA) for each type',
+      'Or invite a specific expert not yet on mindPick'
+    ]
+  },
+  {
+    id: 2,
+    title: 'Submit Your Question',
+    summary: 'Choose question type and submit',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+      </svg>
+    ),
+    details: [
+      'Quick Consult: Pay fixed price, expert answers within their SLA',
+      'Deep Dive: Propose your price, expert reviews offer in 24h',
+      'Record your question (audio or video)',
+      'Payment authorized (not charged until answer delivered)'
+    ]
+  },
+  {
+    id: 3,
+    title: 'Expert Reviews',
+    summary: 'They decide whether to answer',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+      </svg>
+    ),
+    details: [
+      'Quick Consult: Expert starts answering immediately',
+      'Deep Dive: Expert accepts or declines your offer within 24h',
+      'If declined or offer expires: instant refund, no charge',
+      'If accepted: Expert answers within their SLA, then you\'re charged'
+    ]
+  },
+  {
+    id: 4,
+    title: 'Receive Answer',
+    summary: 'Get their expert response',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+    details: [
+      'Expert records their answer',
+      'Payment charged only now (not before)',
+      'Answer delivered via email + dashboard',
+      'SLA guarantee: refunded if they miss deadline'
+    ]
+  },
+  {
+    id: 5,
+    title: 'Access & Review',
+    summary: 'Watch, read, and save your answer',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      </svg>
+    ),
+    details: [
+      'Watch or listen to full answer',
+      'AI transcript for easy reading (Pro)',
+      'AI summary for quick TL;DR (Pro)',
+      'Searchable in your question history'
+    ]
+  }
+];
 
-  // FAQ Preview Data
-  const faqPreview = [
-    {
-      q: 'What\'s the difference between Quick Consult and Deep Dive?',
-      a: 'Quick Consult (⚡) has a fixed price set by the expert and they answer within 24h. Deep Dive (🎯) lets you propose a price for complex questions. The expert reviews your offer within 24h, and if they accept, they answer within 48-72h. Both types pre-reserve funds and only charge after the answer is delivered.'
-    },
-    {
-      q: 'When am I actually charged?',
-      a: 'For both question types, payment is authorized when you submit, but you\'re only charged after the expert delivers the answer. For Deep Dive, if the expert declines your offer or doesn\'t respond within 24h, you\'re refunded instantly. For Quick Consult, if the expert misses their SLA, you\'re refunded automatically.'
-    },
-    {
-      q: 'How does Deep Dive pricing work?',
-      a: 'You propose a price based on the expert\'s suggested range (e.g., €150-300). The expert reviews your offer within 24h. If accepted, their SLA countdown starts and they answer your question. If declined, you\'re instantly refunded and can resubmit at a different amount or find another expert.'
-    },
-    {
-      q: 'How long should answers be?',
-      a: 'There\'s no strict limit, but most answers are 3-10 minutes. Experts typically provide comprehensive answers that fully address the question. You can see average response lengths on expert profiles.'
-    },
-    {
-      q: 'Is my payment information secure?',
-      a: 'Absolutely. All payments are processed through Stripe, a PCI-compliant payment processor used by millions of businesses. We never store your full payment details—Stripe handles all sensitive data.'
-    }
-  ];
+  /// FAQ Preview Data
+const faqPreview = [
+  {
+    q: 'What\'s the difference between Quick Consult and Deep Dive?',
+    a: 'Quick Consult (⚡) has a fixed price set by the expert and they answer within their committed SLA (response time). Deep Dive (🎯) lets you propose a price for complex questions. The expert reviews your offer within 24h, and if they accept, they answer within their committed SLA. Both types pre-reserve funds and only charge after the answer is delivered.'
+  },
+  {
+    q: 'When am I actually charged?',
+    a: 'For both question types, payment is authorized when you submit, but you\'re only charged after the expert delivers the answer. For Deep Dive, if the expert declines your offer or doesn\'t respond within 24h, you\'re refunded instantly. For Quick Consult, if the expert misses their SLA, you\'re refunded automatically.'
+  },
+  {
+    q: 'How does Deep Dive pricing work?',
+    a: 'You propose a price based on the expert\'s suggested range (e.g., €150-300). The expert reviews your offer within 24h. If accepted, their SLA countdown starts and they answer your question. If declined, you\'re instantly refunded and can resubmit at a different amount or find another expert.'
+  },
+  {
+    q: 'How long should answers be?',
+    a: 'There\'s no strict limit, but most answers are 3-10 minutes. Experts typically provide comprehensive answers that fully address the question. You can see average response lengths on expert profiles.'
+  },
+  {
+    q: 'Is my payment information secure?',
+    a: 'Absolutely. All payments are processed through Stripe, a PCI-compliant payment processor used by millions of businesses. We never store your full payment details—Stripe handles all sensitive data.'
+  }
+];
 
   const toggleStep = (stepId) => {
     setExpandedStep(expandedStep === stepId ? null : stepId);

@@ -34,10 +34,10 @@ function FaqPage() {
           q: "What's the difference between Starter and Pro plans?",
           a: "Starter is free with a 10% platform fee. Pro costs €15/month with a reduced 7% fee, plus you get AI transcripts, remove 'Powered by mindPick' branding, custom branding options, social share kits, and priority support. Pro pays for itself after about 20 questions per month."
         },
-        {
-          q: "What's the difference between Quick Consult and Deep Dive?",
-          a: "Experts can offer two question types. Quick Consult (⚡) is for tactical, focused questions with a fixed price set by the expert (e.g., €75 for 24h response). Deep Dive (🎯) is for comprehensive analysis where you propose a price within the expert's suggested range (e.g., €150-300). The expert reviews Deep Dive offers within 24h and accepts or declines. If accepted, they answer within their longer SLA (typically 48-72h). Both types pre-reserve funds and only charge after answer delivery."
-        }
+{
+  q: "What's the difference between Quick Consult and Deep Dive?",
+  a: "Experts can offer two question types. Quick Consult (⚡) is for tactical, focused questions with a fixed price set by the expert and a set response time (SLA). Deep Dive (🎯) is for comprehensive analysis where you propose a price within the expert's suggested range (e.g., €150-300). The expert reviews Deep Dive offers within 24h and accepts or declines. If accepted, they answer within their committed SLA. Both types pre-reserve funds and only charge after answer delivery."
+}
       ]
     },
     'pricing-payments': {
@@ -102,10 +102,10 @@ function FaqPage() {
           q: "What if I need more than my SLA time to answer?",
           a: "If you need more time, you have two options: 1) Contact the asker directly (if they provided contact info) to let them know, or 2) Set a longer SLA in your settings to give yourself more breathing room. Remember, your SLA is a commitment, so choose a timeframe you can reliably meet."
         },
-        {
-          q: "How does Deep Dive offer review work?",
-          a: "When an asker submits a Deep Dive question, they propose a price based on your suggested range. You have 24 hours to review the full question (including video, attachments, and their price justification) and either accept or decline. If you accept, your SLA countdown starts and you commit to answering within your stated timeframe (typically 48-72h). If you decline, you can provide a message explaining why (e.g., 'This scope requires €220 minimum'), and the asker is instantly refunded. They can then resubmit at a different price or find another expert."
-        }
+{
+  q: "How does Deep Dive offer review work?",
+  a: "When an asker submits a Deep Dive question, they propose a price based on your suggested range. You have 24 hours to review the full question (including video, attachments, and their price justification) and either accept or decline. If you accept, your SLA countdown starts and you commit to answering within your configured response time. If you decline, you can provide a message explaining why (e.g., 'This scope requires €220 minimum'), and the asker is instantly refunded. They can then resubmit at a different price or find another expert."
+}
       ]
     },
     'for-askers': {
@@ -125,8 +125,8 @@ function FaqPage() {
           a: "Yes. All payments are processed by Stripe, a global leader in online payments trusted by millions of businesses. mindPick never sees or stores your credit card information. Your payment data is encrypted and secure."
         },
         {
-          q: "When will I get my answer?",
-          a: "Each expert sets their own SLA (Service Level Agreement), typically 24-48 hours. You'll see this clearly displayed on their profile before you submit your question. Most experts respond faster than their stated SLA. If they don't respond in time, you won't be charged."
+           q: "When will I get my answer?",
+           a: "Each expert sets their own SLA (Service Level Agreement) for each question type. You'll see this clearly displayed on their profile before you submit your question. Most experts respond faster than their stated SLA. If they don't respond in time, you won't be charged."
         },
         {
           q: "What if the expert doesn't answer?",
