@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import TierSelector from '@/components/pricing/TierSelector';
-import Toast from '@/components/common/Toast';
+import { Toast } from '@/components/common/Toast';
 
 // ⭐ INLINE SVG ICONS - No external dependencies
 const HeartIcon = ({ className }) => (
