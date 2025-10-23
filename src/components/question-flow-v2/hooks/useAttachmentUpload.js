@@ -1,19 +1,12 @@
-// ALTERNATIVE VERSION - Sends raw file (binary) like audio uploads
-
-import { useState, useCallback } from 'react';
+// src/hooks/useAttachmentUpload.js
+import { useState } from 'react';
 
 export function useAttachmentUpload() {
   const [uploads, setUploads] = useState([]);
+  // uploads: [{ id, file, uploading, progress, error, result }]
 
-  const uploadAttachment = useCallback(async (file) => {
-    const uploadId = `${Date.now()}-${Math.random()}`;
-
-    console.log('📎 Starting attachment upload:', {
-      uploadId,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-    });
+  const uploadAttachment = async (file) => {
+    const uploadId = `${Date.now()}-${file.name}`;
 
     // Add to uploads list
     setUploads(prev => [...prev, {
@@ -26,106 +19,88 @@ export function useAttachmentUpload() {
     }]);
 
     try {
-      setUploads(prev => prev.map(u =>
-        u.id === uploadId ? { ...u, progress: 20 } : u
-      ));
+      // Convert to base64
+      const base64 = await fileToBase64(file);
 
-      console.log('📤 Uploading file as binary (like audio)...');
+      console.log('Uploading file:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
 
-      // ✅ ALTERNATIVE: Send raw file (like audio upload does)
       const response = await fetch('/api/media/upload-attachment', {
         method: 'POST',
-        headers: {
-          'Content-Type': file.type || 'application/octet-stream',  // Use file's MIME type
-          'X-File-Name': encodeURIComponent(file.name),              // Pass filename in header
-          'X-File-Size': file.size.toString(),                       // Pass size in header
-        },
-        body: file,  // ✅ Send raw file, not JSON or FormData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: {
+            name: file.name,
+            type: file.type || 'application/octet-stream',  // ⭐ ENSURE type is always present
+            data: base64.split(',')[1], // Remove data URL prefix
+          },
+        }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage;
+        let errorMessage = `Upload failed (${response.status})`;
         
         try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorData.message || errorText;
-        } catch {
-          errorMessage = errorText;
+          // Clone response to avoid "body consumed" error
+          const errorData = await response.clone().json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          console.error('Could not parse error response');
+          errorMessage = `Server error (${response.status})`;
         }
         
-        console.error('❌ Backend error response:', errorText);
-        throw new Error(errorMessage || `Upload failed with status ${response.status}`);
+        throw new Error(errorMessage);
       }
 
-      setUploads(prev => prev.map(u =>
-        u.id === uploadId ? { ...u, progress: 90 } : u
-      ));
-
       const result = await response.json();
-      console.log('✅ Attachment uploaded:', result);
+      console.log('File uploaded successfully:', result.data);
 
-      const attachmentResult = {
-        name: file.name,
-        filename: file.name,
-        type: file.type,
-        size: file.size,
-        url: result.url || result.data?.url || result.playbackUrl,
-        data: result.data,
-        ...result,
-      };
-
-      setUploads(prev => prev.map(u =>
-        u.id === uploadId
-          ? { ...u, uploading: false, progress: 100, result: attachmentResult }
-          : u
+      // Update upload state
+      setUploads(prev => prev.map(upload => 
+        upload.id === uploadId
+          ? { ...upload, uploading: false, progress: 100, result: result.data }
+          : upload
       ));
 
-      return attachmentResult;
+      return result.data;
+
     } catch (error) {
-      console.error('❌ Attachment upload failed:', error);
+      console.error('Upload error:', error);
       
-      setUploads(prev => prev.map(u =>
-        u.id === uploadId
-          ? { ...u, uploading: false, error: error.message }
-          : u
+      setUploads(prev => prev.map(upload =>
+        upload.id === uploadId
+          ? { ...upload, uploading: false, error: error.message }
+          : upload
       ));
       
       throw error;
     }
-  }, []);
+  };
 
-  const retryUpload = useCallback(async (uploadId) => {
+  const retryUpload = async (uploadId) => {
     const upload = uploads.find(u => u.id === uploadId);
-    if (!upload) {
-      console.warn('⚠️ Upload not found:', uploadId);
-      return;
-    }
+    if (!upload || !upload.file) return;
 
-    console.log('🔄 Retrying upload:', uploadId);
-
-    setUploads(prev => prev.map(u =>
-      u.id === uploadId
-        ? { ...u, uploading: true, error: null, progress: 0 }
-        : u
-    ));
-
+    // Remove old upload and try again
+    setUploads(prev => prev.filter(u => u.id !== uploadId));
+    
     try {
       await uploadAttachment(upload.file);
     } catch (error) {
-      console.error('❌ Retry failed:', error);
+      console.error('Retry failed:', error);
     }
-  }, [uploads, uploadAttachment]);
+  };
 
-  const removeUpload = useCallback((uploadId) => {
-    console.log('🗑️ Removing upload:', uploadId);
+  const removeUpload = (uploadId) => {
     setUploads(prev => prev.filter(u => u.id !== uploadId));
-  }, []);
+  };
 
-  const reset = useCallback(() => {
-    console.log('🔄 Reset all uploads');
+  const reset = () => {
     setUploads([]);
-  }, []);
+  };
 
   return {
     uploads,
@@ -134,4 +109,14 @@ export function useAttachmentUpload() {
     removeUpload,
     reset,
   };
+}
+
+// Helper function
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
