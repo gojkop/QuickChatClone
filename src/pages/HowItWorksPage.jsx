@@ -837,49 +837,49 @@ function HowItWorksPage() {
         </div>
       </section>
 
-      {/* FINAL CTA SECTION */}
-      <section className="py-12 md:py-16 bg-gradient-to-br from-indigo-600 to-violet-600">
+      {/* FINAL CTA SECTION - MINIMALISTIC DESIGN */}
+      <section className="py-12 md:py-16 bg-gradient-to-b from-white to-gray-50 border-t border-gray-100">
         <div className="container mx-auto px-6 text-center">
           <div className="max-w-3xl mx-auto">
             {selectedPersona === 'expert' ? (
               <>
-                <h2 className="text-2xl md:text-3xl font-black text-white mb-3">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                   Ready to Start Earning?
                 </h2>
-                <p className="text-indigo-100 text-base mb-6">
+                <p className="text-gray-600 text-base mb-8">
                   Create your expert page in 5 minutes and start monetizing your expertise
                 </p>
                 <Link
                   to="/signin"
-                  className="inline-flex items-center gap-2 bg-white text-indigo-600 font-bold py-4 px-8 rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                  className="inline-flex items-center gap-2 bg-gray-900 text-white font-semibold py-3 px-8 rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   <span>Start Earning Today</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </Link>
-                <p className="mt-4 text-indigo-100 text-sm">
+                <p className="mt-4 text-gray-500 text-sm">
                   No credit card required • 5-minute setup • Cancel anytime
                 </p>
               </>
             ) : (
               <>
-                <h2 className="text-2xl md:text-3xl font-black text-white mb-3">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                   Need to Ask a Specific Expert?
                 </h2>
-                <p className="text-indigo-100 text-base mb-6">
+                <p className="text-gray-600 text-base mb-8">
                   Invite them to mindPick and ask your question professionally
                 </p>
                 <Link
                   to="/invite"
-                  className="inline-flex items-center gap-2 bg-white text-indigo-600 font-bold py-4 px-8 rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                  className="inline-flex items-center gap-2 bg-gray-900 text-white font-semibold py-3 px-8 rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   <span>Invite an Expert</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </Link>
-                <p className="mt-4 text-indigo-100 text-sm">
+                <p className="mt-4 text-gray-500 text-sm">
                   Professional outreach • No awkward emails • Zero risk payment
                 </p>
               </>
