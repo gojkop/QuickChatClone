@@ -1,9 +1,10 @@
+// Updated version
 import React from 'react';
 import ProgressDots from './ProgressDots';
 import AccordionSection from './AccordionSection';
 import { useFlowState } from '../hooks/useFlowState';
 import StepCompose from '../steps/StepCompose';
-import StepReview from '../steps/StepReview';  // ← This was missing
+import StepReview from '../steps/StepReview';
 import StepPayment from '../steps/StepPayment';  
 
 import '../../../styles/question-flow-v2.css';
@@ -11,6 +12,16 @@ import '../../../styles/question-flow-v2.css';
 function FlowContainer({ expert, tierType, tierConfig }) {
   const { state, actions } = useFlowState();
   const { currentStep, completedSteps } = state;
+
+  // Dynamic title based on tier type
+  const getStepTitle = () => {
+    if (tierType === 'quick_consult') {
+      return 'Your Quick Consult Question';
+    } else if (tierType === 'deep_dive') {
+      return 'Your Deep Dive Question';
+    }
+    return 'Your Question';
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -23,6 +34,10 @@ function FlowContainer({ expert, tierType, tierConfig }) {
           </span>
         </h1>
         <p className="text-sm text-gray-600">
+          <span className={tierType === 'deep_dive' ? 'text-purple-600 font-semibold' : 'text-blue-600 font-semibold'}>
+            {tierType === 'quick_consult' ? 'Quick Consult' : tierType === 'deep_dive' ? 'Deep Dive' : 'Question'}
+          </span>
+          {' • '}
           Response within <strong>{tierConfig?.sla_hours || expert.sla_hours} hours</strong>
         </p>
       </div>
@@ -36,7 +51,7 @@ function FlowContainer({ expert, tierType, tierConfig }) {
       {/* Step 1: Compose */}
       <AccordionSection
         step={1}
-        title="Your Question"
+        title={getStepTitle()}
         icon="compose"
         state={
           currentStep === 1 ? 'active' :
@@ -46,7 +61,7 @@ function FlowContainer({ expert, tierType, tierConfig }) {
         onEdit={() => actions.goToStep(1)}
         isExpandable={completedSteps.includes(1)}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <StepCompose
             expert={expert}
             tierType={tierType}
@@ -61,7 +76,7 @@ function FlowContainer({ expert, tierType, tierConfig }) {
       {/* Step 2: Review */}
       <AccordionSection
         step={2}
-        title="Review Your Question"
+        title="Review & Contact Info"
         icon="review"
         state={
           currentStep === 2 ? 'active' :
@@ -71,7 +86,7 @@ function FlowContainer({ expert, tierType, tierConfig }) {
         onEdit={() => actions.goToStep(2)}
         isExpandable={completedSteps.includes(2)}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <StepReview
             expert={expert}
             tierType={tierType}
@@ -85,33 +100,33 @@ function FlowContainer({ expert, tierType, tierConfig }) {
         </div>
       </AccordionSection>
 
-{/* Step 3: Payment */}
-<AccordionSection
-  step={3}
-  title="Payment & Submit"
-  icon="payment"
-  state={
-    currentStep === 3 ? 'active' :
-    completedSteps.includes(3) ? 'completed' :
-    'locked'
-  }
-  onEdit={() => actions.goToStep(3)}
-  isExpandable={false}
->
-  <div className="p-6">
-    <StepPayment
-      expert={expert}
-      tierType={tierType}
-      tierConfig={tierConfig}
-      composeData={state.compose}
-      reviewData={state.review}
-      onSubmit={() => {
-        // TODO: Navigate to success page
-        alert('Question submitted successfully! (Mock)');
-      }}
-    />
-  </div>
-</AccordionSection>
+      {/* Step 3: Payment */}
+      <AccordionSection
+        step={3}
+        title="Payment & Submit"
+        icon="payment"
+        state={
+          currentStep === 3 ? 'active' :
+          completedSteps.includes(3) ? 'completed' :
+          'locked'
+        }
+        onEdit={() => actions.goToStep(3)}
+        isExpandable={false}
+      >
+        <div className="p-4 sm:p-6">
+          <StepPayment
+            expert={expert}
+            tierType={tierType}
+            tierConfig={tierConfig}
+            composeData={state.compose}
+            reviewData={state.review}
+            onSubmit={() => {
+              // TODO: Navigate to success page
+              alert('Question submitted successfully! (Mock)');
+            }}
+          />
+        </div>
+      </AccordionSection>
     </div>
   );
 }

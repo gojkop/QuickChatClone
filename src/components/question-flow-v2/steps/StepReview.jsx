@@ -31,7 +31,7 @@ function StepReview({
   const canContinue = reviewData.email && reviewData.email.includes('@');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Question Summary */}
       <QuestionSummaryCard
         composeData={composeData}
@@ -53,7 +53,7 @@ function StepReview({
       />
 
       {/* Continue Button */}
-      <div className="pt-4 border-t">
+      <div className="pt-3 border-t">
 <MobileStickyFooter>
   <button
     onClick={handleContinue}

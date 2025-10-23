@@ -1,6 +1,31 @@
 import React from 'react';
 
-function ExpertMessageInput({ value, onChange }) {
+function ExpertMessageInput({ value, onChange, compact = false }) {
+  if (compact) {
+    return (
+      <div>
+        <label htmlFor="expert-message" className="block text-sm font-semibold text-gray-900 mb-2">
+          Message to Expert
+          <span className="text-gray-500 font-normal ml-2">(Optional)</span>
+        </label>
+        <textarea
+          id="expert-message"
+          name="message"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Why is this question important or urgent?"
+          rows={3}
+          maxLength={500}
+          className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-500 transition text-sm resize-none"
+          autoComplete="off"
+          autoCapitalize="sentences"
+          spellCheck="true"
+        />
+        <div className="text-right text-xs text-gray-500 mt-1">{value.length} / 500</div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <label htmlFor="expert-message" className="block text-sm font-semibold text-gray-900 mb-2">

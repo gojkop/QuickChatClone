@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import TitleInput from './TitleInput';
-import QuickRecordButton from './QuickRecordButton';
+import RecordingOptions from './RecordingOptions';
 import AdvancedOptions from './AdvancedOptions';
 import MindPilotPanel from './MindPilotPanel';
+import RecordingSegmentList from './RecordingSegmentList';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
 import MobileStickyFooter from '../shared/MobileStickyFooter';
@@ -15,6 +16,11 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
   
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
+
+  const MAX_RECORDING_DURATION = 90; // seconds
+  const totalDuration = segmentUpload.segments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
+  const remainingTime = MAX_RECORDING_DURATION - totalDuration;
+  const canRecordMore = remainingTime > 5; // Need at least 5 seconds
 
   const handleTitleChange = (value) => {
     setTitle(value);
@@ -58,41 +64,23 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
       {/* Title Input */}
       <TitleInput value={title} onChange={handleTitleChange} />
 
-      {/* Quick Record Buttons */}
-      <div>
-        <label className="block text-sm font-semibold text-gray-900 mb-3">
-          Record Your Question
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <QuickRecordButton
-            type="video"
-            onComplete={handleRecordingComplete}
-            segmentUpload={segmentUpload}
-          />
-          <QuickRecordButton
-            type="audio"
-            onComplete={handleRecordingComplete}
-            segmentUpload={segmentUpload}
-          />
-        </div>
+      {/* Recording Segments List */}
+      {hasRecordings && (
+        <RecordingSegmentList
+          segments={segmentUpload.segments}
+          onRemoveSegment={segmentUpload.removeSegment}
+          onReorderSegments={segmentUpload.reorderSegments}
+          maxDuration={MAX_RECORDING_DURATION}
+        />
+      )}
 
-        {/* Existing Recordings Display */}
-        {hasRecordings && (
-          <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-semibold text-indigo-900">
-                {segmentUpload.segments.length} recording{segmentUpload.segments.length > 1 ? 's' : ''} added
-              </span>
-            </div>
-            {segmentUpload.hasUploading && (
-              <p className="text-xs text-indigo-700">Uploading in background...</p>
-            )}
-          </div>
-        )}
-      </div>
+      {/* Unified Recording Options (same as Deep Dive) */}
+      <RecordingOptions
+        segmentUpload={segmentUpload}
+        attachmentUpload={attachmentUpload}
+        canRecordMore={canRecordMore}
+        remainingTime={remainingTime}
+      />
 
       {/* Advanced Options (Collapsed) */}
       <AdvancedOptions
@@ -115,7 +103,7 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
         }}
         onApplySuggestions={(suggestions) => {
           if (suggestions.additionalContext) {
-            const newText = (text + suggestions.additionalContext).trim();
+            const newText = (text + '\n\n' + suggestions.additionalContext).trim();
             setText(newText);
             onUpdate({ text: newText });
           }
@@ -123,22 +111,22 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
       />
 
       {/* Continue Button */}
-      <div className="pt-4 border-t">
-<MobileStickyFooter>
-  <button
-    onClick={handleContinue}
-    disabled={!canContinue}
-    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-  >
-    {!title.trim()
-      ? 'Enter a title to continue'
-      : title.length < 5
-      ? 'Title too short (min 5 characters)'
-      : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
-      ? 'Uploading...'
-      : 'Continue to Review →'}
-  </button>
-</MobileStickyFooter>
+      <div className="pt-4 border-t border-gray-200">
+        <MobileStickyFooter>
+          <button
+            onClick={handleContinue}
+            disabled={!canContinue}
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+          >
+            {!title.trim()
+              ? 'Enter a title to continue'
+              : title.length < 5
+              ? 'Title too short (min 5 characters)'
+              : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
+              ? 'Uploading...'
+              : 'Continue to Review →'}
+          </button>
+        </MobileStickyFooter>
       </div>
     </div>
   );

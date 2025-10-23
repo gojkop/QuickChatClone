@@ -4,7 +4,7 @@ import RecordingOptions from './RecordingOptions';
 import PriceOfferInput from './PriceOfferInput';
 import ExpertMessageInput from './ExpertMessageInput';
 import MindPilotPanel from './MindPilotPanel';
-import { TargetIcon } from '../shared/SVGIcons';
+import RecordingSegmentList from './RecordingSegmentList';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
 import MobileStickyFooter from '../shared/MobileStickyFooter';
@@ -18,6 +18,11 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
   
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
+
+  const MAX_RECORDING_DURATION = 90;
+  const totalDuration = segmentUpload.segments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
+  const remainingTime = MAX_RECORDING_DURATION - totalDuration;
+  const canRecordMore = remainingTime > 5;
 
   const handleTitleChange = (value) => {
     setTitle(value);
@@ -92,6 +97,7 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
     onContinue();
   };
 
+  const hasRecordings = segmentUpload.segments.length > 0;
   const canContinue = 
     title.trim().length >= 5 && 
     proposedPrice && 
@@ -101,57 +107,67 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
 
   return (
     <div className="space-y-6">
-      {/* Deep Dive Badge */}
-      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <TargetIcon className="w-6 h-6 text-purple-600" />
-          <h3 className="font-bold text-gray-900">Deep Dive Question</h3>
-        </div>
-        <p className="text-sm text-gray-700">
-          Complex questions with detailed context. Expert will review your offer before accepting.
-        </p>
-      </div>
-
       {/* Title Input */}
       <TitleInput value={title} onChange={handleTitleChange} />
+
+      {/* Recording Segments List */}
+      {hasRecordings && (
+        <RecordingSegmentList
+          segments={segmentUpload.segments}
+          onRemoveSegment={segmentUpload.removeSegment}
+          onReorderSegments={segmentUpload.reorderSegments}
+          maxDuration={MAX_RECORDING_DURATION}
+        />
+      )}
 
       {/* Recording Options (All Visible) */}
       <RecordingOptions
         segmentUpload={segmentUpload}
         attachmentUpload={attachmentUpload}
+        canRecordMore={canRecordMore}
+        remainingTime={remainingTime}
       />
 
       {/* Written Details (Always Visible) */}
       <div>
-        <label className="block text-sm font-semibold text-gray-900 mb-2">
+        <label htmlFor="deep-dive-text" className="block text-sm font-semibold text-gray-900 mb-2">
           Written Details
           <span className="text-gray-500 font-normal ml-2">(Recommended for Deep Dive)</span>
         </label>
         <textarea
+          id="deep-dive-text"
           value={text}
           onChange={(e) => handleTextChange(e.target.value)}
           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-300 focus:border-purple-500 focus:outline-none transition text-base resize-none"
-          rows="5"
+          rows="4"
           maxLength="5000"
           placeholder="Provide detailed context, background, specific constraints, or any other information that will help the expert give you the best answer..."
+          autoComplete="off"
+          autoCapitalize="sentences"
+          spellCheck="true"
         />
         <div className="text-right text-xs text-gray-500 mt-1">{text.length} / 5000</div>
       </div>
 
-      {/* Price Offer */}
-      <PriceOfferInput
-        value={proposedPrice}
-        onChange={handlePriceChange}
-        minPrice={tierConfig?.min_price_cents || 0}
-        maxPrice={tierConfig?.max_price_cents || 0}
-        currency={expert.currency || 'USD'}
-      />
+      {/* Compact Pricing Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Price Offer - Compact */}
+        <PriceOfferInput
+          value={proposedPrice}
+          onChange={handlePriceChange}
+          minPrice={tierConfig?.min_price_cents || 0}
+          maxPrice={tierConfig?.max_price_cents || 0}
+          currency={expert.currency || 'USD'}
+          compact={true}
+        />
 
-      {/* Message to Expert */}
-      <ExpertMessageInput
-        value={askerMessage}
-        onChange={handleMessageChange}
-      />
+        {/* Message to Expert - Compact */}
+        <ExpertMessageInput
+          value={askerMessage}
+          onChange={handleMessageChange}
+          compact={true}
+        />
+      </div>
 
       {/* mindPilot Panel */}
       <MindPilotPanel
@@ -165,7 +181,7 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
         }}
         onApplySuggestions={(suggestions) => {
           if (suggestions.additionalContext) {
-            const newText = (text + suggestions.additionalContext).trim();
+            const newText = (text + '\n\n' + suggestions.additionalContext).trim();
             setText(newText);
             onUpdate({ text: newText });
           }
