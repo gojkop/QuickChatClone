@@ -205,33 +205,8 @@ function AskQuestionPage() {
       console.log('✅ Full backend response:', result);
       console.log('📦 Result.data structure:', result.data);
 
-      // Auto-decline Deep Dive offers below threshold
-      if (tierType === 'deep_dive' && tierConfig?.auto_decline_below_cents) {
-        const proposedPriceCents = Math.round(parseFloat(proposedPrice) * 100);
-        const autoDeclineThreshold = tierConfig.auto_decline_below_cents;
-
-        if (proposedPriceCents < autoDeclineThreshold) {
-          const questionId = result.data?.questionId || result.data?.id;
-          console.log(`🚫 Auto-declining offer: $${proposedPrice} < $${autoDeclineThreshold / 100}`);
-
-          try {
-            // Automatically decline the offer
-            await fetch(`/api/offers/${questionId}/decline`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                decline_reason: `Offer below minimum threshold ($${autoDeclineThreshold / 100})`
-              }),
-            });
-            console.log('✅ Offer auto-declined');
-          } catch (declineError) {
-            console.error('❌ Auto-decline failed:', declineError);
-            // Continue anyway - question was created
-          }
-        }
-      }
+      // Note: Auto-decline logic is handled in Xano during question creation
+      // Offers below auto_decline_below_cents threshold are created with pricing_status = 'offer_declined'
 
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl;
