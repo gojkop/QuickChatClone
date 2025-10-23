@@ -74,7 +74,7 @@ function AccordionSection({
 
         {/* Title */}
         <div className="flex-1">
-          <h2 className="text-lg font-bold text-gray-900">
+          <h2 className="text-base font-bold text-gray-900 tracking-tight" style={{ fontFeatureSettings: '"kern" 1' }}>
             Step {step}: {title}
           </h2>
         </div>

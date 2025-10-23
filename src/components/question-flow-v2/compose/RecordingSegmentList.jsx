@@ -1,238 +1,206 @@
-import React, { useState } from 'react';
-import { VideoIcon, MicIcon, MonitorIcon, TrashIcon, CheckCircleIcon } from '../shared/SVGIcons';
+import React, { useState, useRef } from 'react';
+import { TrashIcon } from '../shared/SVGIcons';
 
-function RecordingSegmentList({ segments, onRemoveSegment, onReorderSegments, maxDuration = 90 }) {
-  const [playingSegmentId, setPlayingSegmentId] = useState(null);
-  const [draggedIndex, setDraggedIndex] = useState(null);
-
-  const totalDuration = segments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
-  const remainingTime = maxDuration - totalDuration;
-  const progressPercent = (totalDuration / maxDuration) * 100;
+function RecordingSegmentList({ segments, onRemove, onRetry }) {
+  const [playingId, setPlayingId] = useState(null);
+  const audioRef = useRef(null);
+  const videoRef = useRef(null);
 
   const formatTime = (seconds) => {
+    if (!seconds || seconds < 0) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getSegmentIcon = (mode) => {
-    switch (mode) {
-      case 'video': return <VideoIcon className="w-5 h-5 text-blue-600" />;
-      case 'audio': return <MicIcon className="w-5 h-5 text-orange-600" />;
-      case 'screen': return <MonitorIcon className="w-5 h-5 text-purple-600" />;
-      default: return null;
+  const totalDuration = segments
+    .filter(s => s.result)
+    .reduce((sum, s) => sum + (s.result.duration || 0), 0);
+
+  const handlePlay = async (segment) => {
+    if (!segment.result) return;
+
+    if (playingId === segment.id) {
+      // Pause
+      if (audioRef.current) audioRef.current.pause();
+      if (videoRef.current) videoRef.current.pause();
+      setPlayingId(null);
+    } else {
+      // Play
+      setPlayingId(segment.id);
+      
+      // Stop any currently playing media
+      if (audioRef.current) audioRef.current.pause();
+      if (videoRef.current) videoRef.current.pause();
     }
   };
 
-  const getSegmentLabel = (mode) => {
+  const getModeIcon = (mode) => {
     switch (mode) {
-      case 'video': return 'Video';
-      case 'audio': return 'Audio';
-      case 'screen': return 'Screen Recording';
-      default: return 'Recording';
+      case 'video':
+        return (
+          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        );
+      case 'audio':
+        return (
+          <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+        );
+      case 'screen':
+        return (
+          <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        );
+      default:
+        return null;
     }
   };
-
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e, dropIndex) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === dropIndex) return;
-
-    const newSegments = [...segments];
-    const [draggedSegment] = newSegments.splice(draggedIndex, 1);
-    newSegments.splice(dropIndex, 0, draggedSegment);
-
-    onReorderSegments(newSegments);
-    setDraggedIndex(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-  };
-
-  const getStatusColor = (segment) => {
-    if (segment.error) return 'border-red-300 bg-red-50';
-    if (segment.uploading) return 'border-indigo-300 bg-indigo-50';
-    if (segment.result) return 'border-green-300 bg-green-50';
-    return 'border-gray-300 bg-gray-50';
-  };
-
-  const getStatusText = (segment) => {
-    if (segment.error) return 'Upload failed';
-    if (segment.uploading) return `Uploading... ${segment.progress || 0}%`;
-    if (segment.result) return 'Ready';
-    return 'Pending';
-  };
-
-  if (segments.length === 0) return null;
 
   return (
-    <div className="space-y-4">
-      {/* Duration Progress Bar */}
-      <div className="bg-white border-2 border-indigo-200 rounded-xl p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-bold text-gray-900">Recording Progress</h4>
-          <span className="text-sm font-bold text-indigo-600">
-            {formatTime(totalDuration)} / {formatTime(maxDuration)}
+    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-sm font-semibold text-indigo-900">
+            {segments.length} recording{segments.length > 1 ? 's' : ''} added
           </span>
         </div>
-        
-        {/* Progress Bar */}
-        <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className={`absolute inset-y-0 left-0 rounded-full transition-all duration-300 ${
-              progressPercent >= 100 ? 'bg-red-500' : 'bg-gradient-to-r from-indigo-500 to-violet-500'
-            }`}
-            style={{ width: `${Math.min(progressPercent, 100)}%` }}
-          />
-        </div>
-
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xs text-gray-600">
-            {segments.length} segment{segments.length > 1 ? 's' : ''}
-          </span>
-          <span className={`text-xs font-semibold ${remainingTime <= 0 ? 'text-red-600' : 'text-gray-600'}`}>
-            {remainingTime > 0 ? `${formatTime(remainingTime)} remaining` : 'Limit reached'}
-          </span>
-        </div>
+        <span className="text-xs text-indigo-700 font-semibold">
+          Total: {formatTime(totalDuration)} / 1:30
+        </span>
       </div>
 
-      {/* Segments List */}
+      {/* Segment List */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-gray-900">Your Recordings</h4>
-          <span className="text-xs text-gray-500">Drag to reorder</span>
-        </div>
-
-        {segments.map((segment, index) => (
-          <div
+        {segments.map((segment) => (
+          <div 
             key={segment.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
-            className={`border-2 rounded-lg p-3 transition-all cursor-move ${getStatusColor(segment)} ${
-              draggedIndex === index ? 'opacity-50 scale-95' : 'hover:shadow-md'
-            }`}
+            className="flex items-center gap-3 bg-white rounded-lg p-3 border border-indigo-200"
           >
-            <div className="flex items-center gap-3">
-              {/* Drag Handle */}
-              <div className="flex flex-col gap-0.5 text-gray-400 cursor-grab active:cursor-grabbing">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="9" cy="5" r="1.5" />
-                  <circle cx="9" cy="12" r="1.5" />
-                  <circle cx="9" cy="19" r="1.5" />
-                  <circle cx="15" cy="5" r="1.5" />
-                  <circle cx="15" cy="12" r="1.5" />
-                  <circle cx="15" cy="19" r="1.5" />
-                </svg>
-              </div>
-
-              {/* Icon */}
-              <div className="flex-shrink-0">
-                {getSegmentIcon(segment.mode)}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-gray-900 text-sm">
-                    Segment {index + 1}: {getSegmentLabel(segment.mode)}
-                  </span>
-                  {segment.result && (
-                    <CheckCircleIcon className="w-4 h-4 text-green-600" />
-                  )}
-                </div>
-                <div className="flex items-center gap-3 text-xs text-gray-600">
-                  <span>{formatTime(segment.duration || 0)}</span>
-                  <span>•</span>
-                  <span className="font-medium">{getStatusText(segment)}</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2">
-                {/* Preview Button */}
-                {segment.blobUrl && (
-                  <button
-                    onClick={() => {
-                      if (playingSegmentId === segment.id) {
-                        setPlayingSegmentId(null);
-                      } else {
-                        setPlayingSegmentId(segment.id);
-                      }
-                    }}
-                    className="px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-100 rounded-lg transition"
-                  >
-                    {playingSegmentId === segment.id ? 'Close' : 'Preview'}
-                  </button>
-                )}
-
-                {/* Delete Button */}
-                <button
-                  onClick={() => onRemoveSegment(segment.id)}
-                  className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition"
-                  aria-label="Delete segment"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
-              </div>
+            {/* Icon */}
+            <div className="flex-shrink-0">
+              {getModeIcon(segment.mode)}
             </div>
 
-            {/* Preview Player */}
-            {playingSegmentId === segment.id && segment.blobUrl && (
-              <div className="mt-3 pt-3 border-t border-gray-300">
-                {segment.mode === 'audio' ? (
-                  <audio
-                    src={segment.blobUrl}
-                    controls
-                    className="w-full"
-                    autoPlay
-                  />
-                ) : (
-                  <video
-                    src={segment.blobUrl}
-                    controls
-                    className="w-full rounded-lg bg-black max-h-64"
-                    playsInline
-                    autoPlay
-                  />
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-900 capitalize">
+                  {segment.mode} {segment.segmentIndex + 1}
+                </span>
+                {segment.result && (
+                  <span className="text-xs text-gray-600">
+                    ({formatTime(segment.result.duration)})
+                  </span>
                 )}
               </div>
-            )}
-
-            {/* Upload Progress Bar */}
-            {segment.uploading && (
-              <div className="mt-3 pt-3 border-t border-indigo-200">
-                <div className="relative h-1.5 bg-indigo-200 rounded-full overflow-hidden">
-                  <div
-                    className="absolute inset-y-0 left-0 bg-indigo-600 rounded-full transition-all duration-300"
-                    style={{ width: `${segment.progress || 0}%` }}
-                  />
+              
+              {segment.uploading && (
+                <div className="mt-1">
+                  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-indigo-600 transition-all duration-300"
+                      style={{ width: `${segment.progress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-indigo-600 mt-0.5">Uploading {segment.progress}%...</p>
                 </div>
-              </div>
-            )}
+              )}
+              
+              {segment.error && (
+                <p className="text-xs text-red-600 mt-1">{segment.error}</p>
+              )}
+            </div>
 
-            {/* Error Message */}
-            {segment.error && (
-              <div className="mt-3 pt-3 border-t border-red-200">
-                <p className="text-xs text-red-600 font-medium">{segment.error}</p>
-              </div>
-            )}
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              {/* Play Button (only if uploaded successfully) */}
+              {segment.result && (
+                <button
+                  onClick={() => handlePlay(segment)}
+                  className="p-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg transition"
+                  title="Play/Pause"
+                >
+                  {playingId === segment.id ? (
+                    <PauseIcon className="w-4 h-4 text-indigo-600" />
+                  ) : (
+                    <PlayIcon className="w-4 h-4 text-indigo-600" />
+                  )}
+                </button>
+              )}
+
+              {/* Retry Button (only if error) */}
+              {segment.error && (
+                <button
+                  onClick={() => onRetry(segment.id)}
+                  className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
+                >
+                  Retry
+                </button>
+              )}
+
+              {/* Delete Button */}
+              <button
+                onClick={() => onRemove(segment.id)}
+                className="p-2 bg-red-100 hover:bg-red-200 rounded-lg transition"
+                title="Delete"
+              >
+                <TrashIcon className="w-4 h-4 text-red-600" />
+              </button>
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Hidden audio/video players */}
+      {playingId && segments.find(s => s.id === playingId)?.result && (
+        <div className="mt-3">
+          {segments.find(s => s.id === playingId)?.mode === 'audio' ? (
+            <audio
+              ref={audioRef}
+              src={segments.find(s => s.id === playingId)?.result?.playbackUrl}
+              autoPlay
+              onEnded={() => setPlayingId(null)}
+              controls
+              className="w-full"
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              src={segments.find(s => s.id === playingId)?.result?.playbackUrl}
+              autoPlay
+              onEnded={() => setPlayingId(null)}
+              controls
+              className="w-full rounded-lg"
+            />
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+// Icon components (local to this file)
+function PlayIcon({ className }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}
+
+function PauseIcon({ className }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+    </svg>
   );
 }
 
