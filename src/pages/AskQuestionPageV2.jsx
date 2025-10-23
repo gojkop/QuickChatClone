@@ -301,75 +301,7 @@ function AskQuestionPageV2() {
   return (
       <ErrorBoundary>
     <div className="min-h-screen bg-gray-50 pb-32 sm:pb-8">
-      <FlowContainer>
-        {/* Progress Dots */}
-        <ProgressDots
-          currentStep={state.currentStep}
-          completedSteps={state.completedSteps}
-        />
-
-        {/* Step 1: Compose */}
-        <AccordionSection
-          step={1}
-          title="Compose Your Question"
-          icon="compose"
-          state={state.currentStep === 1 ? 'active' : state.completedSteps.includes(1) ? 'completed' : 'locked'}
-          isExpandable={true}
-          onEdit={handleEditCompose}
-        >
-        <ErrorBoundary>
-          <StepCompose
-            expert={safeExpert}
-            tierType={tierType}
-            tierConfig={tierConfig}
-            composeData={state.compose}
-            onUpdate={actions.updateCompose}
-            onContinue={handleComposeComplete}
-          />
-        </ErrorBoundary>
-        </AccordionSection>
-
-        {/* Step 2: Review */}
-        <AccordionSection
-          step={2}
-          title="Review & Contact Info"
-          icon="review"
-          state={state.currentStep === 2 ? 'active' : state.completedSteps.includes(2) ? 'completed' : 'locked'}
-          isExpandable={true}
-          onEdit={() => actions.goToStep(2)}
-        >
-      <ErrorBoundary>
-          <StepReview
-            expert={safeExpert}
-            tierType={tierType}
-            tierConfig={tierConfig}
-            composeData={state.compose}
-            reviewData={state.review}
-            onUpdate={actions.updateReview}
-            onContinue={handleReviewComplete}
-            onEditCompose={handleEditCompose}
-          />
-      </ErrorBoundary>
-        </AccordionSection>
-
-        {/* Step 3: Payment */}
-        <AccordionSection
-          step={3}
-          title="Payment & Submit"
-          icon="payment"
-          state={state.currentStep === 3 ? 'active' : 'locked'}
-          isExpandable={false}
-        >
-         <ErrorBoundary>
-          <StepPayment
-            expert={safeExpert}
-            tierType={tierType}
-            tierConfig={tierConfig}
-            composeData={state.compose}
-            reviewData={state.review}
-          />
-       </ErrorBoundary>
-        </AccordionSection>
+    <FlowContainer expert={safeExpert} tierType={tierType} tierConfig={tierConfig}>
       </FlowContainer>
 
       {/* Persistent Mobile Footer */}
