@@ -14,6 +14,26 @@ function AskQuestionPageV2() {
   const tierInfo = location.state || {};
   const { tierType, tierConfig } = tierInfo;
 
+// TESTING: Allow tier override via URL parameter
+const params = new URLSearchParams(location.search);
+const urlTierType = params.get('tier');
+if (urlTierType) {
+  tierType = urlTierType;
+  // Mock tier config for testing
+  if (tierType === 'deep_dive') {
+    tierConfig = {
+      sla_hours: 48,
+      min_price_cents: 5000, // $50
+      max_price_cents: 50000, // $500
+    };
+  } else if (tierType === 'quick_consult') {
+    tierConfig = {
+      sla_hours: 24,
+      price_cents: 10000, // $100
+    };
+  }
+}
+
   // Fetch expert profile
   React.useEffect(() => {
     const fetchExpertProfile = async () => {
