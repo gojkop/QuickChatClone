@@ -31,13 +31,23 @@ function RecordingModal({ mode, onComplete, onClose }) {
     }
   }, [state]);
 
-  // Set review video source when blob is ready
+  // Set review video/audio source when blob is ready
   useEffect(() => {
     if (state === 'review' && recordedBlob && reviewVideoRef.current && (mode === 'video' || mode === 'screen')) {
       const blobUrl = URL.createObjectURL(recordedBlob);
       setReviewBlobUrl(blobUrl);
       reviewVideoRef.current.src = blobUrl;
       reviewVideoRef.current.load();
+      
+      return () => {
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+      };
+    }
+    
+    // HANDLE AUDIO MODE
+    if (state === 'review' && recordedBlob && mode === 'audio') {
+      const blobUrl = URL.createObjectURL(recordedBlob);
+      setReviewBlobUrl(blobUrl);
       
       return () => {
         if (blobUrl) URL.revokeObjectURL(blobUrl);

@@ -51,7 +51,7 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
       {/* Title Input */}
       <TitleInput value={title} onChange={handleTitleChange} />
 
-      {/* Recording Options - WITHOUT Screen Recording */}
+      {/* Recording Options - WITHOUT Screen Recording and WITHOUT Attach Files */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-3">
           Record Your Question
@@ -60,6 +60,7 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
           segmentUpload={segmentUpload}
           attachmentUpload={attachmentUpload}
           showScreenRecording={false}
+          showAttachFiles={false}
           showRecordingList={false}
         />
       </div>

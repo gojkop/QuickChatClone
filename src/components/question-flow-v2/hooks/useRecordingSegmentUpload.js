@@ -8,7 +8,6 @@ export function useRecordingSegmentUpload() {
 
   const uploadSegment = useCallback(async (blob, mode, segmentIndex, duration) => {
     const segmentId = `${Date.now()}-${segmentIndex}`;
-    const blobUrl = URL.createObjectURL(blob); // Store for playback
 
     console.log('🚀 Starting upload:', {
       segmentId,
@@ -24,11 +23,14 @@ export function useRecordingSegmentUpload() {
       throw new Error('Invalid blob - size is 0 bytes');
     }
 
-    // Add to segments list with blob URL for immediate playback
+    // Create blob URL for immediate playback
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Add to segments list
     setSegments(prev => [...prev, {
       id: segmentId,
       blob,
-      blobUrl, // For local playback
+      blobUrl,
       mode,
       segmentIndex,
       duration,
@@ -68,7 +70,7 @@ export function useRecordingSegmentUpload() {
         const result = {
           uid: audioResult.data.uid,
           playbackUrl: audioResult.data.playbackUrl,
-          blobUrl, // Keep blob URL for playback
+          blobUrl,
           duration,
           mode: 'audio',
           size: blob.size,
@@ -85,7 +87,7 @@ export function useRecordingSegmentUpload() {
         return result;
       }
 
-      // === VIDEO/SCREEN UPLOAD TO STREAM ===
+      // === VIDEO/SCREEN UPLOAD TO STREAM (EXISTING CODE - UNCHANGED) ===
       // Step 1: Get upload URL from backend
       console.log('📡 Requesting upload URL...');
       
@@ -114,12 +116,14 @@ export function useRecordingSegmentUpload() {
         s.id === segmentId ? { ...s, progress: 10 } : s
       ));
 
+      // ✅ CRITICAL: Cloudflare expects FormData with 'file' field
       const formData = new FormData();
       formData.append('file', blob, `segment-${segmentIndex}.webm`);
 
       const uploadResponse = await fetch(uploadURL, {
         method: 'POST',
         body: formData,
+        // ⚠️ DO NOT set Content-Type - browser sets it with boundary
       });
 
       if (!uploadResponse.ok) {
@@ -138,7 +142,7 @@ export function useRecordingSegmentUpload() {
         playbackUrl: accountId 
           ? `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`
           : null,
-        blobUrl, // Keep blob URL for immediate playback
+        blobUrl,
         duration,
         mode,
         size: blob.size,
@@ -191,17 +195,21 @@ export function useRecordingSegmentUpload() {
 
   const removeSegment = useCallback((segmentId) => {
     console.log('🗑️ Removing segment:', segmentId);
-    const segment = segments.find(s => s.id === segmentId);
-    if (segment?.blobUrl) {
-      URL.revokeObjectURL(segment.blobUrl);
-    }
     setSegments(prev => prev.filter(s => s.id !== segmentId));
-  }, [segments]);
+  }, []);
 
-  // FIXED: Proper reorder function
   const reorderSegments = useCallback((newSegments) => {
     console.log('🔄 Reordering segments');
-    setSegments(newSegments);
+    // Update segment indices to match new order
+    const reorderedSegments = newSegments.map((segment, index) => ({
+      ...segment,
+      segmentIndex: index,
+      result: segment.result ? {
+        ...segment.result,
+        segmentIndex: index
+      } : null
+    }));
+    setSegments(reorderedSegments);
   }, []);
 
   const getSuccessfulSegments = useCallback(() => {
@@ -213,11 +221,8 @@ export function useRecordingSegmentUpload() {
 
   const reset = useCallback(() => {
     console.log('🔄 Reset all segments');
-    segments.forEach(s => {
-      if (s.blobUrl) URL.revokeObjectURL(s.blobUrl);
-    });
     setSegments([]);
-  }, [segments]);
+  }, []);
 
   const hasUploading = segments.some(s => s.uploading);
   const hasErrors = segments.some(s => s.error);
@@ -227,7 +232,7 @@ export function useRecordingSegmentUpload() {
     uploadSegment,
     retrySegment,
     removeSegment,
-    reorderSegments, // ADDED
+    reorderSegments,
     getSuccessfulSegments,
     reset,
     hasUploading,
