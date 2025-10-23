@@ -1,0 +1,243 @@
+/* ===================================
+   QUESTION FLOW V2 - ACCORDION STYLES
+   =================================== */
+
+/* Accordion Section */
+.accordion-section {
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.accordion-section.active {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.accordion-section.completed {
+  border-color: #10b981;
+}
+
+.accordion-section.locked {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Accordion Header */
+.accordion-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fafafa;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  min-height: 72px;
+}
+
+.accordion-header:hover:not(.locked .accordion-header) {
+  background: #f3f4f6;
+}
+
+.accordion-section.locked .accordion-header {
+  cursor: not-allowed;
+}
+
+/* Accordion Icon */
+.accordion-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.accordion-section.active .accordion-icon {
+  transform: scale(1.1);
+}
+
+/* Edit Button */
+.accordion-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4b5563;
+  transition: all 0.2s ease;
+  min-height: 36px;
+}
+
+.accordion-edit-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* Accordion Content */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-content.expanded {
+  max-height: 5000px;
+  overflow: visible;
+}
+
+.accordion-body {
+  background: white;
+}
+
+/* Fade-in animation for content */
+.accordion-content.expanded .accordion-body {
+  animation: fadeInContent 0.3s ease-in 0.1s both;
+}
+
+@keyframes fadeInContent {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===================================
+   PROGRESS DOTS
+   =================================== */
+
+.progress-dots-container {
+  margin-bottom: 32px;
+}
+
+.progress-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-dot.active {
+  background: #6366f1;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.progress-dot.completed {
+  background: #10b981;
+  animation: checkmarkPop 0.3s ease;
+}
+
+@keyframes checkmarkPop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Progress Connector */
+.progress-connector {
+  width: 40px;
+  height: 2px;
+  background: #e5e7eb;
+  transition: background 0.3s ease;
+}
+
+.progress-connector.completed {
+  background: #10b981;
+}
+
+/* ===================================
+   MOBILE OPTIMIZATIONS
+   =================================== */
+
+@media (max-width: 640px) {
+  .accordion-header {
+    padding: 12px 16px;
+    min-height: 64px;
+  }
+
+  .accordion-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .accordion-body {
+    padding: 16px;
+  }
+
+  .accordion-edit-btn span {
+    display: none;
+  }
+
+  .progress-dot {
+    width: 32px;
+    height: 32px;
+  }
+
+  .progress-connector {
+    width: 24px;
+  }
+
+  /* Sticky CTA for mobile */
+  .sticky-cta-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 40;
+  }
+}
+
+/* Touch target sizing for mobile */
+@media (max-width: 640px) {
+  button, 
+  .accordion-header,
+  .accordion-edit-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ===================================
+   UTILITY ANIMATIONS
+   =================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
