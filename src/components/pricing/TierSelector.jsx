@@ -41,11 +41,13 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
         Choose Your Question Type
       </h2>
 
-      <div className={`grid gap-4 ${availableTiers.length === 2 ? 'md:grid-cols-2' : 'md:max-w-md'}`}>
+      {/* ⭐ PHASE 1 CHANGE: Reduced gap from gap-4 to gap-3 sm:gap-4 for tighter mobile spacing */}
+      <div className={`grid gap-3 sm:gap-4 ${availableTiers.length === 2 ? 'md:grid-cols-2' : 'md:max-w-md'}`}>
         {/* Quick Consult Card */}
         {quick_consult?.enabled && (
           <div className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all duration-200 overflow-hidden group cursor-pointer shadow-sm hover:shadow-lg flex flex-col">
-            <div className="p-6 flex-grow">
+            {/* ⭐ PHASE 1 CHANGE: Reduced padding from p-6 to p-4 sm:p-6 for mobile optimization */}
+            <div className="p-4 sm:p-6 flex-grow">
               {/* Header */}
               <div className="flex items-center gap-3 mb-4 min-h-[60px]">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
@@ -74,10 +76,10 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </p>
               </div>
 
-              {/* CTA Button */}
+              {/* ⭐ PHASE 1 CHANGE: Enhanced CTA button with better mobile touch target (min-h-12) */}
               <button
                 onClick={() => onSelectTier('quick_consult', quick_consult)}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2 group-hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2 group-hover:scale-[1.02] active:scale-[0.98] min-h-[48px] touch-manipulation"
               >
                 <span>Ask Question</span>
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +89,8 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
             </div>
 
             {/* Feature List */}
-            <div className="bg-blue-50 px-6 py-4 border-t border-blue-100">
+            {/* ⭐ PHASE 1 CHANGE: Reduced padding from px-6 py-4 to px-4 py-3 sm:px-6 sm:py-4 */}
+            <div className="bg-blue-50 px-4 py-3 sm:px-6 sm:py-4 border-t border-blue-100">
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -115,7 +118,8 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
         {/* Deep Dive Card */}
         {deep_dive?.enabled && (
           <div className="bg-white rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all duration-200 overflow-hidden group cursor-pointer shadow-sm hover:shadow-lg flex flex-col">
-            <div className="p-6 flex-grow">
+            {/* ⭐ PHASE 1 CHANGE: Reduced padding from p-6 to p-4 sm:p-6 for mobile optimization */}
+            <div className="p-4 sm:p-6 flex-grow">
               {/* Header */}
               <div className="flex items-center gap-3 mb-4 min-h-[60px]">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
@@ -144,10 +148,10 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </p>
               </div>
 
-              {/* CTA Button */}
+              {/* ⭐ PHASE 1 CHANGE: Enhanced CTA button with better mobile touch target (min-h-12) */}
               <button
                 onClick={() => onSelectTier('deep_dive', deep_dive)}
-                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold py-3 px-4 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 flex items-center justify-center gap-2 group-hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold py-3 px-4 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 flex items-center justify-center gap-2 group-hover:scale-[1.02] active:scale-[0.98] min-h-[48px] touch-manipulation"
               >
                 <span>Make Offer</span>
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,7 +161,8 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
             </div>
 
             {/* Feature List */}
-            <div className="bg-purple-50 px-6 py-4 border-t border-purple-100">
+            {/* ⭐ PHASE 1 CHANGE: Reduced padding from px-6 py-4 to px-4 py-3 sm:px-6 sm:py-4 */}
+            <div className="bg-purple-50 px-4 py-3 sm:px-6 sm:py-4 border-t border-purple-100">
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-purple-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -183,8 +188,8 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
         )}
       </div>
 
-      {/* Help Text */}
-      <p className="text-sm text-gray-500 mt-4 text-center">
+      {/* ⭐ PHASE 1 CHANGE: Better positioned help text with improved mobile spacing */}
+      <p className="text-sm text-gray-500 mt-3 sm:mt-4 text-center px-2">
         Not sure which to choose? Quick Consult is great for focused questions. Deep Dive is for comprehensive analysis where you set the price.
       </p>
     </div>

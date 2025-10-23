@@ -195,8 +195,8 @@ const CharityHeroBadge = () => {
   );
 };
 
-// Living Avatar Component with breathing animation and particle field
-const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocials, socials }) => {
+// ⭐ PHASE 1 CHANGE: Enhanced Living Avatar Component with larger size and improved animations
+const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const avatarRef = React.useRef(null);
@@ -243,24 +243,24 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocial
   } : {};
 
   return (
-    <div className="flex items-start gap-4 -mt-16 md:-mt-18 relative z-10">
+    <div className="flex items-start gap-4 -mt-20 md:-mt-24 relative z-10">
       <div 
         ref={avatarRef}
         className="relative flex-shrink-0 group"
         onMouseEnter={() => !isMobile && setIsHovering(true)}
         onMouseLeave={() => !isMobile && setIsHovering(false)}
       >
-        {/* Ambient glow - enhanced with breathing */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-violet-400 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500 living-breath"/>
+        {/* ⭐ PHASE 1: Enhanced ambient glow with stronger effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full blur-3xl opacity-30 group-hover:opacity-40 transition-opacity duration-500 living-breath scale-110"/>
         
-        {/* Avatar container with breathing animation and parallax */}
+        {/* ⭐ PHASE 1: Larger avatar container (128px → 160px) */}
         <div 
           className="relative living-breath-avatar"
           style={parallaxStyle}
         >
           {avatarUrl ? (
             <img 
-              className="relative w-24 h-24 md:w-28 md:h-28 rounded-full object-cover ring-4 ring-white shadow-2xl" 
+              className="relative w-32 h-32 md:w-40 md:h-40 rounded-full object-cover ring-4 ring-white shadow-2xl" 
               src={avatarUrl}
               alt={(name || 'Expert') + "'s avatar"}
               onError={function(e) {
@@ -270,25 +270,25 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocial
             />
           ) : null}
           <div 
-            className="relative w-24 h-24 md:w-28 md:h-28 flex-shrink-0" 
+            className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0" 
             style={{ display: avatarUrl ? 'none' : 'block' }}
           >
-            <DefaultAvatar size={112} />
+            <DefaultAvatar size={160} />
           </div>
         </div>
         
-        {/* Activity indicator with pulse */}
-        <div className={`absolute -bottom-1 -right-1 w-9 h-9 rounded-full border-4 border-white shadow-lg flex items-center justify-center living-status ${
+        {/* ⭐ PHASE 1: Larger status indicator (36px → 44px) */}
+        <div className={`absolute -bottom-1 -right-1 w-11 h-11 rounded-full border-4 border-white shadow-lg flex items-center justify-center living-status ${
           isAcceptingQuestions 
             ? 'bg-gradient-to-br from-green-400 to-green-500' 
             : 'bg-gradient-to-br from-yellow-400 to-yellow-500'
         }`}>
           {isAcceptingQuestions ? (
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
             </svg>
           ) : (
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           )}
@@ -299,29 +299,6 @@ const LivingAvatar = ({ avatarUrl, name, handle, isAcceptingQuestions, hasSocial
           <div className="absolute inset-0 rounded-full border-2 border-indigo-400/30 animate-ping" style={{ animationDuration: '2s' }} />
         )}
       </div>
-      
-      {/* Social Links */}
-      {hasSocials && (
-        <div className="pt-12 md:pt-14 flex-1">
-          <div className="flex items-center justify-end gap-2 flex-wrap">
-            {socials.twitter && (
-              <SocialLink platform="twitter" url={socials.twitter} />
-            )}
-            {socials.linkedin && (
-              <SocialLink platform="linkedin" url={socials.linkedin} />
-            )}
-            {socials.instagram && (
-              <SocialLink platform="instagram" url={socials.instagram} />
-            )}
-            {socials.github && (
-              <SocialLink platform="github" url={socials.github} />
-            )}
-            {socials.website && (
-              <SocialLink platform="website" url={socials.website} />
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -768,20 +745,22 @@ useEffect(() => {
       return (
         <React.Fragment>
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden">
-            {/* Compact Header */}
-            <div className="relative h-32 md:h-36 bg-gradient-to-br from-slate-50 via-gray-50 to-indigo-50 overflow-hidden">
-              <div className="absolute inset-0 opacity-20">
-                <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                      <circle cx="2" cy="2" r="1" fill="currentColor" className="text-indigo-400"/>
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#grid)"/>
-                </svg>
-              </div>
+            {/* ⭐ PHASE 1 CHANGE: Enhanced Hero Section with vibrant gradient and floating shapes */}
+            <div className="relative h-40 md:h-48 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 overflow-hidden">
+              {/* Floating shape 1 - top left */}
+              <div className="absolute top-4 left-8 w-20 h-20 bg-white/10 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '0s' }}></div>
               
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50"/>
+              {/* Floating shape 2 - top right */}
+              <div className="absolute top-8 right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-float-shape" style={{ animationDelay: '2s' }}></div>
+              
+              {/* Floating shape 3 - bottom center */}
+              <div className="absolute bottom-6 left-1/2 w-24 h-24 bg-white/10 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '4s' }}></div>
+              
+              {/* Gradient overlay for depth */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+              
+              {/* Bottom edge glow */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
               
               {/* Share & QR Buttons */}
               <div className="absolute top-3 right-3 flex gap-2">
@@ -811,18 +790,17 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="px-5 md:px-6 pb-28 md:pb-6 space-y-5">
-              {/* Living Avatar Section */}
+            {/* ⭐ PHASE 1 CHANGE: Reduced mobile padding from pb-28 to pb-8 */}
+            <div className="px-5 md:px-6 pb-8 md:pb-6 space-y-5">
+              {/* ⭐ PHASE 1: Enhanced Living Avatar (larger size) */}
               <LivingAvatar 
                 avatarUrl={profile.avatar_url}
                 name={profile.name}
                 handle={handle}
                 isAcceptingQuestions={isAcceptingQuestions}
-                hasSocials={hasSocials}
-                socials={profile.socials}
               />
 
-              {/* Name, Title */}
+              {/* Name, Title, Tagline */}
               <div className="space-y-2.5">
                 <div className="flex items-start gap-2.5 flex-wrap">
                   <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
@@ -846,46 +824,76 @@ useEffect(() => {
                 )}
               </div>
 
-              {/* Bio Section with Markdown */}
-              {profile.bio && (
-                <div className="prose prose-gray prose-sm max-w-none">
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeSanitize]}
-                    components={{
-                      p: ({node, ...props}) => <p className="text-gray-700 leading-relaxed text-base mb-3 last:mb-0" {...props} />,
-                      strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
-                      em: ({node, ...props}) => <em className="italic" {...props} />,
-                      a: ({node, ...props}) => (
-                        <a 
-                          className="text-indigo-600 hover:text-indigo-700 font-medium hover:underline" 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          {...props} 
-                        />
-                      ),
-                      ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3 text-gray-700" {...props} />,
-                      ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-1 mb-3 text-gray-700" {...props} />,
-                      li: ({node, ...props}) => <li className="text-gray-700 text-base" {...props} />,
-                    }}
-                  >
-                    {profile.bio}
-                  </ReactMarkdown>
+              {/* ⭐ PHASE 1 CHANGE: Social Links repositioned prominently below name/tagline */}
+              {hasSocials && (
+                <div className="flex items-center gap-2 flex-wrap pt-1">
+                  {profile.socials.twitter && (
+                    <SocialLink platform="twitter" url={profile.socials.twitter} />
+                  )}
+                  {profile.socials.linkedin && (
+                    <SocialLink platform="linkedin" url={profile.socials.linkedin} />
+                  )}
+                  {profile.socials.instagram && (
+                    <SocialLink platform="instagram" url={profile.socials.instagram} />
+                  )}
+                  {profile.socials.github && (
+                    <SocialLink platform="github" url={profile.socials.github} />
+                  )}
+                  {profile.socials.website && (
+                    <SocialLink platform="website" url={profile.socials.website} />
+                  )}
                 </div>
               )}
 
-              {/* Expertise Section */}
+              {/* ⭐ PHASE 1 CHANGE: Enhanced Bio Section with card styling */}
+              {profile.bio && (
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-4 border border-gray-200/50 shadow-sm">
+                  <div className="prose prose-gray prose-sm max-w-none">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeSanitize]}
+                      components={{
+                        p: ({node, ...props}) => <p className="text-gray-700 leading-relaxed text-base mb-3 last:mb-0" {...props} />,
+                        strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                        em: ({node, ...props}) => <em className="italic" {...props} />,
+                        a: ({node, ...props}) => (
+                          <a 
+                            className="text-indigo-600 hover:text-indigo-700 font-medium hover:underline" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            {...props} 
+                          />
+                        ),
+                        ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3 text-gray-700" {...props} />,
+                        ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-1 mb-3 text-gray-700" {...props} />,
+                        li: ({node, ...props}) => <li className="text-gray-700 text-base" {...props} />,
+                      }}
+                    >
+                      {profile.bio}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+
+              {/* ⭐ PHASE 1 CHANGE: Enhanced Expertise Section with colored background and icon */}
               {profile.expertise && profile.expertise.length > 0 && (
-                <div className="space-y-3.5">
-                  <h3 className="text-sm font-bold text-gray-900 tracking-wide">Ask me about</h3>
+                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-xl p-5 border border-indigo-200/50 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900">Areas of Expertise</h3>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {profile.expertise.slice(0, 6).map(function(field, index) {
                       return (
                         <span 
                           key={index} 
-                          className="group inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-all shadow-sm hover:shadow-md cursor-default"
+                          className="group inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-indigo-700 bg-white/80 backdrop-blur-sm border border-indigo-200 rounded-lg hover:border-indigo-400 hover:bg-white hover:text-indigo-800 hover:shadow-md transition-all cursor-default transform hover:scale-105"
                         >
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 group-hover:bg-indigo-500 transition-colors"/>
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 group-hover:bg-indigo-600 transition-colors"/>
                           {field}
                         </span>
                       );
@@ -966,7 +974,7 @@ useEffect(() => {
       <div className="w-full max-w-lg">
         {renderContent()}
         
-        <div className="text-center mt-6 mb-6 pb-32 md:pb-0">
+        <div className="text-center mt-6 mb-6 pb-20 md:pb-0">
           <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors group">
             <span>Powered by</span>
             <span className="font-bold bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent">
