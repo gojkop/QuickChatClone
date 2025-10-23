@@ -114,17 +114,13 @@ function AskQuestionPage() {
     try {
       console.log("Starting question submission...");
 
-      // Validate Deep Dive offer amount
+      // Validate Deep Dive offer amount - only check it's a valid positive number
+      // Min/max prices are suggestions only, not enforced
+      // Auto-decline threshold is the only hard limit (handled after submission)
       if (tierType === 'deep_dive') {
         const priceValue = parseFloat(proposedPrice);
         if (!priceValue || priceValue <= 0) {
           alert('Please enter a valid offer amount');
-          return;
-        }
-        const minPrice = (tierConfig?.min_price_cents || 0) / 100;
-        const maxPrice = (tierConfig?.max_price_cents || 0) / 100;
-        if (priceValue < minPrice || priceValue > maxPrice) {
-          alert(`Offer must be between ${formatPrice(tierConfig?.min_price_cents)} and ${formatPrice(tierConfig?.max_price_cents)}`);
           return;
         }
       }
@@ -209,37 +205,65 @@ function AskQuestionPage() {
       console.log('✅ Full backend response:', result);
       console.log('📦 Result.data structure:', result.data);
 
+      // Auto-decline Deep Dive offers below threshold
+      if (tierType === 'deep_dive' && tierConfig?.auto_decline_below_cents) {
+        const proposedPriceCents = Math.round(parseFloat(proposedPrice) * 100);
+        const autoDeclineThreshold = tierConfig.auto_decline_below_cents;
+
+        if (proposedPriceCents < autoDeclineThreshold) {
+          const questionId = result.data?.questionId || result.data?.id;
+          console.log(`🚫 Auto-declining offer: $${proposedPrice} < $${autoDeclineThreshold / 100}`);
+
+          try {
+            // Automatically decline the offer
+            await fetch(`/api/offers/${questionId}/decline`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                decline_reason: `Offer below minimum threshold ($${autoDeclineThreshold / 100})`
+              }),
+            });
+            console.log('✅ Offer auto-declined');
+          } catch (declineError) {
+            console.error('❌ Auto-decline failed:', declineError);
+            // Continue anyway - question was created
+          }
+        }
+      }
+
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl;
       } else {
         const expertName = expert.name || expert.user?.name || expert.handle;
         const questionId = result.data?.questionId || result.data?.id;
-        
-        const reviewToken = result.data?.reviewToken || 
-                           result.data?.review_token || 
+
+        const reviewToken = result.data?.reviewToken ||
+                           result.data?.review_token ||
                            result.data?.token ||
                            result.reviewToken ||
                            result.review_token ||
                            result.token;
-        
+
         console.log('🔍 Review token found:', reviewToken);
         console.log('🔍 Question ID:', questionId);
-        
+
         const params = new URLSearchParams({
           question_id: questionId,
           expert: expert.handle,
           expertName: expertName,
         });
-        
+
         if (reviewToken) {
           params.append('review_token', reviewToken);
           console.log('✅ Added review_token to URL params');
         } else {
           console.warn('⚠️ No review_token found in response.');
         }
-        
+
         params.append('dev_mode', 'true');
-        
+
         const navigationUrl = `/question-sent?${params.toString()}`;
         console.log('🚀 Navigating to:', navigationUrl);
         
@@ -374,7 +398,7 @@ function AskQuestionPage() {
                 ) : (
                   <>
                     <p className="font-semibold">
-                      Price Range: {formatPrice(tierConfig?.min_price_cents)} - {formatPrice(tierConfig?.max_price_cents)}
+                      Suggested Range: {formatPrice(tierConfig?.min_price_cents)} - {formatPrice(tierConfig?.max_price_cents)}
                     </p>
                     <p className="text-gray-600">
                       Expert will review your offer. Answer delivered within {tierConfig?.sla_hours} hours after acceptance.
@@ -418,8 +442,6 @@ function AskQuestionPage() {
                     value={proposedPrice}
                     onChange={(e) => setProposedPrice(e.target.value)}
                     placeholder={`${(tierConfig?.min_price_cents || 0) / 100} - ${(tierConfig?.max_price_cents || 0) / 100}`}
-                    min={(tierConfig?.min_price_cents || 0) / 100}
-                    max={(tierConfig?.max_price_cents || 0) / 100}
                     step="1"
                     className="w-full pl-8 pr-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg font-semibold"
                     required
