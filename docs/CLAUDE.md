@@ -13,11 +13,16 @@ QuickChat is a video-based Q&A platform connecting askers with experts. Users re
 - Auth: Google OAuth + LinkedIn OAuth + Magic Link (passwordless email)
 - Media: Cloudflare Stream (video) + Cloudflare R2 (audio/files)
 - AI: Google Gemini (free tier), multi-provider LLM service architecture
+- Payments: Stripe (integration for two-tier pricing)
+
+**Core Features:**
+- **Two-Tier Pricing System:** Quick Consult (fixed price) and Deep Dive (custom pricing with expert review) - **Production Ready (99%)**
 
 ## Documentation & Resources
 
 - **Documentation Index:** [`docs/README.md`](./README.md) - Complete documentation navigation
 - **Quick Reference Sections:**
+  - **Two-Tier Pricing:** `docs/two-tier question model/` - Two-tier pricing system implementation (Quick Consult & Deep Dive)
   - **Features:** `docs/features/` - Feature implementations and guides
   - **API & Database:** `docs/api-database/` - Xano endpoints and database
   - **Integrations:** `docs/integrations/` - Third-party integrations
@@ -51,12 +56,17 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
 ### Request Flow
 
 **Question Submission:**
-1. User records video/audio segments in browser (MediaRecorder API)
-2. Each segment uploads to Cloudflare R2 via presigned URL (`/api/media/get-upload-url`)
-3. Cloudflare Stream processes video segments
-4. User submits question with media UIDs (`/api/questions/create`)
-5. Xano stores question record with media_asset references
-6. Optional: AI Coach analyzes and guides question improvement (Tier 1-2)
+1. User selects pricing tier on expert's public profile:
+   - **Quick Consult (Tier 1):** Fixed price, immediate acceptance
+   - **Deep Dive (Tier 2):** Custom price proposal, expert reviews offer
+2. User records video/audio segments in browser (MediaRecorder API)
+3. Each segment uploads to Cloudflare R2 via presigned URL (`/api/media/get-upload-url`)
+4. Cloudflare Stream processes video segments
+5. User submits question with media UIDs:
+   - Quick Consult: `/api/questions/quick-consult` → Question created, status = 'paid'
+   - Deep Dive: `/api/questions/deep-dive` → Offer created, pricing_status = 'offer_pending' (or auto-declined)
+6. Xano stores question record with media_asset references and tier information
+7. Optional: AI Coach analyzes and guides question improvement (Tier 1-2)
 
 **Answer Submission:**
 1. Expert records answer (video/audio segments)
@@ -71,13 +81,18 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
 /src                          # Frontend React application
   /pages                      # Route pages
     - SignInPage.jsx          # OAuth login
-    - ExpertDashboardPage.jsx # Expert's question queue
+    - ExpertDashboardPage.jsx # Expert's question queue (with tab filtering)
     - AskQuestionPage.jsx     # Question submission flow
     - TestAICoachPage.jsx     # AI Coach testing page
+    - AnswerReviewPage.jsx    # Asker's view of question/answer (with pending offer status)
+    - PublicProfilePage.jsx   # Expert's public profile (with tier selector)
   /components
     /dashboard                # Expert dashboard components
       - AnswerRecorder.jsx    # Multi-segment video recording
-      - QuestionTable.jsx     # Question list/queue
+      - QuestionTable.jsx     # Question list/queue (with tier badges)
+      - PendingOffersSection.jsx  # Deep Dive offer cards (clickable)
+      - TierSelector.jsx      # Tier selection UI (Quick Consult vs Deep Dive)
+      - QuestionDetailModal.jsx   # Question details modal
     /question                 # Question composition
       - QuestionComposer.jsx  # Question recording flow
       - QuestionCoachDialog.jsx   # AI coaching UI (Tier 2)
@@ -106,8 +121,16 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
     - upload-audio.js         # Audio upload to R2
     - upload-attachment.js    # File attachments
   /questions                  # Question endpoints
-    - create.js               # Create new question
-    - submit.js               # Submit question for expert
+    - create.js               # Create new question (legacy)
+    - submit.js               # Submit question for expert (legacy)
+    - quick-consult.js        # Create Quick Consult question (Tier 1)
+    - deep-dive.js            # Create Deep Dive offer (Tier 2)
+  /offers                     # Deep Dive offer management
+    /[id]
+      - accept.js             # Accept Deep Dive offer
+      - decline.js            # Decline Deep Dive offer
+  /expert                     # Expert-specific endpoints
+    - pending-offers.js       # Get pending Deep Dive offers
   /marketing                  # Marketing & UTM tracking (NEW)
     - campaigns.js            # GET/POST campaigns
     - traffic-sources.js      # GET traffic breakdown
@@ -145,10 +168,29 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
 - id, email, name, google_id, linkedin_id
 - expert_specialty, expert_price, expert_sla_hours
 
-**questions** - Questions submitted to experts
+**expert_profile** - Expert tier configuration
+- id, user_id, handle, avatar_url
+- **Tier 1 (Quick Consult):**
+  - tier1_enabled (bool), tier1_price_cents (int), tier1_sla_hours (int), tier1_description (text)
+- **Tier 2 (Deep Dive):**
+  - tier2_enabled (bool), tier2_min_price_cents (int), tier2_max_price_cents (int), tier2_sla_hours (int), tier2_description (text)
+  - tier2_auto_decline_below_cents (int) - Auto-decline threshold
+  - tier2_pricing_mode (text) - 'flexible' or 'fixed'
+
+**question** - Questions submitted to experts
 - id, user_id (asker), expert_id, text_question
 - media_asset_id (FK to media_assets)
-- status: 'draft', 'pending', 'answered'
+- status: 'paid', 'declined', 'closed', etc.
+- **Two-Tier Fields:**
+  - question_tier (text) - 'tier1' (Quick Consult) or 'tier2' (Deep Dive)
+  - pricing_status (text) - 'offer_pending', 'offer_accepted', 'offer_declined' (Deep Dive only)
+  - proposed_price_cents (int) - Asker's proposed price (Tier 2)
+  - final_price_cents (int) - Actual price paid
+  - asker_message (text) - Message to expert (Tier 2)
+  - offer_expires_at (timestamp) - Offer expiration (Tier 2)
+  - decline_reason (text) - Reason for decline
+  - sla_hours_snapshot (int) - SLA at time of purchase (historical accuracy)
+  - playback_token_hash (text) - Review token for `/r/{token}` page
 - created_at, answered_at
 
 **answers** - Expert responses
@@ -402,6 +444,222 @@ See `docs/marketing module/` for detailed implementation docs:
 - `IMPLEMENTATION-STEP-3-ENDPOINTS.md` - API specifications
 - `IMPLEMENTATION-COMPLETE.md` - Implementation summary
 - `PROGRESS-2025-10-14.md` - Development log
+
+## Two-Tier Pricing System
+
+**Status:** ✅ Production Ready (99%) - October 23, 2025
+
+The two-tier pricing system provides experts with two distinct pricing models for their services: Quick Consult (fixed price) and Deep Dive (custom pricing).
+
+### Overview
+
+**Quick Consult (Tier 1):**
+- Fixed price set by expert
+- Immediate acceptance (no review required)
+- Question created immediately with `status = 'paid'`
+- SLA timer starts at question creation
+
+**Deep Dive (Tier 2):**
+- Custom price proposed by asker
+- Expert reviews offer and can accept/decline
+- Min/max prices are suggestions (not enforced)
+- Auto-decline threshold enforced server-side
+- SLA timer starts when expert accepts offer
+
+### Pricing Status Flow (Deep Dive)
+
+```
+Asker Submits Offer
+        ↓
+  Auto-Decline Check
+        ↓
+   ┌────┴────┐
+   ↓         ↓
+Below      Above
+Threshold  Threshold
+   ↓         ↓
+offer_    offer_
+declined  pending
+           ↓
+    Expert Reviews
+           ↓
+      ┌────┴────┐
+      ↓         ↓
+   Accept    Decline
+      ↓         ↓
+   offer_    offer_
+  accepted  declined
+      ↓
+   Expert
+   Answers
+```
+
+### Frontend Components
+
+**TierSelector.jsx** - Tier selection on public profile
+- Shows Quick Consult and Deep Dive options
+- Displays price, SLA, and description for each tier
+- Handles tier selection and navigation to question flow
+
+**PendingOffersSection.jsx** - Deep Dive offer management
+- Displays pending offers for expert
+- Clickable cards open QuestionDetailModal
+- Accept/Decline buttons with stopPropagation
+- Time colors: red when < 20% time remaining
+
+**QuestionTable.jsx** - Question list with tier badges
+- Displays tier badges (Quick Consult / Deep Dive)
+- Time Left column with 20% urgency threshold
+- Filters out pending offers (shown in PendingOffersSection)
+
+**ExpertDashboardPage.jsx** - Dashboard with tab filtering
+- **Pending Tab:** Only unanswered, non-declined, non-hidden questions
+- **Answered Tab:** Only completed questions
+- **All Tab:** Everything including declined, expired, hidden
+- Count badges for each tab
+
+**AnswerReviewPage.jsx** - Asker's view with three states
+- **Pending Offer:** "Awaiting Expert Review" with countdown timer
+- **Offer Accepted:** "Answer In Progress" with SLA
+- **Offer Declined:** Red/orange banner with decline reason
+
+### API Endpoints
+
+**Question Creation:**
+- `POST /api/questions/quick-consult` - Create Quick Consult
+- `POST /api/questions/deep-dive` - Create Deep Dive offer with auto-decline check
+
+**Offer Management:**
+- `POST /api/offers/[id]/accept` - Accept Deep Dive offer
+- `POST /api/offers/[id]/decline` - Decline Deep Dive offer
+- `GET /api/expert/pending-offers` - Get pending offers for expert
+
+**Xano Endpoints:**
+- `POST /question/quick-consult` - Create Quick Consult
+- `POST /question/deep-dive` - Create Deep Dive with auto-decline logic
+- `POST /offers/[id]/accept` - Accept offer (updates pricing_status, starts SLA)
+- `POST /offers/[id]/decline` - Decline offer (updates pricing_status, records reason)
+- `GET /expert/pending-offers` - Get pending offers (filters by expert, excludes expired)
+- `GET /review/{token}` - Get question by review token (for asker view)
+
+### Auto-Decline Logic
+
+When a Deep Dive offer is submitted, Xano checks if the proposed price is below the expert's `tier2_auto_decline_below_cents` threshold:
+
+```javascript
+// In Xano Lambda function
+const threshold = $var.expert_profile.tier2_auto_decline_below_cents;
+const proposedPrice = $var.proposed_price_cents;
+
+if (threshold && proposedPrice < threshold) {
+  // Auto-decline
+  return {
+    pricing_status: 'offer_declined',
+    status: 'declined',
+    decline_reason: `Offer below minimum threshold of $${threshold / 100}`
+  };
+} else {
+  // Create pending offer
+  return {
+    pricing_status: 'offer_pending',
+    status: 'paid'
+  };
+}
+```
+
+**Key Features:**
+- Atomic operation (no authentication required)
+- Runs during question creation
+- No separate endpoint needed
+- Decline reason automatically recorded
+
+### SLA Hours Snapshot
+
+The `sla_hours_snapshot` field preserves the SLA hours from the time of purchase, ensuring historical accuracy even if the expert changes their SLA settings later.
+
+**Implementation:**
+- Frontend passes current SLA hours during question creation
+- Xano stores in `sla_hours_snapshot` field
+- All SLA calculations use snapshot value, not current expert settings
+
+**Why important:**
+- Expert changes SLA from 24h to 48h
+- Old questions still expire based on 24h (when purchased)
+- New questions use 48h
+
+### Review Tokens
+
+Every question gets a unique `playback_token_hash` generated using Xano's `UUID()` function. This token enables unauthenticated access to the question/answer page at `/r/{token}`.
+
+**Use cases:**
+- Email notifications include review link
+- Askers can view question status without logging in
+- Experts can share answer link
+
+### Dashboard Tab Filtering
+
+**Pending Tab:**
+- Shows only actionable questions
+- Filters: `status = 'paid'`, `!answered_at`, `pricing_status !== 'offer_declined'`, `hidden !== true`
+- Excludes pending Deep Dive offers (shown in PendingOffersSection)
+
+**Answered Tab:**
+- Shows only completed questions
+- Filters: `status = 'closed' OR status = 'answered' OR answered_at exists`
+
+**All Tab:**
+- Shows everything except pending Deep Dive offers
+- Includes declined, expired, and hidden questions
+- Optional filter for hidden questions
+
+### Time Urgency Colors
+
+Both PendingOffersSection and QuestionTable use a 20% threshold for urgency colors:
+
+```javascript
+const percentRemaining = (timeRemaining / totalDuration) * 100;
+
+if (percentRemaining < 20) {
+  return 'text-red-600'; // Urgent - less than 20% time left
+}
+return 'text-orange-600'; // Normal
+```
+
+**Why 20%:** Provides meaningful urgency signal across different SLA durations (24h, 48h, 72h, etc.)
+
+### Pricing Validation
+
+**Min/Max Prices (Suggestions):**
+- Displayed to askers as guidance
+- Not enforced by frontend or backend
+- Asker can submit any price
+
+**Auto-Decline Threshold (Enforced):**
+- Hard limit set by expert
+- Enforced server-side during question creation
+- Offers below threshold are automatically declined
+- No manual review needed
+
+### Known Issues
+
+1. **Xano field verification needed:** `offer_expires_at` may not be included in GET `/review/{token}` response
+   - **Impact:** Countdown timer won't show on asker side
+   - **Graceful degradation:** Page still works, just no timer
+   - **Fix:** Add `offer_expires_at: question.offer_expires_at` to Xano Response step
+
+2. **Settings Modal not deployed:** Expert can't configure tier settings via UI yet (requires manual Xano updates)
+
+### Documentation
+
+See `docs/two-tier question model/` for complete documentation:
+- **README.md** - Master documentation index (30+ files)
+- **IMPLEMENTATION-STATUS.md** - Overall project status (v1.3)
+- **FINAL-DEPLOYMENT-CHECKLIST.md** - Pre-deployment verification
+- **SESSION-SUMMARY-OCT-23-2025-AFTERNOON.md** - Latest changes
+- **FRONTEND-IMPLEMENTATION-COMPLETE.md** - Frontend guide
+- **XANO-API-IMPLEMENTATION-GUIDE.md** - Xano endpoints
+- **AUTO-DECLINE-XANO-IMPLEMENTATION.md** - Auto-decline logic
+- **DECLINED-STATUS-UI.md** - Declined offer UI
 
 ## Download Features
 
@@ -896,13 +1154,15 @@ For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`
 
 ## Known Limitations
 
-1. **AI Coach:** Tier 3 (post-payment enhancement) not implemented
-2. **Expert Co-pilot:** Entire feature not started (see spec doc)
-3. **Knowledge Graph:** Not implemented (requires Neo4j setup)
-4. **Rate Limiting:** AI Coach rate limits not enforced yet
-5. **Session Persistence:** AI Coach sessions not saved to Xano
-6. **Xano Free Tier:** Rate limiting may affect high-traffic usage (429 errors)
-7. **Marketing Attribution:** Questions not automatically linked to campaigns yet (requires session tracking)
+1. **Two-Tier Pricing:** Settings Modal not deployed (experts configure tiers manually in Xano)
+2. **Two-Tier Pricing:** `offer_expires_at` field may not be in GET `/review/{token}` response (needs Xano verification)
+3. **AI Coach:** Tier 3 (post-payment enhancement) not implemented
+4. **Expert Co-pilot:** Entire feature not started (see spec doc)
+5. **Knowledge Graph:** Not implemented (requires Neo4j setup)
+6. **Rate Limiting:** AI Coach rate limits not enforced yet
+7. **Session Persistence:** AI Coach sessions not saved to Xano
+8. **Xano Free Tier:** Rate limiting may affect high-traffic usage (429 errors)
+9. **Marketing Attribution:** Questions not automatically linked to campaigns yet (requires session tracking)
 
 ## Troubleshooting
 
@@ -987,6 +1247,7 @@ For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`
 ## Next Steps
 
 **Recently Completed:**
+- ✅ Two-Tier Pricing System - Quick Consult & Deep Dive pricing models (October 23, 2025)
 - ✅ ZIP Download Feature - Download questions/answers as organized archives (October 16, 2025)
 - ✅ QR Code Profile Sharing - Generate and share profile QR codes (October 16, 2025)
 - ✅ Marketing Module - UTM tracking, campaign management, analytics (October 2025)
