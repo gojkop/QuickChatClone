@@ -2,7 +2,9 @@ import React from 'react';
 import ProgressDots from './ProgressDots';
 import AccordionSection from './AccordionSection';
 import { useFlowState } from '../hooks/useFlowState';
-import '@/styles/question-flow-v2.css';
+import StepCompose from '../steps/StepCompose';
+import StepReview from '../steps/StepReview';  // ← This was missing
+import '../../../styles/question-flow-v2.css';
 
 function FlowContainer({ expert, tierType, tierConfig }) {
   const { state, actions } = useFlowState();
@@ -43,13 +45,14 @@ function FlowContainer({ expert, tierType, tierConfig }) {
         isExpandable={completedSteps.includes(1)}
       >
         <div className="p-6">
-          <p className="text-gray-600 mb-4">Step 1 content will go here (Phase 2)</p>
-          <button
-            onClick={() => actions.completeStep(1)}
-            className="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition"
-          >
-            Continue to Review →
-          </button>
+          <StepCompose
+            expert={expert}
+            tierType={tierType}
+            tierConfig={tierConfig}
+            composeData={state.compose}
+            onUpdate={actions.updateCompose}
+            onContinue={() => actions.completeStep(1)}
+          />
         </div>
       </AccordionSection>
 
@@ -67,13 +70,16 @@ function FlowContainer({ expert, tierType, tierConfig }) {
         isExpandable={completedSteps.includes(2)}
       >
         <div className="p-6">
-          <p className="text-gray-600 mb-4">Step 2 content will go here (Phase 4)</p>
-          <button
-            onClick={() => actions.completeStep(2)}
-            className="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition"
-          >
-            Continue to Payment →
-          </button>
+          <StepReview
+            expert={expert}
+            tierType={tierType}
+            tierConfig={tierConfig}
+            composeData={state.compose}
+            reviewData={state.review}
+            onUpdate={actions.updateReview}
+            onContinue={() => actions.completeStep(2)}
+            onEditCompose={() => actions.goToStep(1)}
+          />
         </div>
       </AccordionSection>
 
