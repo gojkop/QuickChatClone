@@ -25,20 +25,25 @@ export function useRecordingSegmentUpload() {
 
     // Create blob URL for immediate playback
     const blobUrl = URL.createObjectURL(blob);
+    console.log('✅ Created blobUrl:', blobUrl);
 
-    // Add to segments list
-    setSegments(prev => [...prev, {
-      id: segmentId,
-      blob,
-      blobUrl,
-      mode,
-      segmentIndex,
-      duration,
-      uploading: true,
-      progress: 0,
-      error: null,
-      result: null,
-    }]);
+    // Add to segments list WITH blobUrl
+    setSegments(prev => {
+      const newSegment = {
+        id: segmentId,
+        blob,
+        blobUrl,  // ← CRITICAL: Add blobUrl here
+        mode,
+        segmentIndex,
+        duration,
+        uploading: true,
+        progress: 0,
+        error: null,
+        result: null,
+      };
+      console.log('✅ Adding segment with blobUrl:', newSegment);
+      return [...prev, newSegment];
+    });
 
     try {
       // ⭐ ROUTE BASED ON MODE
@@ -70,7 +75,7 @@ export function useRecordingSegmentUpload() {
         const result = {
           uid: audioResult.data.uid,
           playbackUrl: audioResult.data.playbackUrl,
-          blobUrl,
+          blobUrl,  // ← Keep blobUrl in result
           duration,
           mode: 'audio',
           size: blob.size,
@@ -79,7 +84,7 @@ export function useRecordingSegmentUpload() {
 
         setSegments(prev => prev.map(s =>
           s.id === segmentId
-            ? { ...s, uploading: false, progress: 100, result }
+            ? { ...s, uploading: false, progress: 100, result, blobUrl }  // ← Keep blobUrl in segment
             : s
         ));
 
@@ -87,7 +92,7 @@ export function useRecordingSegmentUpload() {
         return result;
       }
 
-      // === VIDEO/SCREEN UPLOAD TO STREAM (EXISTING CODE - UNCHANGED) ===
+      // === VIDEO/SCREEN UPLOAD TO STREAM ===
       // Step 1: Get upload URL from backend
       console.log('📡 Requesting upload URL...');
       
@@ -142,7 +147,7 @@ export function useRecordingSegmentUpload() {
         playbackUrl: accountId 
           ? `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`
           : null,
-        blobUrl,
+        blobUrl,  // ← Keep blobUrl in result
         duration,
         mode,
         size: blob.size,
@@ -151,7 +156,7 @@ export function useRecordingSegmentUpload() {
 
       setSegments(prev => prev.map(s =>
         s.id === segmentId
-          ? { ...s, uploading: false, progress: 100, result }
+          ? { ...s, uploading: false, progress: 100, result, blobUrl }  // ← Keep blobUrl in segment
           : s
       ));
 
@@ -163,7 +168,7 @@ export function useRecordingSegmentUpload() {
       
       setSegments(prev => prev.map(s =>
         s.id === segmentId
-          ? { ...s, uploading: false, error: error.message }
+          ? { ...s, uploading: false, error: error.message, blobUrl }  // ← Keep blobUrl even on error
           : s
       ));
       
@@ -195,20 +200,33 @@ export function useRecordingSegmentUpload() {
 
   const removeSegment = useCallback((segmentId) => {
     console.log('🗑️ Removing segment:', segmentId);
+    
+    // Clean up blob URL before removing
+    const segment = segments.find(s => s.id === segmentId);
+    if (segment?.blobUrl) {
+      URL.revokeObjectURL(segment.blobUrl);
+    }
+    
     setSegments(prev => prev.filter(s => s.id !== segmentId));
-  }, []);
+  }, [segments]);
 
   const reorderSegments = useCallback((newSegments) => {
-    console.log('🔄 Reordering segments');
+    console.log('🔄 Reordering segments:', newSegments.length);
+    
     // Update segment indices to match new order
-    const reorderedSegments = newSegments.map((segment, index) => ({
-      ...segment,
-      segmentIndex: index,
-      result: segment.result ? {
-        ...segment.result,
-        segmentIndex: index
-      } : null
-    }));
+    const reorderedSegments = newSegments.map((segment, index) => {
+      console.log(`  - Segment ${segment.id}: index ${segment.segmentIndex} → ${index}`);
+      return {
+        ...segment,
+        segmentIndex: index,
+        result: segment.result ? {
+          ...segment.result,
+          segmentIndex: index
+        } : null
+      };
+    });
+    
+    console.log('✅ Reordered segments:', reorderedSegments);
     setSegments(reorderedSegments);
   }, []);
 
@@ -221,11 +239,33 @@ export function useRecordingSegmentUpload() {
 
   const reset = useCallback(() => {
     console.log('🔄 Reset all segments');
+    
+    // Clean up all blob URLs
+    segments.forEach(segment => {
+      if (segment.blobUrl) {
+        URL.revokeObjectURL(segment.blobUrl);
+      }
+    });
+    
     setSegments([]);
-  }, []);
+  }, [segments]);
 
   const hasUploading = segments.some(s => s.uploading);
   const hasErrors = segments.some(s => s.error);
+
+  // Debug log
+  console.log('📊 Hook state:', {
+    segmentCount: segments.length,
+    segments: segments.map(s => ({
+      id: s.id,
+      mode: s.mode,
+      hasBlobUrl: !!s.blobUrl,
+      uploading: s.uploading,
+      error: s.error,
+    })),
+    hasUploading,
+    hasErrors,
+  });
 
   return {
     segments,
