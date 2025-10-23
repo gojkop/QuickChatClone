@@ -44,11 +44,20 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
     try {
       const cardElement = elements.getElement(CardElement);
 
+      console.log('🔍 [STRIPE FORM] Confirming payment with client secret:', clientSecret.substring(0, 20) + '...');
+
       // Confirm the payment
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: cardElement,
         },
+      });
+
+      console.log('🔍 [STRIPE FORM] Payment confirmation result:', {
+        error: error?.message,
+        paymentIntentId: paymentIntent?.id,
+        status: paymentIntent?.status,
+        captureMethod: paymentIntent?.capture_method
       });
 
       if (error) {
