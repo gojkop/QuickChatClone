@@ -3,7 +3,8 @@ import ProgressDots from './ProgressDots';
 import AccordionSection from './AccordionSection';
 import { useFlowState } from '../hooks/useFlowState';
 import StepCompose from '../steps/StepCompose';
-import '@/styles/question-flow-v2.css';
+import StepReview from '../steps/StepReview';  // ← This was missing
+import '../../../styles/question-flow-v2.css';
 
 function FlowContainer({ expert, tierType, tierConfig }) {
   const { state, actions } = useFlowState();
@@ -31,57 +32,57 @@ function FlowContainer({ expert, tierType, tierConfig }) {
       />
 
       {/* Step 1: Compose */}
-<AccordionSection
-  step={1}
-  title="Your Question"
-  icon="compose"
-  state={
-    currentStep === 1 ? 'active' :
-    completedSteps.includes(1) ? 'completed' :
-    'locked'
-  }
-  onEdit={() => actions.goToStep(1)}
-  isExpandable={completedSteps.includes(1)}
->
-  <div className="p-6">
-    <StepCompose
-      expert={expert}
-      tierType={tierType}
-      tierConfig={tierConfig}
-      composeData={state.compose}
-      onUpdate={actions.updateCompose}
-      onContinue={() => actions.completeStep(1)}
-    />
-  </div>
-</AccordionSection>
+      <AccordionSection
+        step={1}
+        title="Your Question"
+        icon="compose"
+        state={
+          currentStep === 1 ? 'active' :
+          completedSteps.includes(1) ? 'completed' :
+          'locked'
+        }
+        onEdit={() => actions.goToStep(1)}
+        isExpandable={completedSteps.includes(1)}
+      >
+        <div className="p-6">
+          <StepCompose
+            expert={expert}
+            tierType={tierType}
+            tierConfig={tierConfig}
+            composeData={state.compose}
+            onUpdate={actions.updateCompose}
+            onContinue={() => actions.completeStep(1)}
+          />
+        </div>
+      </AccordionSection>
 
       {/* Step 2: Review */}
-     {/* Step 2: Review */}
-<AccordionSection
-  step={2}
-  title="Review Your Question"
-  icon="review"
-  state={
-    currentStep === 2 ? 'active' :
-    completedSteps.includes(2) ? 'completed' :
-    'locked'
-  }
-  onEdit={() => actions.goToStep(2)}
-  isExpandable={completedSteps.includes(2)}
->
-  <div className="p-6">
-    <StepReview
-      expert={expert}
-      tierType={tierType}
-      tierConfig={tierConfig}
-      composeData={state.compose}
-      reviewData={state.review}
-      onUpdate={actions.updateReview}
-      onContinue={() => actions.completeStep(2)}
-      onEditCompose={() => actions.goToStep(1)}
-    />
-  </div>
-</AccordionSection>
+      <AccordionSection
+        step={2}
+        title="Review Your Question"
+        icon="review"
+        state={
+          currentStep === 2 ? 'active' :
+          completedSteps.includes(2) ? 'completed' :
+          'locked'
+        }
+        onEdit={() => actions.goToStep(2)}
+        isExpandable={completedSteps.includes(2)}
+      >
+        <div className="p-6">
+          <StepReview
+            expert={expert}
+            tierType={tierType}
+            tierConfig={tierConfig}
+            composeData={state.compose}
+            reviewData={state.review}
+            onUpdate={actions.updateReview}
+            onContinue={() => actions.completeStep(2)}
+            onEditCompose={() => actions.goToStep(1)}
+          />
+        </div>
+      </AccordionSection>
+
       {/* Step 3: Payment */}
       <AccordionSection
         step={3}
