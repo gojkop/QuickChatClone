@@ -49,6 +49,38 @@ export default function MarketingOverview({
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <div className="bg-amber-50 border-l-4 border-amber-500 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0">
+            <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-bold text-amber-900 mb-1">
+              About Your Campaign Analytics
+            </h4>
+            <p className="text-xs text-amber-800 leading-relaxed mb-2">
+              Your campaign tracking respects visitor privacy through <strong>cookie consent</strong>. 
+              When visitors arrive via your campaign links, they choose whether to allow marketing cookies:
+            </p>
+            <ul className="text-xs text-amber-800 space-y-1 ml-4 list-disc">
+              <li><strong>Accept:</strong> Visit is tracked and attributed to your campaign (shown in analytics above)</li>
+              <li><strong>Reject:</strong> Visit is <em>not</em> tracked; if they ask a question, it won't be linked to your campaign</li>
+            </ul>
+            <p className="text-xs text-amber-800 leading-relaxed mt-2">
+              <strong>What this means:</strong> The numbers above represent visitors who <em>consented</em> to marketing tracking. 
+              Your actual reach may be higher, but we only count visitors who opted in to comply with GDPR privacy laws.
+            </p>
+            <div className="mt-3 pt-3 border-t border-amber-200">
+              <p className="text-xs text-amber-700 font-medium">
+                💡 <strong>Tip:</strong> High-quality content and clear calls-to-action help convert visitors regardless of tracking. 
+                Focus on providing value, and those who consent will be accurately measured here.
+              </p>
+            </div>
+          </div>
+        </div>
+        </div>
       {/* Key Metrics - NOW ACCURATE */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Visits */}
