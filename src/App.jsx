@@ -77,7 +77,7 @@ const AppLayout = () => {
           <Route path="/test-ai-coach" element={<TestAICoachPage />} />
           <Route path="/feedback-dashboard" element={<FeedbackDashboardPage />} /> 
           <Route path="/how-it-works" element={<HowItWorksPage />} /> 
-          {Route path="/ask-v2" element={<AskQuestionPageV2 />} />
+          <Route path="/ask-v2" element={<AskQuestionPageV2 />} />
 
           
           {/* Auth Routes */}
