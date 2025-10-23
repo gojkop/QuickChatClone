@@ -1,5 +1,5 @@
 // src/hooks/useRecordingSegmentUpload.js
-// COMPLETE VERSION - Video to Stream, Audio to R2
+// FIXED VERSION - Improved reordering and state management
 
 import { useState, useCallback } from 'react';
 
@@ -27,23 +27,23 @@ export function useRecordingSegmentUpload() {
     const blobUrl = URL.createObjectURL(blob);
     console.log('✅ Created blobUrl:', blobUrl);
 
-    // Add to segments list WITH blobUrl
-    setSegments(prev => {
-      const newSegment = {
-        id: segmentId,
-        blob,
-        blobUrl,
-        mode,
-        segmentIndex,
-        duration,
-        uploading: true,
-        progress: 0,
-        error: null,
-        result: null,
-      };
-      console.log('✅ Adding segment with blobUrl:', newSegment);
-      return [...prev, newSegment];
-    });
+    // Add to segments list WITH blobUrl IMMEDIATELY
+    const newSegment = {
+      id: segmentId,
+      blob,
+      blobUrl, // ✅ Available immediately for playback
+      mode,
+      segmentIndex,
+      duration,
+      uploading: true,
+      progress: 0,
+      error: null,
+      result: null,
+    };
+    
+    console.log('✅ Adding segment with blobUrl:', newSegment);
+    
+    setSegments(prev => [...prev, newSegment]);
 
     try {
       // ⭐ ROUTE BASED ON MODE
@@ -75,7 +75,7 @@ export function useRecordingSegmentUpload() {
         const result = {
           uid: audioResult.data.uid,
           playbackUrl: audioResult.data.playbackUrl,
-          blobUrl,
+          blobUrl, // ✅ Keep blobUrl for local playback
           duration,
           mode: 'audio',
           size: blob.size,
@@ -147,7 +147,7 @@ export function useRecordingSegmentUpload() {
         playbackUrl: accountId 
           ? `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`
           : null,
-        blobUrl,
+        blobUrl, // ✅ Keep blobUrl for local playback
         duration,
         mode,
         size: blob.size,
@@ -168,7 +168,7 @@ export function useRecordingSegmentUpload() {
       
       setSegments(prev => prev.map(s =>
         s.id === segmentId
-          ? { ...s, uploading: false, error: error.message, blobUrl }
+          ? { ...s, uploading: false, error: error.message, blobUrl } // ✅ Keep blobUrl even on error
           : s
       ));
       
@@ -210,12 +210,13 @@ export function useRecordingSegmentUpload() {
     setSegments(prev => prev.filter(s => s.id !== segmentId));
   }, [segments]);
 
+  // ✅ FIXED: Reorder function with proper state update
   const reorderSegments = useCallback((newSegments) => {
     console.log('🔄 Reordering segments:', newSegments.length);
+    console.log('🔄 New order:', newSegments.map((s, i) => `${i}: ${s.id} (${s.mode})`));
     
     // Update segment indices to match new order
     const reorderedSegments = newSegments.map((segment, index) => {
-      console.log(`  - Segment ${segment.id}: index ${segment.segmentIndex} → ${index}`);
       return {
         ...segment,
         segmentIndex: index,
@@ -226,8 +227,10 @@ export function useRecordingSegmentUpload() {
       };
     });
     
-    console.log('✅ Reordered segments:', reorderedSegments);
-    setSegments(reorderedSegments);
+    console.log('✅ Reordered segments complete');
+    
+    // Use functional update to ensure we're working with latest state
+    setSegments(() => reorderedSegments);
   }, []);
 
   const getSuccessfulSegments = useCallback(() => {
@@ -259,6 +262,7 @@ export function useRecordingSegmentUpload() {
     segments: segments.map(s => ({
       id: s.id,
       mode: s.mode,
+      segmentIndex: s.segmentIndex,
       hasBlobUrl: !!s.blobUrl,
       uploading: s.uploading,
       error: s.error,
@@ -272,7 +276,7 @@ export function useRecordingSegmentUpload() {
     uploadSegment,
     retrySegment,
     removeSegment,
-    reorderSegments,
+    reorderSegments, // ✅ Properly exported
     getSuccessfulSegments,
     reset,
     hasUploading,

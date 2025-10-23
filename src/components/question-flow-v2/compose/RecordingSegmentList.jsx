@@ -4,6 +4,7 @@ import { TrashIcon } from '../shared/SVGIcons';
 function RecordingSegmentList({ segments, onRemove, onRetry, onReorder }) {
   const [playingId, setPlayingId] = useState(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState(null);
   const audioRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -20,7 +21,10 @@ function RecordingSegmentList({ segments, onRemove, onRetry, onReorder }) {
 
   const handlePlay = async (segment) => {
     // Can play from blobUrl even if upload isn't complete
-    if (!segment.blobUrl) return;
+    if (!segment.blobUrl) {
+      console.warn('No blobUrl available for segment:', segment.id);
+      return;
+    }
 
     if (playingId === segment.id) {
       // Pause
@@ -40,34 +44,67 @@ function RecordingSegmentList({ segments, onRemove, onRetry, onReorder }) {
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.currentTarget);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e, index) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    
+    // Update drop target for visual feedback
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDropTargetIndex(index);
+    }
+  };
+
+  const handleDragEnter = (e, index) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDropTargetIndex(index);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    // Only clear if we're leaving the entire drop zone
+    if (e.currentTarget === e.target) {
+      setDropTargetIndex(null);
+    }
   };
 
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🎯 Drop event:', { draggedIndex, dropIndex });
     
     if (draggedIndex === null || draggedIndex === dropIndex) {
       setDraggedIndex(null);
+      setDropTargetIndex(null);
       return;
     }
 
+    // Create new array and reorder
     const newSegments = [...segments];
     const [draggedSegment] = newSegments.splice(draggedIndex, 1);
     newSegments.splice(dropIndex, 0, draggedSegment);
     
+    console.log('🔄 Reordered locally, calling onReorder with', newSegments.length, 'segments');
+    
+    // Call parent's reorder function
     if (onReorder) {
       onReorder(newSegments);
+    } else {
+      console.error('❌ onReorder is not defined!');
     }
     
+    // Clear drag state
     setDraggedIndex(null);
+    setDropTargetIndex(null);
   };
 
   const handleDragEnd = () => {
     setDraggedIndex(null);
+    setDropTargetIndex(null);
   };
 
   const getModeIcon = (mode) => {
@@ -95,6 +132,18 @@ function RecordingSegmentList({ segments, onRemove, onRetry, onReorder }) {
     }
   };
 
+  // Debug: Log segment data
+  console.log('🎬 RecordingSegmentList render:', {
+    segmentCount: segments.length,
+    segments: segments.map(s => ({
+      id: s.id,
+      mode: s.mode,
+      hasBlobUrl: !!s.blobUrl,
+      uploading: s.uploading,
+      hasResult: !!s.result
+    }))
+  });
+
   return (
     <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
       {/* Header */}
@@ -118,98 +167,115 @@ function RecordingSegmentList({ segments, onRemove, onRetry, onReorder }) {
 
       {/* Segment List */}
       <div className="space-y-2">
-        {segments.map((segment, index) => (
-          <div 
-            key={segment.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
-            className={`flex items-center gap-3 bg-white rounded-lg p-3 border border-indigo-200 cursor-move transition-opacity ${
-              draggedIndex === index ? 'opacity-50' : 'opacity-100'
-            }`}
-          >
-            {/* Drag Handle */}
-            <div className="flex-shrink-0 text-gray-400">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
-              </svg>
-            </div>
+        {segments.map((segment, index) => {
+          const isDragging = draggedIndex === index;
+          const isDropTarget = dropTargetIndex === index;
+          
+          return (
+            <div 
+              key={segment.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnter={(e) => handleDragEnter(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+              className={`flex items-center gap-3 bg-white rounded-lg p-3 border-2 cursor-move transition-all ${
+                isDragging 
+                  ? 'opacity-40 scale-95 border-indigo-400' 
+                  : isDropTarget
+                  ? 'border-indigo-500 bg-indigo-50 scale-105'
+                  : 'border-indigo-200 hover:border-indigo-300'
+              }`}
+            >
+              {/* Drag Handle */}
+              <div className="flex-shrink-0 text-gray-400 cursor-grab active:cursor-grabbing">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
+                </svg>
+              </div>
 
-            {/* Icon */}
-            <div className="flex-shrink-0">
-              {getModeIcon(segment.mode)}
-            </div>
+              {/* Icon */}
+              <div className="flex-shrink-0">
+                {getModeIcon(segment.mode)}
+              </div>
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-900 capitalize">
-                  {segment.mode} {index + 1}
-                </span>
-                {(segment.result || segment.duration) && (
-                  <span className="text-xs text-gray-600">
-                    ({formatTime(segment.result?.duration || segment.duration)})
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-gray-900 capitalize">
+                    {segment.mode} {index + 1}
                   </span>
+                  {(segment.result || segment.duration) && (
+                    <span className="text-xs text-gray-600">
+                      ({formatTime(segment.result?.duration || segment.duration)})
+                    </span>
+                  )}
+                </div>
+                
+                {segment.uploading && (
+                  <div className="mt-1">
+                    <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-indigo-600 transition-all duration-300"
+                        style={{ width: `${segment.progress}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-indigo-600 mt-0.5">Uploading {segment.progress}%...</p>
+                  </div>
+                )}
+                
+                {segment.error && (
+                  <p className="text-xs text-red-600 mt-1">{segment.error}</p>
                 )}
               </div>
-              
-              {segment.uploading && (
-                <div className="mt-1">
-                  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-indigo-600 transition-all duration-300"
-                      style={{ width: `${segment.progress}%` }}
-                    />
+
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+                {/* Play Button - Show immediately when blobUrl exists */}
+                {segment.blobUrl ? (
+                  <button
+                    onClick={() => handlePlay(segment)}
+                    className="p-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg transition touch-manipulation"
+                    title={playingId === segment.id ? "Pause" : "Play"}
+                  >
+                    {playingId === segment.id ? (
+                      <PauseIcon className="w-4 h-4 text-indigo-600" />
+                    ) : (
+                      <PlayIcon className="w-4 h-4 text-indigo-600" />
+                    )}
+                  </button>
+                ) : (
+                  <div className="p-2 bg-gray-100 rounded-lg">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
-                  <p className="text-xs text-indigo-600 mt-0.5">Uploading {segment.progress}%...</p>
-                </div>
-              )}
-              
-              {segment.error && (
-                <p className="text-xs text-red-600 mt-1">{segment.error}</p>
-              )}
-            </div>
+                )}
 
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              {/* Play Button (available as soon as we have blobUrl) */}
-              {segment.blobUrl && (
+                {/* Retry Button (only if error) */}
+                {segment.error && onRetry && (
+                  <button
+                    onClick={() => onRetry(segment.id)}
+                    className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 font-semibold"
+                  >
+                    Retry
+                  </button>
+                )}
+
+                {/* Delete Button */}
                 <button
-                  onClick={() => handlePlay(segment)}
-                  className="p-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg transition"
-                  title="Play/Pause"
+                  onClick={() => onRemove(segment.id)}
+                  className="p-2 bg-red-100 hover:bg-red-200 rounded-lg transition touch-manipulation"
+                  title="Delete"
                 >
-                  {playingId === segment.id ? (
-                    <PauseIcon className="w-4 h-4 text-indigo-600" />
-                  ) : (
-                    <PlayIcon className="w-4 h-4 text-indigo-600" />
-                  )}
+                  <TrashIcon className="w-4 h-4 text-red-600" />
                 </button>
-              )}
-
-              {/* Retry Button (only if error) */}
-              {segment.error && (
-                <button
-                  onClick={() => onRetry(segment.id)}
-                  className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
-                >
-                  Retry
-                </button>
-              )}
-
-              {/* Delete Button */}
-              <button
-                onClick={() => onRemove(segment.id)}
-                className="p-2 bg-red-100 hover:bg-red-200 rounded-lg transition"
-                title="Delete"
-              >
-                <TrashIcon className="w-4 h-4 text-red-600" />
-              </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Audio/Video Player - USE BLOB URL */}
