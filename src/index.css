@@ -144,7 +144,7 @@ body {
 }
 
 /* ========================================
-   LIVING PROFILE ANIMATIONS (NEW)
+   LIVING PROFILE ANIMATIONS (EXISTING)
    ======================================== */
 
 /* Breathing animation for avatar - subtle scale pulse */
@@ -206,7 +206,65 @@ body {
 }
 
 /* ========================================
-   NEW LANDING PAGE ENHANCEMENTS
+   ⭐ PHASE 1: NEW HERO ANIMATIONS
+   ======================================== */
+
+/* Floating shapes animation for hero background */
+@keyframes float-shape {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translateY(-15px) translateX(10px) scale(1.1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(-25px) translateX(-5px) scale(0.95);
+    opacity: 0.35;
+  }
+  75% {
+    transform: translateY(-10px) translateX(-15px) scale(1.05);
+    opacity: 0.45;
+  }
+}
+
+.animate-float-shape {
+  animation: float-shape 8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Enhanced hero gradient animation */
+@keyframes hero-gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-hero-gradient {
+  background-size: 200% 200%;
+  animation: hero-gradient-shift 15s ease infinite;
+}
+
+/* Subtle scale animation for expertise tags on hover */
+@keyframes subtle-scale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-subtle-scale:hover {
+  animation: subtle-scale 0.3s ease-in-out;
+}
+
+/* ========================================
+   EXISTING LANDING PAGE ENHANCEMENTS
    ======================================== */
 
 /* Gradient shift for hero "brain-pick" text with underline */
@@ -332,6 +390,7 @@ html {
 /* Hardware acceleration for animated elements */
 .animate-pulse,
 .animate-float,
+.animate-float-shape,
 .cta-pulse,
 .animated-gradient-text,
 .living-breath-avatar,
@@ -366,7 +425,8 @@ html {
   .living-breath-avatar,
   .living-breath,
   .living-particle,
-  .living-status {
+  .living-status,
+  .animate-float-shape {
     animation: none !important;
   }
 }
@@ -387,7 +447,7 @@ html {
 }
 
 /* ========================================
-   NAVBAR ENHANCEMENTS (NEW)
+   NAVBAR ENHANCEMENTS (EXISTING)
    ======================================== */
 
 /* Navbar dropdown fade-in animation */
@@ -440,6 +500,7 @@ html {
     background: rgba(255, 255, 255, 0.95) !important;
   }
 }
+
 /* ========================================
    MOBILE OPTIMIZATIONS
    ======================================== */
@@ -455,6 +516,7 @@ html {
     display: none;  /* Chrome, Safari and Opera */
   }
 }
+
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center font-bold rounded-lg transition duration-base ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400;
@@ -468,4 +530,22 @@ html {
   .btn-destructive {
     @apply bg-danger text-white hover:bg-red-600 focus-visible:ring-red-400;
   }
+}
+
+/* ========================================
+   ⭐ PHASE 1: ENHANCED SOCIAL LINK HOVER
+   ======================================== */
+
+/* Enhanced hover animation for social links */
+@keyframes social-link-bounce {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.1) translateY(-2px);
+  }
+}
+
+.social-link-hover:hover {
+  animation: social-link-bounce 0.4s ease-in-out;
 }
