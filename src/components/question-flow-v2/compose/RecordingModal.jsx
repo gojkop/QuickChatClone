@@ -6,6 +6,8 @@ function RecordingModal({ mode, onComplete, onClose }) {
   const [timer, setTimer] = useState(90);
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [recordedDuration, setRecordedDuration] = useState(0);
+  const [facingMode, setFacingMode] = useState('user'); // 'user' (front) or 'environment' (back)
+  const [isFlipping, setIsFlipping] = useState(false);
 
   const videoRef = useRef(null);
   const reviewVideoRef = useRef(null);
@@ -16,11 +18,28 @@ function RecordingModal({ mode, onComplete, onClose }) {
   const startTimeRef = useRef(0);
   const audioContextRef = useRef(null);
 
+  // Detect if mobile device
+  const isMobileDevice = typeof window !== 'undefined' && (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 2)
+  );
+
   // Initialize preview
   useEffect(() => {
     initializePreview();
     return () => cleanup();
   }, [mode]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && state !== 'recording') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [state, onClose]);
 
   const initializePreview = async () => {
     try {
@@ -32,7 +51,14 @@ function RecordingModal({ mode, onComplete, onClose }) {
       } else {
         // Regular video or audio recording
         const constraints = mode === 'video'
-          ? { audio: true, video: { facingMode: 'user' } }
+          ? { 
+              audio: true, 
+              video: { 
+                facingMode: facingMode,
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              } 
+            }
           : { audio: true, video: false };
 
         stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -146,6 +172,44 @@ function RecordingModal({ mode, onComplete, onClose }) {
     }
   };
 
+  const flipCamera = async () => {
+    if (mode !== 'video' || state === 'recording' || isFlipping) return;
+
+    setIsFlipping(true);
+    const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
+
+    try {
+      // Stop current stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      // Get new stream with flipped camera
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: {
+          facingMode: newFacingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+
+      streamRef.current = stream;
+      setFacingMode(newFacingMode);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Camera flip error:', error);
+      alert('Could not flip camera. Using current camera.');
+      // Restore original stream
+      await initializePreview();
+    } finally {
+      setIsFlipping(false);
+    }
+  };
+
   const startCountdown = () => {
     setCountdown(3);
     const countdownInterval = setInterval(() => {
@@ -240,17 +304,34 @@ function RecordingModal({ mode, onComplete, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-md animate-fadeIn"
+      onClick={(e) => {
+        // Close modal if clicking backdrop (but not during recording)
+        if (e.target === e.currentTarget && state !== 'recording') {
+          onClose();
+        }
+      }}
+    >
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
+        <div 
+          className={`relative bg-white rounded-2xl shadow-2xl w-full overflow-hidden animate-slideUp ${
+            isMobileDevice ? 'max-w-full h-full sm:max-w-2xl sm:h-auto' : 'max-w-2xl'
+          }`}
+        >
           {/* Header */}
-          <div className="bg-gray-50 px-6 py-4 border-b flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900">
-              {getModalTitle()}
-            </h3>
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${state === 'recording' ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`} />
+              <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                {getModalTitle()}
+              </h3>
+            </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-200 rounded-lg transition"
+              disabled={state === 'recording'}
+              className="p-2 hover:bg-gray-200 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Close"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -259,39 +340,62 @@ function RecordingModal({ mode, onComplete, onClose }) {
           </div>
 
           {/* Content */}
-          <div className="p-0">
+          <div className="relative">
             {/* Preview State */}
             {state === 'preview' && (
               <>
                 {mode === 'video' || mode === 'screen' ? (
-                  <video
-                    ref={videoRef}
-                    className="w-full bg-gray-900 aspect-video"
-                    autoPlay
-                    muted
-                    playsInline
-                  />
+                  <div className="relative">
+                    <video
+                      ref={videoRef}
+                      className="w-full bg-gray-900 aspect-video object-cover"
+                      autoPlay
+                      muted
+                      playsInline
+                    />
+                    {/* Camera Flip Button (Mobile Video Only) */}
+                    {mode === 'video' && isMobileDevice && (
+                      <button
+                        onClick={flipCamera}
+                        disabled={isFlipping}
+                        className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-all disabled:opacity-50"
+                        aria-label="Flip camera"
+                      >
+                        {isFlipping ? (
+                          <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 ) : (
-                  <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                  <div className="w-full bg-gradient-to-br from-gray-800 to-gray-900 aspect-video flex items-center justify-center">
                     <div className="text-center">
-                      <MicIcon className="w-16 h-16 text-white mx-auto mb-3" />
-                      <p className="text-white font-semibold">Audio Ready</p>
+                      <MicIcon className="w-16 h-16 text-white mx-auto mb-3 opacity-80" />
+                      <p className="text-white font-semibold text-lg">Audio Ready</p>
+                      <p className="text-gray-400 text-sm mt-1">Your microphone is ready to record</p>
                     </div>
                   </div>
                 )}
-                <div className="p-6 flex gap-3">
+                <div className="p-4 sm:p-6 flex gap-3">
                   <button
                     onClick={onClose}
-                    className="px-6 py-3 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition"
+                    className="px-4 sm:px-6 py-3 text-gray-600 font-semibold hover:bg-gray-100 rounded-xl transition"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={startCountdown}
                     disabled={countdown !== null}
-                    className="flex-1 bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-3 px-6 rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Start Recording
+                    {countdown !== null ? 'Starting...' : 'Start Recording'}
                   </button>
                 </div>
               </>
@@ -304,36 +408,43 @@ function RecordingModal({ mode, onComplete, onClose }) {
                   <div className="relative">
                     <video
                       ref={videoRef}
-                      className="w-full bg-gray-900 aspect-video"
+                      className="w-full bg-gray-900 aspect-video object-cover"
                       autoPlay
                       muted
                       playsInline
                     />
                     {/* Recording Indicator Overlay */}
-                    <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 text-white px-3 py-1.5 rounded-full">
-                      <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
-                      <span className="font-semibold text-sm">REC</span>
+                    <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-full shadow-lg animate-pulse">
+                      <div className="w-3 h-3 rounded-full bg-white" />
+                      <span className="font-bold text-sm">REC</span>
                     </div>
                     {/* Timer Overlay */}
-                    <div className="absolute top-4 right-4 bg-black/70 text-white px-4 py-2 rounded-lg font-mono text-lg font-bold">
+                    <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-mono text-lg font-bold shadow-lg">
                       {formatTime(timer)}
+                    </div>
+                    {/* Recording Instructions Overlay */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm">
+                      Recording in progress...
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
+                  <div className="w-full bg-gradient-to-br from-red-900 to-red-800 aspect-video flex items-center justify-center">
                     <div className="text-center">
-                      <div className="w-16 h-16 rounded-full bg-red-600 mx-auto mb-4 animate-pulse" />
-                      <p className="text-white font-semibold">Recording Audio...</p>
+                      <div className="w-20 h-20 rounded-full bg-red-600 mx-auto mb-4 animate-pulse shadow-2xl flex items-center justify-center">
+                        <MicIcon className="w-10 h-10 text-white" />
+                      </div>
+                      <p className="text-white font-bold text-lg mb-2">Recording Audio...</p>
+                      <p className="text-red-200 text-sm">Speak clearly into your microphone</p>
                     </div>
                   </div>
                 )}
-                <div className="p-6 text-center">
-                  <div className="text-4xl font-black text-red-600 mb-4">
+                <div className="p-4 sm:p-6 text-center bg-gray-50">
+                  <div className="text-5xl font-black text-red-600 mb-4 font-mono">
                     {formatTime(timer)}
                   </div>
                   <button
                     onClick={stopRecording}
-                    className="px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
+                    className="px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all"
                   >
                     Stop Recording
                   </button>
@@ -352,31 +463,45 @@ function RecordingModal({ mode, onComplete, onClose }) {
                     playsInline
                   />
                 ) : (
-                  <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
-                    <audio
-                      src={recordedBlob ? URL.createObjectURL(recordedBlob) : ''}
-                      controls
-                      className="w-full max-w-md px-4"
-                    />
+                  <div className="w-full bg-gradient-to-br from-gray-800 to-gray-900 aspect-video flex items-center justify-center p-8">
+                    <div className="w-full max-w-md">
+                      <div className="mb-4 text-center">
+                        <MicIcon className="w-12 h-12 text-white mx-auto mb-2 opacity-80" />
+                        <p className="text-white font-semibold">Audio Recording</p>
+                      </div>
+                      <audio
+                        src={recordedBlob ? URL.createObjectURL(recordedBlob) : ''}
+                        controls
+                        className="w-full"
+                      />
+                    </div>
                   </div>
                 )}
-                <div className="p-6 bg-green-50">
-                  <p className="text-sm text-green-800 mb-4 text-center">
-                    Duration: {formatTime(recordedDuration)}
-                  </p>
+                <div className="p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50">
+                  <div className="text-center mb-4">
+                    <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full mb-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">Recording Complete</span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Duration: <strong>{formatTime(recordedDuration)}</strong>
+                    </p>
+                  </div>
                   <div className="flex gap-3">
                     <button
                       onClick={handleDiscard}
-                      className="px-6 py-3 text-gray-700 font-semibold hover:bg-white rounded-lg transition flex items-center gap-2"
+                      className="px-4 sm:px-6 py-3 text-gray-700 font-semibold hover:bg-white rounded-xl transition flex items-center justify-center gap-2 border-2 border-gray-300"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                      Delete
+                      <span className="hidden sm:inline">Delete</span>
                     </button>
                     <button
                       onClick={handleSave}
-                      className="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"
+                      className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 px-6 rounded-xl hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -390,12 +515,12 @@ function RecordingModal({ mode, onComplete, onClose }) {
 
             {/* Countdown Overlay */}
             {countdown !== null && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-10">
                 <div className="text-center">
-                  <div className="text-8xl font-black text-white mb-4 animate-bounce">
+                  <div className="text-9xl font-black text-white mb-4 animate-bounce drop-shadow-2xl">
                     {countdown}
                   </div>
-                  <div className="text-white text-xl font-semibold">Get ready...</div>
+                  <div className="text-white text-2xl font-semibold drop-shadow-lg">Get ready...</div>
                 </div>
               </div>
             )}
