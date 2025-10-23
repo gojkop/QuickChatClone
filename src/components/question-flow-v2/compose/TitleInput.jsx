@@ -3,13 +3,16 @@ import React, { useState, useEffect } from 'react';
 function TitleInput({ value, onChange }) {
   const [error, setError] = useState('');
 
+  // ✅ FIX: Ensure value is always a string
+  const safeValue = value || '';
+
   useEffect(() => {
-    if (value.length > 0 && value.length < 5) {
+    if (safeValue.length > 0 && safeValue.length < 5) {
       setError('Title should be at least 5 characters');
     } else {
       setError('');
     }
-  }, [value]);
+  }, [safeValue]);
 
   return (
     <div>
@@ -21,7 +24,7 @@ function TitleInput({ value, onChange }) {
         type="text"
         id="question-title"
         name="title"
-        value={value}
+        value={safeValue}
         onChange={(e) => onChange(e.target.value)}
         className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 focus:outline-none transition text-base ${
           error ? 'border-red-300 bg-red-50' : 'border-gray-300'
@@ -40,7 +43,7 @@ function TitleInput({ value, onChange }) {
           {error}
         </div>
       )}
-      <div className="text-right text-xs text-gray-500 mt-1">{value.length} / 200 characters</div>
+      <div className="text-right text-xs text-gray-500 mt-1">{safeValue.length} / 200 characters</div>
     </div>
   );
 }
