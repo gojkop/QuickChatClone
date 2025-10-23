@@ -573,7 +573,7 @@ function AnswerReviewPage() {
           </div>
         )}
 
-        {/* Answer Section */}
+        {/* Answer Section - Only show if question is not declined */}
         {hasAnswer ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
             <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-indigo-100 px-5 sm:px-6 py-4">
@@ -736,7 +736,8 @@ function AnswerReviewPage() {
               <span className="text-xs text-gray-500">For personal use only</span>
             </div>
           </div>
-        ) : (
+        ) : data.pricing_status !== 'offer_declined' ? (
+          // Only show "Answer In Progress" if the question is NOT declined
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
             <div className="text-center">
               <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -755,7 +756,7 @@ function AnswerReviewPage() {
               )}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Question Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
