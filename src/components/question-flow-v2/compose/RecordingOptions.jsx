@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { VideoIcon, MicIcon, MonitorIcon, PaperclipIcon } from '../shared/SVGIcons';
 import RecordingModal from './RecordingModal';
 
-function RecordingOptions({ segmentUpload, attachmentUpload, showScreenRecording = true }) {
+function RecordingOptions({ segmentUpload, attachmentUpload, showScreenRecording = true, showRecordingList = true }) {
   const [showModal, setShowModal] = useState(false);
   const [recordingMode, setRecordingMode] = useState(null);
 
@@ -61,7 +61,6 @@ function RecordingOptions({ segmentUpload, attachmentUpload, showScreenRecording
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const hasRecordings = segmentUpload.segments.length > 0;
   const hasAttachments = attachmentUpload.uploads.length > 0;
   const isScreenRecordingAvailable = typeof navigator !== 'undefined' && 
     navigator.mediaDevices?.getDisplayMedia;

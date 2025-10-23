@@ -6,6 +6,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
   const [timer, setTimer] = useState(90);
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [recordedDuration, setRecordedDuration] = useState(0);
+  const [reviewBlobUrl, setReviewBlobUrl] = useState(null);
 
   const videoRef = useRef(null);
   const reviewVideoRef = useRef(null);
@@ -20,7 +21,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
     return () => cleanup();
   }, [mode]);
 
-  // CRITICAL FIX: Keep video element connected to stream during preview AND recording
+  // Keep video element connected to stream during preview AND recording
   useEffect(() => {
     if (videoRef.current && streamRef.current && (state === 'preview' || state === 'recording')) {
       if (videoRef.current.srcObject !== streamRef.current) {
@@ -29,6 +30,20 @@ function RecordingModal({ mode, onComplete, onClose }) {
       }
     }
   }, [state]);
+
+  // Set review video source when blob is ready
+  useEffect(() => {
+    if (state === 'review' && recordedBlob && reviewVideoRef.current && (mode === 'video' || mode === 'screen')) {
+      const blobUrl = URL.createObjectURL(recordedBlob);
+      setReviewBlobUrl(blobUrl);
+      reviewVideoRef.current.src = blobUrl;
+      reviewVideoRef.current.load();
+      
+      return () => {
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+      };
+    }
+  }, [state, recordedBlob, mode]);
 
   const initializePreview = async () => {
     try {
@@ -139,10 +154,6 @@ function RecordingModal({ mode, onComplete, onClose }) {
       setRecordedBlob(blob);
       setRecordedDuration(duration);
       setState('review');
-      
-      if ((mode === 'video' || mode === 'screen') && reviewVideoRef.current) {
-        reviewVideoRef.current.src = URL.createObjectURL(blob);
-      }
     };
 
     mediaRecorderRef.current.start();
@@ -174,8 +185,8 @@ function RecordingModal({ mode, onComplete, onClose }) {
   };
 
   const handleDiscard = () => {
-    if (recordedBlob) {
-      URL.revokeObjectURL(URL.createObjectURL(recordedBlob));
+    if (reviewBlobUrl) {
+      URL.revokeObjectURL(reviewBlobUrl);
     }
     onClose();
   };
@@ -292,7 +303,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
                 ) : (
                   <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                     <audio
-                      src={recordedBlob ? URL.createObjectURL(recordedBlob) : ''}
+                      src={reviewBlobUrl || ''}
                       controls
                       className="w-full max-w-md px-4"
                     />

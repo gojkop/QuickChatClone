@@ -21,35 +21,46 @@ function StepPayment({
         review: reviewData
       });
 
-      // Build payload
+      // Build base payload - CORRECT FORMAT FROM V1
       const basePayload = {
-        expert_handle: expert.handle,
+        expertHandle: expert.handle,
         title: composeData.title,
-        text: composeData.text || '',
-        media_urls: (composeData.recordings || []).map(r => ({
+        text: composeData.text || null,
+        payerEmail: reviewData.email,
+        payerFirstName: reviewData.firstName || null,
+        payerLastName: reviewData.lastName || null,
+        recordingSegments: (composeData.recordings || []).map(r => ({
           uid: r.uid,
           url: r.playbackUrl,
           mode: r.mode,
           duration: r.duration
         })),
-        attachment_urls: (composeData.attachments || []).map(a => a.url || a.playbackUrl),
-        asker_email: reviewData.email,
-        asker_first_name: reviewData.firstName || '',
-        asker_last_name: reviewData.lastName || '',
+        attachments: (composeData.attachments || []).map(a => ({
+          name: a.name || a.filename,
+          url: a.url || a.playbackUrl,
+          size: a.size
+        })),
+        sla_hours_snapshot: tierConfig?.sla_hours || expert.sla_hours
       };
 
       // Add tier-specific fields
-      const endpoint = tierType === 'deep_dive' 
-        ? '/api/questions/deep-dive'
-        : '/api/questions/quick-consult';
+      let endpoint, payload;
 
-      const payload = tierType === 'deep_dive'
-        ? {
-            ...basePayload,
-            proposed_price_cents: Math.round(parseFloat(composeData.tierSpecific.proposedPrice) * 100),
-            expert_message: composeData.tierSpecific.expertMessage || ''
-          }
-        : basePayload;
+      if (tierType === 'deep_dive') {
+        endpoint = '/api/questions/deep-dive';
+        payload = {
+          ...basePayload,
+          proposed_price_cents: Math.round(parseFloat(composeData.tierSpecific.proposedPrice) * 100),
+          asker_message: composeData.tierSpecific.askerMessage || null,
+          stripe_payment_intent_id: 'pi_mock_' + Date.now()
+        };
+      } else {
+        endpoint = '/api/questions/quick-consult';
+        payload = {
+          ...basePayload,
+          stripe_payment_intent_id: 'pi_mock_' + Date.now()
+        };
+      }
 
       console.log('📡 Sending to:', endpoint, payload);
 

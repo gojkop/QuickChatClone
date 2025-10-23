@@ -6,7 +6,7 @@ function SoundFamiliar() {
     {
       emoji: '📧',
       text: 'Your DMs are overflowing with "quick questions"',
-      subtext: 'Each one costs you 15-30 minutes you'll never get back'
+      subtext: 'Each one costs you 15-30 minutes you will never get back'
     },
     {
       emoji: '😰',
@@ -15,7 +15,7 @@ function SoundFamiliar() {
     },
     {
       emoji: '🔄',
-      text: 'They've already tried AI and Google—it wasn't enough',
+      text: 'They have already tried AI and Google—it was not enough',
       subtext: 'They need your experience, judgment, and context'
     },
     {

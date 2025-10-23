@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import TitleInput from './TitleInput';
 import RecordingOptions from './RecordingOptions';
+import RecordingSegmentList from './RecordingSegmentList';
 import AdvancedOptions from './AdvancedOptions';
 import MindPilotPanel from './MindPilotPanel';
 import { useRecordingSegmentUpload } from '@/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/hooks/useAttachmentUpload';
 import MobileStickyFooter from '../shared/MobileStickyFooter';
-import RecordingSegmentList from './RecordingSegmentList';
 
 
 function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
   const [title, setTitle] = useState(data.title || '');
-  const [recordings, setRecordings] = useState(data.recordings || []);
   const [text, setText] = useState(data.text || '');
   
   const segmentUpload = useRecordingSegmentUpload();
@@ -52,7 +51,7 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
       {/* Title Input */}
       <TitleInput value={title} onChange={handleTitleChange} />
 
-      {/* Recording Options - SAME AS DEEP DIVE but without Screen Recording */}
+      {/* Recording Options - WITHOUT Screen Recording */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-3">
           Record Your Question
@@ -61,19 +60,21 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
           segmentUpload={segmentUpload}
           attachmentUpload={attachmentUpload}
           showScreenRecording={false}
+          showRecordingList={false}
         />
       </div>
 
-      {/* Recording Segment List with Play buttons */}
+      {/* Recording Segment List - SEPARATE */}
       {hasRecordings && (
         <RecordingSegmentList
           segments={segmentUpload.segments}
           onRemove={segmentUpload.removeSegment}
           onRetry={segmentUpload.retrySegment}
+          onReorder={segmentUpload.reorderSegments}
         />
       )}
 
-      {/* Advanced Options (Includes Screen Recording) */}
+      {/* Advanced Options (Includes Screen Recording AND Attach Files) */}
       <AdvancedOptions
         text={text}
         onTextChange={handleTextChange}

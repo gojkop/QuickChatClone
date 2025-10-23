@@ -85,7 +85,7 @@ export function useRecordingSegmentUpload() {
         return result;
       }
 
-      // === VIDEO/SCREEN UPLOAD TO STREAM (EXISTING CODE - UNCHANGED) ===
+      // === VIDEO/SCREEN UPLOAD TO STREAM ===
       // Step 1: Get upload URL from backend
       console.log('📡 Requesting upload URL...');
       
@@ -114,14 +114,12 @@ export function useRecordingSegmentUpload() {
         s.id === segmentId ? { ...s, progress: 10 } : s
       ));
 
-      // ✅ CRITICAL: Cloudflare expects FormData with 'file' field
       const formData = new FormData();
       formData.append('file', blob, `segment-${segmentIndex}.webm`);
 
       const uploadResponse = await fetch(uploadURL, {
         method: 'POST',
         body: formData,
-        // ⚠️ DO NOT set Content-Type - browser sets it with boundary
       });
 
       if (!uploadResponse.ok) {
@@ -200,6 +198,12 @@ export function useRecordingSegmentUpload() {
     setSegments(prev => prev.filter(s => s.id !== segmentId));
   }, [segments]);
 
+  // FIXED: Proper reorder function
+  const reorderSegments = useCallback((newSegments) => {
+    console.log('🔄 Reordering segments');
+    setSegments(newSegments);
+  }, []);
+
   const getSuccessfulSegments = useCallback(() => {
     return segments
       .filter(s => s.result)
@@ -223,6 +227,7 @@ export function useRecordingSegmentUpload() {
     uploadSegment,
     retrySegment,
     removeSegment,
+    reorderSegments, // ADDED
     getSuccessfulSegments,
     reset,
     hasUploading,

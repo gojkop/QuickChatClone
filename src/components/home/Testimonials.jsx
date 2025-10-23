@@ -2,7 +2,6 @@ import React from 'react';
 import AnimatedBackground from './AnimatedBackground';
 
 const TestimonialCard = ({ quote, avatar, name, title, useCase, cardColor, borderColor }) => (
-  // MOBILE OPTIMIZED: p-8 → p-5 md:p-8
   <div className={`group bg-white/80 backdrop-blur-sm p-5 md:p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border ${borderColor} hover:-translate-y-1`}>
     <div className="flex gap-1 mb-3 md:mb-4">
       {[1, 2, 3, 4, 5].map(i => (
@@ -12,12 +11,10 @@ const TestimonialCard = ({ quote, avatar, name, title, useCase, cardColor, borde
       ))}
     </div>
     
-    {/* RESPONSIVE TEXT SIZE */}
     <p className="text-gray-800 text-base md:text-lg mb-5 md:mb-6 leading-relaxed italic">
       "{quote}"
     </p>
     
-    {/* RESPONSIVE AVATAR SIZE */}
     <div className="flex items-center mb-5 md:mb-6">
       <img className={`h-12 w-12 md:h-14 md:w-14 rounded-full object-cover ring-2 ${cardColor}`} src={avatar} alt={name} />
       <div className="ml-3 md:ml-4">
@@ -26,12 +23,9 @@ const TestimonialCard = ({ quote, avatar, name, title, useCase, cardColor, borde
       </div>
     </div>
     
-    {/* MOBILE OPTIMIZED: p-6 → p-4 md:p-6 */}
     <div className={`bg-gradient-to-br ${useCase.bgGradient} p-4 md:p-6 rounded-xl border ${useCase.borderColor}`}>
       <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-        {/* RESPONSIVE EMOJI SIZE */}
         <span className="text-2xl md:text-3xl" role="img" aria-label={useCase.label}>{useCase.emoji}</span>
-        {/* RESPONSIVE TEXT SIZE */}
         <h4 className="text-lg md:text-xl font-bold text-gray-900">{useCase.title}</h4>
       </div>
       <p className="text-gray-700 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: useCase.description }} />
@@ -43,9 +37,10 @@ function Testimonials() {
   const testimonials = [
     {
       quote: "mindPick is a game-changer. I've turned my overflowing DMs into a meaningful revenue stream without adding a single meeting to my calendar.",
-      avatar: "https://i.pravatar.cc/56?u=sara_test",
-      name: "Sara W.",
-      title: "SaaS Consultant",
+      // MOCKUP: Professional headshot - business woman with glasses
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=faces",
+      name: "Sarah Williams",
+      title: "SaaS GTM Consultant",
       cardColor: "ring-indigo-100",
       borderColor: "border-gray-100 hover:border-indigo-200",
       useCase: {
@@ -59,14 +54,15 @@ function Testimonials() {
     },
     {
       quote: "Finally, a polite way to say 'yes' to quick questions. It respects my time and my audience's need for a fast, valuable answer. Onboarding took 5 minutes.",
-      avatar: "https://i.pravatar.cc/56?u=mark_test",
-      name: "Mark C.",
-      title: "Lead UX Designer",
+      // MOCKUP: Professional headshot - male designer
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=faces",
+      name: "Marcus Chen",
+      title: "Lead Product Designer",
       cardColor: "ring-violet-100",
       borderColor: "border-gray-100 hover:border-violet-200",
       useCase: {
         emoji: '🎨',
-        label: 'Palette',
+        label: 'Design',
         title: 'UX/UI Design Critiques',
         description: '<strong>"Tear down this signup flow."</strong> AI generates ideas; a seasoned designer offers taste, heuristics, and conversion judgment.',
         bgGradient: 'from-violet-50 to-purple-50',
@@ -77,10 +73,8 @@ function Testimonials() {
 
   return (
     <AnimatedBackground variant="testimonials">
-      {/* MOBILE OPTIMIZED: py-24 md:py-32 → py-12 md:py-24 lg:py-32 */}
       <section className="py-12 md:py-24 lg:py-32 relative">
         <div className="container mx-auto px-6 relative z-10">
-          {/* RESPONSIVE TEXT SIZES */}
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900">
               Beyond AI.{' '}

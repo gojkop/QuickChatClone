@@ -8,7 +8,7 @@ function ValueCalculator() {
   const [timeHorizon, setTimeHorizon] = useState('monthly');
   const [showBreakdown, setShowBreakdown] = useState(false);
 
-  // Industry presets with SVG icons
+  // Industry presets - REDUCED FROM 8 TO 5
   const presets = [
     { 
       id: 'consultant', 
@@ -64,40 +64,7 @@ function ValueCalculator() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
         </svg>
       )
-    },
-    { 
-      id: 'coach', 
-      label: 'Coach', 
-      questions: 4, 
-      price: 80,
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-        </svg>
-      )
-    },
-    { 
-      id: 'finance', 
-      label: 'Finance', 
-      questions: 2, 
-      price: 120,
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      )
-    },
-    { 
-      id: 'custom', 
-      label: 'Custom', 
-      questions: 3, 
-      price: 100,
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-        </svg>
-      )
-    },
+    }
   ];
 
   const applyPreset = (preset) => {
@@ -206,33 +173,32 @@ function ValueCalculator() {
   };
 
   return (
-    // MOBILE OPTIMIZED: py-16 md:py-20 → py-12 md:py-16 lg:py-20
     <section className="py-12 md:py-16 lg:py-20 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Header - RESPONSIVE TEXT SIZES */}
+          
+          {/* Header - ENHANCED WITH AI POSITIONING */}
           <h2 className="text-3xl sm:text-3xl md:text-4xl font-black tracking-tight text-gray-900 mb-2">
             Your Potential Earnings
           </h2>
-          <p className="text-gray-600 text-sm mb-6 md:mb-8">
-            Calculate your earning potential based on your expertise
+          <p className="text-gray-600 text-sm md:text-base mb-6 md:mb-8">
+            Calculate what your expertise is worth—beyond what AI can provide
           </p>
 
-          {/* Calculator Card - MOBILE OPTIMIZED PADDING: p-6 md:p-7 → p-5 md:p-7 */}
+          {/* Calculator Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 md:p-7">
             
-            {/* Industry Presets - HORIZONTAL SCROLL ON MOBILE */}
+            {/* Industry Presets - 5 PRESETS (down from 8) */}
             <div className="mb-6">
               <label className="block text-xs font-semibold text-gray-700 mb-3 text-left uppercase tracking-wide">
                 Choose your expertise
               </label>
-              {/* MOBILE: Horizontal scroll, DESKTOP: Wrap */}
-              <div className="flex md:flex-wrap gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 -mx-5 px-5 md:mx-0 md:px-0 scrollbar-hide">
+              <div className="flex flex-wrap justify-center gap-2">
                 {presets.map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => applyPreset(preset)}
-                    className={`flex-shrink-0 md:flex-shrink inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       selectedPreset === preset.id
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
@@ -243,13 +209,9 @@ function ValueCalculator() {
                   </button>
                 ))}
               </div>
-              {/* Mobile scroll hint */}
-              <div className="md:hidden text-center mt-2">
-                <p className="text-xs text-gray-400">← Scroll for more →</p>
-              </div>
             </div>
 
-            {/* Inputs Row - more compact */}
+            {/* Inputs Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
               {/* Questions Input */}
               <div className="text-left">
@@ -331,7 +293,7 @@ function ValueCalculator() {
                 per {displayData.label}
               </div>
               
-              {/* Quick Stats - dynamic */}
+              {/* Quick Stats */}
               <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-600">
                 <div className="flex items-center gap-1.5 bg-white/60 px-2.5 py-1.5 rounded-lg">
                   <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

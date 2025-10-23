@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { TrashIcon } from '../shared/SVGIcons';
 
-function RecordingSegmentList({ segments, onRemove, onRetry }) {
+function RecordingSegmentList({ segments, onRemove, onRetry, onReorder }) {
   const [playingId, setPlayingId] = useState(null);
+  const [draggedIndex, setDraggedIndex] = useState(null);
   const audioRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -34,6 +35,39 @@ function RecordingSegmentList({ segments, onRemove, onRetry }) {
       if (audioRef.current) audioRef.current.pause();
       if (videoRef.current) videoRef.current.pause();
     }
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const newSegments = [...segments];
+    const [draggedSegment] = newSegments.splice(draggedIndex, 1);
+    newSegments.splice(dropIndex, 0, draggedSegment);
+    
+    if (onReorder) {
+      onReorder(newSegments);
+    }
+    
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   const getModeIcon = (mode) => {
@@ -78,13 +112,31 @@ function RecordingSegmentList({ segments, onRemove, onRetry }) {
         </span>
       </div>
 
+      {segments.length > 1 && (
+        <p className="text-xs text-indigo-600 mb-2">💡 Drag to reorder</p>
+      )}
+
       {/* Segment List */}
       <div className="space-y-2">
-        {segments.map((segment) => (
+        {segments.map((segment, index) => (
           <div 
             key={segment.id}
-            className="flex items-center gap-3 bg-white rounded-lg p-3 border border-indigo-200"
+            draggable
+            onDragStart={(e) => handleDragStart(e, index)}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+            className={`flex items-center gap-3 bg-white rounded-lg p-3 border border-indigo-200 cursor-move transition-opacity ${
+              draggedIndex === index ? 'opacity-50' : 'opacity-100'
+            }`}
           >
+            {/* Drag Handle */}
+            <div className="flex-shrink-0 text-gray-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
+              </svg>
+            </div>
+
             {/* Icon */}
             <div className="flex-shrink-0">
               {getModeIcon(segment.mode)}
@@ -94,7 +146,7 @@ function RecordingSegmentList({ segments, onRemove, onRetry }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900 capitalize">
-                  {segment.mode} {segment.segmentIndex + 1}
+                  {segment.mode} {index + 1}
                 </span>
                 {(segment.result || segment.duration) && (
                   <span className="text-xs text-gray-600">
