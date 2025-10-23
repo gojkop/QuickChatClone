@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import QuestionComposer from '@/components/question/QuestionComposer';
 import AskReviewModal from '@/components/question/AskReviewModal';
+import PaymentPlaceholder from '@/components/question-flow-v2/payment/PaymentPlaceholder';
 import ProgressStepper from '@/components/common/ProgressStepper';
 import FirstTimeUserTips from '@/components/common/FirstTimeUserTips';
 
@@ -27,11 +28,16 @@ function AskQuestionPage() {
 
   // Modal state
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [questionData, setQuestionData] = useState(null);
+  const [askerInfo, setAskerInfo] = useState(null);
 
   // Deep Dive specific state
   const [proposedPrice, setProposedPrice] = useState('');
   const [askerMessage, setAskerMessage] = useState('');
+
+  // Submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchExpertProfile = async () => {
@@ -110,26 +116,26 @@ function AskQuestionPage() {
     }
   };
 
-  const handleProceedToPayment = async (askerInfo) => {
+  const handleProceedToPayment = async (reviewInfo) => {
+    // Validate Deep Dive offer amount
+    if (tierType === 'deep_dive') {
+      const priceValue = parseFloat(proposedPrice);
+      if (!priceValue || priceValue <= 0) {
+        alert('Please enter a valid offer amount');
+        return;
+      }
+    }
+
+    // Store asker info and move to payment step
+    setAskerInfo(reviewInfo);
+    setShowReviewModal(false);
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = async (paymentIntentId) => {
     try {
-      console.log("Starting question submission...");
-
-      // Validate Deep Dive offer amount - only check it's a valid positive number
-      // Min/max prices are suggestions only, not enforced
-      // Auto-decline threshold is the only hard limit (handled after submission)
-      if (tierType === 'deep_dive') {
-        const priceValue = parseFloat(proposedPrice);
-        if (!priceValue || priceValue <= 0) {
-          alert('Please enter a valid offer amount');
-          return;
-        }
-      }
-
-      const submitButton = document.querySelector('button[type="submit"]');
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.textContent = 'Submitting...';
-      }
+      setIsSubmitting(true);
+      console.log("💳 Payment successful, submitting question with payment ID:", paymentIntentId);
 
       // Base payload for both tiers
       const basePayload = {
@@ -141,7 +147,8 @@ function AskQuestionPage() {
         payerLastName: askerInfo.lastName || null,
         recordingSegments: questionData.recordingSegments || [],
         attachments: questionData.attachments || [],
-        sla_hours_snapshot: tierConfig?.sla_hours || expert.sla_hours
+        sla_hours_snapshot: tierConfig?.sla_hours || expert.sla_hours,
+        stripe_payment_intent_id: paymentIntentId // Real payment ID from Stripe
       };
 
       // Add tier-specific fields
@@ -153,15 +160,11 @@ function AskQuestionPage() {
           ...basePayload,
           proposed_price_cents: Math.round(parseFloat(proposedPrice) * 100),
           asker_message: askerMessage || null,
-          stripe_payment_intent_id: 'pi_mock_' + Date.now(), // Mock for now
         };
         endpoint = '/api/questions/deep-dive';
       } else {
-        // Quick Consult or legacy flow (default)
-        payload = {
-          ...basePayload,
-          stripe_payment_intent_id: 'pi_mock_' + Date.now(), // Mock for now
-        };
+        // Quick Consult
+        payload = basePayload;
         endpoint = '/api/questions/quick-consult';
       }
 
@@ -247,6 +250,7 @@ function AskQuestionPage() {
 
     } catch (error) {
       console.error('Submission error:', error);
+      setIsSubmitting(false);
       alert(`Error: ${error.message}`);
       
       const submitButton = document.querySelector('button[type="submit"]');
@@ -480,6 +484,60 @@ function AskQuestionPage() {
         tierConfig={tierConfig}
         proposedPrice={proposedPrice}
       />
+
+      {/* Payment Modal */}
+      {showPaymentModal && questionData && askerInfo && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowPaymentModal(false)}
+          />
+
+          {/* Modal */}
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Progress Stepper */}
+              <div className="pt-6 px-4 sm:px-6">
+                <ProgressStepper currentStep={3} />
+              </div>
+
+              {/* Header */}
+              <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Payment</h2>
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  disabled={isSubmitting}
+                  className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Payment Content */}
+              <div className="p-6">
+                <PaymentPlaceholder
+                  expert={expert}
+                  tierType={tierType}
+                  tierConfig={tierConfig}
+                  composeData={{
+                    title: questionData.title,
+                    text: questionData.text,
+                    recordings: questionData.recordingSegments,
+                    attachments: questionData.attachments,
+                    tierSpecific: tierType === 'deep_dive' ? { price: proposedPrice } : null
+                  }}
+                  reviewData={askerInfo}
+                  onSubmit={handlePaymentSuccess}
+                  isSubmitting={isSubmitting}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
