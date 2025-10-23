@@ -618,11 +618,12 @@ function PublicProfilePage() {
               </svg>
             </div>
             
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Expert Not Found</h2>
-            <p className="text-base md:text-lg text-gray-600 mb-2">
+            {/* ⭐ Brand-aligned typography with tracking-tight */}
+            <h2 className="font-sans text-2xl md:text-3xl font-bold text-gray-900 mb-3 tracking-tight">Expert Not Found</h2>
+            <p className="font-sans text-base md:text-lg text-gray-600 mb-2">
               <span className="font-semibold text-gray-900">@{handle}</span> is not on mindPick yet.
             </p>
-            <p className="text-base md:text-lg text-gray-600 mb-6">
+            <p className="font-sans text-base md:text-lg text-gray-600 mb-6">
               But you can invite them to join!
             </p>
             
@@ -660,8 +661,9 @@ function PublicProfilePage() {
               </svg>
             </div>
             
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Profile is Private</h2>
-            <p className="text-base md:text-lg text-gray-600 mb-6">
+            {/* ⭐ Brand-aligned typography with tracking-tight */}
+            <h2 className="font-sans text-2xl md:text-3xl font-bold text-gray-900 mb-3 tracking-tight">Profile is Private</h2>
+            <p className="font-sans text-base md:text-lg text-gray-600 mb-6">
               This expert has set their profile to private.
             </p>
             
@@ -686,8 +688,9 @@ function PublicProfilePage() {
             </svg>
           </div>
           
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Oops!</h2>
-          <p className="text-base md:text-lg text-gray-600 mb-6">{error}</p>
+          {/* ⭐ Brand-aligned typography with tracking-tight */}
+          <h2 className="font-sans text-2xl md:text-3xl font-bold text-gray-900 mb-3 tracking-tight">Oops!</h2>
+          <p className="font-sans text-base md:text-lg text-gray-600 mb-6">{error}</p>
           
           <a 
             href="/"
@@ -708,15 +711,19 @@ function PublicProfilePage() {
       
       return (
         <React.Fragment>
+          {/* ⭐ UPDATED: Professional soft indigo header banner */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden hover-lift">
-              <div className="relative h-40 md:h-48 bg-gradient-to-br from-gray-100 via-indigo-50 to-indigo-100 overflow-hidden">
-              <div className="absolute top-4 left-8 w-20 h-20 bg-white/10 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '0s' }}></div>
-              <div className="absolute top-8 right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-float-shape" style={{ animationDelay: '2s' }}></div>
-              <div className="absolute bottom-6 left-1/2 w-24 h-24 bg-white/10 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '4s' }}></div>
+            <div className="relative h-40 md:h-48 bg-gradient-to-br from-gray-100 via-indigo-50 to-indigo-100 overflow-hidden">
+              {/* Subtle floating shapes with softer colors */}
+              <div className="absolute top-4 left-8 w-20 h-20 bg-indigo-200/20 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '0s' }}></div>
+              <div className="absolute top-8 right-12 w-32 h-32 bg-indigo-300/15 rounded-full blur-2xl animate-float-shape" style={{ animationDelay: '2s' }}></div>
+              <div className="absolute bottom-6 left-1/2 w-24 h-24 bg-gray-200/25 rounded-full blur-xl animate-float-shape" style={{ animationDelay: '4s' }}></div>
               
-              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+              {/* Subtle gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-200/40 to-transparent"></div>
               
+              {/* Share & QR Buttons */}
               <div className="absolute top-3 right-3 flex gap-2">
                 <button
                   onClick={() => setIsQRModalOpen(true)}
@@ -747,9 +754,10 @@ function PublicProfilePage() {
                 isAcceptingQuestions={isAcceptingQuestions}
               />
 
+              {/* ⭐ Brand-aligned typography with Inter font and tracking-tight */}
               <div className="space-y-2.5">
                 <div className="flex items-start gap-2.5 flex-wrap">
-                  <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-none">
+                  <h1 className="font-sans text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-none">
                     {profile.name || 'Expert'}
                   </h1>
                   {profile.charity_percentage === 100 ? (
@@ -759,12 +767,12 @@ function PublicProfilePage() {
                   )}
                 </div>
                 {profile.title && (
-                  <p className="text-xl md:text-2xl text-gray-600 font-medium leading-tight">
+                  <p className="font-sans text-xl md:text-2xl text-gray-600 font-medium leading-tight">
                     {profile.title}
                   </p>
                 )}
                 {profile.tagline && (
-                  <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                  <p className="font-sans text-base md:text-lg text-gray-700 leading-relaxed">
                     {profile.tagline}
                   </p>
                 )}
@@ -797,7 +805,7 @@ function PublicProfilePage() {
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeSanitize]}
                       components={{
-                        p: ({node, ...props}) => <p className="text-gray-700 leading-relaxed text-base md:text-lg mb-3 last:mb-0" {...props} />,
+                        p: ({node, ...props}) => <p className="font-sans text-gray-700 leading-relaxed text-base md:text-lg mb-3 last:mb-0" {...props} />,
                         strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
                         em: ({node, ...props}) => <em className="italic" {...props} />,
                         a: ({node, ...props}) => (
@@ -810,7 +818,7 @@ function PublicProfilePage() {
                         ),
                         ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3 text-gray-700" {...props} />,
                         ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-1 mb-3 text-gray-700" {...props} />,
-                        li: ({node, ...props}) => <li className="text-gray-700 text-base md:text-lg" {...props} />,
+                        li: ({node, ...props}) => <li className="font-sans text-gray-700 text-base md:text-lg" {...props} />,
                       }}
                     >
                       {profile.bio}
@@ -827,7 +835,8 @@ function PublicProfilePage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
                     </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900">Areas of Expertise</h3>
+                    {/* ⭐ Brand-aligned heading with tracking-tight */}
+                    <h3 className="font-sans text-xl md:text-2xl font-bold text-gray-900 tracking-tight">Areas of Expertise</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {profile.expertise.slice(0, 6).map(function(field, index) {
@@ -881,6 +890,7 @@ function PublicProfilePage() {
             </div>
           </div>
 
+          {/* Trust Indicators */}
           <div className="pt-8 pb-4">
             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 text-sm text-gray-500">
               <div className="flex items-center gap-2">
