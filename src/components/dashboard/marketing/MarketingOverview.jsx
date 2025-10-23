@@ -1,5 +1,6 @@
 // MarketingOverview.jsx - FIXED VERSION
 // Use trafficSources as single source of truth until backend is fixed
+import { useState } from 'react';
 
 export default function MarketingOverview({ 
   campaigns, 
