@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { TrashIcon, PlayIcon, PauseIcon } from '../shared/SVGIcons';
+import { TrashIcon } from '../shared/SVGIcons';
 
 function RecordingSegmentList({ segments, onRemove, onRetry }) {
   const [playingId, setPlayingId] = useState(null);
@@ -187,7 +187,7 @@ function RecordingSegmentList({ segments, onRemove, onRetry }) {
   );
 }
 
-// Icon components
+// Icon components (local to this file)
 function PlayIcon({ className }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 24 24">
