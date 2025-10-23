@@ -11,8 +11,10 @@ function RecordingModal({ mode, onComplete, onClose }) {
   const reviewVideoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
+  const micStreamRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const startTimeRef = useRef(0);
+  const audioContextRef = useRef(null);
 
   // Initialize preview
   useEffect(() => {
@@ -22,26 +24,122 @@ function RecordingModal({ mode, onComplete, onClose }) {
 
   const initializePreview = async () => {
     try {
-      const constraints = mode === 'video'
-        ? { audio: true, video: { facingMode: 'user' } }
-        : { audio: true, video: false };
+      let stream;
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (mode === 'screen') {
+        // Screen recording with audio mixing
+        stream = await setupScreenRecording();
+      } else {
+        // Regular video or audio recording
+        const constraints = mode === 'video'
+          ? { audio: true, video: { facingMode: 'user' } }
+          : { audio: true, video: false };
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
+
       streamRef.current = stream;
 
-      if (mode === 'video' && videoRef.current) {
+      if ((mode === 'video' || mode === 'screen') && videoRef.current) {
         videoRef.current.srcObject = stream;
       }
     } catch (error) {
       console.error('Media permission error:', error);
-      alert('Camera/microphone permission denied');
+      alert('Camera/microphone permission denied or screen sharing cancelled');
       onClose();
+    }
+  };
+
+  const setupScreenRecording = async () => {
+    try {
+      // Get display stream with audio
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      });
+
+      // Get microphone audio
+      const micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        },
+        video: false
+      });
+
+      // Store mic stream reference for cleanup
+      micStreamRef.current = micStream;
+
+      // Create audio context to mix both audio sources
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
+
+      const destination = audioContext.createMediaStreamDestination();
+
+      // Add system audio if available
+      const systemAudioTracks = displayStream.getAudioTracks();
+      if (systemAudioTracks.length > 0) {
+        const systemSource = audioContext.createMediaStreamSource(
+          new MediaStream(systemAudioTracks)
+        );
+        // Create a gain node to control system audio volume
+        const systemGain = audioContext.createGain();
+        systemGain.gain.value = 0.7; // Reduce system audio slightly
+        systemSource.connect(systemGain);
+        systemGain.connect(destination);
+      }
+
+      // Add microphone audio
+      const micAudioTracks = micStream.getAudioTracks();
+      if (micAudioTracks.length > 0) {
+        const micSource = audioContext.createMediaStreamSource(micStream);
+        // Create a gain node to control mic volume
+        const micGain = audioContext.createGain();
+        micGain.gain.value = 1.0; // Keep mic at full volume
+        micSource.connect(micGain);
+        micGain.connect(destination);
+      }
+
+      // Combine video from display with mixed audio
+      const combinedStream = new MediaStream([
+        ...displayStream.getVideoTracks(),
+        ...destination.stream.getAudioTracks()
+      ]);
+
+      // Handle when user stops sharing via browser UI
+      displayStream.getVideoTracks()[0].addEventListener('ended', () => {
+        console.log('Screen sharing stopped by user');
+        if (state === 'recording') {
+          stopRecording();
+        } else {
+          onClose();
+        }
+      });
+
+      return combinedStream;
+    } catch (error) {
+      console.error('Screen recording setup error:', error);
+      throw error;
     }
   };
 
   const cleanup = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach(track => track.stop());
+      micStreamRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
     }
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
@@ -84,7 +182,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
       setRecordedDuration(duration);
       setState('review');
       
-      if (mode === 'video' && reviewVideoRef.current) {
+      if (mode !== 'audio' && reviewVideoRef.current) {
         reviewVideoRef.current.src = URL.createObjectURL(blob);
       }
     };
@@ -130,6 +228,17 @@ function RecordingModal({ mode, onComplete, onClose }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const getModalTitle = () => {
+    if (state === 'preview') {
+      if (mode === 'video') return 'Record Video';
+      if (mode === 'audio') return 'Record Audio';
+      if (mode === 'screen') return 'Record Screen';
+    }
+    if (state === 'recording') return 'Recording...';
+    if (state === 'review') return 'Review Recording';
+    return '';
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
       <div className="flex min-h-full items-center justify-center p-4">
@@ -137,9 +246,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
           {/* Header */}
           <div className="bg-gray-50 px-6 py-4 border-b flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900">
-              {state === 'preview' && `Record ${mode === 'video' ? 'Video' : 'Audio'}`}
-              {state === 'recording' && 'Recording...'}
-              {state === 'review' && 'Review Recording'}
+              {getModalTitle()}
             </h3>
             <button
               onClick={onClose}
@@ -156,7 +263,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
             {/* Preview State */}
             {state === 'preview' && (
               <>
-                {mode === 'video' ? (
+                {mode === 'video' || mode === 'screen' ? (
                   <video
                     ref={videoRef}
                     className="w-full bg-gray-900 aspect-video"
@@ -193,14 +300,25 @@ function RecordingModal({ mode, onComplete, onClose }) {
             {/* Recording State */}
             {state === 'recording' && (
               <>
-                {mode === 'video' ? (
-                  <video
-                    ref={videoRef}
-                    className="w-full bg-gray-900 aspect-video"
-                    autoPlay
-                    muted
-                    playsInline
-                  />
+                {mode === 'video' || mode === 'screen' ? (
+                  <div className="relative">
+                    <video
+                      ref={videoRef}
+                      className="w-full bg-gray-900 aspect-video"
+                      autoPlay
+                      muted
+                      playsInline
+                    />
+                    {/* Recording Indicator Overlay */}
+                    <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 text-white px-3 py-1.5 rounded-full">
+                      <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
+                      <span className="font-semibold text-sm">REC</span>
+                    </div>
+                    {/* Timer Overlay */}
+                    <div className="absolute top-4 right-4 bg-black/70 text-white px-4 py-2 rounded-lg font-mono text-lg font-bold">
+                      {formatTime(timer)}
+                    </div>
+                  </div>
                 ) : (
                   <div className="w-full bg-gray-900 aspect-video flex items-center justify-center">
                     <div className="text-center">
@@ -226,7 +344,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
             {/* Review State */}
             {state === 'review' && (
               <>
-                {mode === 'video' ? (
+                {mode === 'video' || mode === 'screen' ? (
                   <video
                     ref={reviewVideoRef}
                     className="w-full bg-black aspect-video"
@@ -249,15 +367,21 @@ function RecordingModal({ mode, onComplete, onClose }) {
                   <div className="flex gap-3">
                     <button
                       onClick={handleDiscard}
-                      className="px-6 py-3 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
+                      className="px-6 py-3 text-gray-700 font-semibold hover:bg-white rounded-lg transition flex items-center gap-2"
                     >
-                      🗑️ Delete
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
                     </button>
                     <button
                       onClick={handleSave}
-                      className="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700"
+                      className="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"
                     >
-                      ✅ Save Recording
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save Recording
                     </button>
                   </div>
                 </div>

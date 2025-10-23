@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import MobileStickyFooter from '../shared/MobileStickyFooter';
-
+import React from 'react';
 
 function PaymentPlaceholder({ 
   expert, 
@@ -8,11 +6,9 @@ function PaymentPlaceholder({
   tierConfig, 
   composeData, 
   reviewData,
-  onSubmit 
+  onSubmit,
+  isSubmitting = false
 }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-
   const formatPrice = (cents, currency = 'USD') => {
     const symbols = { USD: '$', EUR: '€', GBP: '£' };
     const symbol = symbols[currency] || '$';
@@ -20,149 +16,103 @@ function PaymentPlaceholder({
     return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
   };
 
-  const getDisplayPrice = () => {
-    if (tierType === 'quick_consult' && tierConfig?.price_cents) {
-      return tierConfig.price_cents;
-    } else if (tierType === 'deep_dive' && composeData?.tierSpecific?.proposedPrice) {
-      return Math.round(parseFloat(composeData.tierSpecific.proposedPrice) * 100);
-    }
-    return expert.price_cents;
-  };
-
-  const displayPriceCents = getDisplayPrice();
-  const isDeepDive = tierType === 'deep_dive';
-
-  const handleSubmit = async () => {
-    if (!agreedToTerms) {
-      alert('Please agree to the Terms & Conditions');
-      return;
-    }
-
-    setIsSubmitting(true);
-    await onSubmit();
-    setIsSubmitting(false);
-  };
+  const displayPrice = tierType === 'deep_dive' && composeData.tierSpecific?.price
+    ? `$${composeData.tierSpecific.price}`
+    : formatPrice(tierConfig?.price_cents || expert.price_cents, expert.currency);
 
   return (
     <div className="space-y-6">
-      {/* Payment Method Placeholder */}
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Payment Method</h3>
-        
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-dashed border-indigo-300 rounded-lg p-8 text-center">
-          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Payment Info Card */}
+      <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl p-6 border-2 border-indigo-200">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
           </div>
-          <h4 className="font-bold text-gray-900 mb-2">Stripe Payment Integration</h4>
-          <p className="text-sm text-gray-600 mb-4">
-            Stripe Checkout will be embedded here
-          </p>
-          <div className="inline-flex items-center gap-2 text-xs text-indigo-600 font-semibold">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <span>Secure payment powered by Stripe</span>
+          <div className="flex-1">
+            <h3 className="text-xl font-bold text-gray-900 mb-1">
+              Payment Summary
+            </h3>
+            <p className="text-sm text-gray-600">
+              {tierType === 'quick_consult' 
+                ? 'Fixed price - answer guaranteed' 
+                : 'Offer pending expert approval'}
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* Final Summary */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h3>
-        
-        <div className="space-y-3">
-          {/* Expert */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Asking</span>
-            <span className="font-semibold text-gray-900">
-              {expert.name || expert.user?.name || expert.handle}
-            </span>
+        <div className="bg-white rounded-lg p-4 mb-4">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-gray-700 font-medium">Question to {expert.name || expert.handle}</span>
+            <span className="text-2xl font-black text-indigo-600">{displayPrice}</span>
           </div>
-
-          {/* SLA */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Answer within</span>
-            <span className="font-semibold text-gray-900">
-              {tierConfig?.sla_hours || expert.sla_hours} hours
-            </span>
-          </div>
-
-          {/* Question Type */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Question Type</span>
-            <span className="font-semibold text-gray-900">
-              {tierType === 'quick_consult' ? '⚡ Quick Consult' : '🎯 Deep Dive'}
-            </span>
-          </div>
-
-          <div className="border-t border-green-300 pt-3 mt-3">
-            <div className="flex items-center justify-between">
-              <span className="text-base font-bold text-gray-900">
-                {isDeepDive ? 'Your Offer' : 'Total'}
-              </span>
-              <span className="text-2xl font-black text-green-700">
-                {formatPrice(displayPriceCents, expert.currency)}
-              </span>
+          
+          {tierType === 'deep_dive' && (
+            <div className="text-xs text-gray-600 bg-purple-50 rounded-lg p-3 border border-purple-200">
+              <p className="font-semibold text-purple-900 mb-1">Deep Dive Offer</p>
+              <p>Your offer will be reviewed by the expert. You'll be notified if accepted or countered.</p>
             </div>
-          </div>
+          )}
+
+          {tierType === 'quick_consult' && tierConfig?.sla_hours && (
+            <div className="text-xs text-gray-600 bg-blue-50 rounded-lg p-3 border border-blue-200">
+              <p className="font-semibold text-blue-900 mb-1">Quick Consult</p>
+              <p>Answer delivered within {tierConfig.sla_hours} hours after payment</p>
+            </div>
+          )}
+        </div>
+
+        <div className="text-xs text-gray-500 space-y-1">
+          <p>✓ Email confirmation to: <strong>{reviewData.email}</strong></p>
+          <p>✓ Question: <strong>{composeData.title}</strong></p>
+          {composeData.recordings?.length > 0 && (
+            <p>✓ Recordings: <strong>{composeData.recordings.length} segment(s)</strong></p>
+          )}
+          {composeData.attachments?.length > 0 && (
+            <p>✓ Attachments: <strong>{composeData.attachments.length} file(s)</strong></p>
+          )}
         </div>
       </div>
 
-      {/* Terms & Conditions */}
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={agreedToTerms}
-            onChange={(e) => setAgreedToTerms(e.target.checked)}
-            className="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-          />
-          <span className="text-sm text-gray-700">
-            I agree to the{' '}
-            <a href="/terms" target="_blank" className="text-indigo-600 hover:text-indigo-700 font-semibold underline">
-              Terms & Conditions
-            </a>
-            {' '}and{' '}
-            <a href="/privacy" target="_blank" className="text-indigo-600 hover:text-indigo-700 font-semibold underline">
-              Privacy Policy
-            </a>
-          </span>
-        </label>
+      {/* Stripe Integration Notice */}
+      <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="text-sm">
+            <p className="font-semibold text-amber-900 mb-1">Payment Integration Coming Soon</p>
+            <p className="text-amber-700">
+              Stripe payment processing is not yet implemented. Click "Submit Question" to create your question without payment for testing purposes.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Submit Button */}
-      <div className="pt-4 border-t">
-<MobileStickyFooter>
-  <button
-    onClick={handleSubmit}
-    disabled={!agreedToTerms || isSubmitting}
-    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-  >
-    {isSubmitting ? (
-      <span className="flex items-center justify-center gap-2">
-        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        Processing...
-      </span>
-    ) : !agreedToTerms ? (
-      'Please agree to Terms & Conditions'
-    ) : isDeepDive ? (
-      'Submit Offer →'
-    ) : (
-      'Pay & Submit Question →'
-    )}
-  </button>
-</MobileStickyFooter>
-      </div>
+      <button
+        onClick={onSubmit}
+        disabled={isSubmitting}
+        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+      >
+        {isSubmitting ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Submitting Question...
+          </span>
+        ) : (
+          'Submit Question →'
+        )}
+      </button>
 
-      {/* Help Text */}
-      <div className="text-center">
-        <p className="text-xs text-gray-500">
-          {isDeepDive 
-            ? 'Your payment will be processed after the expert accepts your offer'
-            : 'Your payment will be processed securely via Stripe'
-          }
+      {/* Security Notice */}
+      <div className="text-center text-xs text-gray-500">
+        <p>
+          🔒 Secure submission • Your information is encrypted
         </p>
       </div>
     </div>

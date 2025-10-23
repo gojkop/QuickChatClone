@@ -12,8 +12,8 @@ import MobileStickyFooter from '../shared/MobileStickyFooter';
 function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
   const [title, setTitle] = useState(data.title || '');
   const [text, setText] = useState(data.text || '');
-  const [proposedPrice, setProposedPrice] = useState(data.tierSpecific?.proposedPrice || '');
-  const [askerMessage, setAskerMessage] = useState(data.tierSpecific?.askerMessage || '');
+  const [proposedPrice, setProposedPrice] = useState(data.tierSpecific?.price || '');
+  const [askerMessage, setAskerMessage] = useState(data.tierSpecific?.message || '');
   
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
@@ -33,7 +33,7 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
     onUpdate({ 
       tierSpecific: { 
         ...data.tierSpecific, 
-        proposedPrice: value 
+        price: value 
       } 
     });
   };
@@ -43,7 +43,7 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
     onUpdate({ 
       tierSpecific: { 
         ...data.tierSpecific, 
-        askerMessage: value 
+        message: value 
       } 
     });
   };
@@ -82,8 +82,8 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
       recordings: segmentUpload.getSuccessfulSegments(),
       attachments: attachmentUpload.uploads.filter(u => u.result).map(u => u.result),
       tierSpecific: {
-        proposedPrice,
-        askerMessage
+        price: proposedPrice,
+        message: askerMessage
       }
     };
 
@@ -103,7 +103,9 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
       {/* Deep Dive Badge */}
       <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-4">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-2xl">🎯</span>
+          <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
           <h3 className="font-bold text-gray-900">Deep Dive Question</h3>
         </div>
         <p className="text-sm text-gray-700">
@@ -173,23 +175,23 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
 
       {/* Continue Button */}
       <div className="pt-4 border-t">
-<MobileStickyFooter>
-  <button
-    onClick={handleContinue}
-    disabled={!canContinue}
-    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-  >
-    {!title.trim()
-      ? 'Enter a title to continue'
-      : title.length < 5
-      ? 'Title too short (min 5 characters)'
-      : !proposedPrice || parseFloat(proposedPrice) <= 0
-      ? 'Enter your offer amount'
-      : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
-      ? 'Uploading...'
-      : 'Continue to Review →'}
-  </button>
-</MobileStickyFooter>
+        <MobileStickyFooter>
+          <button
+            onClick={handleContinue}
+            disabled={!canContinue}
+            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+          >
+            {!title.trim()
+              ? 'Enter a title to continue'
+              : title.length < 5
+              ? 'Title too short (min 5 characters)'
+              : !proposedPrice || parseFloat(proposedPrice) <= 0
+              ? 'Enter your offer amount'
+              : segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
+              ? 'Uploading...'
+              : 'Continue to Review →'}
+          </button>
+        </MobileStickyFooter>
       </div>
     </div>
   );
