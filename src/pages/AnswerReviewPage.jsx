@@ -20,6 +20,7 @@ function AnswerReviewPage() {
   const [allowTestimonial, setAllowTestimonial] = useState(false);
   const [showPrivacyReminder, setShowPrivacyReminder] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -410,9 +411,6 @@ function AnswerReviewPage() {
   const expertName = data.expert_profile?.user?.name || 'Expert';
   const expertAvatar = data.expert_profile?.avatar_url;
   const expertHandle = data.expert_profile?.handle;
-
-  // Track if avatar failed to load
-  const [avatarError, setAvatarError] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">

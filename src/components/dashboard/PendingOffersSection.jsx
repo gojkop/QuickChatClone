@@ -25,6 +25,27 @@ const formatTimeRemaining = (expiresAt) => {
   return `${minutes}m`;
 };
 
+const getTimeRemainingColor = (expiresAt, createdAt) => {
+  const now = Date.now();
+  const expiry = new Date(expiresAt).getTime();
+  const created = createdAt ? new Date(createdAt).getTime() : expiry - (24 * 60 * 60 * 1000); // Default to 24h total
+
+  const totalDuration = expiry - created;
+  const remaining = expiry - now;
+
+  if (remaining <= 0) {
+    return 'text-red-600'; // Expired
+  }
+
+  const percentRemaining = (remaining / totalDuration) * 100;
+
+  if (percentRemaining < 20) {
+    return 'text-red-600'; // Less than 20% time left
+  }
+
+  return 'text-orange-600'; // Normal
+};
+
 function PendingOffersSection({ onOfferUpdate, onViewDetails }) {
   const [offers, setOffers] = useState([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -189,60 +210,54 @@ function PendingOffersSection({ onOfferUpdate, onViewDetails }) {
         {offers.map((offer) => (
           <div
             key={offer.question_id}
-            className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border-2 border-purple-200 p-5 hover:shadow-md transition-shadow"
+            className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border-2 border-purple-200 hover:shadow-md transition-all hover:border-purple-300 cursor-pointer"
           >
-            {/* Header */}
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900 text-base mb-1">{offer.title}</h3>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <span className="font-semibold text-purple-700">
-                    Offered: {formatPrice(offer.proposed_price_cents)}
-                  </span>
-                  <span>•</span>
-                  <span className={`font-medium ${
-                    formatTimeRemaining(offer.offer_expires_at) === 'Expired'
-                      ? 'text-red-600'
-                      : 'text-orange-600'
-                  }`}>
-                    Expires in {formatTimeRemaining(offer.offer_expires_at)}
-                  </span>
+            {/* Clickable area - entire card except buttons */}
+            <div
+              onClick={() => onViewDetails && onViewDetails(offer.question_id)}
+              className="p-5 pb-3"
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900 text-base mb-1">{offer.title}</h3>
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <span className="font-semibold text-purple-700">
+                      Offered: {formatPrice(offer.proposed_price_cents)}
+                    </span>
+                    <span>•</span>
+                    <span className={`font-medium ${getTimeRemainingColor(offer.offer_expires_at, offer.created_at)}`}>
+                      Expires in {formatTimeRemaining(offer.offer_expires_at)}
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {/* Asker Message */}
+              {offer.asker_message && (
+                <div className="bg-white/80 rounded-lg p-3 mb-3 border border-purple-100">
+                  <p className="text-xs font-semibold text-gray-500 mb-1">Message from asker:</p>
+                  <p className="text-sm text-gray-700 italic">"{offer.asker_message}"</p>
+                </div>
+              )}
+
+              {/* Question Preview */}
+              {offer.text && (
+                <div className="bg-white/60 rounded-lg p-3 mb-3 border border-purple-100">
+                  <p className="text-xs font-semibold text-gray-500 mb-1">Question:</p>
+                  <p className="text-sm text-gray-700 line-clamp-2">{offer.text}</p>
+                </div>
+              )}
+
+              {/* Click hint */}
+              <p className="text-xs text-gray-500 text-center mt-2">Click to view full question details</p>
             </div>
 
-            {/* Asker Message */}
-            {offer.asker_message && (
-              <div className="bg-white/80 rounded-lg p-3 mb-3 border border-purple-100">
-                <p className="text-xs font-semibold text-gray-500 mb-1">Message from asker:</p>
-                <p className="text-sm text-gray-700 italic">"{offer.asker_message}"</p>
-              </div>
-            )}
-
-            {/* Question Preview */}
-            {offer.text && (
-              <div className="bg-white/60 rounded-lg p-3 mb-3 border border-purple-100">
-                <p className="text-xs font-semibold text-gray-500 mb-1">Question:</p>
-                <p className="text-sm text-gray-700 line-clamp-2">{offer.text}</p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex flex-col gap-2">
-              {/* View Details Button */}
-              <button
-                onClick={() => onViewDetails && onViewDetails(offer.question_id)}
-                className="w-full bg-purple-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-purple-700 transition-all flex items-center justify-center gap-2"
+            {/* Actions - Outside clickable area */}
+            <div className="px-5 pb-5">
+              <div className="flex items-center gap-3"
+                onClick={(e) => e.stopPropagation()}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                View Full Question
-              </button>
-
-              {/* Accept/Decline Buttons */}
-              <div className="flex items-center gap-3">
                 <button
                   onClick={() => handleAccept(offer.question_id)}
                   disabled={processingOfferId === offer.question_id}

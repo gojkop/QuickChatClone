@@ -62,7 +62,7 @@ const getPayerName = (question) => {
   return 'Anonymous';
 };
 
-// Helper to format SLA remaining time - FIXED with null handling
+// Helper to format SLA remaining time - with 20% threshold coloring
 const formatSLA = (slaHours, createdAt) => {
   if (!slaHours || slaHours <= 0) {
     return <span className="text-gray-400">—</span>;
@@ -73,16 +73,22 @@ const formatSLA = (slaHours, createdAt) => {
   const elapsed = now - createdAtSeconds;
   const slaSeconds = slaHours * 3600;
   const remaining = slaSeconds - elapsed;
-  
+
   if (remaining <= 0) return <span className="text-red-600 font-bold">Overdue</span>;
-  
+
   const hours = Math.floor(remaining / 3600);
   const minutes = Math.floor((remaining % 3600) / 60);
-  
+
+  // Calculate percentage of time remaining
+  const percentRemaining = (remaining / slaSeconds) * 100;
+
+  // Red color if less than 20% time remaining
+  const isUrgent = percentRemaining < 20;
+
   if (hours > 0) {
-    return <span className={hours < 2 ? 'text-orange-600 font-bold' : ''}>{hours}h</span>;
+    return <span className={isUrgent ? 'text-red-600 font-bold' : ''}>{hours}h</span>;
   }
-  return <span className="text-orange-600 font-bold">{minutes}m</span>;
+  return <span className={isUrgent ? 'text-red-600 font-bold' : 'text-orange-600 font-bold'}>{minutes}m</span>;
 };
 
 // Helper to format price
