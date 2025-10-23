@@ -100,7 +100,26 @@ function PendingOffersSection({ onOfferUpdate, onViewDetails }) {
 
     try {
       setProcessingOfferId(offerId);
-      const response = await apiClient.post(`/offers/${offerId}/accept`);
+
+      // Get auth token for Vercel API
+      const token = localStorage.getItem('qc_token');
+
+      // Call Vercel endpoint (which captures Stripe payment)
+      const response = await fetch(`/api/offers/${offerId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to accept offer');
+      }
+
+      const result = await response.json();
+      console.log('✅ Offer accepted, payment captured:', result);
 
       // Remove from pending offers list
       setOffers(prev => prev.filter(offer => offer.question_id !== offerId));
@@ -111,11 +130,11 @@ function PendingOffersSection({ onOfferUpdate, onViewDetails }) {
       }
 
       // Show success message
-      alert('✓ Offer accepted! The question has been moved to your queue.');
+      alert('✓ Offer accepted! Payment captured and question moved to your queue.');
 
     } catch (err) {
       console.error('Failed to accept offer:', err);
-      alert('Failed to accept offer: ' + (err.response?.data?.error || err.message));
+      alert('Failed to accept offer: ' + err.message);
     } finally {
       setProcessingOfferId(null);
     }
@@ -132,10 +151,29 @@ function PendingOffersSection({ onOfferUpdate, onViewDetails }) {
     try {
       setProcessingOfferId(offerId);
       console.log('🔍 Declining offer:', offerId);
-      const response = await apiClient.post(`/offers/${offerId}/decline`, {
-        decline_reason: reason || 'Expert declined'
+
+      // Get auth token for Vercel API
+      const token = localStorage.getItem('qc_token');
+
+      // Call Vercel endpoint (which cancels Stripe payment)
+      const response = await fetch(`/api/offers/${offerId}/decline`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          decline_reason: reason || 'Expert declined'
+        })
       });
-      console.log('🔍 Decline response:', response.data);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to decline offer');
+      }
+
+      const result = await response.json();
+      console.log('🔍 Decline response:', result);
 
       // Remove from pending offers list
       setOffers(prev => prev.filter(offer => offer.question_id !== offerId));
@@ -145,14 +183,11 @@ function PendingOffersSection({ onOfferUpdate, onViewDetails }) {
         onOfferUpdate();
       }
 
-      alert('✓ Offer declined. Payment has been refunded to the asker.');
+      alert('✓ Offer declined. Payment authorization has been canceled.');
 
     } catch (err) {
       console.error('Failed to decline offer:', err);
-      console.error('🔍 Error response:', err.response);
-      console.error('🔍 Error data:', err.response?.data);
-      console.error('🔍 Error status:', err.response?.status);
-      alert('Failed to decline offer: ' + (err.response?.data?.message || err.response?.data?.error || err.message));
+      alert('Failed to decline offer: ' + err.message);
     } finally {
       setProcessingOfferId(null);
     }
