@@ -28,6 +28,7 @@ function AskQuestionPageV2() {
     const fetchExpertFromURL = async () => {
       // If we already have expert data from navigation, skip fetch
       if (navigationState.expert) {
+        console.log('✅ Using expert data from navigation state');
         setIsLoading(false);
         return;
       }
@@ -48,6 +49,8 @@ function AskQuestionPageV2() {
       try {
         setIsLoading(true);
         
+        console.log('📡 Fetching expert profile for:', handle);
+        
         const response = await fetch(
           `https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/profile?handle=${encodeURIComponent(handle)}`
         );
@@ -60,7 +63,10 @@ function AskQuestionPageV2() {
         }
 
         const data = await response.json();
+        console.log('📦 Raw API response:', data);
+        
         const expertProfile = data?.expert_profile ?? data;
+        console.log('📋 Expert profile extracted:', expertProfile);
         
         // Check if profile is public
         const publicValue = expertProfile?.public ?? expertProfile?.is_public ?? expertProfile?.isPublic;
@@ -79,6 +85,7 @@ function AskQuestionPageV2() {
                                      acceptingQuestionsValue === 'true';
 
         if (!isAcceptingQuestions) {
+          console.log('⚠️ Expert not accepting questions, redirecting to profile');
           navigate(`/u/${handle}`, { replace: true });
           return;
         }
@@ -86,9 +93,15 @@ function AskQuestionPageV2() {
         const expertData = {
           ...expertProfile,
           user: data?.user ?? expertProfile?.user,
-          name: expertProfile?.name ?? data?.user?.name,
+          name: expertProfile?.name ?? data?.user?.name ?? handle,
+          handle: expertProfile?.handle ?? handle,
           accepting_questions: isAcceptingQuestions,
         };
+
+        console.log('✅ Expert data loaded:', expertData);
+        console.log('📋 Expert has name:', expertData.name);
+        console.log('📋 Expert has handle:', expertData.handle);
+        console.log('📋 Expert has user:', expertData.user);
 
         setExpert(expertData);
 
@@ -96,17 +109,21 @@ function AskQuestionPageV2() {
         const determinedTierType = tier || 'quick_consult';
         setTierType(determinedTierType);
 
+        console.log('🎯 Tier type:', determinedTierType);
+
         if (determinedTierType === 'quick_consult') {
           setTierConfig({
-            price_cents: expertData.price_cents,
-            sla_hours: expertData.sla_hours
+            price_cents: expertData.price_cents || 0,
+            sla_hours: expertData.sla_hours || 48
           });
         } else if (determinedTierType === 'deep_dive') {
           // Parse deep_dive tier config if available
           const deepDiveTiers = expertData.deep_dive_tiers || expertData.tiers;
           if (deepDiveTiers && deepDiveTiers.length > 0) {
+            console.log('📊 Using deep dive tier config:', deepDiveTiers[0]);
             setTierConfig(deepDiveTiers[0]);
           } else {
+            console.log('⚠️ No deep dive tiers found, using fallback');
             // Fallback config
             setTierConfig({
               min_price_cents: 5000,
@@ -116,9 +133,10 @@ function AskQuestionPageV2() {
           }
         }
 
+        console.log('✅ Initialization complete');
         setIsLoading(false);
       } catch (err) {
-        console.error('Failed to fetch expert profile:', err);
+        console.error('❌ Failed to fetch expert profile:', err);
         setError(err.message || 'Could not load expert details.');
         setIsLoading(false);
       }
@@ -247,14 +265,36 @@ function AskQuestionPageV2() {
     );
   }
 
-  // No expert data
-  if (!expert) {
+  // No expert data - EXPANDED CHECK
+  if (!expert || !expert.handle) {
+    console.error('❌ No expert data available');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">No expert data available.</p>
+        <div className="text-center">
+          <p className="text-gray-500 mb-4">No expert data available.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition"
+          >
+            Go to Homepage
+          </button>
+        </div>
       </div>
     );
   }
+
+  // Ensure expert has required fields with safe defaults
+  const safeExpert = {
+    ...expert,
+    name: expert.name || expert.user?.name || expert.handle || 'Expert',
+    handle: expert.handle,
+    price_cents: expert.price_cents || 0,
+    currency: expert.currency || 'USD',
+    sla_hours: expert.sla_hours || 48,
+    id: expert.id || expert._id || null
+  };
+
+  console.log('🔒 Safe expert data:', safeExpert);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32 sm:pb-8">
@@ -275,7 +315,7 @@ function AskQuestionPageV2() {
           onEdit={handleEditCompose}
         >
           <StepCompose
-            expert={expert}
+            expert={safeExpert}
             tierType={tierType}
             tierConfig={tierConfig}
             composeData={state.compose}
@@ -294,7 +334,7 @@ function AskQuestionPageV2() {
           onEdit={() => actions.goToStep(2)}
         >
           <StepReview
-            expert={expert}
+            expert={safeExpert}
             tierType={tierType}
             tierConfig={tierConfig}
             composeData={state.compose}
@@ -314,7 +354,7 @@ function AskQuestionPageV2() {
           isExpandable={false}
         >
           <StepPayment
-            expert={expert}
+            expert={safeExpert}
             tierType={tierType}
             tierConfig={tierConfig}
             composeData={state.compose}
