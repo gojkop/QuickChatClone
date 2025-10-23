@@ -9,8 +9,9 @@ import { useAttachmentUpload } from '@/components/question-flow-v2/hooks/useAtta
 
 
 function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
-  const [title, setTitle] = useState(data.title || '');
-  const [text, setText] = useState(data.text || '');
+  // ✅ FIX: Safe data initialization with optional chaining
+  const [title, setTitle] = useState(data?.title || '');
+  const [text, setText] = useState(data?.text || '');
   
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
@@ -26,12 +27,12 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
 
   const handleTitleChange = (value) => {
     setTitle(value);
-    onUpdate({ title: value });
+    if (onUpdate) onUpdate({ title: value });
   };
 
   const handleTextChange = (value) => {
     setText(value);
-    onUpdate({ text: value });
+    if (onUpdate) onUpdate({ text: value });
   };
 
   const hasRecordings = segmentUpload.segments.length > 0;
@@ -74,7 +75,7 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
       />
 
       {/* mindPilot Panel - with safety check */}
-      {expert && expert.id && (
+      {expert && expert.id && title && title.length >= 5 && (
         <MindPilotPanel
           questionTitle={title}
           questionText={text}
@@ -88,7 +89,7 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
             if (suggestions && suggestions.additionalContext) {
               const newText = (text + suggestions.additionalContext).trim();
               setText(newText);
-              onUpdate({ text: newText });
+              if (onUpdate) onUpdate({ text: newText });
             }
           }}
         />

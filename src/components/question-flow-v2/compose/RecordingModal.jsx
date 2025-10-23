@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 function RecordingModal({ mode, onComplete, onClose }) {
   const [state, setState] = useState('preview'); // preview, recording, review
@@ -15,23 +16,37 @@ function RecordingModal({ mode, onComplete, onClose }) {
   const timerIntervalRef = useRef(null);
   const startTimeRef = useRef(0);
 
-  // ✅ Lock body scroll when modal is open
+  // ✅ IMPROVED: Lock body scroll when modal is open with better mobile handling
   useEffect(() => {
-    // Save current scroll position
     const scrollY = window.scrollY;
+    const body = document.body;
+    const html = document.documentElement;
     
-    // Prevent body scroll
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
+    // Store original styles
+    const originalBodyOverflow = body.style.overflow;
+    const originalBodyPosition = body.style.position;
+    const originalBodyTop = body.style.top;
+    const originalBodyWidth = body.style.width;
+    const originalHtmlOverflow = html.style.overflow;
+    
+    // Lock scroll on both body and html for better mobile support
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.left = '0';
+    body.style.right = '0';
+    html.style.overflow = 'hidden';
 
     return () => {
-      // Restore body scroll
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
+      // Restore original styles
+      body.style.overflow = originalBodyOverflow;
+      body.style.position = originalBodyPosition;
+      body.style.top = originalBodyTop;
+      body.style.width = originalBodyWidth;
+      body.style.left = '';
+      body.style.right = '';
+      html.style.overflow = originalHtmlOverflow;
       
       // Restore scroll position
       window.scrollTo(0, scrollY);
@@ -233,17 +248,37 @@ function RecordingModal({ mode, onComplete, onClose }) {
   // ✅ Detect mobile
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
 
-  return (
+  // ✅ IMPROVED: Render modal using React Portal to avoid z-index issues
+  const modalContent = (
     <div 
-      className="fixed inset-0 overflow-hidden bg-black/60 backdrop-blur-sm"
-      style={{ zIndex: 9999 }}
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+      style={{ 
+        zIndex: 99999,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: 'hidden',
+        WebkitOverflowScrolling: 'touch'
+      }}
     >
-      <div className={`flex min-h-full items-center justify-center ${isMobile ? 'p-0' : 'p-4'}`}>
-        <div className={`relative bg-white overflow-hidden ${
-          isMobile 
-            ? 'w-full h-full flex flex-col' 
-            : 'rounded-2xl shadow-2xl max-w-2xl w-full'
-        }`}>
+      <div 
+        className="absolute inset-0 flex items-center justify-center"
+        style={{
+          padding: isMobile ? '0' : '1rem'
+        }}
+      >
+        <div 
+          className={`bg-white shadow-2xl ${
+            isMobile 
+              ? 'w-full h-full flex flex-col' 
+              : 'rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col'
+          }`}
+          style={{
+            maxHeight: isMobile ? '100vh' : '90vh'
+          }}
+        >
           {/* Header */}
           <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center justify-between flex-shrink-0">
             <h3 className="text-base sm:text-lg font-bold text-gray-900">
@@ -253,47 +288,51 @@ function RecordingModal({ mode, onComplete, onClose }) {
             </h3>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-200 rounded-lg transition"
+              className="p-2 hover:bg-gray-200 rounded-lg transition touch-manipulation"
+              style={{ minWidth: '44px', minHeight: '44px' }}
               aria-label="Close modal"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
           {/* Content - Mobile optimized */}
-          <div className={`relative ${isMobile ? 'flex-1 flex flex-col' : ''}`} style={{ minHeight: isMobile ? 'auto' : '400px' }}>
+          <div className="relative flex-1 flex flex-col overflow-hidden" style={{ minHeight: '300px' }}>
             {/* Preview State */}
             {state === 'preview' && (
               <>
                 {(mode === 'video' || mode === 'screen') ? (
                   <video
                     ref={videoRef}
-                    className={`w-full bg-gray-900 ${isMobile ? 'flex-1 object-cover' : 'aspect-video'}`}
+                    className="w-full flex-1 bg-gray-900 object-cover"
                     autoPlay
                     muted
                     playsInline
+                    style={{ maxHeight: isMobile ? 'calc(100vh - 200px)' : 'none' }}
                   />
                 ) : (
-                  <div className={`w-full bg-gray-900 flex items-center justify-center ${isMobile ? 'flex-1' : 'aspect-video'}`}>
-                    <div className="text-center">
+                  <div className="w-full flex-1 bg-gray-900 flex items-center justify-center">
+                    <div className="text-center p-8">
                       <MicIcon className="w-16 h-16 text-white mx-auto mb-3" />
                       <p className="text-white font-semibold">Audio Ready</p>
                     </div>
                   </div>
                 )}
-                <div className="p-4 sm:p-6 flex gap-3 flex-shrink-0">
+                <div className="p-4 sm:p-6 flex gap-3 flex-shrink-0 bg-white border-t">
                   <button
                     onClick={onClose}
-                    className="px-4 sm:px-6 py-3 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition"
+                    className="px-4 sm:px-6 py-3 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition touch-manipulation"
+                    style={{ minHeight: '48px' }}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={startCountdown}
                     disabled={countdown !== null}
-                    className="flex-1 bg-red-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                    className="flex-1 bg-red-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg hover:bg-red-700 transition disabled:opacity-50 touch-manipulation"
+                    style={{ minHeight: '48px', fontSize: '16px' }}
                   >
                     Start Recording
                   </button>
@@ -307,26 +346,28 @@ function RecordingModal({ mode, onComplete, onClose }) {
                 {(mode === 'video' || mode === 'screen') ? (
                   <video
                     ref={videoRef}
-                    className={`w-full bg-gray-900 ${isMobile ? 'flex-1 object-cover' : 'aspect-video'}`}
+                    className="w-full flex-1 bg-gray-900 object-cover"
                     autoPlay
                     muted
                     playsInline
+                    style={{ maxHeight: isMobile ? 'calc(100vh - 200px)' : 'none' }}
                   />
                 ) : (
-                  <div className={`w-full bg-gray-900 flex items-center justify-center ${isMobile ? 'flex-1' : 'aspect-video'}`}>
-                    <div className="text-center">
+                  <div className="w-full flex-1 bg-gray-900 flex items-center justify-center">
+                    <div className="text-center p-8">
                       <div className="w-16 h-16 rounded-full bg-red-600 mx-auto mb-4 animate-pulse" />
                       <p className="text-white font-semibold">Recording {mode === 'screen' ? 'Screen' : 'Audio'}...</p>
                     </div>
                   </div>
                 )}
-                <div className="p-4 sm:p-6 text-center flex-shrink-0">
+                <div className="p-4 sm:p-6 text-center flex-shrink-0 bg-white border-t">
                   <div className="text-3xl sm:text-4xl font-black text-red-600 mb-4">
                     {formatTime(timer)}
                   </div>
                   <button
                     onClick={stopRecording}
-                    className="px-6 sm:px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
+                    className="px-6 sm:px-8 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 touch-manipulation"
+                    style={{ minHeight: '48px', fontSize: '16px' }}
                   >
                     Stop Recording
                   </button>
@@ -340,35 +381,39 @@ function RecordingModal({ mode, onComplete, onClose }) {
                 {(mode === 'video' || mode === 'screen') ? (
                   <video
                     ref={reviewVideoRef}
-                    className={`w-full bg-black ${isMobile ? 'flex-1' : 'aspect-video'}`}
+                    className="w-full flex-1 bg-black object-contain"
                     controls
                     playsInline
+                    style={{ maxHeight: isMobile ? 'calc(100vh - 200px)' : 'none' }}
                   />
                 ) : (
-                  <div className={`w-full bg-gray-900 flex items-center justify-center ${isMobile ? 'flex-1' : 'aspect-video'}`}>
+                  <div className="w-full flex-1 bg-gray-900 flex items-center justify-center">
                     <audio
                       src={reviewBlobUrl || ''}
                       controls
                       className="w-full max-w-md px-4"
+                      style={{ minHeight: '54px' }}
                     />
                   </div>
                 )}
-                <div className="p-4 sm:p-6 bg-green-50 flex-shrink-0">
-                  <p className="text-sm text-green-800 mb-4 text-center">
+                <div className="p-4 sm:p-6 bg-green-50 flex-shrink-0 border-t">
+                  <p className="text-sm text-green-800 mb-4 text-center font-semibold">
                     Duration: {formatTime(recordedDuration)}
                   </p>
                   <div className="flex gap-3">
                     <button
                       onClick={handleDiscard}
-                      className="px-4 sm:px-6 py-3 text-gray-700 font-semibold hover:bg-white rounded-lg transition"
+                      className="px-4 sm:px-6 py-3 text-gray-700 font-semibold hover:bg-white rounded-lg transition border-2 border-gray-300 touch-manipulation"
+                      style={{ minHeight: '48px' }}
                     >
-                      🗑️ Delete
+                      Delete
                     </button>
                     <button
                       onClick={handleSave}
-                      className="flex-1 bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg hover:bg-green-700"
+                      className="flex-1 bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg hover:bg-green-700 shadow-lg touch-manipulation"
+                      style={{ minHeight: '48px', fontSize: '16px' }}
                     >
-                      ✅ Save Recording
+                      Save Recording
                     </button>
                   </div>
                 </div>
@@ -377,7 +422,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
 
             {/* Countdown Overlay */}
             {countdown !== null && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+              <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
                 <div className="text-center">
                   <div className="text-6xl sm:text-8xl font-black text-white mb-4 animate-bounce">
                     {countdown}
@@ -391,6 +436,11 @@ function RecordingModal({ mode, onComplete, onClose }) {
       </div>
     </div>
   );
+
+  // Render using portal
+  return typeof document !== 'undefined' 
+    ? createPortal(modalContent, document.body)
+    : null;
 }
 
 // Icon components (inline for modal)

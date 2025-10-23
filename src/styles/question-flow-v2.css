@@ -815,6 +815,33 @@ label.recording-option-btn {
   }
 }
 
+/* Mobile touch optimization */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS zoom on input focus */
+input[type="text"],
+input[type="email"],
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+/* Recording option buttons - mobile optimized */
+.recording-option-btn {
+  @apply flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200;
+  min-height: 60px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.recording-option-icon {
+  @apply w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0;
+}
+
+
 /* ===================================
    PERSISTENT MOBILE FOOTER
    =================================== */
