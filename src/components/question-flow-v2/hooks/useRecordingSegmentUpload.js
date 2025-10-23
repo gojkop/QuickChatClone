@@ -256,21 +256,6 @@ export function useRecordingSegmentUpload() {
   const hasUploading = segments.some(s => s.uploading);
   const hasErrors = segments.some(s => s.error);
 
-  // Debug log
-  console.log('📊 Hook state:', {
-    segmentCount: segments.length,
-    segments: segments.map(s => ({
-      id: s.id,
-      mode: s.mode,
-      segmentIndex: s.segmentIndex,
-      hasBlobUrl: !!s.blobUrl,
-      uploading: s.uploading,
-      error: s.error,
-    })),
-    hasUploading,
-    hasErrors,
-  });
-
   return {
     segments,
     uploadSegment,
