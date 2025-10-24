@@ -38,12 +38,17 @@ function PaymentPlaceholder({
     }
   }, [config.enabled, config.publicKey, stripePromise]);
 
-  // Create payment intent on mount
+  // Create payment intent when we have the required data
   useEffect(() => {
-    if (!clientSecret && !isCreatingIntent) {
+    // Don't create intent if we don't have the required data yet
+    const hasRequiredData = tierType === 'deep_dive'
+      ? composeData.tierSpecific?.proposedPrice  // Deep Dive needs proposed price
+      : composeData.title;  // Quick Consult just needs a title
+
+    if (!clientSecret && !isCreatingIntent && hasRequiredData) {
       handleCreatePaymentIntent();
     }
-  }, []);
+  }, [clientSecret, isCreatingIntent, composeData.title, composeData.tierSpecific?.proposedPrice, tierType]);
 
   const handleCreatePaymentIntent = async () => {
     setIsCreatingIntent(true);
