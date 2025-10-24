@@ -31,6 +31,14 @@
     {
       "path": "/api/cron/daily-question-digest",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/cancel-expired-offers",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/cancel-expired-slas",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

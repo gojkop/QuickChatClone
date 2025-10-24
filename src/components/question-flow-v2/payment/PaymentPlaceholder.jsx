@@ -56,7 +56,8 @@ function PaymentPlaceholder({
         : tierConfig?.price_cents || expert.price_cents || 0;
 
       const description = `${tierType === 'quick_consult' ? 'Quick Consult' : 'Deep Dive'}: ${composeData.title}`;
-      const captureMethod = tierType === 'deep_dive' ? 'manual' : 'automatic';
+      // Both tiers now use manual capture - payment is only captured when question is answered
+      const captureMethod = 'manual';
 
       console.log(`🔍 [PAYMENT] Tier type: ${tierType}, Capture method: ${captureMethod}`);
 
