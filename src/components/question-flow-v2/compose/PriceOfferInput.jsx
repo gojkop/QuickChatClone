@@ -14,23 +14,17 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
       return;
     }
 
+    // ✅ CHANGED: Only validate that it's a positive number
     if (isNaN(numValue) || numValue <= 0) {
       setError('Please enter a valid amount');
       return;
     }
 
-    if (numValue < minDollars) {
-      setError(`Min $${minDollars}`);
-      return;
-    }
-
-    if (numValue > maxDollars) {
-      setError(`Max $${maxDollars}`);
-      return;
-    }
-
+    // ✅ REMOVED: Min/max range validation
+    // Expert can accept, decline, or counter any offer
+    
     setError('');
-  }, [value, minDollars, maxDollars]);
+  }, [value]); // Removed minDollars, maxDollars from dependencies
 
   const getCurrencySymbol = () => {
     const symbols = { USD: '$', EUR: '€', GBP: '£' };
@@ -56,9 +50,7 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
             name="price"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={`${minDollars}-${maxDollars}`}
-            min={minDollars}
-            max={maxDollars}
+            placeholder={`e.g. ${minDollars}-${maxDollars}`}
             step="1"
             inputMode="decimal"
             className={`w-full pr-3 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base font-bold ${
@@ -74,8 +66,8 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
         {error ? (
           <p className="text-xs text-red-600 font-medium mt-1">{error}</p>
         ) : (
-          <p className="text-xs text-gray-600 mt-1">
-            Range: ${minDollars} - ${maxDollars}
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Expert suggested range: ${minDollars} - ${maxDollars}
           </p>
         )}
       </div>
@@ -103,9 +95,7 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
             name="price"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={`${minDollars} - ${maxDollars}`}
-            min={minDollars}
-            max={maxDollars}
+            placeholder={`e.g. ${minDollars} - ${maxDollars}`}
             step="1"
             inputMode="decimal"
             className={`w-full pr-4 py-3 sm:py-4 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg sm:text-xl font-bold ${
@@ -127,8 +117,8 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
               {error}
             </div>
           ) : (
-            <span className="text-xs text-gray-600">
-              Suggested range: ${minDollars} - ${maxDollars}
+            <span className="text-xs text-gray-500">
+              💡 Expert suggested range: ${minDollars} - ${maxDollars}
             </span>
           )}
         </div>
@@ -140,8 +130,7 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-xs text-purple-900">
-            <strong>How it works:</strong> The expert will review your question and offer. 
-            They may accept, decline, or propose a different price.
+            <strong>How it works:</strong> You can offer any amount. The expert will review your question and offer, then may accept, decline, or propose a different price.
           </p>
         </div>
       </div>

@@ -14,7 +14,7 @@ function AskQuestionPageV2() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  console.log('🎨 AskQuestionPageV2 RENDERED');
+  // console.log('🎨 AskQuestionPageV2 RENDERED');
   
   const navigationState = location.state || {};
   
@@ -26,19 +26,19 @@ function AskQuestionPageV2() {
 
   const { state, actions } = useFlowState();
 
-  useEffect(() => {
-    console.log('🔍 AskQuestionPageV2 - State changed:', {
-      currentStep: state.currentStep,
-      composeTitle: state.compose.title,
-      composeTitleLength: state.compose.title?.length,
-      fullComposeState: JSON.stringify(state.compose)
-    });
-  }, [state.compose.title, state.currentStep]);
+  // useEffect(() => {
+  //   console.log('🔍 AskQuestionPageV2 - State changed:', {
+  //     currentStep: state.currentStep,
+  //     composeTitle: state.compose.title,
+  //     composeTitleLength: state.compose.title?.length,
+  //     fullComposeState: JSON.stringify(state.compose)
+  //   });
+  // }, [state.compose.title, state.currentStep]);
 
   useEffect(() => {
     const fetchExpertFromURL = async () => {
       if (navigationState.expert) {
-        console.log('✅ Using expert data from navigation state');
+        // console.log('✅ Using expert data from navigation state');
         setIsLoading(false);
         return;
       }
@@ -47,7 +47,7 @@ function AskQuestionPageV2() {
       const handle = params.get('expert');
       const tier = params.get('tier');
 
-      console.log('🔍 AskQuestionPageV2 - URL params:', { handle, tier });
+      // console.log('🔍 AskQuestionPageV2 - URL params:', { handle, tier });
 
       if (!handle) {
         console.error('❌ No expert handle found in URL params');
@@ -59,7 +59,7 @@ function AskQuestionPageV2() {
       try {
         setIsLoading(true);
         
-        console.log('📡 Fetching expert profile for:', handle);
+        // console.log('📡 Fetching expert profile for:', handle);
         
         const response = await fetch(
           `https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/profile?handle=${encodeURIComponent(handle)}`
@@ -73,10 +73,10 @@ function AskQuestionPageV2() {
         }
 
         const data = await response.json();
-        console.log('📦 Raw API response:', data);
+        // console.log('📦 Raw API response:', data);
         
         const expertProfile = data?.expert_profile ?? data;
-        console.log('📋 Expert profile extracted:', expertProfile);
+        // console.log('📋 Expert profile extracted:', expertProfile);
         
         const publicValue = expertProfile?.public ?? expertProfile?.is_public ?? expertProfile?.isPublic;
         const isPublic = publicValue === true || publicValue === 1 || 
@@ -93,7 +93,7 @@ function AskQuestionPageV2() {
                                      acceptingQuestionsValue === 'true';
 
         if (!isAcceptingQuestions) {
-          console.log('⚠️ Expert not accepting questions, redirecting to profile');
+          console.log('Expert not accepting questions, redirecting to profile');
           navigate(`/u/${handle}`, { replace: true });
           return;
         }
@@ -106,17 +106,17 @@ function AskQuestionPageV2() {
           accepting_questions: isAcceptingQuestions,
         };
 
-        console.log('✅ Expert data loaded:', expertData);
-        console.log('📋 Expert has name:', expertData.name);
-        console.log('📋 Expert has handle:', expertData.handle);
-        console.log('📋 Expert has user:', expertData.user);
+        // console.log('✅ Expert data loaded:', expertData);
+        // console.log('📋 Expert has name:', expertData.name);
+        // console.log('📋 Expert has handle:', expertData.handle);
+        // console.log('📋 Expert has user:', expertData.user);
 
         setExpert(expertData);
 
         const determinedTierType = tier || 'quick_consult';
         setTierType(determinedTierType);
 
-        console.log('🎯 Tier type:', determinedTierType);
+        // console.log('🎯 Tier type:', determinedTierType);
 
         if (determinedTierType === 'quick_consult') {
           setTierConfig({
@@ -126,10 +126,10 @@ function AskQuestionPageV2() {
         } else if (determinedTierType === 'deep_dive') {
           const deepDiveTiers = expertData.deep_dive_tiers || expertData.tiers;
           if (deepDiveTiers && deepDiveTiers.length > 0) {
-            console.log('📊 Using deep dive tier config:', deepDiveTiers[0]);
+            // console.log('📊 Using deep dive tier config:', deepDiveTiers[0]);
             setTierConfig(deepDiveTiers[0]);
           } else {
-            console.log('⚠️ No deep dive tiers found, using fallback');
+            // console.log('⚠️ No deep dive tiers found, using fallback');
             setTierConfig({
               min_price_cents: 5000,
               max_price_cents: 50000,
@@ -138,7 +138,7 @@ function AskQuestionPageV2() {
           }
         }
 
-        console.log('✅ Initialization complete');
+        console.log('Expert profile loaded successfully');
         setIsLoading(false);
       } catch (err) {
         console.error('❌ Failed to fetch expert profile:', err);
@@ -160,14 +160,6 @@ function AskQuestionPageV2() {
       const priceValue = parseFloat(state.compose.tierSpecific?.proposedPrice);
       if (!priceValue || priceValue <= 0) {
         alert('Please enter a valid offer amount');
-        return;
-      }
-
-      const minPrice = (tierConfig?.min_price_cents || 0) / 100;
-      const maxPrice = (tierConfig?.max_price_cents || 0) / 100;
-      
-      if (priceValue < minPrice || priceValue > maxPrice) {
-        alert(`Offer must be between $${minPrice} and $${maxPrice}`);
         return;
       }
     }
@@ -250,7 +242,7 @@ function AskQuestionPageV2() {
     id: expert.id || expert._id || null
   };
 
-  console.log('🔒 Safe expert data:', safeExpert);
+  // console.log('🔒 Safe expert data:', safeExpert);
 
   return (
     <ErrorBoundary>
@@ -337,11 +329,11 @@ function AskQuestionPageV2() {
 }
 
 function MobileFooterButton({ state, tierType, onComposeComplete, onReviewComplete }) {
-  console.log('📱 MobileFooterButton rendered with state:', {
-    step: state.currentStep,
-    title: state.compose?.title,
-    email: state.review?.email
-  });
+  // console.log('📱 MobileFooterButton rendered with state:', {
+  //   step: state.currentStep,
+  //   title: state.compose?.title,
+  //   email: state.review?.email
+  // });
 
   if (state.currentStep === 1) {
     const titleText = state.compose?.title || '';
@@ -361,13 +353,13 @@ function MobileFooterButton({ state, tierType, onComposeComplete, onReviewComple
     
     const isDisabled = !hasValidTitle || !hasPrice;
     
-    console.log('📱 Step 1 button state:', {
-      title: titleText,
-      trimmedLength: trimmedTitle.length,
-      hasValidTitle,
-      isDisabled,
-      buttonText
-    });
+    // console.log('📱 Step 1 button state:', {
+    //   title: titleText,
+    //   trimmedLength: trimmedTitle.length,
+    //   hasValidTitle,
+    //   isDisabled,
+    //   buttonText
+    // });
 
     return (
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-gray-200 shadow-lg" style={{ 
