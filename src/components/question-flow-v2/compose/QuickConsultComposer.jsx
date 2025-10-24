@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TitleInput from './TitleInput';
 import RecordingOptions from './RecordingOptions';
 import RecordingSegmentList from './RecordingSegmentList';
@@ -9,12 +9,22 @@ import { useAttachmentUpload } from '@/components/question-flow-v2/hooks/useAtta
 
 
 function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
-  // ✅ FIX: Safe data initialization with optional chaining
+  console.log('🎨 QuickConsultComposer rendered with data:', data);
+  
   const [title, setTitle] = useState(data?.title || '');
   const [text, setText] = useState(data?.text || '');
   
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
+
+  // ✅ NEW: Monitor when data prop changes
+  useEffect(() => {
+    console.log('📥 QuickConsultComposer - data prop changed:', data);
+    if (data?.title !== undefined && data.title !== title) {
+      console.log('🔄 Syncing title from prop:', data.title);
+      setTitle(data.title);
+    }
+  }, [data]);
 
   // Safety check
   if (!expert) {
@@ -26,8 +36,14 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
   }
 
   const handleTitleChange = (value) => {
+    console.log('✏️ Title changed to:', value);
     setTitle(value);
-    if (onUpdate) onUpdate({ title: value });
+    if (onUpdate) {
+      console.log('📤 Calling onUpdate with title:', value);
+      onUpdate({ title: value });
+    } else {
+      console.error('❌ onUpdate is not defined!');
+    }
   };
 
   const handleTextChange = (value) => {
@@ -36,6 +52,12 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
   };
 
   const hasRecordings = segmentUpload.segments.length > 0;
+
+  console.log('🔍 QuickConsultComposer render state:', {
+    localTitle: title,
+    dataTitle: data?.title,
+    onUpdateExists: !!onUpdate
+  });
 
   return (
     <div className="space-y-6 pb-24 sm:pb-6">

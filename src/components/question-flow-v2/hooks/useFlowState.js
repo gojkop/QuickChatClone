@@ -46,12 +46,17 @@ export function useFlowState() {
       }));
     }, []),
 
-    // Update compose data
+    // Update compose data - WITH LOGGING
     updateCompose: useCallback((data) => {
-      setState(prev => ({
-        ...prev,
-        compose: { ...prev.compose, ...data }
-      }));
+      console.log('🔄 updateCompose called with:', data);
+      setState(prev => {
+        const newState = {
+          ...prev,
+          compose: { ...prev.compose, ...data }
+        };
+        console.log('📊 New compose state:', newState.compose);
+        return newState;
+      });
     }, []),
 
     // Update review data

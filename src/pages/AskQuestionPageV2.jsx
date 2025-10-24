@@ -25,6 +25,16 @@ function AskQuestionPageV2() {
 
   const { state, actions } = useFlowState();
 
+  // ✅ NEW: Monitor state changes for debugging
+  useEffect(() => {
+    console.log('🔍 AskQuestionPageV2 - State changed:', {
+      currentStep: state.currentStep,
+      composeTitle: state.compose.title,
+      composeTitleLength: state.compose.title?.length,
+      fullComposeState: state.compose
+    });
+  }, [state.compose.title, state.currentStep]);
+
   // Fetch expert data from URL params if not provided via navigation
   useEffect(() => {
     const fetchExpertFromURL = async () => {
@@ -191,13 +201,14 @@ function AskQuestionPageV2() {
 
  // Get current step button info for persistent mobile footer
   const getCurrentStepButton = () => {
-    console.log('🔘 Button state check - Current step:', state.currentStep);
-    console.log('📝 Compose state:', state.compose);
+    const currentTime = new Date().toISOString();
+    console.log(`🔘 [${currentTime}] getCurrentStepButton called`);
+    console.log('📊 Current state.compose:', state.compose);
     
     switch (state.currentStep) {
       case 1:
         // ✅ FIX: Use trimmed length consistently
-        const titleText = state.compose.title || '';
+        const titleText = state.compose?.title || '';
         const trimmedTitle = titleText.trim();
         const hasValidTitle = trimmedTitle.length >= 5;
         
@@ -205,13 +216,13 @@ function AskQuestionPageV2() {
           ? state.compose.tierSpecific?.proposedPrice && parseFloat(state.compose.tierSpecific.proposedPrice) > 0
           : true;
 
-        console.log('📊 Title validation:', {
-          titleText,
-          trimmedTitle,
+        console.log('📋 Title validation:', {
+          rawTitle: titleText,
+          trimmedTitle: trimmedTitle,
           trimmedLength: trimmedTitle.length,
-          hasValidTitle,
-          hasPrice,
-          tierType
+          hasValidTitle: hasValidTitle,
+          hasPrice: hasPrice,
+          tierType: tierType
         });
 
         const buttonText = trimmedTitle.length === 0
@@ -224,7 +235,11 @@ function AskQuestionPageV2() {
 
         const isDisabled = !hasValidTitle || !hasPrice;
 
-        console.log('🔘 Button result:', { buttonText, isDisabled });
+        console.log('✅ Button config:', { 
+          text: buttonText, 
+          disabled: isDisabled,
+          timestamp: currentTime
+        });
 
         return {
           show: true,
@@ -256,7 +271,8 @@ function AskQuestionPageV2() {
   };
 
   const buttonInfo = getCurrentStepButton();
-  
+  console.log('🎯 Final buttonInfo:', buttonInfo);
+
   // Loading state
   if (isLoading) {
     return (
