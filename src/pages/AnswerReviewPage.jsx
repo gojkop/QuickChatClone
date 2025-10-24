@@ -231,7 +231,13 @@ function AnswerReviewPage() {
         });
         console.log('🔗 Expert handle:', transformedData.expert_profile?.handle);
         setData(transformedData);
-        
+
+        // Auto-expand question section if there are attachments or media
+        if ((transformedData.media_assets?.length > 0) || (transformedData.attachments?.length > 0)) {
+          setShowQuestion(true);
+          console.log('✅ Auto-expanding question section (has media or attachments)');
+        }
+
       } catch (err) {
         console.error('❌ Error fetching review data:', err);
         setError(err.message);
@@ -897,9 +903,9 @@ function AnswerReviewPage() {
             </div>
             
             <div className="flex items-center gap-2">
-              {!showQuestion && data.media_assets?.length > 0 && (
+              {!showQuestion && (data.media_assets?.length > 0 || data.attachments?.length > 0) && (
                 <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium hidden sm:inline">
-                  {data.media_assets.length} {data.media_assets.length === 1 ? 'part' : 'parts'}
+                  {(data.media_assets?.length || 0) + (data.attachments?.length || 0)} {((data.media_assets?.length || 0) + (data.attachments?.length || 0)) === 1 ? 'item' : 'items'}
                 </span>
               )}
               <svg 
