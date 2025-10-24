@@ -17,31 +17,63 @@ function AccordionSection({
     const shouldExpand = state === 'active';
     setIsExpanded(shouldExpand);
     
-    // ✅ IMPROVED: Better scroll behavior - always scroll to section header
+    // ✅ ADAPTIVE SCROLL: Different behavior for mobile vs desktop
     if (shouldExpand && sectionRef.current) {
-      // Wait for accordion expansion animation to complete
+      // Wait for accordion expansion animation to complete (400ms)
       setTimeout(() => {
-        const element = sectionRef.current;
+        const section = sectionRef.current;
         const isMobile = window.innerWidth < 640;
         
         if (isMobile) {
-          // Mobile: Scroll to accordion header with small offset from top
-          const headerHeight = 60; // Progress dots + small padding
-          const elementTop = element.getBoundingClientRect().top;
-          const absoluteTop = elementTop + window.pageYOffset;
-          const scrollTarget = absoluteTop - headerHeight;
+          // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          // MOBILE: Scroll to first input for keyboard optimization
+          // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          const firstInput = section.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), textarea');
+          
+          if (firstInput) {
+            // Scroll to center the input field (accounting for mobile keyboard)
+            const inputTop = firstInput.getBoundingClientRect().top;
+            const absoluteInputTop = inputTop + window.pageYOffset;
+            const viewportCenter = window.innerHeight / 3; // Top third of screen
+            const scrollTarget = absoluteInputTop - viewportCenter;
+            
+            window.scrollTo({ 
+              top: Math.max(0, scrollTarget),
+              behavior: 'smooth' 
+            });
+            
+            console.log('📱 Mobile: Scrolled to input field');
+          } else {
+            // Fallback: scroll to accordion header if no input found
+            const headerOffset = 60;
+            const sectionTop = section.getBoundingClientRect().top;
+            const absoluteTop = sectionTop + window.pageYOffset;
+            const scrollTarget = absoluteTop - headerOffset;
+            
+            window.scrollTo({ 
+              top: Math.max(0, scrollTarget),
+              behavior: 'smooth' 
+            });
+            
+            console.log('📱 Mobile: Scrolled to section header (no input found)');
+          }
+        } else {
+          // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          // DESKTOP: Scroll to show progress dots + header + content preview
+          // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          const headerOffset = 120; // Show progress dots (60px) + spacing
+          const sectionTop = section.getBoundingClientRect().top;
+          const absoluteTop = sectionTop + window.pageYOffset;
+          const scrollTarget = absoluteTop - headerOffset;
           
           window.scrollTo({ 
-            top: Math.max(0, scrollTarget), // Don't scroll negative
+            top: Math.max(0, scrollTarget),
             behavior: 'smooth' 
           });
-        } else {
-          // Desktop: Scroll with moderate offset for context
-          const yOffset = -100;
-          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-          window.scrollTo({ top: y, behavior: 'smooth' });
+          
+          console.log('🖥️ Desktop: Scrolled to section with context preserved');
         }
-      }, 250); // Increased delay to wait for accordion expansion
+      }, 300); // Wait for accordion animation
     }
   }, [state]);
 
