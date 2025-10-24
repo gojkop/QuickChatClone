@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TitleInput from './TitleInput';
 import RecordingOptions from './RecordingOptions';
-import RecordingSegmentList from '../shared/RecordingSegmentList';
+import RecordingSegmentList from './RecordingSegmentList';
 import AdvancedOptions from './AdvancedOptions';
 import MindPilotPanel from './MindPilotPanel';
 import { useRecordingSegmentUpload } from '@/components/question-flow-v2/hooks/useRecordingSegmentUpload';
