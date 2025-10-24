@@ -1,6 +1,6 @@
 // client/src/App.jsx
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { CookieConsentProvider } from './context/CookieConsentContext';  // ← FIRST
 import { AuthProvider } from './context/AuthContext';
 import { FeatureFlagsProvider } from './context/FeatureFlagsContext';
@@ -19,7 +19,7 @@ import TermsPage from '@/pages/TermsPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import InvitePage from '@/pages/InvitePage';
 import InviteSentPage from '@/pages/InviteSentPage';
-import AskQuestionPage from '@/pages/AskQuestionPage';
+// import AskQuestionPage from '@/pages/AskQuestionPage';
 import QuestionSentPage from '@/pages/QuestionSentPage';
 import AnswerReviewPage from '@/pages/AnswerReviewPage';
 import TestAICoachPage from '@/pages/TestAICoachPage';
@@ -70,7 +70,7 @@ const AppLayout = () => {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/invite" element={<InvitePage />} />
           <Route path="/invite-sent" element={<InviteSentPage />} />
-          <Route path="/ask" element={<AskQuestionPage />} />
+          <Route path="/ask" element={<Navigate to="/ask-v2" replace />} />
           <Route path="/question-sent" element={<QuestionSentPage />} />
           <Route path="/u/:handle" element={<PublicProfilePage />} />
           <Route path="/r/:token" element={<AnswerReviewPage />} />

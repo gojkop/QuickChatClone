@@ -14,8 +14,6 @@ function AskQuestionPageV2() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // console.log('🎨 AskQuestionPageV2 RENDERED');
-  
   const navigationState = location.state || {};
   
   const [expert, setExpert] = useState(navigationState.expert || null);
@@ -26,19 +24,9 @@ function AskQuestionPageV2() {
 
   const { state, actions } = useFlowState();
 
-  // useEffect(() => {
-  //   console.log('🔍 AskQuestionPageV2 - State changed:', {
-  //     currentStep: state.currentStep,
-  //     composeTitle: state.compose.title,
-  //     composeTitleLength: state.compose.title?.length,
-  //     fullComposeState: JSON.stringify(state.compose)
-  //   });
-  // }, [state.compose.title, state.currentStep]);
-
   useEffect(() => {
     const fetchExpertFromURL = async () => {
       if (navigationState.expert) {
-        // console.log('✅ Using expert data from navigation state');
         setIsLoading(false);
         return;
       }
@@ -46,8 +34,6 @@ function AskQuestionPageV2() {
       const params = new URLSearchParams(location.search);
       const handle = params.get('expert');
       const tier = params.get('tier');
-
-      // console.log('🔍 AskQuestionPageV2 - URL params:', { handle, tier });
 
       if (!handle) {
         console.error('❌ No expert handle found in URL params');
@@ -58,8 +44,6 @@ function AskQuestionPageV2() {
 
       try {
         setIsLoading(true);
-        
-        // console.log('📡 Fetching expert profile for:', handle);
         
         const response = await fetch(
           `https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/public/profile?handle=${encodeURIComponent(handle)}`
@@ -73,10 +57,8 @@ function AskQuestionPageV2() {
         }
 
         const data = await response.json();
-        // console.log('📦 Raw API response:', data);
         
         const expertProfile = data?.expert_profile ?? data;
-        // console.log('📋 Expert profile extracted:', expertProfile);
         
         const publicValue = expertProfile?.public ?? expertProfile?.is_public ?? expertProfile?.isPublic;
         const isPublic = publicValue === true || publicValue === 1 || 
@@ -106,17 +88,10 @@ function AskQuestionPageV2() {
           accepting_questions: isAcceptingQuestions,
         };
 
-        // console.log('✅ Expert data loaded:', expertData);
-        // console.log('📋 Expert has name:', expertData.name);
-        // console.log('📋 Expert has handle:', expertData.handle);
-        // console.log('📋 Expert has user:', expertData.user);
-
         setExpert(expertData);
 
         const determinedTierType = tier || 'quick_consult';
         setTierType(determinedTierType);
-
-        // console.log('🎯 Tier type:', determinedTierType);
 
         if (determinedTierType === 'quick_consult') {
           setTierConfig({
@@ -126,10 +101,8 @@ function AskQuestionPageV2() {
         } else if (determinedTierType === 'deep_dive') {
           const deepDiveTiers = expertData.deep_dive_tiers || expertData.tiers;
           if (deepDiveTiers && deepDiveTiers.length > 0) {
-            // console.log('📊 Using deep dive tier config:', deepDiveTiers[0]);
             setTierConfig(deepDiveTiers[0]);
           } else {
-            // console.log('⚠️ No deep dive tiers found, using fallback');
             setTierConfig({
               min_price_cents: 5000,
               max_price_cents: 50000,
@@ -242,12 +215,10 @@ function AskQuestionPageV2() {
     id: expert.id || expert._id || null
   };
 
-  // console.log('🔒 Safe expert data:', safeExpert);
-
   return (
     <ErrorBoundary>
-    <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 pb-32 sm:pb-8">
-        {/* ✅ FIXED: Pass props to FlowContainer */}
+      {/* ✅ PREMIUM: Added top padding for navbar spacing */}
+      <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 pb-32 sm:pb-8">
         <FlowContainer expert={safeExpert} tierType={tierType} tierConfig={tierConfig}>
           <ProgressDots
             currentStep={state.currentStep}
@@ -315,6 +286,7 @@ function AskQuestionPageV2() {
           </AccordionSection>
         </FlowContainer>
 
+        {/* ✅ PREMIUM: Mobile footer with reactive state */}
         {state.currentStep <= 2 && (
           <MobileFooterButton 
             state={state}
@@ -328,13 +300,8 @@ function AskQuestionPageV2() {
   );
 }
 
+// ✅ PREMIUM: Enhanced Mobile Footer Button Component
 function MobileFooterButton({ state, tierType, onComposeComplete, onReviewComplete }) {
-  // console.log('📱 MobileFooterButton rendered with state:', {
-  //   step: state.currentStep,
-  //   title: state.compose?.title,
-  //   email: state.review?.email
-  // });
-
   if (state.currentStep === 1) {
     const titleText = state.compose?.title || '';
     const trimmedTitle = titleText.trim();
@@ -352,26 +319,28 @@ function MobileFooterButton({ state, tierType, onComposeComplete, onReviewComple
       : 'Continue to Review →';
     
     const isDisabled = !hasValidTitle || !hasPrice;
-    
-    // console.log('📱 Step 1 button state:', {
-    //   title: titleText,
-    //   trimmedLength: trimmedTitle.length,
-    //   hasValidTitle,
-    //   isDisabled,
-    //   buttonText
-    // });
 
     return (
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-gray-200 shadow-lg" style={{ 
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        backdropFilter: 'blur(10px)',
-        backgroundColor: 'rgba(255, 255, 255, 0.98)'
-      }}>
+      <div 
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-50" 
+        style={{ 
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          // ✅ PREMIUM: Glass morphism effect
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          // ✅ PREMIUM: Subtle border
+          borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+          // ✅ PREMIUM: Enhanced shadow with inset highlight
+          boxShadow: '0 -4px 16px 0 rgba(0, 0, 0, 0.08), inset 0 1px 0 0 rgba(255, 255, 255, 0.5)'
+        }}
+      >
         <div className="p-4">
           <button
             onClick={onComposeComplete}
             disabled={isDisabled}
-            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+            // ✅ PREMIUM: Added btn-premium-primary class
+            className="btn-premium-primary w-full text-white font-bold py-4 px-6 rounded-xl touch-manipulation"
             style={{
               minHeight: '52px',
               fontSize: '16px'
@@ -393,16 +362,26 @@ function MobileFooterButton({ state, tierType, onComposeComplete, onReviewComple
       : 'Continue to Payment →';
 
     return (
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-gray-200 shadow-lg" style={{ 
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        backdropFilter: 'blur(10px)',
-        backgroundColor: 'rgba(255, 255, 255, 0.98)'
-      }}>
+      <div 
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-50" 
+        style={{ 
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          // ✅ PREMIUM: Glass morphism effect
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          // ✅ PREMIUM: Subtle border
+          borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+          // ✅ PREMIUM: Enhanced shadow with inset highlight
+          boxShadow: '0 -4px 16px 0 rgba(0, 0, 0, 0.08), inset 0 1px 0 0 rgba(255, 255, 255, 0.5)'
+        }}
+      >
         <div className="p-4">
           <button
             onClick={onReviewComplete}
             disabled={!hasEmail}
-            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+            // ✅ PREMIUM: Added btn-premium-primary class
+            className="btn-premium-primary w-full text-white font-bold py-4 px-6 rounded-xl touch-manipulation"
             style={{
               minHeight: '52px',
               fontSize: '16px'

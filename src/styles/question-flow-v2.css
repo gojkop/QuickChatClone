@@ -880,3 +880,340 @@ select {
     width: 100% !important;
   }
 }
+
+Files to Update:
+✅ question-flow-v2.css - Enhanced shadows, buttons, progress dots
+✅ TitleInput.jsx - Premium input focus states
+✅ ProgressDots.jsx - 3D-style premium dots
+✅ AskQuestionPageV2.jsx - Premium mobile footer button
+1. question-flow-v2.css (Add to bottom of file)
+Add this section at the very end of the file (after line 855):
+
+/* ===================================
+   PHASE 1: PREMIUM ENHANCEMENTS
+   Quick Wins - Enhanced Shadows, Buttons, Inputs, Progress
+   =================================== */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PREMIUM ACCORDION SECTIONS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.accordion-section {
+  /* Override defaults with premium styling */
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 16px !important;
+  
+  /* Multi-layered shadow for depth */
+  box-shadow: 
+    0 1px 2px 0 rgba(0, 0, 0, 0.03),
+    0 2px 6px -1px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.02) !important;
+  
+  /* Subtle gradient background */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(249, 250, 251, 0.8) 100%
+  ) !important;
+  
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Premium hover state - Desktop only */
+@media (min-width: 640px) {
+  .accordion-section:hover {
+    border-color: rgba(99, 102, 241, 0.1) !important;
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 10px 15px -3px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(99, 102, 241, 0.05) !important;
+    
+    transform: translateY(-1px);
+  }
+}
+
+/* Premium active state with glow */
+.accordion-section.active {
+  border-color: rgba(99, 102, 241, 0.2) !important;
+  
+  box-shadow: 
+    0 4px 6px -1px rgba(99, 102, 241, 0.1),
+    0 10px 15px -3px rgba(99, 102, 241, 0.15),
+    0 20px 25px -5px rgba(99, 102, 241, 0.08),
+    0 0 0 1px rgba(99, 102, 241, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.8) !important;
+  
+  /* Gradient border effect */
+  background: 
+    linear-gradient(white, white) padding-box,
+    linear-gradient(135deg, 
+      rgba(99, 102, 241, 0.2), 
+      rgba(168, 85, 247, 0.15)
+    ) border-box !important;
+}
+
+/* Premium completed state */
+.accordion-section.completed {
+  border-color: rgba(16, 185, 129, 0.15) !important;
+  
+  box-shadow: 
+    0 2px 4px -1px rgba(16, 185, 129, 0.05),
+    0 4px 8px -2px rgba(16, 185, 129, 0.08) !important;
+  
+  /* Subtle success tint */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(236, 253, 245, 0.3) 100%
+  ) !important;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PREMIUM PROGRESS DOTS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.progress-dot {
+  /* Enhanced with 3D effect */
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  position: relative;
+}
+
+/* Inactive state - soft gray with inner shadow */
+.progress-dot:not(.active):not(.completed) {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+  box-shadow: 
+    inset 0 2px 4px 0 rgba(0, 0, 0, 0.06),
+    0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Active state - vibrant gradient with glow */
+.progress-dot.active {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  box-shadow: 
+    0 4px 14px 0 rgba(99, 102, 241, 0.4),
+    0 2px 6px 0 rgba(99, 102, 241, 0.3),
+    inset 0 -2px 6px 0 rgba(0, 0, 0, 0.15),
+    inset 0 2px 2px 0 rgba(255, 255, 255, 0.4) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transform: scale(1.2) !important;
+}
+
+/* Completed state - success gradient */
+.progress-dot.completed {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  box-shadow: 
+    0 4px 12px 0 rgba(16, 185, 129, 0.3),
+    inset 0 -2px 4px 0 rgba(0, 0, 0, 0.15),
+    inset 0 2px 2px 0 rgba(255, 255, 255, 0.3) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Enhanced connector with gradient */
+.progress-connector {
+  height: 3px !important;
+  background: linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%) !important;
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-connector.completed {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%) !important;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PREMIUM BUTTONS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Premium primary button (Continue buttons) */
+.btn-premium-primary {
+  position: relative;
+  overflow: hidden;
+  
+  /* Rich gradient background */
+  background: linear-gradient(
+    135deg,
+    #6366f1 0%,
+    #8b5cf6 50%,
+    #a855f7 100%
+  ) !important;
+  
+  /* Multi-layer shadow */
+  box-shadow: 
+    0 4px 14px 0 rgba(99, 102, 241, 0.4),
+    0 2px 6px 0 rgba(139, 92, 246, 0.3),
+    inset 0 -2px 4px 0 rgba(0, 0, 0, 0.1),
+    inset 0 2px 2px 0 rgba(255, 255, 255, 0.2) !important;
+  
+  /* Typography */
+  font-weight: 700 !important;
+  letter-spacing: 0.025em !important;
+  
+  /* Border for definition */
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Shimmer effect on hover - desktop only */
+@media (min-width: 640px) {
+  .btn-premium-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
+
+  .btn-premium-primary:hover::before {
+    left: 100%;
+  }
+
+  .btn-premium-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 20px 0 rgba(99, 102, 241, 0.5),
+      0 4px 10px 0 rgba(139, 92, 246, 0.4),
+      inset 0 -2px 6px 0 rgba(0, 0, 0, 0.15),
+      inset 0 2px 2px 0 rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .btn-premium-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 
+      0 2px 8px 0 rgba(99, 102, 241, 0.3),
+      inset 0 2px 4px 0 rgba(0, 0, 0, 0.2) !important;
+  }
+}
+
+/* Disabled state */
+.btn-premium-primary:disabled {
+  background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%) !important;
+  box-shadow: none !important;
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PREMIUM INPUT FOCUS STATES
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Enhanced input focus - applied globally */
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+  border-color: #6366f1 !important;
+  ring-color: #6366f1 !important;
+  box-shadow: 
+    0 0 0 4px rgba(99, 102, 241, 0.1),
+    0 4px 12px -2px rgba(99, 102, 241, 0.2) !important;
+  transform: translateY(-1px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Premium input default state */
+input[type="text"],
+input[type="email"],
+input[type="number"],
+textarea {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-width: 2px;
+  border-radius: 12px !important;
+}
+
+/* Premium input hover state - desktop only */
+@media (min-width: 640px) {
+  input[type="text"]:not(:focus):hover,
+  input[type="email"]:not(:focus):hover,
+  input[type="number"]:not(:focus):hover,
+  textarea:not(:focus):hover {
+    border-color: #9ca3af;
+    background: white;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PREMIUM MOBILE FOOTER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@media (max-width: 640px) {
+  /* Enhanced mobile sticky footer */
+  .fixed.bottom-0.z-50 {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 
+      0 -4px 16px 0 rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.5) !important;
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PREMIUM ANIMATIONS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Smooth expand animation for accordion */
+@keyframes smoothExpand {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.accordion-content.expanded .accordion-body {
+  animation: smoothExpand 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* Success ripple for completed steps */
+@keyframes successRipple {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Pulse animation for active dot */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1.4);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.6);
+  }
+}
+
+/* Slide in animation for progress connector */
+@keyframes slideInFromLeft {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
