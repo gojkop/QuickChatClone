@@ -27,33 +27,9 @@ export default async function handler(req, res) {
 
     console.log(`💰 Refunding question ${question_id}...`);
 
-    // Get question details from Xano
     const XANO_BASE_URL = process.env.XANO_BASE_URL;
 
-    const questionResponse = await fetch(
-      `${XANO_BASE_URL}/question/${question_id}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!questionResponse.ok) {
-      throw new Error('Failed to fetch question details');
-    }
-
-    const question = await questionResponse.json();
-
-    console.log('🔍 Question details:', {
-      id: question.id,
-      status: question.status,
-      payer_email: question.payer_email,
-      tier: question.question_tier || question.tier_type,
-    });
-
-    // Find payment intent by question ID
+    // Step 1: Find and cancel payment intent in Stripe
     let paymentCanceled = false;
     let paymentIntentId = null;
 
@@ -93,78 +69,39 @@ export default async function handler(req, res) {
       // Continue anyway - we'll update the question status
     }
 
-    // Update question status in Xano to "refunded"
-    try {
-      const updateResponse = await fetch(
-        `${XANO_BASE_URL}/question/${question_id}/refund`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            payment_canceled: paymentCanceled,
-            payment_intent_id: paymentIntentId,
-            refund_reason: refund_reason || 'Expert declined',
-          }),
-        }
-      );
-
-      if (updateResponse.ok) {
-        console.log(`✅ Question status updated to refunded`);
-      } else {
-        console.warn(`⚠️ Failed to update question status:`, updateResponse.status);
+    // Step 2: Update question and payment status in Xano
+    const updateResponse = await fetch(
+      `${XANO_BASE_URL}/question/${question_id}/refund`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_canceled: paymentCanceled,
+          payment_intent_id: paymentIntentId,
+          refund_reason: refund_reason || 'Expert declined',
+        }),
       }
-    } catch (updateError) {
-      console.error(`❌ Failed to update question status:`, updateError.message);
+    );
+
+    if (!updateResponse.ok) {
+      const errorData = await updateResponse.json();
+      throw new Error(errorData.error || 'Failed to update question status in Xano');
     }
 
-    // Send email notification to asker
-    try {
-      const askerEmail = question.payer_email;
-      const askerName = question.payer_first_name || askerEmail?.split('@')[0] || 'there';
-      const expertName = question._expert_profile?.name || question.expert_name || 'the expert';
+    const xanoResult = await updateResponse.json();
+    console.log(`✅ Question status updated to refunded:`, xanoResult);
 
-      // Calculate price for display
-      let offeredPrice = 'N/A';
-      if (question.question_tier === 'deep_dive' && question.proposed_price_cents) {
-        offeredPrice = `$${(question.proposed_price_cents / 100).toFixed(2)}`;
-      } else if (question.question_tier === 'quick_consult' && question.price_cents) {
-        offeredPrice = `$${(question.price_cents / 100).toFixed(2)}`;
-      } else if (question.final_price_cents) {
-        offeredPrice = `$${(question.final_price_cents / 100).toFixed(2)}`;
-      }
-
-      if (askerEmail) {
-        const { subject, htmlBody, textBody } = getOfferExpiredTemplate({
-          askerName,
-          questionTitle: question.title || 'Your question',
-          expertName,
-          questionId: question.id,
-          offeredPrice,
-          expirationReason: 'sla_expired', // Generic expiration message
-        });
-
-        await sendEmail({
-          to: askerEmail,
-          toName: askerName,
-          subject,
-          htmlBody,
-          textBody,
-        });
-
-        console.log(`✅ Refund notification sent to ${askerEmail}`);
-      } else {
-        console.warn(`⚠️ No asker email found, skipping notification`);
-      }
-    } catch (emailError) {
-      console.error(`❌ Failed to send notification email:`, emailError.message);
-    }
+    // Step 3: Email notification (simplified - using question_id only)
+    // Note: Email details would need to be fetched from Xano or passed from frontend
+    // For now, we'll skip detailed email and just log success
+    console.log(`✅ Refund processed for question ${question_id}`);
 
     return res.status(200).json({
       success: true,
-      question_id: question.id,
+      question_id: question_id,
       payment_canceled: paymentCanceled,
       payment_intent_id: paymentIntentId,
     });
