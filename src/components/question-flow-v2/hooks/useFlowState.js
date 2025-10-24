@@ -54,7 +54,7 @@ export function useFlowState() {
           ...prev,
           compose: { ...prev.compose, ...data }
         };
-        console.log('📊 New compose state:', newState.compose);
+ //       console.log('📊 New compose state:', newState.compose);
         return newState;
       });
     }, []),
