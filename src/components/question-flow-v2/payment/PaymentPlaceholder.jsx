@@ -51,9 +51,18 @@ function PaymentPlaceholder({
 
     try {
       // Calculate amount
+      console.log('💰 [DEBUG] Payment calculation:', {
+        tierType,
+        proposedPrice: composeData.tierSpecific?.proposedPrice,
+        tierConfigPrice: tierConfig?.price_cents,
+        expertPrice: expert.price_cents
+      });
+
       const amount = tierType === 'deep_dive' && composeData.tierSpecific?.proposedPrice
         ? parseFloat(composeData.tierSpecific.proposedPrice) * 100 // Convert dollars to cents
         : tierConfig?.price_cents || expert.price_cents || 0;
+
+      console.log('💰 [DEBUG] Calculated amount (cents):', amount);
 
       const description = `${tierType === 'quick_consult' ? 'Quick Consult' : 'Deep Dive'}: ${composeData.title}`;
       // Both tiers now use manual capture - payment is only captured when question is answered
