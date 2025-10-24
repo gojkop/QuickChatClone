@@ -107,10 +107,6 @@ function HowItWorks() {
                 </p>
               </div>
               
-              {/* Connector line (hidden on last item) */}
-              {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-1/2 -right-6 w-12 h-0.5 bg-gradient-to-r from-indigo-200 to-purple-200 -translate-y-1/2"></div>
-              )}
             </div>
           ))}
         </div>

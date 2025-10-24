@@ -6,8 +6,8 @@ function SoundFamiliar() {
   const opportunities = [
     {
       Icon: Sparkles,
-      iconColor: 'text-gray-600',
-      bgColor: 'bg-gray-50',
+      iconColor: 'text-amber-600',
+      bgColor: 'bg-amber-50',
       title: 'Your Inbox Is Full of "Quick Questions"',
       description: 'DMs, emails, LinkedIn messages asking for advice. Each one takes 20+ minutes to answer thoughtfully.',
       stat: '5-15',
@@ -15,8 +15,8 @@ function SoundFamiliar() {
     },
     {
       Icon: Target,
-      iconColor: 'text-gray-600',
-      bgColor: 'bg-gray-50',
+      iconColor: 'text-blue-600',
+      bgColor: 'bg-blue-50',
       title: 'People Say "Can I Pick Your Brain?"',
       description: 'Coffee chats, "quick calls," and Zoom meetings that pull you away from paid work—just to share what you know.',
       stat: '3-5 hrs',
@@ -24,8 +24,8 @@ function SoundFamiliar() {
     },
     {
       Icon: Rocket,
-      iconColor: 'text-gray-600',
-      bgColor: 'bg-gray-50',
+      iconColor: 'text-slate-600',
+      bgColor: 'bg-slate-50',
       title: 'They\'ve Already Tried Google and AI',
       description: 'The questions you get aren\'t basic. They need someone who understands nuance, context, and their specific situation.',
       stat: '80%',
@@ -33,8 +33,8 @@ function SoundFamiliar() {
     },
     {
       Icon: Award,
-      iconColor: 'text-gray-600',
-      bgColor: 'bg-gray-50',
+      iconColor: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
       title: 'Years of Experience, Given Away Free',
       description: 'You invested time and money to build your expertise. Others charge hundreds per hour for similar advice.',
       stat: '10+ yrs',
@@ -63,7 +63,7 @@ function SoundFamiliar() {
               }}
             >
               You're Already{' '}
-              <span className="bg-gradient-to-r from-gray-600 to-gray-800 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-slate-600 to-slate-800 bg-clip-text text-transparent">
                 Doing the Work
               </span>
             </h2>
@@ -110,7 +110,7 @@ function SoundFamiliar() {
                   {/* Stat display */}
                   <div className="text-right">
                     <div 
-                      className="text-2xl font-black text-gray-700"
+                      className="text-2xl font-black text-slate-700"
                       style={{ letterSpacing: '-0.02em' }}
                     >
                       {item.stat}
