@@ -279,14 +279,29 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
       }
 
       // Download all files and add to ZIP
+      let skippedVideos = 0;
       for (const item of allItems) {
         try {
           const response = await fetch(item.url);
+
+          // Check if video download is not available
+          if (!response.ok) {
+            if (response.status === 424 && item.type === 'video') {
+              console.warn(`⚠️ Video download not available: ${item.name}`);
+              skippedVideos++;
+              continue; // Skip this video but continue with other files
+            }
+            throw new Error(`HTTP ${response.status}`);
+          }
+
           const blob = await response.blob();
           zip.file(item.name, blob);
           console.log(`✅ Added to ZIP: ${item.name}`);
         } catch (err) {
           console.error(`❌ Failed to download ${item.name}:`, err);
+          if (item.type === 'video') {
+            skippedVideos++;
+          }
         }
       }
 
@@ -303,6 +318,11 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
       document.body.removeChild(link);
 
       console.log(`✅ question-${question.id}.zip downloaded successfully!`);
+
+      // Notify user if videos were skipped
+      if (skippedVideos > 0) {
+        alert(`Download complete!\n\nNote: ${skippedVideos} video${skippedVideos > 1 ? 's were' : ' was'} skipped because download wasn't enabled when ${skippedVideos > 1 ? 'they were' : 'it was'} uploaded. Videos can be viewed in the browser but not downloaded.\n\nAudio files and attachments were included in the ZIP.`);
+      }
     } catch (error) {
       console.error('❌ Error creating ZIP:', error);
       alert('Failed to create download. Please try again.');

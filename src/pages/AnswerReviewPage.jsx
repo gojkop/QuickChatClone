@@ -919,23 +919,27 @@ function AnswerReviewPage() {
                 </div>
               )}
 
-              {data.media_assets && data.media_assets.length > 0 && (
+              {/* Question Attachments - Combined Media & Files */}
+              {((data.media_assets && data.media_assets.length > 0) || (data.attachments && data.attachments.length > 0)) && (
                 <div className="space-y-3">
-                  {data.media_assets
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Question Attachments</p>
+
+                  {/* Media (videos/audio) */}
+                  {data.media_assets && data.media_assets.length > 0 && data.media_assets
                     .sort((a, b) => a.segment_index - b.segment_index)
                     .map((segment, arrayIndex) => {
-                      const isVideo = segment.metadata?.mode === 'video' || 
-                                      segment.metadata?.mode === 'screen' || 
+                      const isVideo = segment.metadata?.mode === 'video' ||
+                                      segment.metadata?.mode === 'screen' ||
                                       segment.metadata?.mode === 'screen-camera' ||
                                       segment.url?.includes('cloudflarestream.com');
-                      const isAudio = segment.metadata?.mode === 'audio' || 
-                                      segment.url?.includes('.webm') || 
+                      const isAudio = segment.metadata?.mode === 'audio' ||
+                                      segment.url?.includes('.webm') ||
                                       !isVideo;
-                      
+
                       const videoId = isVideo ? getStreamVideoId(segment.url) : null;
                       const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
                       const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-                      
+
                       return (
                         <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
                           {data.media_assets.length > 1 && (
@@ -948,7 +952,7 @@ function AnswerReviewPage() {
                               </span>
                             </div>
                           )}
-                          
+
                           {isVideo && videoId && customerCode ? (
                             <div className="w-full aspect-video bg-black">
                               <iframe
@@ -969,13 +973,9 @@ function AnswerReviewPage() {
                         </div>
                       );
                     })}
-                </div>
-              )}
 
-              {data.attachments && data.attachments.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Attachments</p>
-                  {data.attachments.map((file, index) => (
+                  {/* File Attachments */}
+                  {data.attachments && data.attachments.length > 0 && data.attachments.map((file, index) => (
                     <a
                       key={index}
                       href={file.url}

@@ -65,7 +65,19 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       console.error(`Failed to fetch video: ${response.status} ${response.statusText}`);
-      throw new Error(`Failed to fetch video: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+
+      // Check if this is a "downloads not enabled" error
+      if (response.status === 404 || response.status === 403) {
+        return res.status(424).json({
+          error: 'Video downloads not available',
+          message: 'This video was uploaded without download enabled. Videos can only be viewed in the browser.',
+          details: `Status: ${response.status}`
+        });
+      }
+
+      throw new Error(`Failed to fetch video: ${response.status} - ${errorText}`);
     }
 
     // Get the content type from the response
