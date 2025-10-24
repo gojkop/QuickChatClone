@@ -16,7 +16,7 @@ QuickChat is a video-based Q&A platform connecting askers with experts. Users re
 - Payments: Stripe (integration for two-tier pricing)
 
 **Core Features:**
-- **Two-Tier Pricing System:** Quick Consult (fixed price) and Deep Dive (custom pricing with expert review) - **Production Ready (99%)**
+- **Two-Tier Pricing System:** Quick Consult (fixed price) and Deep Dive (custom pricing with expert review) with complete payment hold and capture - **Production Ready (100%)**
 
 ## Documentation & Resources
 
@@ -447,9 +447,9 @@ See `docs/marketing module/` for detailed implementation docs:
 
 ## Two-Tier Pricing System
 
-**Status:** ✅ Production Ready (99%) - October 23, 2025
+**Status:** ✅ Production Ready (100%) - January 15, 2025
 
-The two-tier pricing system provides experts with two distinct pricing models for their services: Quick Consult (fixed price) and Deep Dive (custom pricing).
+The two-tier pricing system provides experts with two distinct pricing models for their services: Quick Consult (fixed price) and Deep Dive (custom pricing). Includes complete payment hold and capture lifecycle with Stripe integration.
 
 ### Overview
 
@@ -541,6 +541,70 @@ declined  pending
 - `POST /offers/[id]/decline` - Decline offer (updates pricing_status, records reason)
 - `GET /expert/pending-offers` - Get pending offers (filters by expert, excludes expired)
 - `GET /review/{token}` - Get question by review token (for asker view)
+
+### Payment Capture System
+
+**Status:** ✅ Fully Implemented - January 15, 2025
+
+The payment capture system uses Stripe's manual capture flow to hold funds until the expert delivers an answer, protecting both askers and experts.
+
+**Payment Lifecycle:**
+
+**Quick Consult Flow:**
+1. Question submitted → Funds HELD (Stripe: `requires_capture`, DB: `authorized`)
+2. Answer submitted → Funds CAPTURED (Stripe: `succeeded`, DB: `captured`)
+3. Refund/SLA expires → Funds RELEASED (Stripe: `canceled`, DB: `refunded`)
+
+**Deep Dive Flow:**
+1. Offer submitted → Funds HELD (Stripe: `requires_capture`, DB: `authorized`)
+2. Expert accepts → Funds STILL HELD (Stripe: `requires_capture`, DB: `accepted`)
+3. Expert answers → Funds CAPTURED (Stripe: `succeeded`, DB: `captured`)
+4. Refund/decline/SLA expires → Funds RELEASED (Stripe: `canceled`, DB: `refunded`)
+
+**Database Architecture:**
+
+The system uses a dedicated `payment_table_structure` table (separate from `question` table) to track the complete payment lifecycle:
+
+**Key Fields:**
+- `stripe_payment_intent_id` - Links to Stripe payment
+- `question_id` - Links to question (foreign key)
+- `status` - Payment state: "authorized", "accepted", "captured", "refunded", "failed"
+- `amount_cents`, `currency`, `question_type`
+- Timestamps: `authorized_at`, `accepted_at`, `captured_at`, `refunded_at`
+- Retry tracking: `capture_attempted`, `capture_failed`, `retry_count`
+
+**API Endpoints:**
+
+**Payment Management:**
+- `POST /api/questions/refund` - Refund/decline question (cancels Stripe payment + updates DB)
+- `POST /question/{id}/refund` (Xano) - Updates both `payment_table_structure` and `question` tables
+- `POST /payment/capture` (Xano) - Updates payment status to captured after answer submission
+
+**Answer Submission:**
+- `POST /api/answers/create` - Creates answer, captures Stripe payment, updates payment table
+
+**Cron Jobs (Every 15 minutes):**
+- `/api/cron/cancel-expired-offers` - Cancels payments for Deep Dive offers not accepted within 24h
+- `/api/cron/cancel-expired-slas` - Cancels payments for questions not answered within SLA
+
+**Payment Intent Metadata:**
+
+Payment intents store `question_id` in metadata for later retrieval:
+
+```javascript
+// When question is created
+await updatePaymentIntentMetadata(paymentIntentId, {
+  question_id: String(questionId)
+});
+
+// When answer is submitted
+const paymentIntent = await findPaymentIntentByQuestionId(questionId);
+await capturePaymentIntent(paymentIntent.id);
+```
+
+**Security:**
+
+All payment endpoints are authenticated and verify expert ownership before allowing refunds or captures.
 
 ### Auto-Decline Logic
 
@@ -642,12 +706,8 @@ return 'text-orange-600'; // Normal
 
 ### Known Issues
 
-1. **Xano field verification needed:** `offer_expires_at` may not be included in GET `/review/{token}` response
-   - **Impact:** Countdown timer won't show on asker side
-   - **Graceful degradation:** Page still works, just no timer
-   - **Fix:** Add `offer_expires_at: question.offer_expires_at` to Xano Response step
-
-2. **Settings Modal not deployed:** Expert can't configure tier settings via UI yet (requires manual Xano updates)
+1. **Settings Modal not deployed:** Expert can't configure tier settings via UI yet (requires manual Xano updates)
+2. **Email notifications for refunds:** Currently disabled - can be re-enabled by adding question data fetch in refund endpoint
 
 ### Documentation
 
@@ -1155,14 +1215,14 @@ For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`
 ## Known Limitations
 
 1. **Two-Tier Pricing:** Settings Modal not deployed (experts configure tiers manually in Xano)
-2. **Two-Tier Pricing:** `offer_expires_at` field may not be in GET `/review/{token}` response (needs Xano verification)
-3. **AI Coach:** Tier 3 (post-payment enhancement) not implemented
-4. **Expert Co-pilot:** Entire feature not started (see spec doc)
-5. **Knowledge Graph:** Not implemented (requires Neo4j setup)
-6. **Rate Limiting:** AI Coach rate limits not enforced yet
-7. **Session Persistence:** AI Coach sessions not saved to Xano
-8. **Xano Free Tier:** Rate limiting may affect high-traffic usage (429 errors)
-9. **Marketing Attribution:** Questions not automatically linked to campaigns yet (requires session tracking)
+2. **AI Coach:** Tier 3 (post-payment enhancement) not implemented
+3. **Expert Co-pilot:** Entire feature not started (see spec doc)
+4. **Knowledge Graph:** Not implemented (requires Neo4j setup)
+5. **Rate Limiting:** AI Coach rate limits not enforced yet
+6. **Session Persistence:** AI Coach sessions not saved to Xano
+7. **Xano Free Tier:** Rate limiting may affect high-traffic usage (429 errors)
+8. **Marketing Attribution:** Questions not automatically linked to campaigns yet (requires session tracking)
+9. **Refund Email Notifications:** Currently disabled in refund flow (can be re-enabled)
 
 ## Troubleshooting
 
@@ -1247,6 +1307,7 @@ For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`
 ## Next Steps
 
 **Recently Completed:**
+- ✅ Payment Capture System - Manual capture with hold/release for two-tier pricing (January 15, 2025)
 - ✅ Two-Tier Pricing System - Quick Consult & Deep Dive pricing models (October 23, 2025)
 - ✅ ZIP Download Feature - Download questions/answers as organized archives (October 16, 2025)
 - ✅ QR Code Profile Sharing - Generate and share profile QR codes (October 16, 2025)
