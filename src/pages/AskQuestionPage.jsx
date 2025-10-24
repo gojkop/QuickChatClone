@@ -6,6 +6,7 @@ import AskReviewModal from '@/components/question/AskReviewModal';
 import PaymentPlaceholder from '@/components/question-flow-v2/payment/PaymentPlaceholder';
 import ProgressStepper from '@/components/common/ProgressStepper';
 import FirstTimeUserTips from '@/components/common/FirstTimeUserTips';
+import apiClient from '@/api';
 
 const formatPrice = (cents, currency = 'USD') => {
   const symbols = { USD: '$', EUR: '€', GBP: '£' };
@@ -137,7 +138,52 @@ function AskQuestionPage() {
       setIsSubmitting(true);
       console.log("💳 Payment successful, submitting question with payment ID:", paymentIntentId);
 
-      // Base payload for both tiers
+      // ✅ STEP 1: Create media_asset record if recordings exist
+      let mediaAssetId = null;
+
+      if (questionData.recordingSegments && questionData.recordingSegments.length > 0) {
+        console.log('📹 Creating media_asset record for', questionData.recordingSegments.length, 'segments');
+        
+        const firstSegment = questionData.recordingSegments[0];
+        const totalDuration = questionData.recordingSegments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
+        
+        const metadata = {
+          type: 'multi-segment',
+          mime_type: 'video/webm',
+          segments: questionData.recordingSegments.map(seg => ({
+            uid: seg.uid,
+            playback_url: seg.playbackUrl,
+            duration: seg.duration,
+            mode: seg.mode,
+            segment_index: seg.segmentIndex,
+          })),
+          segment_count: questionData.recordingSegments.length,
+        };
+        
+        try {
+          const response = await apiClient.post('/media_asset', {
+            owner_type: 'question',
+            owner_id: 0, // Placeholder - Xano will update this
+            provider: 'cloudflare_stream',
+            asset_id: firstSegment.uid,
+            duration_sec: Math.round(totalDuration),
+            status: 'ready',
+            url: firstSegment.playbackUrl,
+            metadata: JSON.stringify(metadata),
+            segment_index: null, // Parent record
+          });
+
+          mediaAssetId = response.data?.id;
+          console.log('✅ Media asset created, ID:', mediaAssetId);
+        } catch (mediaError) {
+          console.error('❌ Failed to create media_asset:', mediaError);
+          alert('Failed to process media. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // ✅ STEP 2: Build payload with media_asset_id (NO recordingSegments array)
       const basePayload = {
         expertHandle: expert.handle,
         title: questionData.title,
@@ -145,7 +191,7 @@ function AskQuestionPage() {
         payerEmail: askerInfo.email,
         payerFirstName: askerInfo.firstName || null,
         payerLastName: askerInfo.lastName || null,
-        recordingSegments: questionData.recordingSegments || [],
+        media_asset_id: mediaAssetId, // ✅ Send the ID instead of segments array
         attachments: questionData.attachments || [],
         sla_hours_snapshot: tierConfig?.sla_hours || expert.sla_hours,
         stripe_payment_intent_id: paymentIntentId // Real payment ID from Stripe
@@ -171,7 +217,7 @@ function AskQuestionPage() {
       console.log('Submitting question with payload:', {
         tierType: tierType || 'legacy',
         endpoint,
-        recordingSegments: payload.recordingSegments.length + ' segments',
+        media_asset_id: payload.media_asset_id,
         attachments: payload.attachments.length + ' attachments'
       });
 

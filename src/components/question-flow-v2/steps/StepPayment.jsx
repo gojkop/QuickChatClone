@@ -13,83 +13,125 @@ function StepPayment({
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
-    try {
-      console.log('📤 Submitting question with data:', {
-        expert: expert.handle,
-        tierType,
-        compose: composeData,
-        review: reviewData
-      });
+  try {
+    console.log('📤 Submitting question with data:', {
+      expert: expert.handle,
+      tierType,
+      compose: composeData,
+      review: reviewData
+    });
 
-      // Build base payload - CORRECT FORMAT FROM V1
-      const basePayload = {
-        expertHandle: expert.handle,
-        title: composeData.title,
-        text: composeData.text || null,
-        payerEmail: reviewData.email,
-        payerFirstName: reviewData.firstName || null,
-        payerLastName: reviewData.lastName || null,
-        recordingSegments: (composeData.recordings || []).map(r => ({
-          uid: r.uid,
-          url: r.playbackUrl,
-          mode: r.mode,
-          duration: r.duration
+    // ✅ STEP 1: Create media_asset record if recordings exist
+    let mediaAssetId = null;
+
+    if (composeData.recordings && composeData.recordings.length > 0) {
+      console.log('📹 Creating media_asset record for', composeData.recordings.length, 'segments');
+      
+      const firstSegment = composeData.recordings[0];
+      const totalDuration = composeData.recordings.reduce((sum, seg) => sum + (seg.duration || 0), 0);
+      
+      const metadata = {
+        type: 'multi-segment',
+        mime_type: 'video/webm',
+        segments: composeData.recordings.map(seg => ({
+          uid: seg.uid,
+          playback_url: seg.playbackUrl,
+          duration: seg.duration,
+          mode: seg.mode,
+          segment_index: seg.segmentIndex,
         })),
-        attachments: (composeData.attachments || []).map(a => ({
-          name: a.name || a.filename,
-          url: a.url || a.playbackUrl,
-          size: a.size
-        })),
-        sla_hours_snapshot: tierConfig?.sla_hours || expert.sla_hours
+        segment_count: composeData.recordings.length,
       };
+      
+      try {
+        // Use apiClient which has auth token
+        const { default: apiClient } = await import('@/api');
+        
+        const response = await apiClient.post('/media_asset', {
+          owner_type: 'question',
+          owner_id: 0, // Placeholder - Xano will update this
+          provider: 'cloudflare_stream',
+          asset_id: firstSegment.uid,
+          duration_sec: Math.round(totalDuration),
+          status: 'ready',
+          url: firstSegment.playbackUrl,
+          metadata: JSON.stringify(metadata),
+          segment_index: null, // Parent record
+        });
 
-      // Add tier-specific fields
-      let endpoint, payload;
-
-      if (tierType === 'deep_dive') {
-        endpoint = '/api/questions/deep-dive';
-        payload = {
-          ...basePayload,
-          proposed_price_cents: Math.round(parseFloat(composeData.tierSpecific.proposedPrice) * 100),
-          asker_message: composeData.tierSpecific.askerMessage || null,
-          stripe_payment_intent_id: 'pi_mock_' + Date.now()
-        };
-      } else {
-        endpoint = '/api/questions/quick-consult';
-        payload = {
-          ...basePayload,
-          stripe_payment_intent_id: 'pi_mock_' + Date.now()
-        };
+        mediaAssetId = response.data?.id;
+        console.log('✅ Media asset created, ID:', mediaAssetId);
+      } catch (mediaError) {
+        console.error('❌ Failed to create media_asset:', mediaError);
+        alert('Failed to process media. Please try again.');
+        return;
       }
-
-      console.log('📡 Sending to:', endpoint, payload);
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Submission failed');
-      }
-
-      const result = await response.json();
-      console.log('✅ Question submitted:', result);
-
-      // Navigate to success page
-      if (result.review_token) {
-        navigate(`/question-sent?token=${result.review_token}`);
-      } else {
-        navigate('/question-sent');
-      }
-
-    } catch (error) {
-      console.error('❌ Submission error:', error);
-      alert(`Failed to submit question: ${error.message}`);
     }
-  };
+
+    // ✅ STEP 2: Build payload with media_asset_id
+    const basePayload = {
+      expertHandle: expert.handle,
+      title: composeData.title,
+      text: composeData.text || null,
+      payerEmail: reviewData.email,
+      payerFirstName: reviewData.firstName || null,
+      payerLastName: reviewData.lastName || null,
+      media_asset_id: mediaAssetId, // ✅ Send the media_asset_id
+      attachments: (composeData.attachments || []).map(a => ({
+        name: a.name || a.filename,
+        url: a.url || a.playbackUrl,
+        size: a.size
+      })),
+      sla_hours_snapshot: tierConfig?.sla_hours || expert.sla_hours
+    };
+
+    // Add tier-specific fields
+    let endpoint, payload;
+
+    if (tierType === 'deep_dive') {
+      endpoint = '/api/questions/deep-dive';
+      payload = {
+        ...basePayload,
+        proposed_price_cents: Math.round(parseFloat(composeData.tierSpecific.proposedPrice) * 100),
+        asker_message: composeData.tierSpecific.askerMessage || null,
+        stripe_payment_intent_id: 'pi_mock_' + Date.now()
+      };
+    } else {
+      endpoint = '/api/questions/quick-consult';
+      payload = {
+        ...basePayload,
+        stripe_payment_intent_id: 'pi_mock_' + Date.now()
+      };
+    }
+
+    console.log('📡 Sending to:', endpoint, payload);
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Submission failed');
+    }
+
+    const result = await response.json();
+    console.log('✅ Question submitted:', result);
+
+    // Navigate to success page
+    if (result.review_token) {
+      navigate(`/question-sent?token=${result.review_token}`);
+    } else {
+      navigate('/question-sent');
+    }
+
+  } catch (error) {
+    console.error('❌ Submission error:', error);
+    alert(`Failed to submit question: ${error.message}`);
+  }
+};
 
   return (
     <div className="space-y-6">
