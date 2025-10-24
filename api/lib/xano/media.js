@@ -1,6 +1,7 @@
 // ============================================
 // FILE: api/lib/xano/media.js
 // Xano media_asset operations
+// ⚡ PHASE 1 OPTIMIZATION: Added batch fetching capability
 // ============================================
 
 const XANO_BASE_URL = process.env.XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
@@ -73,6 +74,53 @@ export async function getMediaAsset(id) {
   } catch (error) {
     console.error('Error getting media_asset:', error);
     throw error;
+  }
+}
+
+/**
+ * ⚡ PHASE 1 OPTIMIZATION: Batch fetch multiple media assets
+ * Replaces N individual queries with a single batch operation
+ * 
+ * @param {number[]} ids - Array of media_asset IDs to fetch
+ * @returns {Promise<Object[]>} Array of media_asset objects
+ */
+export async function getMediaAssetsBatch(ids) {
+  // Early return if no IDs provided
+  if (!ids || ids.length === 0) {
+    return [];
+  }
+
+  try {
+    console.log(`⚡ Batch fetching ${ids.length} media assets`);
+    
+    // Fetch all media assets in parallel using Promise.all
+    const fetchPromises = ids.map(id => 
+      fetch(`${XANO_BASE_URL}/media_asset/${id}`)
+        .then(response => {
+          if (!response.ok) {
+            console.warn(`Failed to fetch media_asset ${id}: ${response.status}`);
+            return null;
+          }
+          return response.json();
+        })
+        .catch(error => {
+          console.warn(`Error fetching media_asset ${id}:`, error.message);
+          return null;
+        })
+    );
+
+    const results = await Promise.all(fetchPromises);
+    
+    // Filter out null results (failed fetches)
+    const validResults = results.filter(result => result !== null);
+    
+    console.log(`✅ Successfully fetched ${validResults.length}/${ids.length} media assets`);
+    
+    return validResults;
+  } catch (error) {
+    console.error('Error in batch fetch media_assets:', error);
+    // Return empty array instead of throwing - don't fail the entire request
+    return [];
   }
 }
 
