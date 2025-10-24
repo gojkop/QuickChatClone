@@ -599,27 +599,66 @@ function ExpertDashboardPage() {
   };
 
   // ✅ Handle action from dropdown (including refresh)
-  const handleQuestionAction = (action, question) => {
+  const handleQuestionAction = async (action, question) => {
     if (action === 'refresh') {
       // Refresh questions when hide/unhide is triggered
       refreshQuestions();
       return;
     }
-    
+
     // Handle other actions
     console.log('Action:', action, 'Question:', question);
-    
+
     if (action === 'view') {
       window.location.hash = `#question-${question.id}`;
       return;
     }
-    
-    switch (action) {
-      case 'refund':
-        alert('Refund process initiated');
-        break;
-      default:
-        break;
+
+    if (action === 'refund') {
+      // Confirm refund action
+      const confirmed = window.confirm(
+        `Are you sure you want to refund this question?\n\n` +
+        `"${question.title}"\n\n` +
+        `The payment will be canceled and the customer will be notified.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        console.log('💰 Processing refund for question:', question.id);
+
+        const response = await fetch('/api/questions/refund', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            question_id: question.id,
+            refund_reason: 'Expert declined',
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to process refund');
+        }
+
+        const result = await response.json();
+        console.log('✅ Refund processed:', result);
+
+        // Show success message
+        alert('✅ Refund processed successfully. The customer has been notified.');
+
+        // Refresh questions list
+        refreshQuestions();
+
+      } catch (error) {
+        console.error('❌ Refund error:', error);
+        alert(`Failed to process refund: ${error.message}`);
+      }
     }
   };
 
