@@ -89,6 +89,37 @@ export default async function handler(req, res) {
           console.log(`💳 Capturing payment intent: ${paymentIntent.id}`);
           const capturedPayment = await capturePaymentIntent(paymentIntent.id);
           console.log(`✅ Payment captured successfully: ${capturedPayment.id}, status: ${capturedPayment.status}`);
+
+          // Update payment table in Xano
+          try {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+              const token = authHeader.replace('Bearer ', '');
+              const XANO_BASE_URL = process.env.XANO_BASE_URL;
+
+              const updatePaymentResponse = await fetch(
+                `${XANO_BASE_URL}/payment/capture`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    question_id: question_id,
+                  }),
+                }
+              );
+
+              if (updatePaymentResponse.ok) {
+                console.log(`✅ Payment table updated to captured status`);
+              } else {
+                console.warn(`⚠️ Failed to update payment table:`, updatePaymentResponse.status);
+              }
+            }
+          } catch (updateError) {
+            console.error(`❌ Failed to update payment table:`, updateError.message);
+          }
         } else if (paymentIntent.status === 'succeeded') {
           console.log(`✅ Payment was already captured (status: succeeded)`);
         } else {
