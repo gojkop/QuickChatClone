@@ -214,6 +214,11 @@ function AnswerReviewPage() {
           isMultiSegment: rawData.media_asset?.[0]?.metadata?.type === 'multi-segment',
           segmentCount: rawData.media_asset?.[0]?.metadata?.segment_count
         });
+        console.log('📎 Question attachments details:', {
+          rawAttachments: rawData.attachments,
+          transformedAttachments: transformedData.attachments,
+          attachmentCount: transformedData.attachments?.length || 0
+        });
         console.log('🎥 Answer details:', {
           hasAnswer: !!transformedData.answer,
           answerExists: !!(rawData.answer && rawData.answer.id),
