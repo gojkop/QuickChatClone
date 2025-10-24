@@ -84,25 +84,12 @@ export default async function handler(req, res) {
       console.warn('⚠️ No payment intent ID found - cannot capture payment');
     }
 
-    // Capture the payment (if not mock)
+    // Keep payment on hold - will be captured when question is answered
     if (paymentIntentId && !paymentIntentId.startsWith('pi_mock_')) {
-      try {
-        console.log(`💳 Capturing payment intent: ${paymentIntentId}`);
-        const capturedPayment = await capturePaymentIntent(paymentIntentId);
-        console.log(`✅ Payment captured: ${capturedPayment.id}, status: ${capturedPayment.status}`);
-      } catch (paymentError) {
-        console.error('❌ Failed to capture payment:', paymentError.message);
-        // Payment capture failed, but offer was already accepted
-        // Log this for manual review
-        console.error('⚠️ CRITICAL: Offer accepted but payment capture failed!', {
-          questionId: id,
-          paymentIntentId,
-          error: paymentError.message
-        });
-        // Continue anyway - the offer is already accepted
-      }
+      console.log(`💳 Payment intent ${paymentIntentId} remains on hold (requires_capture)`);
+      console.log('✅ Payment will be captured when question is answered');
     } else if (paymentIntentId?.startsWith('pi_mock_')) {
-      console.log('💳 [MOCK MODE] Skipping payment capture for mock payment intent');
+      console.log('💳 [MOCK MODE] Mock payment intent remains on hold');
     }
 
     return res.status(200).json({

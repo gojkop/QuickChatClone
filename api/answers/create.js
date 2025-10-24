@@ -2,6 +2,7 @@
 // Consolidated endpoint for answer creation + email notification
 import { sendAnswerReceivedNotification } from '../lib/zeptomail.js';
 import { fetchUserData, getAskerName, getAskerEmail } from '../lib/user-data.js';
+import { capturePaymentIntent, findPaymentIntentByQuestionId } from '../lib/stripe.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -71,9 +72,43 @@ export default async function handler(req, res) {
     const answer = await answerResponse.json();
     const answerId = answer.id;
     console.log('✅ Answer created:', answerId);
-    
+
     // NOTE: answered_at is now set automatically by Xano POST /answer endpoint
     // No need to make a separate PATCH request
+
+    // 1.5. Capture payment (if payment intent exists for this question)
+    try {
+      console.log(`💳 Searching for payment intent for question ${question_id}...`);
+      const paymentIntent = await findPaymentIntentByQuestionId(question_id);
+
+      if (paymentIntent && !paymentIntent.id.startsWith('pi_mock_')) {
+        console.log(`💳 Found payment intent: ${paymentIntent.id}, status: ${paymentIntent.status}`);
+
+        // Only capture if it's in requires_capture status
+        if (paymentIntent.status === 'requires_capture') {
+          console.log(`💳 Capturing payment intent: ${paymentIntent.id}`);
+          const capturedPayment = await capturePaymentIntent(paymentIntent.id);
+          console.log(`✅ Payment captured successfully: ${capturedPayment.id}, status: ${capturedPayment.status}`);
+        } else if (paymentIntent.status === 'succeeded') {
+          console.log(`✅ Payment was already captured (status: succeeded)`);
+        } else {
+          console.warn(`⚠️ Payment intent in unexpected status: ${paymentIntent.status}`);
+        }
+      } else if (paymentIntent?.id.startsWith('pi_mock_')) {
+        console.log('💳 [MOCK MODE] Skipping payment capture for mock payment intent');
+      } else {
+        console.log('⚠️ No payment intent found for this question');
+      }
+    } catch (paymentError) {
+      // Payment capture is non-critical - answer was already created
+      console.error('❌ Failed to capture payment:', paymentError.message);
+      console.error('⚠️ WARNING: Answer created but payment capture failed!', {
+        questionId: question_id,
+        answerId: answerId,
+        error: paymentError.message
+      });
+      // Continue anyway - the answer is already created
+    }
 
     // 2. Extract question data from answer response (embedded by Xano)
     const questionData = answer.question || answer._question;
