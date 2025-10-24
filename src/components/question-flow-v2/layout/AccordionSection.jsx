@@ -17,39 +17,52 @@ function AccordionSection({
     const shouldExpand = state === 'active';
     setIsExpanded(shouldExpand);
     
+    // ✅ FIX: Better scroll behavior on mobile - scroll to input, not bottom
     if (shouldExpand && sectionRef.current) {
       setTimeout(() => {
         const element = sectionRef.current;
         const isMobile = window.innerWidth < 640;
         
         if (isMobile) {
-          // Mobile: Scroll to input field
-          const firstInput = element.querySelector('input, textarea');
+          // Mobile: Find first interactive element
+          const firstInput = element.querySelector('input:not([type="hidden"]), textarea, select');
+          
           if (firstInput) {
-            firstInput.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'start',
-              inline: 'nearest'
+            // Calculate position to place input comfortably in view
+            const navbarHeight = 80;
+            const inputRect = firstInput.getBoundingClientRect();
+            const inputTop = inputRect.top + window.pageYOffset;
+            const targetScroll = inputTop - navbarHeight;
+            
+            window.scrollTo({ 
+              top: Math.max(0, targetScroll), 
+              behavior: 'smooth' 
             });
+            
+            // Focus input after scroll completes
+            setTimeout(() => {
+              firstInput.focus({ preventScroll: true });
+            }, 400);
           } else {
-            const headerHeight = 20;
+            // Fallback: scroll to accordion section
+            const headerHeight = 80;
             const y = element.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-            window.scrollTo({ top: y, behavior: 'smooth' });
+            window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
           }
         } else {
           // Desktop: Scroll to show progress dots
-          const flowContainer = element.closest('.max-w-4xl');
+          const flowContainer = element.closest('.max-w-4xl') || element.closest('.container-premium');
           if (flowContainer) {
             const progressDots = flowContainer.querySelector('.progress-dots-container');
             if (progressDots) {
               const navbarOffset = 100;
               const absoluteDotsTop = progressDots.getBoundingClientRect().top + window.pageYOffset;
               const scrollTarget = absoluteDotsTop - navbarOffset;
-              window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+              window.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
             }
           }
         }
-      }, 150);
+      }, 250); // Increased timeout for full expansion
     }
   }, [state]);
 
