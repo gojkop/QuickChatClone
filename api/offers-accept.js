@@ -1,7 +1,7 @@
 // api/offers-accept.js
 // Accept a Deep Dive offer and capture the payment
 
-import { capturePaymentIntent } from './lib/stripe.js';
+import { capturePaymentIntent, findPaymentIntentByQuestionId } from './lib/stripe.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     const result = await xanoResponse.json();
 
     // Get payment intent ID from the result
-    const paymentIntentId = result.stripe_payment_intent_id || result.payment_intent_id;
+    let paymentIntentId = result.stripe_payment_intent_id || result.payment_intent_id;
 
     console.log('🔍 Accept result:', {
       question_id: result.question_id,
@@ -64,8 +64,24 @@ export default async function handler(req, res) {
       resultKeys: Object.keys(result)
     });
 
+    // If Xano didn't return payment intent ID, search for it in Stripe by question ID
+    if (!paymentIntentId && result.question_id) {
+      console.log(`🔍 Payment intent ID not in response, searching Stripe by question_id: ${result.question_id}`);
+      try {
+        const paymentIntent = await findPaymentIntentByQuestionId(result.question_id);
+        if (paymentIntent) {
+          paymentIntentId = paymentIntent.id;
+          console.log(`✅ Found payment intent via search: ${paymentIntentId}`);
+        } else {
+          console.warn('⚠️ No payment intent found in Stripe for this question');
+        }
+      } catch (searchError) {
+        console.error('❌ Error searching for payment intent:', searchError.message);
+      }
+    }
+
     if (!paymentIntentId) {
-      console.warn('⚠️ No payment intent ID found in accept response');
+      console.warn('⚠️ No payment intent ID found - cannot capture payment');
     }
 
     // Capture the payment (if not mock)
