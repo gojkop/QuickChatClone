@@ -51,8 +51,8 @@ function PaymentPlaceholder({
 
     try {
       // Calculate amount
-      const amount = tierType === 'deep_dive' && composeData.tierSpecific?.price
-        ? composeData.tierSpecific.price * 100 // Convert dollars to cents
+      const amount = tierType === 'deep_dive' && composeData.tierSpecific?.proposedPrice
+        ? parseFloat(composeData.tierSpecific.proposedPrice) * 100 // Convert dollars to cents
         : tierConfig?.price_cents || expert.price_cents || 0;
 
       const description = `${tierType === 'quick_consult' ? 'Quick Consult' : 'Deep Dive'}: ${composeData.title}`;
