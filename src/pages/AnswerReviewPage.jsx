@@ -531,7 +531,7 @@ function AnswerReviewPage() {
             {expertHandle && (
               <div className="flex flex-col gap-2 flex-shrink-0">
                 <a
-                  href={`/ask?expert=${expertHandle}`}
+                  href={`/u/${expertHandle}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border border-indigo-200 hover:border-indigo-300 transition-all"
                   title="Ask another question"
                 >
