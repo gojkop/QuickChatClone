@@ -121,8 +121,8 @@ function PaymentPlaceholder({
     return `${symbol}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
   };
 
-  const displayPrice = tierType === 'deep_dive' && composeData.tierSpecific?.price
-    ? `$${composeData.tierSpecific.price}`
+  const displayPrice = tierType === 'deep_dive' && composeData.tierSpecific?.proposedPrice
+    ? `$${parseFloat(composeData.tierSpecific.proposedPrice).toFixed(2)}`
     : formatPrice(tierConfig?.price_cents || expert.price_cents, expert.currency);
 
   // ✅ Safe expert name

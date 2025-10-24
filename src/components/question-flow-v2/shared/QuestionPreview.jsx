@@ -45,10 +45,10 @@ function QuestionPreview({ isOpen, onClose, questionData, expert, tierType, tier
               <div>
                 <div className="font-bold text-gray-900">{expert.name || expert.handle}</div>
                 <div className="text-sm text-gray-600">
-                  {tierType === 'quick_consult' ? 'Quick Consult' : 'Deep Dive'} • 
-                  {tierType === 'quick_consult' 
+                  {tierType === 'quick_consult' ? 'Quick Consult' : 'Deep Dive'} •
+                  {tierType === 'quick_consult'
                     ? formatPrice(tierConfig?.price_cents, expert.currency)
-                    : questionData.tierSpecific?.price ? `$${questionData.tierSpecific.price}` : 'Offer pending'
+                    : questionData.tierSpecific?.proposedPrice ? `$${parseFloat(questionData.tierSpecific.proposedPrice).toFixed(2)}` : 'Offer pending'
                   }
                 </div>
               </div>
