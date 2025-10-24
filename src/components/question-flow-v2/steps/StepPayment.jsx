@@ -13,13 +13,14 @@ function StepPayment({
 }) {
   const navigate = useNavigate();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (paymentIntentId) => {
     try {
       console.log('📤 Submitting question with data:', {
         expert: expert.handle,
         tierType,
         compose: composeData,
-        review: reviewData
+        review: reviewData,
+        paymentIntentId
       });
 
       // ✅ STEP 1: Create media_asset record if recordings exist
@@ -104,13 +105,13 @@ function StepPayment({
           ...basePayload,
           proposed_price_cents: Math.round(parseFloat(composeData.tierSpecific.proposedPrice) * 100),
           asker_message: composeData.tierSpecific.askerMessage || null,
-          stripe_payment_intent_id: 'pi_mock_' + Date.now()
+          stripe_payment_intent_id: paymentIntentId
         };
       } else {
         endpoint = '/api/questions/quick-consult';
         payload = {
           ...basePayload,
-          stripe_payment_intent_id: 'pi_mock_' + Date.now()
+          stripe_payment_intent_id: paymentIntentId
         };
       }
 
