@@ -24,9 +24,6 @@ export default async function handler(req, res) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-
-    console.log(`💰 Refunding question ${question_id}...`);
-
     const XANO_BASE_URL = process.env.XANO_BASE_URL;
 
     // Step 1: Find and cancel payment intent in Stripe
@@ -34,38 +31,28 @@ export default async function handler(req, res) {
     let paymentIntentId = null;
 
     try {
-      console.log(`💳 Searching for payment intent for question ${question_id}...`);
       const paymentIntent = await findPaymentIntentByQuestionId(question_id);
 
       if (paymentIntent && !paymentIntent.id.startsWith('pi_mock_')) {
         paymentIntentId = paymentIntent.id;
-        console.log(`💳 Found payment intent: ${paymentIntentId}, status: ${paymentIntent.status}`);
 
-        // Only cancel if it's in requires_capture or requires_payment_method status
         if (paymentIntent.status === 'requires_capture' || paymentIntent.status === 'requires_payment_method') {
-          console.log(`💳 Canceling payment intent...`);
           await cancelPaymentIntent(paymentIntentId);
-          console.log(`✅ Payment canceled successfully`);
           paymentCanceled = true;
         } else if (paymentIntent.status === 'canceled') {
-          console.log(`✅ Payment was already canceled`);
           paymentCanceled = true;
         } else if (paymentIntent.status === 'succeeded') {
-          console.error(`⚠️ Payment already captured - cannot cancel, requires manual refund`);
           return res.status(400).json({
             error: 'Payment has already been captured. Please contact support for manual refund.'
           });
         } else {
-          console.log(`⚠️ Payment in unexpected status: ${paymentIntent.status}`);
+          console.warn(`⚠️ Payment in unexpected status: ${paymentIntent.status} for question ${question_id}`);
         }
       } else if (paymentIntent?.id.startsWith('pi_mock_')) {
-        console.log(`💳 [MOCK MODE] Skipping payment cancellation for mock payment intent`);
         paymentCanceled = true;
-      } else {
-        console.log(`⚠️ No payment intent found for this question`);
       }
     } catch (paymentError) {
-      console.error(`❌ Failed to cancel payment:`, paymentError.message);
+      console.error(`❌ Payment cancellation failed for question ${question_id}:`, paymentError.message);
       // Continue anyway - we'll update the question status
     }
 
@@ -91,12 +78,6 @@ export default async function handler(req, res) {
       throw new Error(errorData.error || 'Failed to update question status in Xano');
     }
 
-    const xanoResult = await updateResponse.json();
-    console.log(`✅ Question status updated to refunded:`, xanoResult);
-
-    // Step 3: Email notification (simplified - using question_id only)
-    // Note: Email details would need to be fetched from Xano or passed from frontend
-    // For now, we'll skip detailed email and just log success
     console.log(`✅ Refund processed for question ${question_id}`);
 
     return res.status(200).json({

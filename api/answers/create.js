@@ -78,66 +78,39 @@ export default async function handler(req, res) {
 
     // 1.5. Capture payment (if payment intent exists for this question)
     try {
-      console.log(`💳 Searching for payment intent for question ${question_id}...`);
       const paymentIntent = await findPaymentIntentByQuestionId(question_id);
 
       if (paymentIntent && !paymentIntent.id.startsWith('pi_mock_')) {
-        console.log(`💳 Found payment intent: ${paymentIntent.id}, status: ${paymentIntent.status}`);
-
-        // Only capture if it's in requires_capture status
         if (paymentIntent.status === 'requires_capture') {
-          console.log(`💳 Capturing payment intent: ${paymentIntent.id}`);
-          const capturedPayment = await capturePaymentIntent(paymentIntent.id);
-          console.log(`✅ Payment captured successfully: ${capturedPayment.id}, status: ${capturedPayment.status}`);
+          await capturePaymentIntent(paymentIntent.id);
+          console.log(`✅ Payment captured for question ${question_id}`);
 
           // Update payment table in Xano
-          try {
-            const authHeader = req.headers.authorization;
-            if (authHeader && authHeader.startsWith('Bearer ')) {
-              const token = authHeader.replace('Bearer ', '');
-              const XANO_BASE_URL = process.env.XANO_BASE_URL;
-
-              const updatePaymentResponse = await fetch(
-                `${XANO_BASE_URL}/payment/capture`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    question_id: question_id,
-                  }),
-                }
-              );
-
-              if (updatePaymentResponse.ok) {
-                console.log(`✅ Payment table updated to captured status`);
-              } else {
-                console.warn(`⚠️ Failed to update payment table:`, updatePaymentResponse.status);
+          const authHeader = req.headers.authorization;
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.replace('Bearer ', '');
+            const updatePaymentResponse = await fetch(
+              `${process.env.XANO_BASE_URL}/payment/capture`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question_id }),
               }
+            );
+
+            if (!updatePaymentResponse.ok) {
+              console.warn(`⚠️ Failed to update payment table (status: ${updatePaymentResponse.status})`);
             }
-          } catch (updateError) {
-            console.error(`❌ Failed to update payment table:`, updateError.message);
           }
-        } else if (paymentIntent.status === 'succeeded') {
-          console.log(`✅ Payment was already captured (status: succeeded)`);
-        } else {
-          console.warn(`⚠️ Payment intent in unexpected status: ${paymentIntent.status}`);
+        } else if (paymentIntent.status !== 'succeeded') {
+          console.warn(`⚠️ Payment in unexpected status: ${paymentIntent.status} for question ${question_id}`);
         }
-      } else if (paymentIntent?.id.startsWith('pi_mock_')) {
-        console.log('💳 [MOCK MODE] Skipping payment capture for mock payment intent');
-      } else {
-        console.log('⚠️ No payment intent found for this question');
       }
     } catch (paymentError) {
-      // Payment capture is non-critical - answer was already created
-      console.error('❌ Failed to capture payment:', paymentError.message);
-      console.error('⚠️ WARNING: Answer created but payment capture failed!', {
-        questionId: question_id,
-        answerId: answerId,
-        error: paymentError.message
-      });
+      console.error(`❌ Payment capture failed for question ${question_id}:`, paymentError.message);
       // Continue anyway - the answer is already created
     }
 
