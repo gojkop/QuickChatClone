@@ -48,6 +48,16 @@ const AppLayout = () => {
     '/signin',
     '/question-sent'
   ].includes(location.pathname);
+
+  const RedirectWithParams = () => {
+  const location = useLocation();
+  return <Navigate to={{
+    pathname: '/ask-v2',
+    search: location.search,
+    hash: location.hash
+  }} replace />;
+};
+
   
   // Also hide on pages with their own isolated design
   const isPublicProfile = location.pathname.startsWith('/u/');
@@ -70,7 +80,7 @@ const AppLayout = () => {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/invite" element={<InvitePage />} />
           <Route path="/invite-sent" element={<InviteSentPage />} />
-          <Route path="/ask" element={<Navigate to="/ask-v2" replace />} />
+          <Route path="/ask" element={<RedirectWithParams />} />
           <Route path="/question-sent" element={<QuestionSentPage />} />
           <Route path="/u/:handle" element={<PublicProfilePage />} />
           <Route path="/r/:token" element={<AnswerReviewPage />} />
