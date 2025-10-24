@@ -535,61 +535,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                   </div>
                 </div>
 
-                {/* Question Media & Attachments */}
-                {mediaSegments.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Question Media</h4>
-                    {mediaSegments
-                      .sort((a, b) => a.segment_index - b.segment_index)
-                      .map((segment, index) => {
-                        const isVideo = segment.metadata?.mode === 'video' || 
-                                        segment.metadata?.mode === 'screen' || 
-                                        segment.metadata?.mode === 'screen-camera' ||
-                                        segment.url?.includes('cloudflarestream.com');
-                        const isAudio = segment.metadata?.mode === 'audio' || 
-                                        segment.url?.includes('.webm') || 
-                                        !isVideo;
-                        
-                        const videoId = isVideo ? getStreamVideoId(segment.url) : null;
-                        const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
-                        const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-                        
-                        return (
-                          <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
-                            {mediaSegments.length > 1 && (
-                              <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
-                                <span className="text-xs font-semibold text-gray-300">
-                                  Part {index + 1}
-                                </span>
-                                <span className="text-xs text-gray-400">
-                                  {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
-                                </span>
-                              </div>
-                            )}
-                            
-                            {isVideo && videoId && customerCode ? (
-                              <div className="w-full aspect-video bg-black">
-                                <iframe
-                                  src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                                  style={{ border: 'none', width: '100%', height: '100%' }}
-                                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                                  allowFullScreen={true}
-                                  title={`Video segment ${index + 1}`}
-                                />
-                              </div>
-                            ) : isAudio && segment.url ? (
-                              <div className="p-4 flex items-center justify-center">
-                                <audio controls className="w-full max-w-md" preload="metadata">
-                                  <source src={segment.url} type="audio/webm" />
-                                </audio>
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
-
+                {/* Question Attachments - Combined Media & Files */}
                 {(() => {
                   let attachments = [];
                   try {
@@ -605,15 +551,67 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
 
                   const hasMediaOrAttachments = (mediaSegments && mediaSegments.length > 0) || (attachments && attachments.length > 0);
 
-                  if (!Array.isArray(attachments) || attachments.length === 0) {
+                  if (!hasMediaOrAttachments) {
                     return null;
                   }
 
                   return (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                      <div className="p-4 sm:p-5 space-y-2">
-                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base mb-3">Question Attachments</h4>
-                        {attachments.map((file, index) => (
+                      <div className="p-4 sm:p-5 space-y-3">
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Question Attachments</p>
+
+                        {/* Media (videos/audio) */}
+                        {mediaSegments && mediaSegments.length > 0 && mediaSegments
+                          .sort((a, b) => a.segment_index - b.segment_index)
+                          .map((segment, index) => {
+                            const isVideo = segment.metadata?.mode === 'video' ||
+                                            segment.metadata?.mode === 'screen' ||
+                                            segment.metadata?.mode === 'screen-camera' ||
+                                            segment.url?.includes('cloudflarestream.com');
+                            const isAudio = segment.metadata?.mode === 'audio' ||
+                                            segment.url?.includes('.webm') ||
+                                            !isVideo;
+
+                            const videoId = isVideo ? getStreamVideoId(segment.url) : null;
+                            const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+                            const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+
+                            return (
+                              <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
+                                {mediaSegments.length > 1 && (
+                                  <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-gray-300">
+                                      Part {index + 1}
+                                    </span>
+                                    <span className="text-xs text-gray-400">
+                                      {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
+                                    </span>
+                                  </div>
+                                )}
+
+                                {isVideo && videoId && customerCode ? (
+                                  <div className="w-full aspect-video bg-black">
+                                    <iframe
+                                      src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                                      style={{ border: 'none', width: '100%', height: '100%' }}
+                                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                      allowFullScreen={true}
+                                      title={`Video segment ${index + 1}`}
+                                    />
+                                  </div>
+                                ) : isAudio && segment.url ? (
+                                  <div className="p-4 flex items-center justify-center">
+                                    <audio controls className="w-full max-w-md" preload="metadata">
+                                      <source src={segment.url} type="audio/webm" />
+                                    </audio>
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+
+                        {/* File Attachments */}
+                        {attachments && attachments.length > 0 && attachments.map((file, index) => (
                           <a
                             key={index}
                             href={file.url}

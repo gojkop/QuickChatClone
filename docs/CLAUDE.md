@@ -199,11 +199,12 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
 - attachments (JSON array)
 
 **media_assets** - Cloudflare media references
-- id, owner_type ('question' | 'answer'), owner_id
-- provider ('cloudflare_stream' | 'cloudflare_r2')
+- id, provider ('cloudflare_stream' | 'cloudflare_r2')
 - asset_id (Cloudflare UID), duration_sec, url
-- metadata (JSON), segment_index (for multi-segment videos)
+- metadata (JSON) - stores multi-segment data for questions/answers
+- segment_index (for multi-segment videos)
 - status: 'uploading', 'ready', 'failed'
+- **Note:** `owner_type` and `owner_id` columns removed October 2025 (FK-only architecture)
 
 **question_coaching_sessions** - AI Coach state (partially implemented)
 - id, session_id (UUID), question_id (nullable)
@@ -304,6 +305,8 @@ Supports three authentication methods with JWT tokens stored in localStorage as 
 
 Uses Cloudflare services for all media storage.
 
+**Recent Update (October 2025):** Media asset architecture migrated from bidirectional to FK-only relationships. See [`docs/api-database/MEDIA-ASSET-MIGRATION-OCT-2025.md`](./api-database/MEDIA-ASSET-MIGRATION-OCT-2025.md) for complete migration details.
+
 ### Multi-Segment Recording
 
 Both questions and answers support progressive recording with pause/resume:
@@ -336,12 +339,12 @@ Both questions and answers support progressive recording with pause/resume:
 
 ### Media Asset Records
 
+**⚠️ UPDATED OCTOBER 2025:** The `owner_type` and `owner_id` columns have been removed from the `media_asset` table. Use FK-only architecture.
+
 Always create `media_asset` records in Xano after Cloudflare uploads:
 
 ```javascript
 await apiClient.post('/media_asset', {
-  owner_type: 'answer',      // or 'question'
-  owner_id: answerId,        // FK reference
   provider: 'cloudflare_stream',
   asset_id: cloudflareUid,
   duration_sec: Math.round(duration),
@@ -350,7 +353,17 @@ await apiClient.post('/media_asset', {
   metadata: JSON.stringify({ /* extra data */ }),
   segment_index: 0           // null for parent, 0+ for segments
 });
+
+// Then link to question/answer via FK
+question.media_asset_id = mediaAssetId;
+// OR
+answer.media_asset_id = mediaAssetId;
 ```
+
+**Architecture:**
+- Questions reference media via `question.media_asset_id` (FK to `media_asset.id`)
+- Answers reference media via `answer.media_asset_id` (FK to `media_asset.id`)
+- No bidirectional relationship (media_asset does NOT store owner_id/owner_type)
 
 ## Marketing Module
 
@@ -1327,6 +1340,8 @@ For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`
 ## Next Steps
 
 **Recently Completed:**
+- ✅ Media Asset Architecture Migration - Simplified to FK-only relationships (October 24, 2025)
+- ✅ Expert Dashboard Enhancements - Media preview, Download All (ZIP) for questions (October 24, 2025)
 - ✅ Payment Capture System - Manual capture with hold/release for two-tier pricing (January 15, 2025)
 - ✅ Two-Tier Pricing System - Quick Consult & Deep Dive pricing models (October 23, 2025)
 - ✅ ZIP Download Feature - Download questions/answers as organized archives (October 16, 2025)
@@ -1352,8 +1367,9 @@ For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`
 
 ## Critical Notes
 
+- **Media Asset Architecture:** Use FK-only (NO owner_id/owner_type) - see [`docs/api-database/MEDIA-ASSET-MIGRATION-OCT-2025.md`](./api-database/MEDIA-ASSET-MIGRATION-OCT-2025.md)
 - Always stringify JSON fields before sending to Xano: `JSON.stringify(metadata)`
-- Multi-segment videos: Create parent media_asset with `segment_index: null`
+- Multi-segment videos: Store segments in parent media_asset `metadata` field as JSON
 - Auth tokens: Never commit tokens or API keys to git
 - Cloudflare UIDs: Store in Xano as `asset_id`, not as primary key
 - OAuth state: Use sessionStorage for `qc_auth_in_progress` flag to prevent auto-logout
