@@ -153,6 +153,9 @@ function ExpertDashboardPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { setProfileData } = useAuth(); // ✅ ADDED
+
+  // Get auth token for authenticated requests
+  const authToken = localStorage.getItem('qc_token');
   const [profile, setProfile] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [allQuestions, setAllQuestions] = useState([]);
