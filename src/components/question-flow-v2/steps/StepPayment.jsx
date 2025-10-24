@@ -131,13 +131,28 @@ function StepPayment({
       const result = await response.json();
       console.log('✅ Question submitted:', result);
 
-      // Navigate to success page
-      if (result.review_token || result.data?.review_token) {
-        const token = result.review_token || result.data?.review_token;
-        navigate(`/question-sent?token=${token}`);
-      } else {
-        navigate('/question-sent');
+      // Navigate to success page with expert handle
+      const expertName = expert.name || expert.user?.name || expert.handle;
+      const questionId = result.data?.questionId || result.data?.id || result.questionId || result.id;
+      const reviewToken = result.review_token || result.data?.review_token;
+
+      const params = new URLSearchParams({
+        expert: expert.handle,
+        expertName: expertName,
+      });
+
+      if (questionId) {
+        params.append('question_id', questionId);
       }
+
+      if (reviewToken) {
+        params.append('review_token', reviewToken);
+      }
+
+      const navigationUrl = `/question-sent?${params.toString()}`;
+      console.log('🚀 Navigating to:', navigationUrl);
+
+      navigate(navigationUrl);
 
     } catch (error) {
       console.error('❌ Submission error:', error);

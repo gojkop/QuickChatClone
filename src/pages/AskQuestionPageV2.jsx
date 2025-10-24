@@ -254,7 +254,7 @@ function AskQuestionPageV2() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50 pb-32 sm:pb-8">
+    <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 pb-32 sm:pb-8">
         {/* ✅ FIXED: Pass props to FlowContainer */}
         <FlowContainer expert={safeExpert} tierType={tierType} tierConfig={tierConfig}>
           <ProgressDots
