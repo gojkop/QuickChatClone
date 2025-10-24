@@ -14,6 +14,9 @@ function AskQuestionPageV2() {
   const location = useLocation();
   const navigate = useNavigate();
   
+  // ✅ ADD THIS LOG to confirm re-renders
+  console.log('🎨 AskQuestionPageV2 RENDERED');
+  
   // State from navigation OR will be fetched from URL
   const navigationState = location.state || {};
   
@@ -25,13 +28,13 @@ function AskQuestionPageV2() {
 
   const { state, actions } = useFlowState();
 
-  // ✅ NEW: Monitor state changes for debugging
+  // ✅ Monitor compose changes and log them
   useEffect(() => {
     console.log('🔍 AskQuestionPageV2 - State changed:', {
       currentStep: state.currentStep,
       composeTitle: state.compose.title,
       composeTitleLength: state.compose.title?.length,
-      fullComposeState: state.compose
+      fullComposeState: JSON.stringify(state.compose)
     });
   }, [state.compose.title, state.currentStep]);
 
@@ -199,11 +202,11 @@ function AskQuestionPageV2() {
     actions.goToStep(1);
   };
 
- // Get current step button info for persistent mobile footer
+  // Get current step button info for persistent mobile footer
   const getCurrentStepButton = () => {
     const currentTime = new Date().toISOString();
     console.log(`🔘 [${currentTime}] getCurrentStepButton called`);
-    console.log('📊 Current state.compose:', state.compose);
+    console.log('📊 Current state.compose:', JSON.stringify(state.compose, null, 2));
     
     switch (state.currentStep) {
       case 1:
@@ -216,14 +219,14 @@ function AskQuestionPageV2() {
           ? state.compose.tierSpecific?.proposedPrice && parseFloat(state.compose.tierSpecific.proposedPrice) > 0
           : true;
 
-        console.log('📋 Title validation:', {
+        console.log('📋 Title validation:', JSON.stringify({
           rawTitle: titleText,
           trimmedTitle: trimmedTitle,
           trimmedLength: trimmedTitle.length,
           hasValidTitle: hasValidTitle,
           hasPrice: hasPrice,
           tierType: tierType
-        });
+        }, null, 2));
 
         const buttonText = trimmedTitle.length === 0
           ? 'Enter a title to continue'
@@ -235,11 +238,11 @@ function AskQuestionPageV2() {
 
         const isDisabled = !hasValidTitle || !hasPrice;
 
-        console.log('✅ Button config:', { 
+        console.log('✅ Button config:', JSON.stringify({ 
           text: buttonText, 
           disabled: isDisabled,
           timestamp: currentTime
-        });
+        }, null, 2));
 
         return {
           show: true,
@@ -271,7 +274,7 @@ function AskQuestionPageV2() {
   };
 
   const buttonInfo = getCurrentStepButton();
-  console.log('🎯 Final buttonInfo:', buttonInfo);
+  console.log('🎯 Final buttonInfo:', JSON.stringify(buttonInfo, null, 2));
 
   // Loading state
   if (isLoading) {
@@ -342,34 +345,180 @@ function AskQuestionPageV2() {
   return (
       <ErrorBoundary>
     <div className="min-h-screen bg-gray-50 pb-32 sm:pb-8">
-    <FlowContainer expert={safeExpert} tierType={tierType} tierConfig={tierConfig}>
+      <FlowContainer>
+        {/* Progress Dots */}
+        <ProgressDots
+          currentStep={state.currentStep}
+          completedSteps={state.completedSteps}
+        />
+
+        {/* Step 1: Compose */}
+        <AccordionSection
+          step={1}
+          title="Compose Your Question"
+          icon="compose"
+          state={state.currentStep === 1 ? 'active' : state.completedSteps.includes(1) ? 'completed' : 'locked'}
+          isExpandable={true}
+          onEdit={handleEditCompose}
+        >
+        <ErrorBoundary>
+          <StepCompose
+            expert={safeExpert}
+            tierType={tierType}
+            tierConfig={tierConfig}
+            composeData={state.compose}
+            onUpdate={actions.updateCompose}
+            onContinue={handleComposeComplete}
+          />
+        </ErrorBoundary>
+        </AccordionSection>
+
+        {/* Step 2: Review */}
+        <AccordionSection
+          step={2}
+          title="Review & Contact Info"
+          icon="review"
+          state={state.currentStep === 2 ? 'active' : state.completedSteps.includes(2) ? 'completed' : 'locked'}
+          isExpandable={true}
+          onEdit={() => actions.goToStep(2)}
+        >
+      <ErrorBoundary>
+          <StepReview
+            expert={safeExpert}
+            tierType={tierType}
+            tierConfig={tierConfig}
+            composeData={state.compose}
+            reviewData={state.review}
+            onUpdate={actions.updateReview}
+            onContinue={handleReviewComplete}
+            onEditCompose={handleEditCompose}
+          />
+      </ErrorBoundary>
+        </AccordionSection>
+
+        {/* Step 3: Payment */}
+        <AccordionSection
+          step={3}
+          title="Payment & Submit"
+          icon="payment"
+          state={state.currentStep === 3 ? 'active' : 'locked'}
+          isExpandable={false}
+        >
+         <ErrorBoundary>
+          <StepPayment
+            expert={safeExpert}
+            tierType={tierType}
+            tierConfig={tierConfig}
+            composeData={state.compose}
+            reviewData={state.review}
+          />
+       </ErrorBoundary>
+        </AccordionSection>
       </FlowContainer>
 
-      {/* Persistent Mobile Footer */}
-      {buttonInfo.show && (
-        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-gray-200 shadow-lg" style={{ 
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          backdropFilter: 'blur(10px)',
-          backgroundColor: 'rgba(255, 255, 255, 0.98)'
-        }}>
-          <div className="p-4">
-            <button
-              onClick={buttonInfo.onClick}
-              disabled={buttonInfo.disabled}
-              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
-              style={{
-                minHeight: '52px',
-                fontSize: '16px'
-              }}
-            >
-              {buttonInfo.text}
-            </button>
-          </div>
-        </div>
+      {/* Persistent Mobile Footer - REACTIVE VERSION */}
+      {state.currentStep <= 2 && (
+        <MobileFooterButton 
+          state={state}
+          tierType={tierType}
+          onComposeComplete={handleComposeComplete}
+          onReviewComplete={handleReviewComplete}
+        />
       )}
     </div>
  </ErrorBoundary>
   );
+}
+
+// ✅ NEW: Separate component to ensure re-renders on state changes
+function MobileFooterButton({ state, tierType, onComposeComplete, onReviewComplete }) {
+  console.log('📱 MobileFooterButton rendered with state:', {
+    step: state.currentStep,
+    title: state.compose?.title,
+    email: state.review?.email
+  });
+
+  if (state.currentStep === 1) {
+    const titleText = state.compose?.title || '';
+    const trimmedTitle = titleText.trim();
+    const hasValidTitle = trimmedTitle.length >= 5;
+    const hasPrice = tierType === 'deep_dive' 
+      ? state.compose.tierSpecific?.proposedPrice && parseFloat(state.compose.tierSpecific.proposedPrice) > 0
+      : true;
+    
+    const buttonText = trimmedTitle.length === 0
+      ? 'Enter a title to continue'
+      : trimmedTitle.length < 5
+      ? 'Title too short (min 5 characters)'
+      : tierType === 'deep_dive' && !hasPrice
+      ? 'Enter your offer amount'
+      : 'Continue to Review →';
+    
+    const isDisabled = !hasValidTitle || !hasPrice;
+    
+    console.log('📱 Step 1 button state:', {
+      title: titleText,
+      trimmedLength: trimmedTitle.length,
+      hasValidTitle,
+      isDisabled,
+      buttonText
+    });
+
+    return (
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-gray-200 shadow-lg" style={{ 
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        backdropFilter: 'blur(10px)',
+        backgroundColor: 'rgba(255, 255, 255, 0.98)'
+      }}>
+        <div className="p-4">
+          <button
+            onClick={onComposeComplete}
+            disabled={isDisabled}
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+            style={{
+              minHeight: '52px',
+              fontSize: '16px'
+            }}
+          >
+            {buttonText}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (state.currentStep === 2) {
+    const hasEmail = state.review.email && state.review.email.includes('@');
+    const buttonText = !state.review.email
+      ? 'Enter your email to continue'
+      : !state.review.email.includes('@')
+      ? 'Please enter a valid email'
+      : 'Continue to Payment →';
+
+    return (
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-gray-200 shadow-lg" style={{ 
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        backdropFilter: 'blur(10px)',
+        backgroundColor: 'rgba(255, 255, 255, 0.98)'
+      }}>
+        <div className="p-4">
+          <button
+            onClick={onReviewComplete}
+            disabled={!hasEmail}
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+            style={{
+              minHeight: '52px',
+              fontSize: '16px'
+            }}
+          >
+            {buttonText}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 export default AskQuestionPageV2;

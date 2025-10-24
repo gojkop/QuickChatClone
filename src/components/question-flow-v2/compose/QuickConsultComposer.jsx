@@ -1,132 +1,179 @@
 import React, { useState, useEffect } from 'react';
 import TitleInput from './TitleInput';
 import RecordingOptions from './RecordingOptions';
-import RecordingSegmentList from './RecordingSegmentList';
+import RecordingSegmentList from '../shared/RecordingSegmentList';
 import AdvancedOptions from './AdvancedOptions';
 import MindPilotPanel from './MindPilotPanel';
 import { useRecordingSegmentUpload } from '@/components/question-flow-v2/hooks/useRecordingSegmentUpload';
 import { useAttachmentUpload } from '@/components/question-flow-v2/hooks/useAttachmentUpload';
 
-
-function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
-  console.log('🎨 QuickConsultComposer rendered with data:', data);
-  
-  const [title, setTitle] = useState(data?.title || '');
+function QuickConsultComposer({ data, onUpdate, onContinue }) {
+  const [localTitle, setLocalTitle] = useState(data?.title || '');
   const [text, setText] = useState(data?.text || '');
   
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
 
-  // ✅ NEW: Monitor when data prop changes
-  useEffect(() => {
-    console.log('📥 QuickConsultComposer - data prop changed:', data);
-    if (data?.title !== undefined && data.title !== title) {
-      console.log('🔄 Syncing title from prop:', data.title);
-      setTitle(data.title);
-    }
-  }, [data]);
-
-  // Safety check
-  if (!expert) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Loading expert information...</p>
-      </div>
-    );
-  }
-
-  const handleTitleChange = (value) => {
-    console.log('✏️ Title changed to:', value);
-    setTitle(value);
-    if (onUpdate) {
-      console.log('📤 Calling onUpdate with title:', value);
-      onUpdate({ title: value });
-    } else {
-      console.error('❌ onUpdate is not defined!');
-    }
-  };
-
-  const handleTextChange = (value) => {
-    setText(value);
-    if (onUpdate) onUpdate({ text: value });
-  };
-
-  const hasRecordings = segmentUpload.segments.length > 0;
-
+  console.log('🎨 QuickConsultComposer rendered with data:', data);
   console.log('🔍 QuickConsultComposer render state:', {
-    localTitle: title,
+    localTitle,
     dataTitle: data?.title,
     onUpdateExists: !!onUpdate
   });
 
-  return (
-    <div className="space-y-6 pb-24 sm:pb-6">
-      {/* Title Input */}
-      <TitleInput value={title} onChange={handleTitleChange} />
+  // Sync local title with data prop when it changes
+  useEffect(() => {
+    console.log('📥 QuickConsultComposer - data prop changed:', data);
+    if (data?.title !== undefined && data.title !== localTitle) {
+      setLocalTitle(data.title);
+    }
+    if (data?.text !== undefined && data.text !== text) {
+      setText(data.text);
+    }
+  }, [data]);
 
-      {/* Recording Options - WITHOUT Screen Recording and WITHOUT Attach Files */}
-      <div>
-        <label className="block text-sm font-semibold text-gray-900 mb-3">
-          Record Your Question
-        </label>
+  // ✅ NEW: Update parent state whenever recordings change
+  useEffect(() => {
+    const successfulRecordings = segmentUpload.getSuccessfulSegments();
+    console.log('📹 Recordings changed:', successfulRecordings.length, 'segments');
+    
+    if (onUpdate) {
+      onUpdate({
+        title: localTitle,
+        recordings: successfulRecordings,
+        attachments: attachmentUpload.uploads.filter(u => u.result).map(u => u.result),
+        text
+      });
+    }
+  }, [segmentUpload.segments]); // Watch segments array for changes
+
+  // ✅ NEW: Update parent state whenever attachments change
+  useEffect(() => {
+    const successfulAttachments = attachmentUpload.uploads.filter(u => u.result).map(u => u.result);
+    console.log('📎 Attachments changed:', successfulAttachments.length, 'files');
+    
+    if (onUpdate) {
+      onUpdate({
+        title: localTitle,
+        recordings: segmentUpload.getSuccessfulSegments(),
+        attachments: successfulAttachments,
+        text
+      });
+    }
+  }, [attachmentUpload.uploads]); // Watch uploads array for changes
+
+  const handleTitleChange = (newTitle) => {
+    console.log('✏️ Title changed to:', newTitle);
+    setLocalTitle(newTitle);
+    
+    if (onUpdate) {
+      console.log('📤 Calling onUpdate with title:', newTitle);
+      onUpdate({
+        title: newTitle,
+        recordings: segmentUpload.getSuccessfulSegments(),
+        attachments: attachmentUpload.uploads.filter(u => u.result).map(u => u.result),
+        text
+      });
+    }
+  };
+
+  const handleTextChange = (newText) => {
+    setText(newText);
+    if (onUpdate) {
+      onUpdate({
+        title: localTitle,
+        recordings: segmentUpload.getSuccessfulSegments(),
+        attachments: attachmentUpload.uploads.filter(u => u.result).map(u => u.result),
+        text: newText
+      });
+    }
+  };
+
+  const handleContinue = () => {
+    // Validation
+    if (!localTitle.trim() || localTitle.trim().length < 5) {
+      alert('Please enter a title (at least 5 characters)');
+      return;
+    }
+
+    if (segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)) {
+      alert('Please wait for uploads to complete');
+      return;
+    }
+
+    const questionData = {
+      title: localTitle,
+      recordings: segmentUpload.getSuccessfulSegments(),
+      attachments: attachmentUpload.uploads.filter(u => u.result).map(u => u.result),
+      text
+    };
+
+    console.log('📤 Quick Consult - Continue with data:', questionData);
+    
+    onUpdate(questionData);
+    onContinue();
+  };
+
+  const hasRecordings = segmentUpload.segments.length > 0;
+  const canContinue = localTitle.trim().length >= 5 && !segmentUpload.hasUploading && !attachmentUpload.uploads.some(u => u.uploading);
+
+  return (
+    <div className="space-y-6">
+      {/* Title Input */}
+      <TitleInput 
+        value={localTitle} 
+        onChange={handleTitleChange}
+      />
+
+      {/* Recording Options - Video & Audio */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-gray-700">Record Your Question</h3>
         <RecordingOptions
           segmentUpload={segmentUpload}
-          attachmentUpload={attachmentUpload}
-          showScreenRecording={false}
-          showAttachFiles={false}
+          modes={['video', 'audio']}
           showRecordingList={false}
         />
       </div>
 
-      {/* Recording Segment List - SEPARATE */}
+      {/* Recording Segment List */}
       {hasRecordings && (
         <RecordingSegmentList
-          segments={segmentUpload.segments}
-          onRemove={segmentUpload.removeSegment}
-          onRetry={segmentUpload.retrySegment}
-          onReorder={segmentUpload.reorderSegments}
+          segmentUpload={segmentUpload}
         />
       )}
 
-      {/* Advanced Options (Includes Screen Recording AND Attach Files) */}
+      {/* Advanced Options - Screen Recording & Attachments */}
       <AdvancedOptions
+        segmentUpload={segmentUpload}
+        attachmentUpload={attachmentUpload}
         text={text}
         onTextChange={handleTextChange}
-        attachmentUpload={attachmentUpload}
-        segmentUpload={segmentUpload}
       />
 
-      {/* mindPilot Panel - with safety check */}
-      {expert && expert.id && title && title.length >= 5 && (
-        <MindPilotPanel
-          questionTitle={title}
-          questionText={text}
-          expertId={expert.id}
-          expertProfile={{
-            name: expert.name || expert.user?.name || expert.handle || 'Expert',
-            specialty: expert.specialty || '',
-            price: expert.price_cents || 0
-          }}
-          onApplySuggestions={(suggestions) => {
-            if (suggestions && suggestions.additionalContext) {
-              const newText = (text + suggestions.additionalContext).trim();
-              setText(newText);
-              if (onUpdate) onUpdate({ text: newText });
-            }
-          }}
-        />
-      )}
+      {/* MindPilot Panel */}
+      <MindPilotPanel
+        title={localTitle}
+        text={text}
+        onSuggestionApply={(suggestion) => {
+          if (suggestion.title) handleTitleChange(suggestion.title);
+          if (suggestion.text) handleTextChange(suggestion.text);
+        }}
+      />
 
-      {/* Desktop-only Continue Button */}
-      <div className="hidden sm:block pt-6 border-t mt-6">
-        <button
-          onClick={onContinue}
-          disabled={!title.trim() || title.length < 5}
-          className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Continue to Review →
-        </button>
-      </div>
+      {/* Continue Button */}
+      <button
+        onClick={handleContinue}
+        disabled={!canContinue}
+        className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all ${
+          canContinue
+            ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:shadow-lg'
+            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+        }`}
+      >
+        {segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading)
+          ? 'Uploading...'
+          : 'Continue to Review'}
+      </button>
     </div>
   );
 }
