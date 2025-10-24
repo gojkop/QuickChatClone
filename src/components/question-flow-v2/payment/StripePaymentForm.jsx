@@ -2,54 +2,34 @@
 // Stripe payment form using Stripe Elements
 
 import React, { useState } from 'react';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-
-const CARD_ELEMENT_OPTIONS = {
-  style: {
-    base: {
-      fontSize: '16px',
-      color: '#1f2937',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      '::placeholder': {
-        color: '#9ca3af',
-      },
-    },
-    invalid: {
-      color: '#ef4444',
-      iconColor: '#ef4444',
-    },
-  },
-  hidePostalCode: false,
-};
+import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError, isSubmitting }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [cardError, setCardError] = useState(null);
+  const [paymentError, setPaymentError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleCardChange = (event) => {
-    setCardError(event.error ? event.error.message : null);
-  };
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
 
-  const handleSubmit = async () => {
     if (!stripe || !elements || isSubmitting || isProcessing) {
       return;
     }
 
     setIsProcessing(true);
-    setCardError(null);
+    setPaymentError(null);
 
     try {
-      const cardElement = elements.getElement(CardElement);
-
       console.log('🔍 [STRIPE FORM] Confirming payment with client secret:', clientSecret.substring(0, 20) + '...');
 
-      // Confirm the payment
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
+      // Confirm the payment using PaymentElement
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + '/payment-complete', // Fallback, we handle it manually
         },
+        redirect: 'if_required', // Don't redirect, handle in the same page
       });
 
       console.log('🔍 [STRIPE FORM] Payment confirmation result:', {
@@ -61,18 +41,18 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
 
       if (error) {
         console.error('❌ Payment failed:', error.message);
-        setCardError(error.message);
+        setPaymentError(error.message);
         onError?.(error);
-      } else if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture') {
+      } else if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture')) {
         console.log('✅ Payment confirmed:', paymentIntent.id, 'Status:', paymentIntent.status);
         onSuccess?.(paymentIntent);
-      } else {
+      } else if (paymentIntent) {
         console.warn('⚠️ Payment status:', paymentIntent.status);
-        setCardError(`Payment status: ${paymentIntent.status}`);
+        setPaymentError(`Payment status: ${paymentIntent.status}`);
       }
     } catch (err) {
       console.error('❌ Payment error:', err);
-      setCardError(err.message || 'An unexpected error occurred');
+      setPaymentError(err.message || 'An unexpected error occurred');
       onError?.(err);
     } finally {
       setIsProcessing(false);
@@ -86,23 +66,19 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
 
   return (
     <div className="space-y-4">
-      {/* Card Input */}
+      {/* Payment Element - supports cards, Link, Amazon Pay, etc. */}
       <div className="bg-white rounded-lg border-2 border-gray-200 p-4 focus-within:border-indigo-500 transition-colors">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Card Details
-        </label>
-        <div className="py-2">
-          <CardElement
-            options={CARD_ELEMENT_OPTIONS}
-            onChange={handleCardChange}
-          />
-        </div>
+        <PaymentElement
+          options={{
+            layout: 'tabs',
+          }}
+        />
       </div>
 
-      {/* Card Error */}
-      {cardError && (
+      {/* Payment Error */}
+      {paymentError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-sm text-red-800">{cardError}</p>
+          <p className="text-sm text-red-800">{paymentError}</p>
         </div>
       )}
 

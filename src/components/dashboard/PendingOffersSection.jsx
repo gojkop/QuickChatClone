@@ -105,12 +105,13 @@ function PendingOffersSection({ onOfferUpdate, onViewDetails }) {
       const token = localStorage.getItem('qc_token');
 
       // Call Vercel endpoint (which captures Stripe payment)
-      const response = await fetch(`/api/offers/${offerId}/accept`, {
+      const response = await fetch('/api/offers-accept', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ id: offerId })
       });
 
       if (!response.ok) {
@@ -156,13 +157,14 @@ function PendingOffersSection({ onOfferUpdate, onViewDetails }) {
       const token = localStorage.getItem('qc_token');
 
       // Call Vercel endpoint (which cancels Stripe payment)
-      const response = await fetch(`/api/offers/${offerId}/decline`, {
+      const response = await fetch('/api/offers-decline', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          id: offerId,
           decline_reason: reason || 'Expert declined'
         })
       });

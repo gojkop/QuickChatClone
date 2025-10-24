@@ -1,7 +1,7 @@
-// api/offers/[id]/decline.js
+// api/offers-decline.js
 // Decline a Deep Dive offer and cancel/refund the payment
 
-import { cancelPaymentIntent } from '../../lib/stripe.js';
+import { cancelPaymentIntent } from './lib/stripe.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -9,8 +9,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { id } = req.query;
-    const { decline_reason } = req.body;
+    const { id, decline_reason } = req.body;
 
     if (!id) {
       return res.status(400).json({ error: 'Offer ID is required' });
@@ -26,9 +25,18 @@ export default async function handler(req, res) {
 
     console.log(`🚫 Declining offer ${id} and canceling payment...`);
 
+    // Use the correct base URL (try both for compatibility)
+    const baseUrl = process.env.XANO_BASE_URL || process.env.XANO_PUBLIC_API_URL;
+
+    if (!baseUrl) {
+      throw new Error('Xano base URL not configured');
+    }
+
+    console.log(`🔍 Using Xano base URL: ${baseUrl.substring(0, 30)}...`);
+
     // Step 1: Get question details to find payment intent ID
     const questionResponse = await fetch(
-      `${process.env.XANO_BASE_URL}/question/${id}`,
+      `${baseUrl}/question/${id}`,
       {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -37,7 +45,14 @@ export default async function handler(req, res) {
     );
 
     if (!questionResponse.ok) {
-      throw new Error('Failed to fetch question details');
+      const errorText = await questionResponse.text();
+      console.error('❌ Failed to fetch question:', {
+        status: questionResponse.status,
+        statusText: questionResponse.statusText,
+        url: `${baseUrl}/question/${id}`,
+        body: errorText
+      });
+      throw new Error(`Failed to fetch question details: ${questionResponse.status} ${errorText}`);
     }
 
     const question = await questionResponse.json();
@@ -56,7 +71,7 @@ export default async function handler(req, res) {
 
     // Step 2: Decline the offer in Xano
     const xanoResponse = await fetch(
-      `${process.env.XANO_BASE_URL}/offers/${id}/decline`,
+      `${baseUrl}/offers/${id}/decline`,
       {
         method: 'POST',
         headers: {
