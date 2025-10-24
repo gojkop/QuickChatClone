@@ -13,15 +13,17 @@ function StepReview({
   onContinue,
   onEditCompose 
 }) {
-  // ✅ FIX: Handle email change correctly
-  const handleEmailChange = (value) => {
-    console.log('📧 Email changed:', value); // Debug
-    onUpdate('email', value);
+  // ✅ FIX: Add console log to debug
+  console.log('📋 StepReview - reviewData:', reviewData);
+
+  const handleContactChange = (contactData) => {
+    console.log('📧 Contact data changing:', contactData);
+    onUpdate(contactData);
   };
 
   const handleContinue = () => {
-    // Validate email
-    if (!reviewData.email || !reviewData.email.includes('@')) {
+    // ✅ FIX: Safe access with optional chaining
+    if (!reviewData?.email || !reviewData.email.includes('@')) {
       alert('Please enter a valid email address');
       return;
     }
@@ -29,10 +31,11 @@ function StepReview({
     onContinue();
   };
 
-  const canContinue = reviewData.email && reviewData.email.includes('@');
+  // ✅ FIX: Safe access with optional chaining
+  const canContinue = reviewData?.email && reviewData.email.includes('@');
 
   return (
-    <div className="space-y-4 pb-4 sm:pb-6">
+    <div className="space-y-4 pb-24 sm:pb-6">
       {/* Question Summary */}
       <QuestionSummaryCard
         composeData={composeData}
@@ -48,10 +51,10 @@ function StepReview({
       />
 
       {/* Contact Information */}
-      {/* ✅ FIX: Pass email prop instead of data, and onChange expects string value */}
+      {/* ✅ FIX: Provide default empty object if reviewData is undefined */}
       <ContactForm
-        email={reviewData?.email || ''}
-        onChange={handleEmailChange}
+        data={reviewData || { email: '', firstName: '', lastName: '' }}
+        onChange={handleContactChange}
       />
 
       {/* Continue Button - will be shown in persistent footer */}
@@ -61,7 +64,7 @@ function StepReview({
           disabled={!canContinue}
           className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
         >
-          {!reviewData.email
+          {!reviewData?.email
             ? 'Enter your email to continue'
             : !reviewData.email.includes('@')
             ? 'Please enter a valid email'
