@@ -17,97 +17,39 @@ function AccordionSection({
     const shouldExpand = state === 'active';
     setIsExpanded(shouldExpand);
     
-    // ✅ ADAPTIVE SCROLL: Different behavior for mobile vs desktop
     if (shouldExpand && sectionRef.current) {
       setTimeout(() => {
-        const section = sectionRef.current;
+        const element = sectionRef.current;
         const isMobile = window.innerWidth < 640;
         
         if (isMobile) {
-          // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          // MOBILE: Scroll to first input for keyboard optimization
-          // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          const firstInput = section.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), textarea');
-          
+          // Mobile: Scroll to input field
+          const firstInput = element.querySelector('input, textarea');
           if (firstInput) {
-            const inputTop = firstInput.getBoundingClientRect().top;
-            const absoluteInputTop = inputTop + window.pageYOffset;
-            const viewportCenter = window.innerHeight / 3;
-            const scrollTarget = absoluteInputTop - viewportCenter;
-            
-            window.scrollTo({ 
-              top: Math.max(0, scrollTarget),
-              behavior: 'smooth' 
+            firstInput.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start',
+              inline: 'nearest'
             });
-            
-            console.log('📱 Mobile: Scrolled to input field');
           } else {
-            const headerOffset = 60;
-            const sectionTop = section.getBoundingClientRect().top;
-            const absoluteTop = sectionTop + window.pageYOffset;
-            const scrollTarget = absoluteTop - headerOffset;
-            
-            window.scrollTo({ 
-              top: Math.max(0, scrollTarget),
-              behavior: 'smooth' 
-            });
+            const headerHeight = 20;
+            const y = element.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+            window.scrollTo({ top: y, behavior: 'smooth' });
           }
         } else {
-          // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          // DESKTOP: Scroll to show PROGRESS DOTS + accordion header
-          // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          
-          // Find the FlowContainer (parent container with progress dots)
-          const flowContainer = section.closest('.max-w-4xl');
-          
+          // Desktop: Scroll to show progress dots
+          const flowContainer = element.closest('.max-w-4xl');
           if (flowContainer) {
-            // Find the progress dots element (first child of flow container)
             const progressDots = flowContainer.querySelector('.progress-dots-container');
-            
             if (progressDots) {
-              // Scroll to show progress dots at the top
-              const dotsTop = progressDots.getBoundingClientRect().top;
-              const absoluteDotsTop = dotsTop + window.pageYOffset;
-              
-              // Account for fixed navbar (~80px) + small padding (20px)
               const navbarOffset = 100;
+              const absoluteDotsTop = progressDots.getBoundingClientRect().top + window.pageYOffset;
               const scrollTarget = absoluteDotsTop - navbarOffset;
-              
-              window.scrollTo({ 
-                top: Math.max(0, scrollTarget),
-                behavior: 'smooth' 
-              });
-              
-              console.log('🖥️ Desktop: Scrolled to progress dots (context preserved)');
-            } else {
-              // Fallback: scroll to flow container if progress dots not found
-              const containerTop = flowContainer.getBoundingClientRect().top;
-              const absoluteContainerTop = containerTop + window.pageYOffset;
-              const scrollTarget = absoluteContainerTop - 100;
-              
-              window.scrollTo({ 
-                top: Math.max(0, scrollTarget),
-                behavior: 'smooth' 
-              });
-              
-              console.log('🖥️ Desktop: Scrolled to container (fallback)');
+              window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
             }
-          } else {
-            // Final fallback: use original method with larger offset
-            const largeOffset = 200; // Navbar + progress dots + spacing
-            const sectionTop = section.getBoundingClientRect().top;
-            const absoluteTop = sectionTop + window.pageYOffset;
-            const scrollTarget = absoluteTop - largeOffset;
-            
-            window.scrollTo({ 
-              top: Math.max(0, scrollTarget),
-              behavior: 'smooth' 
-            });
-            
-            console.log('🖥️ Desktop: Scrolled with large offset (final fallback)');
           }
         }
-      }, 300);
+      }, 150);
     }
   }, [state]);
 
@@ -129,8 +71,8 @@ function AccordionSection({
 
   const getStateColor = () => {
     switch (state) {
-      case 'active': return 'text-indigo-600 bg-indigo-50';
-      case 'completed': return 'text-green-600 bg-green-50';
+      case 'active': return 'text-indigo-600 bg-gradient-to-br from-indigo-50 to-purple-50';
+      case 'completed': return 'text-green-600 bg-gradient-to-br from-green-50 to-emerald-50';
       case 'locked': return 'text-gray-400 bg-gray-50';
       default: return 'text-gray-600 bg-gray-50';
     }
@@ -140,7 +82,7 @@ function AccordionSection({
     <div ref={sectionRef} className={`accordion-section ${state}`}>
       {/* Header */}
       <div 
-        className="accordion-header"
+        className="accordion-header group"
         onClick={handleHeaderClick}
         role="button"
         tabIndex={state === 'locked' ? -1 : 0}
@@ -151,19 +93,23 @@ function AccordionSection({
         }}
       >
         {/* Step Number & Icon */}
-        <div className={`accordion-icon ${getStateColor()}`}>
+        <div className={`accordion-icon icon-bounce-hover ${getStateColor()}`}>
           {getIcon()}
         </div>
 
         {/* Title */}
         <div className="flex-1">
-          <h2 className="text-base font-bold text-gray-900 tracking-tight" style={{ fontFeatureSettings: '"kern" 1' }}>
+          <h2 className="heading-gradient-primary" style={{ 
+            fontSize: '1.0625rem',
+            fontFeatureSettings: '"kern" 1',
+            lineHeight: '1.4'
+          }}>
             Step {step}: {title}
           </h2>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {state === 'completed' && isExpandable && (
             <button
               onClick={(e) => {
@@ -179,16 +125,18 @@ function AccordionSection({
           )}
 
           {state !== 'locked' && (
-            isExpanded ? 
-              <ChevronUpIcon className="w-5 h-5 text-gray-400" /> :
+            <div className="transition-transform duration-200" style={{
+              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+            }}>
               <ChevronDownIcon className="w-5 h-5 text-gray-400" />
+            </div>
           )}
         </div>
       </div>
 
       {/* Content */}
       <div className={`accordion-content ${isExpanded ? 'expanded' : ''}`}>
-        <div className="accordion-body">
+        <div className="accordion-body card-premium-padding content-flow">
           {children}
         </div>
       </div>
