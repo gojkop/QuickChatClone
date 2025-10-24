@@ -564,7 +564,7 @@ function PublicProfilePage() {
       return;
     }
 
-    const navUrl = `/ask?expert=${handle}`;
+    const navUrl = `/ask-v2?expert=${handle}`;
 
     navigate(navUrl, {
       state: {
