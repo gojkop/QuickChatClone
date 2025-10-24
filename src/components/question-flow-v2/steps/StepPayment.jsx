@@ -80,6 +80,17 @@ function StepPayment({
       }
 
       // ✅ STEP 2: Build base payload with media_asset_id
+      console.log('📎 [DEBUG] composeData.attachments:', composeData.attachments);
+
+      const mappedAttachments = (composeData.attachments || []).map(a => ({
+        name: a.name || a.filename,
+        url: a.url || a.playbackUrl,
+        size: a.size,
+        type: a.type || a.mimeType || 'application/octet-stream'
+      }));
+
+      console.log('📎 [DEBUG] Mapped attachments:', mappedAttachments);
+
       const basePayload = {
         expertHandle: expert.handle,
         title: composeData.title,
@@ -88,11 +99,7 @@ function StepPayment({
         payerFirstName: reviewData.firstName || null,
         payerLastName: reviewData.lastName || null,
         media_asset_id: mediaAssetId, // ✅ Send the media_asset_id
-        attachments: (composeData.attachments || []).map(a => ({
-          name: a.name || a.filename,
-          url: a.url || a.playbackUrl,
-          size: a.size
-        })),
+        attachments: mappedAttachments,
         sla_hours_snapshot: tierConfig?.sla_hours || expert.sla_hours
       };
 
