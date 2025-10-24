@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     const data = await response.json();
     console.log('Raw Xano response:', JSON.stringify(data).substring(0, 500));
 
-    // ✅ NEW: Fetch media_asset for each question and transform
+    // ✅ NEW: Enrich each question with media_asset data
     const enrichedData = await Promise.all(data.map(async (question) => {
       let cleanedAttachments = null;
       
@@ -57,9 +57,15 @@ export default async function handler(req, res) {
           
           if (mediaAsset) {
             // Parse metadata if it's a string
-            const metadata = typeof mediaAsset.metadata === 'string'
-              ? JSON.parse(mediaAsset.metadata)
-              : mediaAsset.metadata;
+            let metadata = mediaAsset.metadata;
+            if (typeof metadata === 'string') {
+              try {
+                metadata = JSON.parse(metadata);
+              } catch (e) {
+                console.error(`Failed to parse metadata for media_asset ${question.media_asset_id}:`, e);
+                metadata = null;
+              }
+            }
             
             // Transform media_asset into recording_segments format
             if (metadata?.type === 'multi-segment' && metadata?.segments) {
