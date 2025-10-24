@@ -8,6 +8,7 @@ function RecordingModal({ mode, onComplete, onClose }) {
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [recordedDuration, setRecordedDuration] = useState(0);
   const [reviewBlobUrl, setReviewBlobUrl] = useState(null);
+  const [facingMode, setFacingMode] = useState('user'); // ✅ NEW: 'user' = front, 'environment' = rear
 
   const videoRef = useRef(null);
   const reviewVideoRef = useRef(null);
@@ -22,14 +23,12 @@ function RecordingModal({ mode, onComplete, onClose }) {
     const body = document.body;
     const html = document.documentElement;
     
-    // Store original styles
     const originalBodyOverflow = body.style.overflow;
     const originalBodyPosition = body.style.position;
     const originalBodyTop = body.style.top;
     const originalBodyWidth = body.style.width;
     const originalHtmlOverflow = html.style.overflow;
     
-    // Lock scroll on both body and html for better mobile support
     body.style.overflow = 'hidden';
     body.style.position = 'fixed';
     body.style.top = `-${scrollY}px`;
@@ -39,7 +38,6 @@ function RecordingModal({ mode, onComplete, onClose }) {
     html.style.overflow = 'hidden';
 
     return () => {
-      // Restore original styles
       body.style.overflow = originalBodyOverflow;
       body.style.position = originalBodyPosition;
       body.style.top = originalBodyTop;
@@ -48,16 +46,17 @@ function RecordingModal({ mode, onComplete, onClose }) {
       body.style.right = '';
       html.style.overflow = originalHtmlOverflow;
       
-      // Restore scroll position
       window.scrollTo(0, scrollY);
     };
   }, []);
 
-  // Initialize preview
+  // ✅ NEW: Re-initialize preview when facingMode changes
   useEffect(() => {
-    initializePreview();
+    if (state === 'preview') {
+      initializePreview();
+    }
     return () => cleanup();
-  }, [mode]);
+  }, [mode, facingMode]);
 
   // Keep video element connected to stream during preview AND recording
   useEffect(() => {
@@ -82,7 +81,6 @@ function RecordingModal({ mode, onComplete, onClose }) {
       };
     }
     
-    // HANDLE AUDIO MODE
     if (state === 'review' && recordedBlob && mode === 'audio') {
       const blobUrl = URL.createObjectURL(recordedBlob);
       setReviewBlobUrl(blobUrl);
@@ -95,24 +93,25 @@ function RecordingModal({ mode, onComplete, onClose }) {
 
   const initializePreview = async () => {
     try {
+      // Clean up existing stream first
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
       let stream;
       
       if (mode === 'screen') {
-        // Screen capture with audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: true
         });
         
-        // Also get microphone audio
         try {
           const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           
-          // Mix both audio tracks
           const audioContext = new AudioContext();
           const dest = audioContext.createMediaStreamDestination();
           
-          // Add display audio
           if (displayStream.getAudioTracks().length > 0) {
             const displaySource = audioContext.createMediaStreamSource(
               new MediaStream(displayStream.getAudioTracks())
@@ -120,23 +119,21 @@ function RecordingModal({ mode, onComplete, onClose }) {
             displaySource.connect(dest);
           }
           
-          // Add microphone audio
           const micSource = audioContext.createMediaStreamSource(audioStream);
           micSource.connect(dest);
           
-          // Combine video + mixed audio
           stream = new MediaStream([
             ...displayStream.getVideoTracks(),
             ...dest.stream.getAudioTracks()
           ]);
         } catch {
-          // If mic fails, just use display stream
           stream = displayStream;
         }
       } else if (mode === 'video') {
+        // ✅ NEW: Use facingMode state for camera selection
         stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
-          video: { facingMode: 'user' }
+          video: { facingMode: facingMode }
         });
       } else {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -165,6 +162,11 @@ function RecordingModal({ mode, onComplete, onClose }) {
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
     }
+  };
+
+  // ✅ NEW: Toggle camera function
+  const toggleCamera = () => {
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
   };
 
   const startCountdown = () => {
@@ -206,7 +208,6 @@ function RecordingModal({ mode, onComplete, onClose }) {
 
     mediaRecorderRef.current.start();
 
-    // Timer
     timerIntervalRef.current = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
@@ -245,10 +246,8 @@ function RecordingModal({ mode, onComplete, onClose }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // ✅ Detect mobile
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
 
-  // ✅ IMPROVED: Render modal using React Portal to avoid z-index issues
   const modalContent = (
     <div 
       className="fixed inset-0 bg-black/70 backdrop-blur-sm"
@@ -298,20 +297,39 @@ function RecordingModal({ mode, onComplete, onClose }) {
             </button>
           </div>
 
-          {/* Content - Mobile optimized */}
+          {/* Content */}
           <div className="relative flex-1 flex flex-col overflow-hidden" style={{ minHeight: '300px' }}>
             {/* Preview State */}
             {state === 'preview' && (
               <>
                 {(mode === 'video' || mode === 'screen') ? (
-                  <video
-                    ref={videoRef}
-                    className="w-full flex-1 bg-gray-900 object-cover"
-                    autoPlay
-                    muted
-                    playsInline
-                    style={{ maxHeight: isMobile ? 'calc(100vh - 200px)' : 'none' }}
-                  />
+                  <div className="relative flex-1 bg-gray-900">
+                    <video
+                      ref={videoRef}
+                      className="w-full h-full object-cover"
+                      autoPlay
+                      muted
+                      playsInline
+                      style={{ 
+                        maxHeight: isMobile ? 'calc(100vh - 200px)' : 'none',
+                        transform: facingMode === 'user' ? 'scaleX(-1)' : 'none'
+                      }}
+                    />
+                    
+                    {/* ✅ NEW: Camera flip button (only for video mode) */}
+                    {mode === 'video' && (
+                      <button
+                        onClick={toggleCamera}
+                        className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition touch-manipulation backdrop-blur-sm"
+                        style={{ minWidth: '48px', minHeight: '48px' }}
+                        aria-label="Switch camera"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <div className="w-full flex-1 bg-gray-900 flex items-center justify-center">
                     <div className="text-center p-8">
@@ -350,7 +368,10 @@ function RecordingModal({ mode, onComplete, onClose }) {
                     autoPlay
                     muted
                     playsInline
-                    style={{ maxHeight: isMobile ? 'calc(100vh - 200px)' : 'none' }}
+                    style={{ 
+                      maxHeight: isMobile ? 'calc(100vh - 200px)' : 'none',
+                      transform: facingMode === 'user' && mode === 'video' ? 'scaleX(-1)' : 'none'
+                    }}
                   />
                 ) : (
                   <div className="w-full flex-1 bg-gray-900 flex items-center justify-center">
@@ -437,13 +458,11 @@ function RecordingModal({ mode, onComplete, onClose }) {
     </div>
   );
 
-  // Render using portal
   return typeof document !== 'undefined' 
     ? createPortal(modalContent, document.body)
     : null;
 }
 
-// Icon components (inline for modal)
 function MicIcon({ className }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">

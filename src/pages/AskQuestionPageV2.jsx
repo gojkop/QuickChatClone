@@ -189,27 +189,50 @@ function AskQuestionPageV2() {
     actions.goToStep(1);
   };
 
-  // Get current step button info for persistent mobile footer
+ // Get current step button info for persistent mobile footer
   const getCurrentStepButton = () => {
+    console.log('🔘 Button state check - Current step:', state.currentStep);
+    console.log('📝 Compose state:', state.compose);
+    
     switch (state.currentStep) {
       case 1:
-        const hasTitle = state.compose.title?.trim() && state.compose.title.length >= 5;
+        // ✅ FIX: Use trimmed length consistently
+        const titleText = state.compose.title || '';
+        const trimmedTitle = titleText.trim();
+        const hasValidTitle = trimmedTitle.length >= 5;
+        
         const hasPrice = tierType === 'deep_dive' 
           ? state.compose.tierSpecific?.proposedPrice && parseFloat(state.compose.tierSpecific.proposedPrice) > 0
           : true;
 
+        console.log('📊 Title validation:', {
+          titleText,
+          trimmedTitle,
+          trimmedLength: trimmedTitle.length,
+          hasValidTitle,
+          hasPrice,
+          tierType
+        });
+
+        const buttonText = trimmedTitle.length === 0
+          ? 'Enter a title to continue'
+          : trimmedTitle.length < 5
+          ? 'Title too short (min 5 characters)'
+          : tierType === 'deep_dive' && !hasPrice
+          ? 'Enter your offer amount'
+          : 'Continue to Review →';
+
+        const isDisabled = !hasValidTitle || !hasPrice;
+
+        console.log('🔘 Button result:', { buttonText, isDisabled });
+
         return {
           show: true,
-          text: !state.compose.title?.trim()
-            ? 'Enter a title to continue'
-            : state.compose.title.length < 5
-            ? 'Title too short (min 5 characters)'
-            : tierType === 'deep_dive' && !hasPrice
-            ? 'Enter your offer amount'
-            : 'Continue to Review →',
-          disabled: !hasTitle || !hasPrice,
+          text: buttonText,
+          disabled: isDisabled,
           onClick: handleComposeComplete
         };
+        
       case 2:
         return {
           show: true,
@@ -221,17 +244,19 @@ function AskQuestionPageV2() {
           disabled: !state.review.email || !state.review.email.includes('@'),
           onClick: handleReviewComplete
         };
+        
       case 3:
         return {
           show: false // Payment step has its own submit button
         };
+        
       default:
         return { show: false };
     }
   };
 
   const buttonInfo = getCurrentStepButton();
-
+  
   // Loading state
   if (isLoading) {
     return (
