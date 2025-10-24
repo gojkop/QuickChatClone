@@ -34,42 +34,7 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Using Xano base URL: ${baseUrl.substring(0, 30)}...`);
 
-    // Step 1: Get question details to find payment intent ID
-    const questionResponse = await fetch(
-      `${baseUrl}/question/${id}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      }
-    );
-
-    if (!questionResponse.ok) {
-      const errorText = await questionResponse.text();
-      console.error('❌ Failed to fetch question:', {
-        status: questionResponse.status,
-        statusText: questionResponse.statusText,
-        url: `${baseUrl}/question/${id}`,
-        body: errorText
-      });
-      throw new Error(`Failed to fetch question details: ${questionResponse.status} ${errorText}`);
-    }
-
-    const question = await questionResponse.json();
-    const paymentIntentId = question.stripe_payment_intent_id;
-
-    console.log('🔍 Question data:', {
-      id: question.id,
-      hasPaymentIntentId: !!paymentIntentId,
-      paymentIntentId: paymentIntentId,
-      questionKeys: Object.keys(question)
-    });
-
-    if (!paymentIntentId) {
-      console.warn('⚠️ No payment intent ID found for question', id);
-    }
-
-    // Step 2: Decline the offer in Xano
+    // Decline the offer in Xano (this should return question data with payment intent ID)
     const xanoResponse = await fetch(
       `${baseUrl}/offers/${id}/decline`,
       {
@@ -104,7 +69,22 @@ export default async function handler(req, res) {
 
     const result = await xanoResponse.json();
 
-    // Step 3: Cancel/refund the payment (if not mock)
+    // Get payment intent ID from the result
+    const paymentIntentId = result.stripe_payment_intent_id || result.payment_intent_id;
+
+    console.log('🔍 Decline result:', {
+      question_id: result.question_id,
+      status: result.status,
+      hasPaymentIntentId: !!paymentIntentId,
+      paymentIntentId: paymentIntentId,
+      resultKeys: Object.keys(result)
+    });
+
+    if (!paymentIntentId) {
+      console.warn('⚠️ No payment intent ID found in decline response');
+    }
+
+    // Cancel/refund the payment (if not mock)
     let paymentCanceled = false;
     if (paymentIntentId && !paymentIntentId.startsWith('pi_mock_')) {
       try {
