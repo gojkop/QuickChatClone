@@ -84,7 +84,47 @@ function AnswerReviewPage() {
             }
             return [];
           })(),
-          media_assets: rawData.media_asset || [],
+          // Extract segments from metadata for multi-segment recordings (same as answer logic)
+          media_assets: (() => {
+            if (!rawData.media_asset || rawData.media_asset.length === 0) {
+              return [];
+            }
+
+            const mainAsset = rawData.media_asset[0];
+
+            // Parse metadata if it's a JSON string
+            let metadata = mainAsset.metadata;
+            if (typeof metadata === 'string') {
+              try {
+                metadata = JSON.parse(metadata);
+              } catch (e) {
+                console.warn('Failed to parse question media metadata:', e);
+                metadata = {};
+              }
+            }
+
+            // Check if this is a multi-segment recording
+            if (metadata?.type === 'multi-segment' && metadata?.segments) {
+              return metadata.segments.map(segment => ({
+                id: segment.uid,
+                url: segment.playback_url,
+                duration_sec: segment.duration,
+                segment_index: segment.segment_index,
+                metadata: {
+                  mode: segment.mode
+                }
+              }));
+            }
+
+            // Otherwise return the main asset as a single item
+            return [{
+              id: mainAsset.id,
+              url: mainAsset.url,
+              duration_sec: mainAsset.duration_sec,
+              segment_index: 0,
+              metadata: metadata
+            }];
+          })(),
           // Answer is an object, not an array - extract segments from metadata
           // IMPORTANT: answer might be null/undefined when no answer exists yet
           answer: (rawData.answer && typeof rawData.answer === 'object' && rawData.answer.id) ? {
@@ -97,12 +137,23 @@ function AnswerReviewPage() {
               if (!rawData.media_asset_answer || rawData.media_asset_answer.length === 0) {
                 return [];
               }
-              
+
               const mainAsset = rawData.media_asset_answer[0];
-              
+
+              // Parse metadata if it's a JSON string
+              let metadata = mainAsset.metadata;
+              if (typeof metadata === 'string') {
+                try {
+                  metadata = JSON.parse(metadata);
+                } catch (e) {
+                  console.warn('Failed to parse answer media metadata:', e);
+                  metadata = {};
+                }
+              }
+
               // Check if this is a multi-segment recording
-              if (mainAsset.metadata?.type === 'multi-segment' && mainAsset.metadata?.segments) {
-                return mainAsset.metadata.segments.map(segment => ({
+              if (metadata?.type === 'multi-segment' && metadata?.segments) {
+                return metadata.segments.map(segment => ({
                   id: segment.uid,
                   url: segment.playback_url,
                   duration_sec: segment.duration,
@@ -112,14 +163,14 @@ function AnswerReviewPage() {
                   }
                 }));
               }
-              
+
               // Otherwise return the main asset as a single item
               return [{
                 id: mainAsset.id,
                 url: mainAsset.url,
                 duration_sec: mainAsset.duration_sec,
                 segment_index: 0,
-                metadata: mainAsset.metadata
+                metadata: metadata
               }];
             })(),
             // Parse attachments if they exist (could be on answer object or empty)
@@ -156,6 +207,13 @@ function AnswerReviewPage() {
         }
         
         console.log('✅ Transformed data:', transformedData);
+        console.log('🎥 Question media details:', {
+          rawMediaAsset: rawData.media_asset?.[0],
+          transformedMediaAssets: transformedData.media_assets,
+          mediaCount: transformedData.media_assets?.length || 0,
+          isMultiSegment: rawData.media_asset?.[0]?.metadata?.type === 'multi-segment',
+          segmentCount: rawData.media_asset?.[0]?.metadata?.segment_count
+        });
         console.log('🎥 Answer details:', {
           hasAnswer: !!transformedData.answer,
           answerExists: !!(rawData.answer && rawData.answer.id),
