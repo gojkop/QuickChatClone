@@ -17,24 +17,31 @@ function AccordionSection({
     const shouldExpand = state === 'active';
     setIsExpanded(shouldExpand);
     
-    // ✅ FIX: Better scroll behavior - scroll to top of section on mobile, smooth on desktop
+    // ✅ IMPROVED: Better scroll behavior - always scroll to section header
     if (shouldExpand && sectionRef.current) {
+      // Wait for accordion expansion animation to complete
       setTimeout(() => {
         const element = sectionRef.current;
         const isMobile = window.innerWidth < 640;
         
         if (isMobile) {
-          // Mobile: Scroll section to top of viewport with small offset
-          const headerHeight = 20; // Small offset from top
-          const y = element.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-          window.scrollTo({ top: y, behavior: 'smooth' });
+          // Mobile: Scroll to accordion header with small offset from top
+          const headerHeight = 60; // Progress dots + small padding
+          const elementTop = element.getBoundingClientRect().top;
+          const absoluteTop = elementTop + window.pageYOffset;
+          const scrollTarget = absoluteTop - headerHeight;
+          
+          window.scrollTo({ 
+            top: Math.max(0, scrollTarget), // Don't scroll negative
+            behavior: 'smooth' 
+          });
         } else {
-          // Desktop: Scroll with more offset for better context
-          const yOffset = -80;
+          // Desktop: Scroll with moderate offset for context
+          const yOffset = -100;
           const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
           window.scrollTo({ top: y, behavior: 'smooth' });
         }
-      }, 150);
+      }, 250); // Increased delay to wait for accordion expansion
     }
   }, [state]);
 

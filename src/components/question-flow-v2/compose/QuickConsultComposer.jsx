@@ -49,7 +49,7 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
     && !(attachmentUpload?.uploads?.some(u => u.uploading) || false); // ✅ Fixed
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-4 sm:pb-6">
       {/* Title Input */}
       <TitleInput value={title} onChange={handleTitleChange} />
 

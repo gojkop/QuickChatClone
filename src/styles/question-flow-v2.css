@@ -849,7 +849,7 @@ select {
 @media (max-width: 640px) {
   /* Ensure content doesn't hide behind persistent footer */
   .accordion-body {
-    padding-bottom: 100px !important;
+    padding-bottom: 80px !important; /* Reduced from 100px */
   }
 
   /* Persistent footer styling */

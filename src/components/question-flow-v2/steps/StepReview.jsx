@@ -30,7 +30,7 @@ function StepReview({
   const canContinue = reviewData.email && reviewData.email.includes('@');
 
   return (
-    <div className="space-y-4 pb-24 sm:pb-6">
+    <div className="space-y-4 pb-4 sm:pb-6">
       {/* Question Summary */}
       <QuestionSummaryCard
         composeData={composeData}
