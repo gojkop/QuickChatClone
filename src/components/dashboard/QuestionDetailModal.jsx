@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import apiClient from '@/api';
+import JSZip from 'jszip';
 import AnswerRecorder from './AnswerRecorder';
 import AnswerReviewModal from './AnswerReviewModal';
 import QuestionContextBanner from './QuestionContextBanner';
@@ -50,6 +51,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   const [answerDetails, setAnswerDetails] = useState(null);
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const isDeclined = question?.pricing_status === 'offer_declined' || question?.status === 'declined';
   const isPending = question?.status === 'paid' && !question?.answered_at && !isDeclined;
@@ -197,12 +199,116 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
     setShowAnswerRecorder(false);
     setAnswerData(null);
     setCurrentStep(1);
-    
+
     if (onAnswerSubmitted) {
       onAnswerSubmitted(question.id);
     }
-    
+
     onClose();
+  };
+
+  // Download question media and attachments as ZIP
+  const downloadQuestionAsZip = async () => {
+    try {
+      setIsDownloading(true);
+      const zip = new JSZip();
+
+      console.log('📦 Creating question download ZIP...');
+
+      const allItems = [];
+
+      // Add media segments (videos and audio)
+      if (mediaSegments && mediaSegments.length > 0) {
+        for (const [index, segment] of mediaSegments.entries()) {
+          const isVideo = segment.metadata?.mode === 'video' ||
+                         segment.metadata?.mode === 'screen' ||
+                         segment.metadata?.mode === 'screen-camera' ||
+                         segment.url?.includes('cloudflarestream.com');
+
+          const isAudio = segment.metadata?.mode === 'audio';
+
+          let downloadUrl = segment.url;
+          let fileName;
+
+          // For Cloudflare Stream videos, use the downloads endpoint
+          if (isVideo && segment.url?.includes('cloudflarestream.com')) {
+            const videoId = getStreamVideoId(segment.url);
+            if (videoId) {
+              const streamDownloadUrl = `https://${CUSTOMER_CODE_OVERRIDE}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
+              downloadUrl = `/api/media/download-video?url=${encodeURIComponent(streamDownloadUrl)}`;
+              fileName = `part${index + 1}-${segment.metadata?.mode || 'video'}.mp4`;
+
+              allItems.push({
+                url: downloadUrl,
+                name: fileName,
+                type: 'video'
+              });
+            }
+          } else if (isAudio && segment.url) {
+            // Audio files - proxy through backend
+            downloadUrl = `/api/media/download-audio?url=${encodeURIComponent(segment.url)}`;
+            fileName = `part${index + 1}-audio.webm`;
+
+            allItems.push({
+              url: downloadUrl,
+              name: fileName,
+              type: 'audio'
+            });
+          }
+        }
+      }
+
+      // Add attachments
+      let attachments = [];
+      try {
+        if (typeof question.attachments === 'string' && question.attachments.trim()) {
+          attachments = JSON.parse(question.attachments);
+        } else if (Array.isArray(question.attachments)) {
+          attachments = question.attachments;
+        }
+      } catch (e) {
+        console.error('Failed to parse attachments:', e);
+      }
+
+      for (const file of attachments) {
+        allItems.push({
+          url: file.url,
+          name: file.name || file.filename || `attachment-${Date.now()}`,
+          type: 'attachment'
+        });
+      }
+
+      // Download all files and add to ZIP
+      for (const item of allItems) {
+        try {
+          const response = await fetch(item.url);
+          const blob = await response.blob();
+          zip.file(item.name, blob);
+          console.log(`✅ Added to ZIP: ${item.name}`);
+        } catch (err) {
+          console.error(`❌ Failed to download ${item.name}:`, err);
+        }
+      }
+
+      // Generate ZIP file
+      console.log('🗜️ Generating ZIP file...');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+      // Download ZIP
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = `question-${question.id}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log(`✅ question-${question.id}.zip downloaded successfully!`);
+    } catch (error) {
+      console.error('❌ Error creating ZIP:', error);
+      alert('Failed to create download. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const getStreamVideoId = (url) => {
@@ -220,6 +326,37 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
   const mediaSegments = question.recording_segments || question.media_asset || [];
+
+  // Debug: Log media data structure
+  if (isOpen && question) {
+    console.log('🎬 [QuestionDetailModal] Question data:', {
+      questionId: question.id,
+      hasRecordingSegments: !!question.recording_segments,
+      recordingSegmentsLength: question.recording_segments?.length,
+      recordingSegments: question.recording_segments,
+      hasMediaAsset: !!question.media_asset,
+      mediaAssetLength: question.media_asset?.length,
+      mediaAsset: question.media_asset,
+      computedMediaSegments: mediaSegments,
+      mediaSegmentsLength: mediaSegments.length,
+    });
+
+    // Log each segment details
+    if (mediaSegments && mediaSegments.length > 0) {
+      mediaSegments.forEach((segment, index) => {
+        console.log(`🎬 [Segment ${index + 1}]:`, {
+          id: segment.id,
+          url: segment.url,
+          metadata: segment.metadata,
+          mode: segment.metadata?.mode,
+          duration: segment.duration_sec || segment.duration,
+          segmentIndex: segment.segment_index,
+        });
+      });
+    } else {
+      console.log('⚠️ [QuestionDetailModal] No media segments found!');
+    }
+  }
 
   return (
     <>
@@ -445,31 +582,63 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                     console.error('Failed to parse attachments:', e);
                     attachments = [];
                   }
-                  
+
+                  const hasMediaOrAttachments = (mediaSegments && mediaSegments.length > 0) || (attachments && attachments.length > 0);
+
                   if (!Array.isArray(attachments) || attachments.length === 0) {
                     return null;
                   }
-                  
+
                   return (
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Question Attachments</h4>
-                      {attachments.map((file, index) => (
-                        <a
-                          key={index}
-                          href={file.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-xs sm:text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
-                        >
-                          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                          </svg>
-                          <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
-                          <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </a>
-                      ))}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                      <div className="p-4 sm:p-5 space-y-2">
+                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base mb-3">Question Attachments</h4>
+                        {attachments.map((file, index) => (
+                          <a
+                            key={index}
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-xs sm:text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
+                          >
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
+                            <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        ))}
+                      </div>
+
+                      {/* Download All Button */}
+                      {hasMediaOrAttachments && (
+                        <div className="px-4 sm:px-5 py-3.5 bg-gray-50 border-t border-gray-200">
+                          <button
+                            onClick={downloadQuestionAsZip}
+                            disabled={isDownloading}
+                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isDownloading ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                <span>Creating ZIP...</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download All (ZIP)
+                                <span className="ml-1 text-xs bg-gray-200 px-2 py-0.5 rounded-full">
+                                  {(mediaSegments?.length || 0) + (attachments?.length || 0)}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}

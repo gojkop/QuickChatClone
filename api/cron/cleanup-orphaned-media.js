@@ -96,8 +96,10 @@ export default async function handler(req, res) {
     const allQuestionAttachments = mediaData.question_attachments || [];
     const allAnswerAttachments = mediaData.answer_attachments || [];
     const allMagicLinkTokens = mediaData.magic_link_tokens || [];
+    const allQuestions = mediaData.questions || [];
+    const allAnswers = mediaData.answers || [];
 
-    console.log(`Found ${allMedia.length} media assets, ${allAvatars.length} avatar URLs, ${allQuestionAttachments.length} question attachments, ${allAnswerAttachments.length} answer attachments, and ${allMagicLinkTokens.length} magic link tokens`);
+    console.log(`Found ${allMedia.length} media assets, ${allAvatars.length} avatar URLs, ${allQuestionAttachments.length} question attachments, ${allAnswerAttachments.length} answer attachments, ${allMagicLinkTokens.length} magic link tokens, ${allQuestions.length} questions, ${allAnswers.length} answers`);
     console.log('');
 
     // ============================================================
@@ -120,6 +122,23 @@ export default async function handler(req, res) {
     // Calculate cutoff time (48 hours ago)
     const cutoffDate = new Date(Date.now() - (48 * 60 * 60 * 1000));
 
+    // Build set of all media_asset_ids that are referenced by questions or answers
+    const referencedMediaIds = new Set();
+
+    for (const question of allQuestions) {
+      if (question.media_asset_id) {
+        referencedMediaIds.add(question.media_asset_id);
+      }
+    }
+
+    for (const answer of allAnswers) {
+      if (answer.media_asset_id) {
+        referencedMediaIds.add(answer.media_asset_id);
+      }
+    }
+
+    console.log(`Found ${referencedMediaIds.size} media assets referenced by questions and answers`);
+
     // Filter for orphaned media (older than 48 hours, not associated with questions/answers)
     for (const media of allMedia) {
       const createdAt = new Date(media.created_at);
@@ -129,29 +148,8 @@ export default async function handler(req, res) {
         continue; // Skip recent uploads
       }
 
-      // Check if media is orphaned
-      let isOrphaned = false;
-
-      if (!media.owner_type || !media.owner_id) {
-        // No owner association at all
-        isOrphaned = true;
-      } else if (media.owner_type === 'question') {
-        // Verify question still exists
-        const questionResponse = await fetch(`${XANO_BASE_URL}/question/${media.owner_id}`, {
-          headers: { 'X-API-Key': XANO_INTERNAL_API_KEY },
-        });
-        if (!questionResponse.ok) {
-          isOrphaned = true; // Question doesn't exist
-        }
-      } else if (media.owner_type === 'answer') {
-        // Verify answer still exists
-        const answerResponse = await fetch(`${XANO_BASE_URL}/answer/${media.owner_id}`, {
-          headers: { 'X-API-Key': XANO_INTERNAL_API_KEY },
-        });
-        if (!answerResponse.ok) {
-          isOrphaned = true; // Answer doesn't exist
-        }
-      }
+      // Check if media is orphaned (not referenced by any question or answer)
+      const isOrphaned = !referencedMediaIds.has(media.id);
 
       // Skip if not orphaned
       if (!isOrphaned) {
