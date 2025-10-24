@@ -1,7 +1,7 @@
 // api/offers-accept.js
 // Accept a Deep Dive offer and capture the payment
 
-import { capturePaymentIntent } from './lib/stripe.js';
+import { capturePaymentIntent, findPaymentIntentByQuestionId } from './lib/stripe.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -34,42 +34,7 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Using Xano base URL: ${baseUrl.substring(0, 30)}...`);
 
-    // Step 1: Get question details to find payment intent ID
-    const questionResponse = await fetch(
-      `${baseUrl}/question/${id}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      }
-    );
-
-    if (!questionResponse.ok) {
-      const errorText = await questionResponse.text();
-      console.error('❌ Failed to fetch question:', {
-        status: questionResponse.status,
-        statusText: questionResponse.statusText,
-        url: `${baseUrl}/question/${id}`,
-        body: errorText
-      });
-      throw new Error(`Failed to fetch question details: ${questionResponse.status} ${errorText}`);
-    }
-
-    const question = await questionResponse.json();
-    const paymentIntentId = question.stripe_payment_intent_id;
-
-    console.log('🔍 Question data:', {
-      id: question.id,
-      hasPaymentIntentId: !!paymentIntentId,
-      paymentIntentId: paymentIntentId,
-      questionKeys: Object.keys(question)
-    });
-
-    if (!paymentIntentId) {
-      console.warn('⚠️ No payment intent ID found for question', id);
-    }
-
-    // Step 2: Accept the offer in Xano
+    // Accept the offer in Xano (this should return question data with payment intent ID)
     const xanoResponse = await fetch(
       `${baseUrl}/offers/${id}/accept`,
       {
@@ -88,7 +53,38 @@ export default async function handler(req, res) {
 
     const result = await xanoResponse.json();
 
-    // Step 3: Capture the payment (if not mock)
+    // Get payment intent ID from the result
+    let paymentIntentId = result.stripe_payment_intent_id || result.payment_intent_id;
+
+    console.log('🔍 Accept result:', {
+      question_id: result.question_id,
+      status: result.status,
+      hasPaymentIntentId: !!paymentIntentId,
+      paymentIntentId: paymentIntentId,
+      resultKeys: Object.keys(result)
+    });
+
+    // If Xano didn't return payment intent ID, search for it in Stripe by question ID
+    if (!paymentIntentId && result.question_id) {
+      console.log(`🔍 Payment intent ID not in response, searching Stripe by question_id: ${result.question_id}`);
+      try {
+        const paymentIntent = await findPaymentIntentByQuestionId(result.question_id);
+        if (paymentIntent) {
+          paymentIntentId = paymentIntent.id;
+          console.log(`✅ Found payment intent via search: ${paymentIntentId}`);
+        } else {
+          console.warn('⚠️ No payment intent found in Stripe for this question');
+        }
+      } catch (searchError) {
+        console.error('❌ Error searching for payment intent:', searchError.message);
+      }
+    }
+
+    if (!paymentIntentId) {
+      console.warn('⚠️ No payment intent ID found - cannot capture payment');
+    }
+
+    // Capture the payment (if not mock)
     if (paymentIntentId && !paymentIntentId.startsWith('pi_mock_')) {
       try {
         console.log(`💳 Capturing payment intent: ${paymentIntentId}`);

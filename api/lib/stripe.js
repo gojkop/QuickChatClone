@@ -260,6 +260,85 @@ export async function cancelPaymentIntent(paymentIntentId) {
 }
 
 /**
+ * Update payment intent metadata
+ *
+ * @param {string} paymentIntentId - Payment intent ID
+ * @param {Object} metadata - Metadata to add/update
+ * @returns {Promise<Object>} Updated payment intent
+ */
+export async function updatePaymentIntentMetadata(paymentIntentId, metadata) {
+  // Handle mock payment intents
+  if (paymentIntentId.startsWith('pi_mock_')) {
+    console.log('💳 [MOCK MODE] Skipping metadata update for mock payment intent');
+    return { id: paymentIntentId, metadata, isMock: true };
+  }
+
+  if (!isStripeEnabled()) {
+    throw new Error('Cannot update real payment intent when Stripe is disabled');
+  }
+
+  const stripe = getStripeClient();
+  if (!stripe) {
+    throw new Error('Stripe is not properly configured');
+  }
+
+  try {
+    console.log(`💳 [STRIPE] Updating payment intent metadata: ${paymentIntentId}`);
+    const paymentIntent = await stripe.paymentIntents.update(paymentIntentId, {
+      metadata
+    });
+    return paymentIntent;
+  } catch (error) {
+    console.error('❌ [STRIPE] Failed to update payment intent metadata:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Find payment intent by question ID in metadata
+ *
+ * @param {number} questionId - Question ID to search for
+ * @returns {Promise<Object|null>} Payment intent or null if not found
+ */
+export async function findPaymentIntentByQuestionId(questionId) {
+  // Handle mock mode
+  if (!isStripeEnabled()) {
+    console.log('💳 [MOCK MODE] Cannot search for payment intent when Stripe is disabled');
+    return null;
+  }
+
+  const stripe = getStripeClient();
+  if (!stripe) {
+    throw new Error('Stripe is not properly configured');
+  }
+
+  try {
+    console.log(`🔍 [STRIPE] Listing recent payment intents for question ${questionId}...`);
+
+    // List recent payment intents and filter by metadata
+    const paymentIntents = await stripe.paymentIntents.list({
+      limit: 100,
+    });
+
+    // Find payment intent with matching question_id in metadata
+    const found = paymentIntents.data.find(pi =>
+      pi.metadata && pi.metadata.question_id === String(questionId)
+    );
+
+    if (found) {
+      console.log(`✅ Found payment intent: ${found.id}`);
+      return found;
+    }
+
+    console.log(`⚠️ No payment intent found for question ${questionId}`);
+    return null;
+  } catch (error) {
+    console.error('❌ [STRIPE] Failed to search payment intents:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Check if Stripe is enabled
  * @returns {boolean}
  */
