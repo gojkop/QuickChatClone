@@ -218,15 +218,12 @@ export function useAnswerUpload() {
     };
     
     const response = await apiClient.post('/media_asset', {
-      owner_type: 'answer',
-      owner_id: 0, // Placeholder
       provider: provider,
       asset_id: mediaResult.uid, // Cloudflare UID
       duration_sec: Math.round(mediaResult.duration || 0),
       status: 'ready',
       url: mediaResult.playbackUrl,
       metadata: JSON.stringify(metadata), // ← Stringify for Xano
-      segment_index: null,
     });
 
     console.log('✅ Media asset record created:', response.data.id);
@@ -282,15 +279,12 @@ export function useAnswerUpload() {
         };
         
         const response = await apiClient.post('/media_asset', {
-          owner_type: 'answer',
-          owner_id: 0, // Placeholder
           provider: 'cloudflare_stream',
           asset_id: firstSegment.uid, // First segment's Cloudflare UID
           duration_sec: Math.round(answerData.recordingDuration || 0),
           status: 'ready',
           url: firstSegment.playbackUrl, // First segment's URL
           metadata: JSON.stringify(metadata), // ← Stringify for Xano
-          segment_index: null, // Parent record
         });
 
         mediaAssetId = response.data?.id;
