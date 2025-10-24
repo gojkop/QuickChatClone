@@ -568,7 +568,7 @@ function PublicProfilePage() {
 
     navigate(navUrl, {
       state: {
-        expert: handle,
+        expert: profile,
         expertProfileId: profile.id,
         expertName: profile.name,
         tierType,
