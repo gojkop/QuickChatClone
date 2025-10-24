@@ -1828,3 +1828,60 @@ input[type="radio"].premium-radio:checked {
     padding: 1.75rem;
   }
 }
+
+/* ===================================
+   HELPER TOOLTIPS
+   =================================== */
+
+/* Tooltip animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tooltip container */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Tooltip pointer/triangle */
+.tooltip-pointer {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-left: 1px solid #e5e7eb;
+  border-top: 1px solid #e5e7eb;
+  transform: rotate(45deg);
+}
+
+/* Mobile tooltip adjustments */
+@media (max-width: 640px) {
+  /* Make tooltips full width on mobile with padding */
+  .tooltip-container > div[class*="absolute"] {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
+    width: calc(100vw - 32px);
+    max-width: 320px;
+  }
+  
+  /* Adjust pointer position */
+  .tooltip-pointer {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) rotate(45deg);
+  }
+}
+
+/* Ensure tooltips stay within viewport */
+.tooltip-responsive {
+  max-width: 90vw;
+}
