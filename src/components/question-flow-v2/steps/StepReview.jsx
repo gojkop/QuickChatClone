@@ -13,8 +13,6 @@ function StepReview({
   onContinue,
   onEditCompose 
 }) {
-  // ✅ FIX: Add console log to debug
-  console.log('📋 StepReview - reviewData:', reviewData);
 
   const handleContactChange = (contactData) => {
     console.log('📧 Contact data changing:', contactData);
