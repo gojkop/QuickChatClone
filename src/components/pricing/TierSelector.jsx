@@ -100,20 +100,20 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
             <div className="p-4 sm:p-5">
               {/* Header with Expand Arrow */}
               <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md flex-shrink-0">
-                    <ZapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md flex-shrink-0">
+                    <ZapIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Quick Consult</h3>
-                    <p className="text-xs sm:text-sm text-gray-500">Fast & Focused</p>
+                    <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 leading-tight">Quick Consult</h3>
+                    <p className="text-xs text-gray-500">Fast & Focused</p>
                   </div>
                 </div>
                 
                 {/* Expand Arrow Button */}
                 <button 
                   onClick={(e) => toggleExpand('quick_consult', e)}
-                  className="p-2 hover:bg-blue-50 rounded-lg transition-all duration-200 flex-shrink-0 ml-2 group touch-manipulation"
+                  className="p-1.5 sm:p-2 hover:bg-blue-50 rounded-lg transition-all duration-200 flex-shrink-0 ml-1 group touch-manipulation"
                   aria-label={expandedCard === 'quick_consult' ? 'Collapse details' : 'Expand details'}
                 >
                   <ChevronDownIcon 
@@ -124,21 +124,27 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </button>
               </div>
 
-              {/* Collapsed State: Price + CTA in compact layout */}
+              {/* Collapsed State: Vertical layout for better fit */}
               {expandedCard !== 'quick_consult' && (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="text-sm text-gray-700">
-                    <span className="font-bold text-lg sm:text-xl text-gray-900">{formatPrice(quick_consult.price_cents)}</span>
-                    <span className="mx-1.5 text-gray-400">•</span>
-                    <span className="text-xs sm:text-sm">{quick_consult.sla_hours}h turnaround</span>
+                <div className="space-y-3">
+                  {/* Price and SLA - centered and aligned */}
+                  <div className="text-center">
+                    <div className="font-bold text-xl sm:text-2xl text-gray-900 mb-1">
+                      {formatPrice(quick_consult.price_cents)}
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-600">
+                      Fixed price • {quick_consult.sla_hours}h turnaround
+                    </div>
                   </div>
+
+                  {/* CTA Button - Full width */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleTierSelect('quick_consult', quick_consult);
                     }}
                     disabled={loadingTier === 'quick_consult'}
-                    className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium sm:font-semibold px-4 py-2 sm:py-2.5 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2 text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] touch-manipulation disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden shadow-sm hover:shadow-md"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold px-4 py-2.5 sm:py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base min-h-[44px] sm:min-h-[48px] touch-manipulation disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden shadow-sm hover:shadow-md group"
                   >
                     {loadingTier === 'quick_consult' ? (
                       <>
@@ -150,7 +156,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                     ) : (
                       <>
                         <span>Ask Question</span>
-                        <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                         </svg>
                       </>
@@ -194,7 +200,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                       handleTierSelect('quick_consult', quick_consult);
                     }}
                     disabled={loadingTier === 'quick_consult'}
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] min-h-[48px] touch-manipulation disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden shadow-md hover:shadow-lg"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] min-h-[48px] touch-manipulation disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden shadow-md hover:shadow-lg group"
                   >
                     {loadingTier === 'quick_consult' ? (
                       <>
@@ -256,20 +262,20 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
             <div className="p-4 sm:p-5">
               {/* Header with Expand Arrow */}
               <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md flex-shrink-0">
-                    <TargetIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md flex-shrink-0">
+                    <TargetIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">Deep Dive</h3>
-                    <p className="text-xs sm:text-sm text-gray-500">In-Depth Expert Review</p>
+                    <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 leading-tight">Deep Dive</h3>
+                    <p className="text-xs text-gray-500">In-Depth Expert Review</p>
                   </div>
                 </div>
                 
                 {/* Expand Arrow Button */}
                 <button 
                   onClick={(e) => toggleExpand('deep_dive', e)}
-                  className="p-2 hover:bg-purple-50 rounded-lg transition-all duration-200 flex-shrink-0 ml-2 group touch-manipulation"
+                  className="p-1.5 sm:p-2 hover:bg-purple-50 rounded-lg transition-all duration-200 flex-shrink-0 ml-1 group touch-manipulation"
                   aria-label={expandedCard === 'deep_dive' ? 'Collapse details' : 'Expand details'}
                 >
                   <ChevronDownIcon 
@@ -280,23 +286,27 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                 </button>
               </div>
 
-              {/* Collapsed State: Price + CTA in compact layout */}
+              {/* Collapsed State: Vertical layout for better fit */}
               {expandedCard !== 'deep_dive' && (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="text-sm text-gray-700">
-                    <span className="font-bold text-lg sm:text-xl text-gray-900">
+                <div className="space-y-3">
+                  {/* Price and SLA - centered and aligned */}
+                  <div className="text-center">
+                    <div className="font-bold text-xl sm:text-2xl text-gray-900 mb-1">
                       {formatPrice(deep_dive.min_price_cents)} - {formatPrice(deep_dive.max_price_cents)}
-                    </span>
-                    <span className="mx-1.5 text-gray-400">•</span>
-                    <span className="text-xs sm:text-sm">{deep_dive.sla_hours}h after accept</span>
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-600">
+                      You propose • {deep_dive.sla_hours}h after acceptance
+                    </div>
                   </div>
+
+                  {/* CTA Button - Full width */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleTierSelect('deep_dive', deep_dive);
                     }}
                     disabled={loadingTier === 'deep_dive'}
-                    className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-purple-700 text-white font-medium sm:font-semibold px-4 py-2 sm:py-2.5 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 flex items-center justify-center gap-2 text-sm whitespace-nowrap min-h-[40px] sm:min-h-[44px] touch-manipulation disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden shadow-sm hover:shadow-md"
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold px-4 py-2.5 sm:py-3 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base min-h-[44px] sm:min-h-[48px] touch-manipulation disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden shadow-sm hover:shadow-md group"
                   >
                     {loadingTier === 'deep_dive' ? (
                       <>
@@ -308,7 +318,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                     ) : (
                       <>
                         <span>Make Offer</span>
-                        <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                         </svg>
                       </>
@@ -352,7 +362,7 @@ const TierSelector = ({ tiers, expertName, onSelectTier }) => {
                       handleTierSelect('deep_dive', deep_dive);
                     }}
                     disabled={loadingTier === 'deep_dive'}
-                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold py-3 px-4 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] min-h-[48px] touch-manipulation disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden shadow-md hover:shadow-lg"
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold py-3 px-4 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] min-h-[48px] touch-manipulation disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden shadow-md hover:shadow-lg group"
                   >
                     {loadingTier === 'deep_dive' ? (
                       <>
