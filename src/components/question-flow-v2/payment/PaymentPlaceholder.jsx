@@ -241,8 +241,8 @@ function PaymentPlaceholder({
         >
           <StripePaymentForm
             clientSecret={clientSecret}
-            amount={tierType === 'deep_dive' && composeData?.tierSpecific?.price
-              ? composeData.tierSpecific.price * 100
+            amount={tierType === 'deep_dive' && composeData?.tierSpecific?.proposedPrice
+              ? parseFloat(composeData.tierSpecific.proposedPrice) * 100
               : tierConfig?.price_cents || expert.price_cents || 0}
             currency={expert.currency || 'usd'}
             onSuccess={handlePaymentSuccess}
