@@ -14,10 +14,8 @@ function AskQuestionPageV2() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // ✅ ADD THIS LOG to confirm re-renders
   console.log('🎨 AskQuestionPageV2 RENDERED');
   
-  // State from navigation OR will be fetched from URL
   const navigationState = location.state || {};
   
   const [expert, setExpert] = useState(navigationState.expert || null);
@@ -28,7 +26,6 @@ function AskQuestionPageV2() {
 
   const { state, actions } = useFlowState();
 
-  // ✅ Monitor compose changes and log them
   useEffect(() => {
     console.log('🔍 AskQuestionPageV2 - State changed:', {
       currentStep: state.currentStep,
@@ -38,10 +35,8 @@ function AskQuestionPageV2() {
     });
   }, [state.compose.title, state.currentStep]);
 
-  // Fetch expert data from URL params if not provided via navigation
   useEffect(() => {
     const fetchExpertFromURL = async () => {
-      // If we already have expert data from navigation, skip fetch
       if (navigationState.expert) {
         console.log('✅ Using expert data from navigation state');
         setIsLoading(false);
@@ -50,7 +45,7 @@ function AskQuestionPageV2() {
 
       const params = new URLSearchParams(location.search);
       const handle = params.get('expert');
-      const tier = params.get('tier'); // 'quick_consult' or 'deep_dive'
+      const tier = params.get('tier');
 
       console.log('🔍 AskQuestionPageV2 - URL params:', { handle, tier });
 
@@ -83,7 +78,6 @@ function AskQuestionPageV2() {
         const expertProfile = data?.expert_profile ?? data;
         console.log('📋 Expert profile extracted:', expertProfile);
         
-        // Check if profile is public
         const publicValue = expertProfile?.public ?? expertProfile?.is_public ?? expertProfile?.isPublic;
         const isPublic = publicValue === true || publicValue === 1 || 
                         publicValue === '1' || publicValue === 'true';
@@ -92,7 +86,6 @@ function AskQuestionPageV2() {
           throw new Error('This expert profile is private.');
         }
 
-        // Check if accepting questions
         const acceptingQuestionsValue = expertProfile?.accepting_questions;
         const isAcceptingQuestions = acceptingQuestionsValue === true || 
                                      acceptingQuestionsValue === 1 || 
@@ -120,7 +113,6 @@ function AskQuestionPageV2() {
 
         setExpert(expertData);
 
-        // Set tier type and config
         const determinedTierType = tier || 'quick_consult';
         setTierType(determinedTierType);
 
@@ -132,14 +124,12 @@ function AskQuestionPageV2() {
             sla_hours: expertData.sla_hours || 48
           });
         } else if (determinedTierType === 'deep_dive') {
-          // Parse deep_dive tier config if available
           const deepDiveTiers = expertData.deep_dive_tiers || expertData.tiers;
           if (deepDiveTiers && deepDiveTiers.length > 0) {
             console.log('📊 Using deep dive tier config:', deepDiveTiers[0]);
             setTierConfig(deepDiveTiers[0]);
           } else {
             console.log('⚠️ No deep dive tiers found, using fallback');
-            // Fallback config
             setTierConfig({
               min_price_cents: 5000,
               max_price_cents: 50000,
@@ -161,7 +151,6 @@ function AskQuestionPageV2() {
   }, [location.search, navigationState.expert, navigate]);
 
   const handleComposeComplete = () => {
-    // Validate required fields before moving to step 2
     if (!state.compose.title || state.compose.title.length < 5) {
       alert('Please enter a question title (at least 5 characters)');
       return;
@@ -188,7 +177,6 @@ function AskQuestionPageV2() {
   };
 
   const handleReviewComplete = () => {
-    // Validate email before moving to step 3
     if (!state.review.email || !state.review.email.includes('@')) {
       alert('Please enter a valid email address');
       return;
@@ -202,81 +190,6 @@ function AskQuestionPageV2() {
     actions.goToStep(1);
   };
 
-  // Get current step button info for persistent mobile footer
-  const getCurrentStepButton = () => {
-    const currentTime = new Date().toISOString();
-    console.log(`🔘 [${currentTime}] getCurrentStepButton called`);
-    console.log('📊 Current state.compose:', JSON.stringify(state.compose, null, 2));
-    
-    switch (state.currentStep) {
-      case 1:
-        // ✅ FIX: Use trimmed length consistently
-        const titleText = state.compose?.title || '';
-        const trimmedTitle = titleText.trim();
-        const hasValidTitle = trimmedTitle.length >= 5;
-        
-        const hasPrice = tierType === 'deep_dive' 
-          ? state.compose.tierSpecific?.proposedPrice && parseFloat(state.compose.tierSpecific.proposedPrice) > 0
-          : true;
-
-        console.log('📋 Title validation:', JSON.stringify({
-          rawTitle: titleText,
-          trimmedTitle: trimmedTitle,
-          trimmedLength: trimmedTitle.length,
-          hasValidTitle: hasValidTitle,
-          hasPrice: hasPrice,
-          tierType: tierType
-        }, null, 2));
-
-        const buttonText = trimmedTitle.length === 0
-          ? 'Enter a title to continue'
-          : trimmedTitle.length < 5
-          ? 'Title too short (min 5 characters)'
-          : tierType === 'deep_dive' && !hasPrice
-          ? 'Enter your offer amount'
-          : 'Continue to Review →';
-
-        const isDisabled = !hasValidTitle || !hasPrice;
-
-        console.log('✅ Button config:', JSON.stringify({ 
-          text: buttonText, 
-          disabled: isDisabled,
-          timestamp: currentTime
-        }, null, 2));
-
-        return {
-          show: true,
-          text: buttonText,
-          disabled: isDisabled,
-          onClick: handleComposeComplete
-        };
-        
-      case 2:
-        return {
-          show: true,
-          text: !state.review.email
-            ? 'Enter your email to continue'
-            : !state.review.email.includes('@')
-            ? 'Please enter a valid email'
-            : 'Continue to Payment →',
-          disabled: !state.review.email || !state.review.email.includes('@'),
-          onClick: handleReviewComplete
-        };
-        
-      case 3:
-        return {
-          show: false // Payment step has its own submit button
-        };
-        
-      default:
-        return { show: false };
-    }
-  };
-
-  const buttonInfo = getCurrentStepButton();
-  console.log('🎯 Final buttonInfo:', JSON.stringify(buttonInfo, null, 2));
-
-  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -288,7 +201,6 @@ function AskQuestionPageV2() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -311,7 +223,6 @@ function AskQuestionPageV2() {
     );
   }
 
-  // No expert data - EXPANDED CHECK
   if (!expert || !expert.handle) {
     console.error('❌ No expert data available');
     return (
@@ -329,7 +240,6 @@ function AskQuestionPageV2() {
     );
   }
 
-  // Ensure expert has required fields with safe defaults
   const safeExpert = {
     ...expert,
     name: expert.name || expert.user?.name || expert.handle || 'Expert',
@@ -343,94 +253,89 @@ function AskQuestionPageV2() {
   console.log('🔒 Safe expert data:', safeExpert);
 
   return (
-      <ErrorBoundary>
-    <div className="min-h-screen bg-gray-50 pb-32 sm:pb-8">
-      <FlowContainer>
-        {/* Progress Dots */}
-        <ProgressDots
-          currentStep={state.currentStep}
-          completedSteps={state.completedSteps}
-        />
-
-        {/* Step 1: Compose */}
-        <AccordionSection
-          step={1}
-          title="Compose Your Question"
-          icon="compose"
-          state={state.currentStep === 1 ? 'active' : state.completedSteps.includes(1) ? 'completed' : 'locked'}
-          isExpandable={true}
-          onEdit={handleEditCompose}
-        >
-        <ErrorBoundary>
-          <StepCompose
-            expert={safeExpert}
-            tierType={tierType}
-            tierConfig={tierConfig}
-            composeData={state.compose}
-            onUpdate={actions.updateCompose}
-            onContinue={handleComposeComplete}
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50 pb-32 sm:pb-8">
+        {/* ✅ FIXED: Pass props to FlowContainer */}
+        <FlowContainer expert={safeExpert} tierType={tierType} tierConfig={tierConfig}>
+          <ProgressDots
+            currentStep={state.currentStep}
+            completedSteps={state.completedSteps}
           />
-        </ErrorBoundary>
-        </AccordionSection>
 
-        {/* Step 2: Review */}
-        <AccordionSection
-          step={2}
-          title="Review & Contact Info"
-          icon="review"
-          state={state.currentStep === 2 ? 'active' : state.completedSteps.includes(2) ? 'completed' : 'locked'}
-          isExpandable={true}
-          onEdit={() => actions.goToStep(2)}
-        >
-      <ErrorBoundary>
-          <StepReview
-            expert={safeExpert}
+          <AccordionSection
+            step={1}
+            title="Compose Your Question"
+            icon="compose"
+            state={state.currentStep === 1 ? 'active' : state.completedSteps.includes(1) ? 'completed' : 'locked'}
+            isExpandable={true}
+            onEdit={handleEditCompose}
+          >
+            <ErrorBoundary>
+              <StepCompose
+                expert={safeExpert}
+                tierType={tierType}
+                tierConfig={tierConfig}
+                composeData={state.compose}
+                onUpdate={actions.updateCompose}
+                onContinue={handleComposeComplete}
+              />
+            </ErrorBoundary>
+          </AccordionSection>
+
+          <AccordionSection
+            step={2}
+            title="Review & Contact Info"
+            icon="review"
+            state={state.currentStep === 2 ? 'active' : state.completedSteps.includes(2) ? 'completed' : 'locked'}
+            isExpandable={true}
+            onEdit={() => actions.goToStep(2)}
+          >
+            <ErrorBoundary>
+              <StepReview
+                expert={safeExpert}
+                tierType={tierType}
+                tierConfig={tierConfig}
+                composeData={state.compose}
+                reviewData={state.review}
+                onUpdate={actions.updateReview}
+                onContinue={handleReviewComplete}
+                onEditCompose={handleEditCompose}
+              />
+            </ErrorBoundary>
+          </AccordionSection>
+
+          <AccordionSection
+            step={3}
+            title="Payment & Submit"
+            icon="payment"
+            state={state.currentStep === 3 ? 'active' : 'locked'}
+            isExpandable={false}
+          >
+            <ErrorBoundary>
+              <StepPayment
+                expert={safeExpert}
+                tierType={tierType}
+                tierConfig={tierConfig}
+                composeData={state.compose}
+                reviewData={state.review}
+              />
+            </ErrorBoundary>
+          </AccordionSection>
+        </FlowContainer>
+
+        {state.currentStep <= 2 && (
+          <MobileFooterButton 
+            state={state}
             tierType={tierType}
-            tierConfig={tierConfig}
-            composeData={state.compose}
-            reviewData={state.review}
-            onUpdate={actions.updateReview}
-            onContinue={handleReviewComplete}
-            onEditCompose={handleEditCompose}
+            onComposeComplete={handleComposeComplete}
+            onReviewComplete={handleReviewComplete}
           />
-      </ErrorBoundary>
-        </AccordionSection>
-
-        {/* Step 3: Payment */}
-        <AccordionSection
-          step={3}
-          title="Payment & Submit"
-          icon="payment"
-          state={state.currentStep === 3 ? 'active' : 'locked'}
-          isExpandable={false}
-        >
-         <ErrorBoundary>
-          <StepPayment
-            expert={safeExpert}
-            tierType={tierType}
-            tierConfig={tierConfig}
-            composeData={state.compose}
-            reviewData={state.review}
-          />
-       </ErrorBoundary>
-        </AccordionSection>
-      </FlowContainer>
-
-      {/* Persistent Mobile Footer - REACTIVE VERSION */}
-      {state.currentStep <= 2 && (
-        <MobileFooterButton 
-          state={state}
-          tierType={tierType}
-          onComposeComplete={handleComposeComplete}
-          onReviewComplete={handleReviewComplete}
-        />
-      )}
-    </div>
- </ErrorBoundary>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
 
-// ✅ NEW: Separate component to ensure re-renders on state changes
 function MobileFooterButton({ state, tierType, onComposeComplete, onReviewComplete }) {
   console.log('📱 MobileFooterButton rendered with state:', {
     step: state.currentStep,
