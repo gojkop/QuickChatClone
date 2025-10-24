@@ -52,6 +52,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isQuestionAttachmentsExpanded, setIsQuestionAttachmentsExpanded] = useState(false);
 
   const isDeclined = question?.pricing_status === 'offer_declined' || question?.status === 'declined';
   const isPending = question?.status === 'paid' && !question?.answered_at && !isDeclined;
@@ -535,7 +536,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                   </div>
                 </div>
 
-                {/* Question Attachments - Combined Media & Files */}
+                {/* Question Attachments - Combined Media & Files - Collapsible */}
                 {(() => {
                   let attachments = [];
                   try {
@@ -557,105 +558,127 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
 
                   return (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                      <div className="p-4 sm:p-5 space-y-3">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Question Attachments</p>
-
-                        {/* Media (videos/audio) */}
-                        {mediaSegments && mediaSegments.length > 0 && mediaSegments
-                          .sort((a, b) => a.segment_index - b.segment_index)
-                          .map((segment, index) => {
-                            const isVideo = segment.metadata?.mode === 'video' ||
-                                            segment.metadata?.mode === 'screen' ||
-                                            segment.metadata?.mode === 'screen-camera' ||
-                                            segment.url?.includes('cloudflarestream.com');
-                            const isAudio = segment.metadata?.mode === 'audio' ||
-                                            segment.url?.includes('.webm') ||
-                                            !isVideo;
-
-                            const videoId = isVideo ? getStreamVideoId(segment.url) : null;
-                            const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
-                            const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-
-                            return (
-                              <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
-                                {mediaSegments.length > 1 && (
-                                  <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-gray-300">
-                                      Part {index + 1}
-                                    </span>
-                                    <span className="text-xs text-gray-400">
-                                      {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
-                                    </span>
-                                  </div>
-                                )}
-
-                                {isVideo && videoId && customerCode ? (
-                                  <div className="w-full aspect-video bg-black">
-                                    <iframe
-                                      src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                                      style={{ border: 'none', width: '100%', height: '100%' }}
-                                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                                      allowFullScreen={true}
-                                      title={`Video segment ${index + 1}`}
-                                    />
-                                  </div>
-                                ) : isAudio && segment.url ? (
-                                  <div className="p-4 flex items-center justify-center">
-                                    <audio controls className="w-full max-w-md" preload="metadata">
-                                      <source src={segment.url} type="audio/webm" />
-                                    </audio>
-                                  </div>
-                                ) : null}
-                              </div>
-                            );
-                          })}
-
-                        {/* File Attachments */}
-                        {attachments && attachments.length > 0 && attachments.map((file, index) => (
-                          <a
-                            key={index}
-                            href={file.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-xs sm:text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
-                          >
-                            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                            <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
-                            <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
-                        ))}
-                      </div>
-
-                      {/* Download All Button */}
-                      {hasMediaOrAttachments && (
-                        <div className="px-4 sm:px-5 py-3.5 bg-gray-50 border-t border-gray-200">
-                          <button
-                            onClick={downloadQuestionAsZip}
-                            disabled={isDownloading}
-                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isDownloading ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                                <span>Creating ZIP...</span>
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Download All (ZIP)
-                                <span className="ml-1 text-xs bg-gray-200 px-2 py-0.5 rounded-full">
-                                  {(mediaSegments?.length || 0) + (attachments?.length || 0)}
-                                </span>
-                              </>
-                            )}
-                          </button>
+                      {/* Collapsible Header */}
+                      <button
+                        onClick={() => setIsQuestionAttachmentsExpanded(!isQuestionAttachmentsExpanded)}
+                        className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Question Attachments</p>
+                          <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full text-gray-600">
+                            {(mediaSegments?.length || 0) + (attachments?.length || 0)}
+                          </span>
                         </div>
+                        <svg
+                          className={`w-5 h-5 text-gray-400 transition-transform ${isQuestionAttachmentsExpanded ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {/* Collapsible Content */}
+                      {isQuestionAttachmentsExpanded && (
+                        <>
+                          <div className="p-4 sm:p-5 space-y-3 border-t border-gray-200">
+                            {/* Media (videos/audio) */}
+                            {mediaSegments && mediaSegments.length > 0 && mediaSegments
+                              .sort((a, b) => a.segment_index - b.segment_index)
+                              .map((segment, index) => {
+                                const isVideo = segment.metadata?.mode === 'video' ||
+                                                segment.metadata?.mode === 'screen' ||
+                                                segment.metadata?.mode === 'screen-camera' ||
+                                                segment.url?.includes('cloudflarestream.com');
+                                const isAudio = segment.metadata?.mode === 'audio' ||
+                                                segment.url?.includes('.webm') ||
+                                                !isVideo;
+
+                                const videoId = isVideo ? getStreamVideoId(segment.url) : null;
+                                const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+                                const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+
+                                return (
+                                  <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
+                                    {mediaSegments.length > 1 && (
+                                      <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-gray-300">
+                                          Part {index + 1}
+                                        </span>
+                                        <span className="text-xs text-gray-400">
+                                          {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {isVideo && videoId && customerCode ? (
+                                      <div className="w-full aspect-video bg-black">
+                                        <iframe
+                                          src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                                          style={{ border: 'none', width: '100%', height: '100%' }}
+                                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                          allowFullScreen={true}
+                                          title={`Video segment ${index + 1}`}
+                                        />
+                                      </div>
+                                    ) : isAudio && segment.url ? (
+                                      <div className="p-4 flex items-center justify-center">
+                                        <audio controls className="w-full max-w-md" preload="metadata">
+                                          <source src={segment.url} type="audio/webm" />
+                                        </audio>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+
+                            {/* File Attachments */}
+                            {attachments && attachments.length > 0 && attachments.map((file, index) => (
+                              <a
+                                key={index}
+                                href={file.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-xs sm:text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
+                              >
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                                <span className="flex-1 text-gray-700 truncate font-medium">{file.name}</span>
+                                <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </a>
+                            ))}
+                          </div>
+
+                          {/* Download All Button */}
+                          <div className="px-4 sm:px-5 py-3.5 bg-gray-50 border-t border-gray-200">
+                            <button
+                              onClick={downloadQuestionAsZip}
+                              disabled={isDownloading}
+                              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isDownloading ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                  <span>Creating ZIP...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                  </svg>
+                                  Download All (ZIP)
+                                  <span className="ml-1 text-xs bg-gray-200 px-2 py-0.5 rounded-full">
+                                    {(mediaSegments?.length || 0) + (attachments?.length || 0)}
+                                  </span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   );
