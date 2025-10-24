@@ -48,7 +48,7 @@ export function useFlowState() {
 
     // Update compose data - WITH LOGGING
     updateCompose: useCallback((data) => {
-      console.log('🔄 updateCompose called with:', data);
+ //     console.log('🔄 updateCompose called with:', data);
       setState(prev => {
         const newState = {
           ...prev,
