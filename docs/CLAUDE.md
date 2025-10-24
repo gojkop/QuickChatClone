@@ -448,6 +448,7 @@ See `docs/marketing module/` for detailed implementation docs:
 ## Two-Tier Pricing System
 
 **Status:** ✅ Production Ready (100%) - January 15, 2025
+**Latest Update:** Deep Dive payment amount display bugs fixed - January 15, 2025
 
 The two-tier pricing system provides experts with two distinct pricing models for their services: Quick Consult (fixed price) and Deep Dive (custom pricing). Includes complete payment hold and capture lifecycle with Stripe integration.
 
@@ -703,6 +704,25 @@ return 'text-orange-600'; // Normal
 - Enforced server-side during question creation
 - Offers below threshold are automatically declined
 - No manual review needed
+
+### Recent Fixes (January 15, 2025)
+
+**Deep Dive Payment Amount Display Bug:**
+- **Issue:** Multiple components were checking `tierSpecific.price` instead of `tierSpecific.proposedPrice`
+- **Impact:** Payment intents created with tier default price instead of user's proposed price, UI displayed incorrect amounts
+- **Fixed locations:**
+  1. `PaymentPlaceholder.jsx:66` - Payment intent creation amount calculation
+  2. `PaymentPlaceholder.jsx:124` - Display price calculation for Payment Summary
+  3. `PaymentPlaceholder.jsx:244` - Amount prop passed to StripePaymentForm (Total Amount and Pay button)
+  4. `QuestionPreview.jsx:51` - Question preview display
+- **Status:** ✅ Fully fixed and tested
+
+**Payment Intent Timing Bug:**
+- **Issue:** Payment intent created immediately on component mount before user data was available
+- **Impact:** Payment intents created with empty question titles and default amounts
+- **Fix:** Modified useEffect to wait for required data (`composeData.tierSpecific?.proposedPrice` for Deep Dive, `composeData.title` for Quick Consult)
+- **Location:** `PaymentPlaceholder.jsx:42-51`
+- **Status:** ✅ Fully fixed and tested
 
 ### Known Issues
 
