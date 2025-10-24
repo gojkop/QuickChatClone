@@ -13,8 +13,10 @@ function StepReview({
   onContinue,
   onEditCompose 
 }) {
-  const handleContactChange = (contactData) => {
-    onUpdate(contactData);
+  // ✅ FIX: Handle email change correctly
+  const handleEmailChange = (value) => {
+    console.log('📧 Email changed:', value); // Debug
+    onUpdate('email', value);
   };
 
   const handleContinue = () => {
@@ -46,9 +48,10 @@ function StepReview({
       />
 
       {/* Contact Information */}
+      {/* ✅ FIX: Pass email prop instead of data, and onChange expects string value */}
       <ContactForm
-        data={reviewData}
-        onChange={handleContactChange}
+        email={reviewData?.email || ''}
+        onChange={handleEmailChange}
       />
 
       {/* Continue Button - will be shown in persistent footer */}

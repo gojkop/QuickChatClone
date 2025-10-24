@@ -69,11 +69,11 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">2</span>
-                      <span>Expert reviews your question</span>
+                      <span>Expert reviews your question within 24h</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">3</span>
-                      <span>They accept, decline, or counter-offer</span>
+                      <span>They accept and their SLA starts, or they decline</span>
                     </li>
                   </ol>
                   <div className="mt-3 pt-3 border-t border-gray-200">
@@ -81,7 +81,7 @@ function PriceOfferInput({ value, onChange, minPrice, maxPrice, currency, compac
                       <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <strong>You're only charged after you approve the final price</strong>
+                      <strong>You're only charged after they answer your question</strong>
                     </p>
                   </div>
                 </div>
