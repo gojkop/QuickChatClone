@@ -917,3 +917,193 @@ body {
 a {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ===================================
+   LANDING PAGE PREMIUM ENHANCEMENTS - PHASE 2
+   =================================== */
+
+/* Step number badge with glow */
+.step-number-glow {
+  position: relative;
+}
+
+.step-number-glow::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.step-number-glow:hover::before {
+  opacity: 1;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Enhanced card hover lift */
+.card-hover-lift {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 
+    0 20px 40px -12px rgba(99, 102, 241, 0.35),
+    0 8px 16px -4px rgba(139, 92, 246, 0.2),
+    inset 0 2px 4px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Icon container with subtle bounce */
+.icon-bounce {
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.card-hover-lift:hover .icon-bounce {
+  transform: translateY(-4px) rotate(5deg);
+  animation: subtle-bounce 0.6s ease-in-out;
+}
+
+@keyframes subtle-bounce {
+  0%, 100% { transform: translateY(-4px) rotate(5deg); }
+  50% { transform: translateY(-8px) rotate(-5deg); }
+}
+
+/* Gradient text with shimmer */
+.gradient-text-shimmer {
+  background: linear-gradient(
+    90deg,
+    #4F46E5 0%,
+    #7C3AED 25%,
+    #EC4899 50%,
+    #7C3AED 75%,
+    #4F46E5 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* ===================================
+   LANDING PAGE PREMIUM ENHANCEMENTS - PHASE 3
+   =================================== */
+
+/* Staggered fade-in animation */
+.stagger-fade-in {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.stagger-fade-in:nth-child(1) { animation-delay: 0.1s; }
+.stagger-fade-in:nth-child(2) { animation-delay: 0.2s; }
+.stagger-fade-in:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Floating animation for decorative elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+.float-slow {
+  animation: float 6s ease-in-out infinite;
+}
+
+.float-medium {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Advanced button press effect */
+.btn-gradient-primary:active:not(:disabled) {
+  transform: scale(0.96) translateY(2px) !important;
+  box-shadow: 
+    0 2px 8px -2px rgba(99, 102, 241, 0.3),
+    inset 0 2px 8px 0 rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Magnetic hover effect for CTA */
+.magnetic-hover {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.magnetic-hover:hover {
+  transform: scale(1.05) translateY(-2px) !important;
+}
+
+/* Success checkmark animation */
+@keyframes checkmark {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.checkmark-animate {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: checkmark 0.6s ease-out forwards;
+}
+
+/* Testimonial card enhanced */
+.testimonial-premium {
+  position: relative;
+  overflow: hidden;
+}
+
+.testimonial-premium::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transition: left 0.6s ease;
+}
+
+.testimonial-premium:hover::before {
+  left: 100%;
+}
