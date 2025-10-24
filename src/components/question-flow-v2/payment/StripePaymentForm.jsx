@@ -13,7 +13,6 @@ const CARD_ELEMENT_OPTIONS = {
       '::placeholder': {
         color: '#9ca3af',
       },
-      lineHeight: '24px',
     },
     invalid: {
       color: '#ef4444',
@@ -92,10 +91,12 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Card Details
         </label>
-        <CardElement
-          options={CARD_ELEMENT_OPTIONS}
-          onChange={handleCardChange}
-        />
+        <div className="py-2">
+          <CardElement
+            options={CARD_ELEMENT_OPTIONS}
+            onChange={handleCardChange}
+          />
+        </div>
       </div>
 
       {/* Card Error */}
