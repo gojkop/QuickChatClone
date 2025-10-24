@@ -19,7 +19,6 @@ function AccordionSection({
     
     // ✅ ADAPTIVE SCROLL: Different behavior for mobile vs desktop
     if (shouldExpand && sectionRef.current) {
-      // Wait for accordion expansion animation to complete (400ms)
       setTimeout(() => {
         const section = sectionRef.current;
         const isMobile = window.innerWidth < 640;
@@ -31,10 +30,9 @@ function AccordionSection({
           const firstInput = section.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), textarea');
           
           if (firstInput) {
-            // Scroll to center the input field (accounting for mobile keyboard)
             const inputTop = firstInput.getBoundingClientRect().top;
             const absoluteInputTop = inputTop + window.pageYOffset;
-            const viewportCenter = window.innerHeight / 3; // Top third of screen
+            const viewportCenter = window.innerHeight / 3;
             const scrollTarget = absoluteInputTop - viewportCenter;
             
             window.scrollTo({ 
@@ -44,7 +42,6 @@ function AccordionSection({
             
             console.log('📱 Mobile: Scrolled to input field');
           } else {
-            // Fallback: scroll to accordion header if no input found
             const headerOffset = 60;
             const sectionTop = section.getBoundingClientRect().top;
             const absoluteTop = sectionTop + window.pageYOffset;
@@ -54,26 +51,63 @@ function AccordionSection({
               top: Math.max(0, scrollTarget),
               behavior: 'smooth' 
             });
-            
-            console.log('📱 Mobile: Scrolled to section header (no input found)');
           }
         } else {
           // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          // DESKTOP: Scroll to show progress dots + header + content preview
+          // DESKTOP: Scroll to show PROGRESS DOTS + accordion header
           // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          const headerOffset = 120; // Show progress dots (60px) + spacing
-          const sectionTop = section.getBoundingClientRect().top;
-          const absoluteTop = sectionTop + window.pageYOffset;
-          const scrollTarget = absoluteTop - headerOffset;
           
-          window.scrollTo({ 
-            top: Math.max(0, scrollTarget),
-            behavior: 'smooth' 
-          });
+          // Find the FlowContainer (parent container with progress dots)
+          const flowContainer = section.closest('.max-w-4xl');
           
-          console.log('🖥️ Desktop: Scrolled to section with context preserved');
+          if (flowContainer) {
+            // Find the progress dots element (first child of flow container)
+            const progressDots = flowContainer.querySelector('.progress-dots-container');
+            
+            if (progressDots) {
+              // Scroll to show progress dots at the top
+              const dotsTop = progressDots.getBoundingClientRect().top;
+              const absoluteDotsTop = dotsTop + window.pageYOffset;
+              
+              // Account for fixed navbar (~80px) + small padding (20px)
+              const navbarOffset = 100;
+              const scrollTarget = absoluteDotsTop - navbarOffset;
+              
+              window.scrollTo({ 
+                top: Math.max(0, scrollTarget),
+                behavior: 'smooth' 
+              });
+              
+              console.log('🖥️ Desktop: Scrolled to progress dots (context preserved)');
+            } else {
+              // Fallback: scroll to flow container if progress dots not found
+              const containerTop = flowContainer.getBoundingClientRect().top;
+              const absoluteContainerTop = containerTop + window.pageYOffset;
+              const scrollTarget = absoluteContainerTop - 100;
+              
+              window.scrollTo({ 
+                top: Math.max(0, scrollTarget),
+                behavior: 'smooth' 
+              });
+              
+              console.log('🖥️ Desktop: Scrolled to container (fallback)');
+            }
+          } else {
+            // Final fallback: use original method with larger offset
+            const largeOffset = 200; // Navbar + progress dots + spacing
+            const sectionTop = section.getBoundingClientRect().top;
+            const absoluteTop = sectionTop + window.pageYOffset;
+            const scrollTarget = absoluteTop - largeOffset;
+            
+            window.scrollTo({ 
+              top: Math.max(0, scrollTarget),
+              behavior: 'smooth' 
+            });
+            
+            console.log('🖥️ Desktop: Scrolled with large offset (final fallback)');
+          }
         }
-      }, 300); // Wait for accordion animation
+      }, 300);
     }
   }, [state]);
 
