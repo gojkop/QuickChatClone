@@ -27,7 +27,7 @@ function HowItWorks() {
     <section className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto px-6">
         
-        {/* ✅ PHASE 2: Enhanced heading with gradient shimmer */}
+        {/* Simplified heading - NO shimmer animation */}
         <div className="text-center mb-16">
           <h2 
             className="text-3xl md:text-4xl lg:text-5xl font-black mb-4"
@@ -37,7 +37,7 @@ function HowItWorks() {
             }}
           >
             How It Works:{' '}
-            <span className="gradient-text-shimmer">
+            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
               Dead Simple
             </span>
           </h2>
@@ -50,30 +50,32 @@ function HowItWorks() {
           {steps.map((step, index) => (
             <div key={index} className="relative">
               
-              {/* ✅ PHASE 2: Enhanced card with better hover */}
+              {/* Simplified card - clean hover only */}
               <div 
-                className="card-hover-lift relative p-8 rounded-2xl"
+                className="relative p-8 rounded-2xl transition-all duration-300 hover:-translate-y-2"
                 style={{
                   background: 'rgba(255, 255, 255, 0.95)',
                   backdropFilter: 'blur(16px) saturate(160%)',
                   WebkitBackdropFilter: 'blur(16px) saturate(160%)',
                   border: '1px solid rgba(229, 231, 235, 0.6)',
-                  boxShadow: '0 4px 16px 0 rgba(0, 0, 0, 0.04), 0 2px 8px 0 rgba(0, 0, 0, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.8)',
-                  transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                  boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.04)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '0 8px 24px -4px rgba(0, 0, 0, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = '0 2px 8px 0 rgba(0, 0, 0, 0.04)';
                 }}
               >
-                {/* ✅ PHASE 2: Step number with glow effect */}
+                {/* Step number - NO glow animation */}
                 <div 
-                  className="step-number-glow absolute -top-4 -left-4 w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg"
-                  style={{
-                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)'
-                  }}
+                  className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-md"
                 >
                   {index + 1}
                 </div>
                 
-                {/* ✅ PHASE 2: Icon with bounce animation */}
-                <div className="icon-bounce mb-6 mt-4">
+                {/* Icon - NO bounce animation */}
+                <div className="mb-6 mt-4">
                   <div 
                     className={`inline-flex p-4 rounded-xl bg-gradient-to-br ${step.color}`}
                     style={{

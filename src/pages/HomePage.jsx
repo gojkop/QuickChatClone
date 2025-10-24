@@ -1,4 +1,3 @@
-// src/pages/HomePage.jsx
 import React from 'react';
 import Hero from '@/components/home/Hero.jsx';
 import SoundFamiliar from '@/components/home/SoundFamiliar.jsx';
@@ -6,7 +5,6 @@ import HowItWorks from '@/components/home/HowItWorks.jsx';
 import LastMileExpertise from '@/components/home/LastMileExpertise.jsx';
 import ValueCalculator from '@/components/home/ValueCalculator.jsx'; 
 import Testimonials from '@/components/home/Testimonials.jsx';
-import InviteExpertSection from '@/components/home/InviteExpertSection.jsx';
 import FinalCTA from '@/components/home/FinalCTA.jsx';
 import SEO from '@/components/common/SEO';
 
@@ -38,10 +36,7 @@ function HomePage() {
       {/* 6. Social Proof - Testimonials with AI vs Human examples */}
       <Testimonials />
       
-      {/* 7. Invite Expert - Mini Asker section (blends nicely) */}
-      <InviteExpertSection />
-      
-      {/* 8. Final Conversion Push */}
+      {/* 7. Final Conversion Push */}
       <FinalCTA />
     </>
   );

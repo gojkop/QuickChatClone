@@ -6,39 +6,39 @@ function SoundFamiliar() {
   const opportunities = [
     {
       Icon: Sparkles,
-      iconColor: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      title: 'Every Question Has Value',
-      description: 'Turn casual inquiries into paid consultations. Your insights are worth more than a free DM.',
-      stat: '$50-500',
-      statLabel: 'per question'
+      iconColor: 'text-gray-600',
+      bgColor: 'bg-gray-50',
+      title: 'Your Inbox Is Full of "Quick Questions"',
+      description: 'DMs, emails, LinkedIn messages asking for advice. Each one takes 20+ minutes to answer thoughtfully.',
+      stat: '5-15',
+      statLabel: 'per week'
     },
     {
       Icon: Target,
-      iconColor: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      title: 'Your Time, Your Price',
-      description: 'Set your rate and get paid for every minute. No more "quick calls" that steal your focus.',
-      stat: '10-30 min',
-      statLabel: 'avg response'
+      iconColor: 'text-gray-600',
+      bgColor: 'bg-gray-50',
+      title: 'People Say "Can I Pick Your Brain?"',
+      description: 'Coffee chats, "quick calls," and Zoom meetings that pull you away from paid work—just to share what you know.',
+      stat: '3-5 hrs',
+      statLabel: 'per week'
     },
     {
       Icon: Rocket,
-      iconColor: 'text-pink-600',
-      bgColor: 'bg-pink-50',
-      title: 'What AI Can\'t Deliver',
-      description: 'Your judgment, experience, and context-aware advice is irreplaceable. That\'s premium value.',
-      stat: '85%',
-      statLabel: 'prefer experts'
+      iconColor: 'text-gray-600',
+      bgColor: 'bg-gray-50',
+      title: 'They\'ve Already Tried Google and AI',
+      description: 'The questions you get aren\'t basic. They need someone who understands nuance, context, and their specific situation.',
+      stat: '80%',
+      statLabel: 'say "AI missed this"'
     },
     {
       Icon: Award,
-      iconColor: 'text-rose-600',
-      bgColor: 'bg-rose-50',
-      title: 'Premium Expertise = Premium Pay',
-      description: 'You spent years building your knowledge. Get compensated like the professional you are.',
-      stat: '$200/hr+',
-      statLabel: 'expert rates'
+      iconColor: 'text-gray-600',
+      bgColor: 'bg-gray-50',
+      title: 'Years of Experience, Given Away Free',
+      description: 'You invested time and money to build your expertise. Others charge hundreds per hour for similar advice.',
+      stat: '10+ yrs',
+      statLabel: 'avg expertise'
     }
   ];
 
@@ -47,11 +47,13 @@ function SoundFamiliar() {
       <div className="container mx-auto px-6">
         <div className="max-w-5xl mx-auto">
           
-          {/* ✅ BALANCED PREMIUM: Clean header with subtle accent */}
+          {/* Problem-focused header */}
           <div className="text-center mb-12 md:mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-semibold text-indigo-700 mb-6">
-              <Sparkles className="w-4 h-4" />
-              <span>Unlock Your Potential</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-sm font-semibold text-amber-700 mb-6">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Sound Familiar?</span>
             </div>
             
             <h2 
@@ -60,9 +62,9 @@ function SoundFamiliar() {
                 letterSpacing: '-0.02em'
               }}
             >
-              Imagine What's{' '}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Possible
+              You're Already{' '}
+              <span className="bg-gradient-to-r from-gray-600 to-gray-800 bg-clip-text text-transparent">
+                Doing the Work
               </span>
             </h2>
             
@@ -73,11 +75,11 @@ function SoundFamiliar() {
                 lineHeight: '1.6'
               }}
             >
-              Turn your expertise into a revenue stream. Every conversation becomes an opportunity.
+              Every day, you answer questions, share insights, and help people solve problems. Just not getting paid for it.
             </p>
           </div>
 
-          {/* ✅ BALANCED PREMIUM: Cards with subtle glass effect */}
+          {/* Pain point cards */}
           <div className="grid md:grid-cols-2 gap-5 md:gap-6 mb-10">
             {opportunities.map((item, index) => (
               <div 
@@ -91,8 +93,8 @@ function SoundFamiliar() {
                   boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.04)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(99, 102, 241, 0.2), 0 4px 12px -4px rgba(0, 0, 0, 0.05)';
-                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.2)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(0, 0, 0, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(156, 163, 175, 0.3)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.boxShadow = '0 2px 8px 0 rgba(0, 0, 0, 0.04)';
@@ -100,15 +102,15 @@ function SoundFamiliar() {
                 }}
               >
                 <div className="flex items-start justify-between mb-4">
-                  {/* SVG Icon with subtle background */}
+                  {/* Icon with subtle background */}
                   <div className={`flex-shrink-0 p-3 rounded-lg ${item.bgColor} group-hover:scale-110 transition-transform duration-300`}>
                     <item.Icon className={`w-6 h-6 ${item.iconColor}`} strokeWidth={2} />
                   </div>
                   
-                  {/* Clean stat display */}
+                  {/* Stat display */}
                   <div className="text-right">
                     <div 
-                      className="text-2xl font-black text-indigo-600"
+                      className="text-2xl font-black text-gray-700"
                       style={{ letterSpacing: '-0.02em' }}
                     >
                       {item.stat}
@@ -142,32 +144,16 @@ function SoundFamiliar() {
             ))}
           </div>
 
-          {/* ✅ BALANCED PREMIUM: Clean CTA with subtle gradient */}
-          <div 
-            className="rounded-2xl p-8 md:p-10 text-center"
-            style={{
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
-              border: '1px solid rgba(99, 102, 241, 0.1)',
-              boxShadow: '0 4px 16px 0 rgba(99, 102, 241, 0.06)'
-            }}
-          >
+          {/* Simple transition text */}
+          <div className="text-center">
             <p 
-              className="text-2xl md:text-3xl font-black text-gray-900 mb-3"
-              style={{
-                letterSpacing: '-0.02em'
-              }}
-            >
-              Ready to Get Paid for What You Know?
-            </p>
-            <p 
-              className="text-base md:text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto"
+              className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto"
               style={{
                 letterSpacing: '0.01em',
                 lineHeight: '1.6'
               }}
             >
-              Join thousands of experts who've turned their inbox into a revenue stream. 
-              <span className="font-semibold text-indigo-600"> Set your price, share your link, start earning today.</span>
+              Sound familiar? There's a better way to handle this.
             </p>
           </div>
 
