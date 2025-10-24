@@ -215,7 +215,15 @@ function PaymentPlaceholder({
 
       {/* Stripe Payment Form (when enabled and ready) */}
       {!isCreatingIntent && !intentError && config.enabled && clientSecret && stripePromise && (
-        <Elements stripe={stripePromise} options={{ clientSecret }}>
+        <Elements
+          stripe={stripePromise}
+          options={{
+            clientSecret,
+            appearance: {
+              theme: 'stripe',
+            },
+          }}
+        >
           <StripePaymentForm
             clientSecret={clientSecret}
             amount={tierType === 'deep_dive' && composeData?.tierSpecific?.price

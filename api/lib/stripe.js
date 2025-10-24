@@ -87,6 +87,7 @@ export async function createPaymentIntent({ amount, currency = 'usd', descriptio
     description,
     metadata,
     capture_method: captureMethod, // 'automatic' for Quick Consult, 'manual' for Deep Dive
+    payment_method_types: ['card', 'link', 'amazon_pay'], // Enable Link and Amazon Pay
   };
 
   console.log('📤 [STRIPE] Sending to Stripe API:', JSON.stringify(createParams, null, 2));
