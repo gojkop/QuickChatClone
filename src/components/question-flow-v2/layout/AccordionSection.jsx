@@ -17,40 +17,62 @@ function AccordionSection({
     const shouldExpand = state === 'active';
     setIsExpanded(shouldExpand);
     
-    // ✅ FIX: Better scroll behavior on mobile - scroll to input, not bottom
+    // ✅ FIX: Proper scroll behavior - Step 1 shows dots, Steps 2-3 scroll to input
     if (shouldExpand && sectionRef.current) {
       setTimeout(() => {
         const element = sectionRef.current;
         const isMobile = window.innerWidth < 640;
         
         if (isMobile) {
-          // Mobile: Find first interactive element
-          const firstInput = element.querySelector('input:not([type="hidden"]), textarea, select');
-          
-          if (firstInput) {
-            // Calculate position to place input comfortably in view
-            const navbarHeight = 80;
-            const inputRect = firstInput.getBoundingClientRect();
-            const inputTop = inputRect.top + window.pageYOffset;
-            const targetScroll = inputTop - navbarHeight;
+          // Step 1: Scroll to show progress dots at top
+          if (step === 1) {
+            const flowContainer = element.closest('.max-w-4xl') || element.closest('.container-premium');
+            if (flowContainer) {
+              const progressDots = flowContainer.querySelector('.progress-dots-container');
+              if (progressDots) {
+                const navbarOffset = 80; // navbar height
+                const dotsTop = progressDots.getBoundingClientRect().top + window.pageYOffset;
+                const scrollTarget = dotsTop - navbarOffset;
+                window.scrollTo({ 
+                  top: Math.max(0, scrollTarget), 
+                  behavior: 'smooth' 
+                });
+              }
+            }
+          } 
+          // Steps 2-3: Scroll to first input field
+          else {
+            const firstInput = element.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), textarea');
             
-            window.scrollTo({ 
-              top: Math.max(0, targetScroll), 
-              behavior: 'smooth' 
-            });
-            
-            // Focus input after scroll completes
-            setTimeout(() => {
-              firstInput.focus({ preventScroll: true });
-            }, 400);
-          } else {
-            // Fallback: scroll to accordion section
-            const headerHeight = 80;
-            const y = element.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-            window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            if (firstInput) {
+              // Position input comfortably below navbar
+              const navbarHeight = 100; // navbar + breathing room
+              
+              // Wait a bit more for accordion to fully expand
+              setTimeout(() => {
+                const inputRect = firstInput.getBoundingClientRect();
+                const inputTop = inputRect.top + window.pageYOffset;
+                const targetScroll = inputTop - navbarHeight;
+                
+                window.scrollTo({ 
+                  top: Math.max(0, targetScroll), 
+                  behavior: 'smooth' 
+                });
+                
+                // Focus the input after scroll
+                setTimeout(() => {
+                  firstInput.focus({ preventScroll: true });
+                }, 400);
+              }, 100);
+            } else {
+              // Fallback: scroll to show section header
+              const headerHeight = 100;
+              const y = element.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+              window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            }
           }
         } else {
-          // Desktop: Scroll to show progress dots
+          // Desktop: Always scroll to show progress dots + header
           const flowContainer = element.closest('.max-w-4xl') || element.closest('.container-premium');
           if (flowContainer) {
             const progressDots = flowContainer.querySelector('.progress-dots-container');
@@ -62,9 +84,9 @@ function AccordionSection({
             }
           }
         }
-      }, 250); // Increased timeout for full expansion
+      }, 300); // Wait for accordion expansion
     }
-  }, [state]);
+  }, [state, step]); // Added 'step' to dependencies
 
   const handleHeaderClick = () => {
     if (state === 'locked') return;
