@@ -105,13 +105,13 @@ function QuickConsultComposer({ expert, tierConfig, data, onUpdate, onContinue }
       />
 
       {/* Desktop-only Continue Button */}
-      <div 
+      <div
         className="pt-6 border-t mt-6"
         style={{ display: window.innerWidth < 640 ? 'none' : 'block' }}
       >
         <button
-          onClick={onContinue}
-          disabled={!title.trim() || title.length < 5}
+          onClick={handleContinue}
+          disabled={!canContinue}
           className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Continue to Review →
