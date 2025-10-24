@@ -45,7 +45,14 @@ export default async function handler(req, res) {
     );
 
     if (!questionResponse.ok) {
-      throw new Error('Failed to fetch question details');
+      const errorText = await questionResponse.text();
+      console.error('❌ Failed to fetch question:', {
+        status: questionResponse.status,
+        statusText: questionResponse.statusText,
+        url: `${baseUrl}/question/${id}`,
+        body: errorText
+      });
+      throw new Error(`Failed to fetch question details: ${questionResponse.status} ${errorText}`);
     }
 
     const question = await questionResponse.json();
