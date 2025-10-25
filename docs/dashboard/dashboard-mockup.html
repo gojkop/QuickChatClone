@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mindPick Expert Dashboard - Layout Mockup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F9FAFB;
+            color: #111827;
+            overflow-x: hidden;
+        }
+        
+        /* Layout Grid */
+        .dashboard-layout {
+            display: grid;
+            grid-template-areas: 
+                "sidebar topbar"
+                "sidebar main";
+            grid-template-columns: 240px 1fr;
+            grid-template-rows: 64px 1fr;
+            min-height: 100vh;
+        }
+        
+        /* Fixed Sidebar */
+        .sidebar {
+            grid-area: sidebar;
+            background: #FFFFFF;
+            border-right: 1px solid #E5E7EB;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 240px;
+            display: flex;
+            flex-direction: column;
+            z-index: 40;
+            overflow-y: auto;
+        }
+        
+        /* Logo Section */
+        .sidebar-logo {
+            padding: 16px 20px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 64px;
+        }
+        
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 14px;
+        }
+        
+        .logo-text {
+            font-size: 18px;
+            font-weight: 800;
+            color: #111827;
+        }
+        
+        /* Navigation */
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            overflow-y: auto;
+        }
+        
+        .nav-section {
+            margin-bottom: 24px;
+        }
+        
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6B7280;
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #6B7280;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: #F3F4F6;
+            color: #111827;
+        }
+        
+        .nav-item.active {
+            background: #EEF2FF;
+            color: #4F46E5;
+            font-weight: 600;
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            background: #4F46E5;
+            border-radius: 0 2px 2px 0;
+        }
+        
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        
+        .nav-badge {
+            margin-left: auto;
+            background: #EF4444;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .nav-badge.green {
+            background: #10B981;
+        }
+        
+        /* Sidebar Footer */
+        .sidebar-footer {
+            padding: 16px 12px;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        
+        .user-profile:hover {
+            background: #F3F4F6;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .user-email {
+            font-size: 12px;
+            color: #6B7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Top Bar */
+        .topbar {
+            grid-area: topbar;
+            background: #FFFFFF;
+            border-bottom: 1px solid #E5E7EB;
+            position: fixed;
+            top: 0;
+            left: 240px;
+            right: 0;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 30;
+        }
+        
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6B7280;
+        }
+        
+        .breadcrumb-item.active {
+            color: #111827;
+            font-weight: 600;
+        }
+        
+        .breadcrumb-separator {
+            color: #D1D5DB;
+        }
+        
+        /* Search Bar */
+        .search-container {
+            flex: 1;
+            max-width: 400px;
+            margin: 0 32px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #F9FAFB;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+        
+        .search-wrapper {
+            position: relative;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: #9CA3AF;
+            pointer-events: none;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #4F46E5;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        /* Actions */
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .action-btn {
+            position: relative;
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: #6B7280;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .action-btn:hover {
+            background: #F3F4F6;
+            color: #111827;
+        }
+        
+        .action-btn-icon {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .action-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 8px;
+            height: 8px;
+            background: #EF4444;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+        }
+        
+        .action-badge.pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Availability Toggle */
+        .availability-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+            background: #FFFFFF;
+            cursor: pointer;
+        }
+        
+        .availability-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10B981;
+        }
+        
+        .availability-dot.pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        .availability-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #10B981;
+        }
+        
+        .toggle-switch {
+            width: 36px;
+            height: 20px;
+            background: #10B981;
+            border-radius: 10px;
+            position: relative;
+            transition: background 0.2s ease;
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            right: 2px;
+            transition: transform 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Main Content */
+        .main-content {
+            grid-area: main;
+            padding: 24px;
+            margin-left: 240px;
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
+        }
+        
+        /* Cards */
+        .card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 1px solid #E5E7EB;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 16px;
+        }
+        
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .metric-card {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.15s ease;
+        }
+        
+        .metric-card:hover {
+            border-color: #4F46E5;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .metric-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #6B7280;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+        
+        .metric-change {
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .metric-change.positive {
+            color: #10B981;
+        }
+        
+        .metric-change.negative {
+            color: #EF4444;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard-layout {
+                grid-template-columns: 64px 1fr;
+            }
+            
+            .sidebar {
+                width: 64px;
+            }
+            
+            .topbar {
+                left: 64px;
+            }
+            
+            .main-content {
+                margin-left: 64px;
+            }
+            
+            .sidebar-logo .logo-text,
+            .nav-section-title,
+            .nav-item span,
+            .nav-badge,
+            .user-info {
+                display: none;
+            }
+            
+            .sidebar-logo {
+                justify-content: center;
+                padding: 16px 12px;
+            }
+            
+            .nav-item {
+                justify-content: center;
+                padding: 12px;
+            }
+            
+            .user-profile {
+                justify-content: center;
+                padding: 8px;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.mobile-open {
+                transform: translateX(0);
+                width: 240px;
+            }
+            
+            .topbar {
+                left: 0;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .search-container {
+                display: none;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Demo Styles */
+        .demo-label {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background: #4F46E5;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+        
+        .toggle-sidebar-btn {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: #4F46E5;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+            cursor: pointer;
+            z-index: 50;
+        }
+        
+        @media (max-width: 768px) {
+            .toggle-sidebar-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-label">
+        📱 Interactive Mockup - Try resizing!
+    </div>
+
+    <div class="dashboard-layout">
+        <!-- Fixed Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <div class="logo-icon">mP</div>
+                <span class="logo-text">mindPick</span>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <!-- Main Section -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <a href="#" class="nav-item active">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                    
+                    <a href="#" class="nav-item">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                        </svg>
+                        <span>Inbox</span>
+                        <span class="nav-badge">3</span>
+                    </a>
+                    
+                    <a href="#" class="nav-item">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span>Analytics</span>
+                    </a>
+                </div>
+                
+                <!-- Business Section -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Business</div>
+                    <a href="#" class="nav-item">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                        </svg>
+                        <span>Marketing</span>
+                        <span class="nav-badge green">New</span>
+                    </a>
+                    
+                    <a href="#" class="nav-item">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Payments</span>
+                    </a>
+                </div>
+                
+                <!-- Settings Section -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Settings</div>
+                    <a href="#" class="nav-item">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        <span>Profile</span>
+                    </a>
+                    
+                    <a href="#" class="nav-item">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                    
+                    <a href="#" class="nav-item">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Help</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <!-- User Profile Footer -->
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">BT</div>
+                    <div class="user-info">
+                        <div class="user-name">Bogdan Tancic</div>
+                        <div class="user-email">b.tancic@gmail.com</div>
+                    </div>
+                    <svg style="width: 16px; height: 16px; color: #9CA3AF; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
+                    </svg>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Top Bar -->
+        <header class="topbar">
+            <!-- Left: Breadcrumb -->
+            <div class="breadcrumb">
+                <div class="breadcrumb-item active">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </div>
+            </div>
+            
+            <!-- Center: Search -->
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input type="text" class="search-input" placeholder="Search questions, answers...">
+                </div>
+            </div>
+            
+            <!-- Right: Actions -->
+            <div class="topbar-actions">
+                <!-- Availability Toggle -->
+                <div class="availability-toggle">
+                    <div class="availability-dot pulse"></div>
+                    <span class="availability-text">Available</span>
+                    <div class="toggle-switch"></div>
+                </div>
+                
+                <!-- Notifications -->
+                <button class="action-btn" title="Notifications">
+                    <svg class="action-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                    <span class="action-badge pulse"></span>
+                </button>
+                
+                <!-- Help -->
+                <button class="action-btn" title="Help">
+                    <svg class="action-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+                
+                <!-- Settings -->
+                <button class="action-btn" title="Settings">
+                    <svg class="action-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">This Month</div>
+                    <div class="metric-value">$5,280</div>
+                    <div class="metric-change positive">
+                        <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                        <span>+100%</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Avg Response</div>
+                    <div class="metric-value">22.9h</div>
+                    <div class="metric-change positive">
+                        <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                        </svg>
+                        <span>-5.1h</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Rating</div>
+                    <div class="metric-value">4.7 ⭐</div>
+                    <div class="metric-change positive">
+                        <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                        <span>+0.2</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Pending</div>
+                    <div class="metric-value">13</div>
+                    <div class="metric-change" style="color: #F59E0B;">
+                        <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>23h avg left</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Cards -->
+            <div class="card">
+                <h2 class="card-title">🔥 Action Required</h2>
+                <div style="padding: 16px; background: #FEF2F2; border: 1px solid #FEE2E2; border-radius: 8px; margin-bottom: 12px;">
+                    <div style="font-weight: 600; color: #991B1B; margin-bottom: 8px;">
+                        ⚠️ 3 Questions Expiring Soon (&lt;12h)
+                    </div>
+                    <a href="#" style="color: #DC2626; font-size: 14px; font-weight: 600; text-decoration: none;">
+                        View All Questions →
+                    </a>
+                </div>
+                <div style="padding: 16px; background: #FFFBEB; border: 1px solid #FEF3C7; border-radius: 8px;">
+                    <div style="font-weight: 600; color: #92400E; margin-bottom: 8px;">
+                        💰 1 Deep Dive Offer Pending Review ($5,500)
+                    </div>
+                    <a href="#" style="color: #D97706; font-size: 14px; font-weight: 600; text-decoration: none;">
+                        Review Offer →
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">Recent Questions</h2>
+                <div style="color: #6B7280; text-align: center; padding: 40px;">
+                    📊 Question table would appear here...
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Mobile Sidebar Toggle -->
+    <button class="toggle-sidebar-btn" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">
+        <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+    
+    <script>
+        // Interactive demo behaviors
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+        
+        // Availability toggle
+        const availabilityToggle = document.querySelector('.availability-toggle');
+        const availabilityDot = document.querySelector('.availability-dot');
+        const availabilityText = document.querySelector('.availability-text');
+        const toggleSwitch = document.querySelector('.toggle-switch');
+        
+        let isAvailable = true;
+        
+        availabilityToggle.addEventListener('click', () => {
+            isAvailable = !isAvailable;
+            
+            if (isAvailable) {
+                availabilityDot.classList.add('pulse');
+                availabilityDot.style.background = '#10B981';
+                availabilityText.textContent = 'Available';
+                availabilityText.style.color = '#10B981';
+                toggleSwitch.style.background = '#10B981';
+                toggleSwitch.querySelector('::after') || (toggleSwitch.style.setProperty('--switch-position', 'right: 2px'));
+            } else {
+                availabilityDot.classList.remove('pulse');
+                availabilityDot.style.background = '#9CA3AF';
+                availabilityText.textContent = 'Away';
+                availabilityText.style.color = '#6B7280';
+                toggleSwitch.style.background = '#E5E7EB';
+            }
+        });
+        
+        // Search focus animation
+        const searchInput = document.querySelector('.search-input');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.style.transform = 'scale(1.02)';
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.style.transform = 'scale(1)';
+        });
+    </script>
+</body>
+</html>
