@@ -32,8 +32,8 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
         />
       </div>
 
-      {/* Navigation - Takes remaining space */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      {/* Navigation - Takes remaining space, prevent horizontal scroll */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3">
         <NavSection title="Main" collapsed={collapsed}>
           <NavItem
             to="/dashboard"
@@ -97,7 +97,7 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
       {/* User Profile Footer - Sticks to bottom */}
       <div className={`
         flex-shrink-0 border-t border-gray-200 overflow-visible
-        ${collapsed ? 'p-2' : 'p-3'}
+        ${collapsed ? 'p-1.5' : 'p-3'}
       `}>
         <UserProfileCard collapsed={collapsed} />
       </div>

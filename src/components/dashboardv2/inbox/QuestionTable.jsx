@@ -4,13 +4,14 @@ import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 
-// Column width configuration (in pixels)
+// Column width configuration (in percentages of container width)
+// These percentages allow the table to be fully responsive
 const DEFAULT_COLUMN_WIDTHS = {
-  checkbox: 40,
-  question: 380,
-  asker: 240,
-  price: 100,
-  time: 90,
+  checkbox: 5,    // ~40-50px on most screens
+  question: 44,   // Largest column for question text
+  asker: 30,      // Room for name + email
+  price: 12,      // Price display
+  time: 9,        // Relative time
 };
 
 // Throttle utility for better performance
@@ -37,20 +38,35 @@ function QuestionTable({
   const [resizing, setResizing] = useState(null);
   const tableRef = useRef(null);
 
-  // Throttled resize handler for better performance
+  // Throttled resize handler for better performance (now works with percentages)
   const handleResize = useCallback(
     throttle((clientX) => {
-      if (!resizing) return;
-      
+      if (!resizing || !tableRef.current) return;
+
       const column = resizing.column;
       const startX = resizing.startX;
       const startWidth = resizing.startWidth;
+      const tableWidth = tableRef.current.offsetWidth;
+
+      // Calculate pixel difference and convert to percentage
       const diff = clientX - startX;
-      const newWidth = Math.max(80, startWidth + diff);
+      const percentDiff = (diff / tableWidth) * 100;
+      const newWidth = startWidth + percentDiff;
+
+      // Minimum widths in percentage (roughly equivalent to 60-80px on 800px container)
+      const minWidths = {
+        checkbox: 4,
+        question: 15,
+        asker: 15,
+        price: 8,
+        time: 6
+      };
+
+      const finalWidth = Math.max(minWidths[column] || 5, newWidth);
 
       setColumnWidths(prev => ({
         ...prev,
-        [column]: newWidth
+        [column]: finalWidth
       }));
     }, 16), // ~60fps
     [resizing]
@@ -92,6 +108,7 @@ function QuestionTable({
     const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
     const diff = now - createdAt;
     
+    if (diff < 60) return 'now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
     return `${Math.floor(diff / 86400)}d`;
@@ -149,11 +166,16 @@ function QuestionTable({
   const allSelected = questions.length > 0 && selectedQuestions.length === questions.length;
   const someSelected = selectedQuestions.length > 0 && !allSelected;
 
-  // Calculate grid template columns
-  const gridTemplateColumns = `${columnWidths.checkbox}px ${columnWidths.question}px ${columnWidths.asker}px ${columnWidths.price}px ${columnWidths.time}px`;
+  // Calculate grid template columns (responsive percentages)
+  const gridTemplateColumns = `${columnWidths.checkbox}% ${columnWidths.question}% ${columnWidths.asker}% ${columnWidths.price}% ${columnWidths.time}%`;
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden" ref={tableRef}>
+      {/* Debug Banner - RESPONSIVE VERSION */}
+      <div className="bg-green-500 text-white text-xs font-bold text-center py-1">
+        ✓ RESPONSIVE v4.0 - Table now uses flexible % widths (Email + Throttle + Resize + No zeros)
+      </div>
+
       {/* Table Header - Sticky */}
       <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
         <div 
@@ -176,50 +198,50 @@ function QuestionTable({
           </div>
 
           {/* Question Column */}
-          <div className="relative flex items-center">
+          <div className="relative flex items-center pr-2">
             <span>Question</span>
             <button
               onMouseDown={(e) => startResize('question', e)}
-              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize"
+              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize column"
             >
-              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
             </button>
           </div>
 
           {/* Asker Column */}
-          <div className="relative flex items-center">
+          <div className="relative flex items-center pr-2">
             <span>Asker</span>
             <button
               onMouseDown={(e) => startResize('asker', e)}
-              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize"
+              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize column"
             >
-              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
             </button>
           </div>
 
           {/* Price Column */}
-          <div className="relative flex items-center justify-end">
+          <div className="relative flex items-center justify-end pr-2">
             <span>Price</span>
             <button
               onMouseDown={(e) => startResize('price', e)}
-              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize"
+              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize column"
             >
-              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
             </button>
           </div>
 
           {/* Time Column */}
-          <div className="relative flex items-center justify-end">
+          <div className="relative flex items-center justify-end pr-2">
             <span>Time</span>
             <button
               onMouseDown={(e) => startResize('time', e)}
-              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize"
+              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize column"
             >
-              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
             </button>
           </div>
         </div>
@@ -300,7 +322,7 @@ function QuestionTable({
               </div>
 
               {/* Asker - Name + Email on separate lines */}
-              <div className="flex flex-col justify-center text-[11px] min-w-0 overflow-hidden" title={askerEmail || askerName}>
+              <div className="flex flex-col justify-center text-[11px] min-w-0 overflow-hidden" title={`${askerName}${askerEmail ? `\n${askerEmail}` : ''}`}>
                 <div className="flex items-center gap-1 truncate">
                   <User size={10} className="flex-shrink-0 text-gray-400" />
                   <span className="truncate font-medium text-gray-700">
@@ -334,7 +356,7 @@ function QuestionTable({
 
       {/* Resize Overlay */}
       {resizing && (
-        <div className="fixed inset-0 z-50 cursor-col-resize" />
+        <div className="fixed inset-0 z-50 cursor-col-resize bg-indigo-500/5" />
       )}
     </div>
   );

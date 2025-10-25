@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Bell, Settings2 } from 'lucide-react';
+import { Menu, Bell } from 'lucide-react';
 import AvailabilityToggle from '../navigation/AvailabilityToggle';
 import NotificationPanel from '../navigation/NotificationPanel';
 import GlobalSearch from '../search/GlobalSearch';
@@ -91,15 +91,6 @@ function DashboardTopBar({
               onClose={() => setIsNotificationsOpen(false)}
             />
           </div>
-
-          {/* Settings */}
-          <button
-            onClick={() => navigate('/dashboard/account')}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            title="Settings"
-          >
-            <Settings2 size={20} className="text-gray-600" />
-          </button>
         </div>
       </div>
     </header>
