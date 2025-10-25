@@ -10,9 +10,9 @@ function NavItem({ to, icon, label, badge, collapsed = false, onClick }) {
       to={to}
       onClick={onClick}
       className={`
-        flex items-center gap-3 px-3 py-2.5 rounded-xl w-full
+        flex items-center rounded-xl w-full
         transition-all duration-200 relative group touch-target
-        ${collapsed ? 'justify-center' : ''}
+        ${collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'}
         ${isActive 
           ? 'bg-gradient-to-r from-indigo-50 to-indigo-100 text-indigo-700 font-semibold shadow-sm' 
           : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
@@ -38,7 +38,7 @@ function NavItem({ to, icon, label, badge, collapsed = false, onClick }) {
       
       {/* Label - hidden when collapsed */}
       {!collapsed && (
-        <span className="flex-1 text-sm whitespace-nowrap">{label}</span>
+        <span className="flex-1 text-sm whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
       )}
       
       {/* Badge - hidden when collapsed */}

@@ -89,9 +89,9 @@ function UserProfileCard({ collapsed = false }) {
       <button
         onClick={toggleMenu}
         className={`
-          w-full flex items-center p-3 rounded-lg
+          flex items-center rounded-lg
           hover:bg-gray-100 group
-          ${collapsed ? 'justify-center' : 'gap-3'}
+          ${collapsed ? 'justify-center p-2 w-full' : 'w-full gap-3 p-3'}
           ${menuOpen ? 'bg-gray-100' : ''}
         `}
         title={collapsed ? userName : undefined}
