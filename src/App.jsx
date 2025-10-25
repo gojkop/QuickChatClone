@@ -28,6 +28,8 @@ import ExpertMarketingPage from '@/pages/ExpertMarketingPage';
 import HowItWorksPage from '@/pages/HowItWorksPage';
 import CookieConsentBanner from '@/components/common/CookieConsentBanner';
 import AskQuestionPageV2 from '@/pages/AskQuestionPageV2';
+import ExpertDashboardPageV2 from '@/pages/ExpertDashboardPageV2';
+
 
 
 
@@ -99,6 +101,14 @@ const AppLayout = () => {
             element={
               <ProtectedRoute>
                 <ExpertDashboardPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+              <ExpertDashboardPageV2 />
               </ProtectedRoute>
             } 
           />
