@@ -13,11 +13,12 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
   const navigate = useNavigate();
 
   return (
-    <aside className={`
-      hidden lg:flex flex-col bg-white border-r border-gray-200
-      transition-all duration-300 h-screen sticky top-0
-      ${collapsed ? 'w-20' : 'w-64'}
-    `}>
+<aside className={`
+  hidden lg:flex flex-col bg-white border-r border-gray-200
+  transition-all duration-300 h-screen fixed left-0 top-0 z-40
+  ${collapsed ? 'w-20' : 'w-64'}
+`}>
+
       {/* Logo */}
       <div className={`
         h-16 border-b border-gray-200 flex items-center

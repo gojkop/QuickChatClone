@@ -8,15 +8,15 @@ function DashboardContent({ children, sidebarCollapsed }) {
   const fullWidthPages = ['/dashboard/inbox', '/dashboard/analytics'];
   const isFullWidth = fullWidthPages.includes(location.pathname);
 
- return (
-    <main
-      className={`
-        bg-gray-50 pt-16
-        transition-all duration-300 ease-out
-        ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-60'}
-        ${!isFullWidth ? 'h-screen overflow-y-auto' : ''}
-      `}
-    >
+return (
+  <main
+    className={`
+      bg-gray-50 pt-16
+      transition-all duration-300 ease-out
+      ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-60'}
+      ${!isFullWidth ? 'min-h-[calc(100vh-4rem)]' : ''}
+    `}
+  >
       {isFullWidth ? (
         // Full-width layout for inbox/analytics - NO padding, NO min-height
         children
