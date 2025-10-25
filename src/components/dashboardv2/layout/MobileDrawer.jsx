@@ -7,6 +7,7 @@ import {
   Home, Inbox, BarChart3, PieChart, DollarSign,
   User, Settings, HelpCircle
 } from 'lucide-react';
+import logo from '@/assets/images/logo-mindpick.svg';
 
 function MobileDrawer({ isOpen, onClose, pendingCount = 0 }) {
   return (
@@ -31,12 +32,11 @@ function MobileDrawer({ isOpen, onClose, pendingCount = 0 }) {
       >
         {/* Header */}
         <div className="h-16 border-b border-gray-200 flex items-center justify-between px-5">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-black text-sm">mP</span>
-            </div>
-            <span className="text-lg font-black text-gray-900">mindPick</span>
-          </div>
+          <img
+            src={logo}
+            alt="mindPick"
+            className="h-9 w-auto"
+          />
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"

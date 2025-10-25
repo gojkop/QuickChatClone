@@ -41,20 +41,20 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
   return (
     <div className="relative">
       <div className={`
-        flex items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300
+        flex items-center gap-1.5 sm:gap-2.5 px-1.5 sm:px-3 py-1 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300
         ${isAvailable
           ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200'
           : 'bg-white border border-gray-200'
         }
       `}>
         {/* Status Indicator with icon */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {isAvailable ? (
-            <Wifi size={14} className="text-green-600 animate-pulse-premium sm:w-4 sm:h-4" />
+            <Wifi size={12} className="text-green-600 animate-pulse-premium sm:w-4 sm:h-4" />
           ) : (
-            <WifiOff size={14} className="text-gray-400 sm:w-4 sm:h-4" />
+            <WifiOff size={12} className="text-gray-400 sm:w-4 sm:h-4" />
           )}
-          <span className={`text-xs sm:text-sm font-semibold whitespace-nowrap ${isAvailable ? 'text-green-700' : 'text-gray-600'}`}>
+          <span className={`text-[10px] sm:text-sm font-semibold whitespace-nowrap ${isAvailable ? 'text-green-700' : 'text-gray-600'}`}>
             {isAvailable ? 'Available' : 'Away'}
           </span>
         </div>
@@ -67,7 +67,7 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
           onClick={handleToggle}
           disabled={isToggling}
           className={`
-            relative inline-flex h-4 w-7 sm:h-5 sm:w-9 items-center rounded-full
+            relative inline-flex h-3.5 w-6 sm:h-5 sm:w-9 items-center rounded-full
             transition-all duration-300 focus-ring
             ${isAvailable
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 shadow-success'
@@ -80,8 +80,8 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
         >
           <span
             className={`
-              inline-block h-3 w-3 sm:h-3.5 sm:w-3.5 transform rounded-full bg-white transition-all duration-300 shadow-md
-              ${isAvailable ? 'translate-x-3.5 sm:translate-x-5' : 'translate-x-0.5'}
+              inline-block h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 transform rounded-full bg-white transition-all duration-300 shadow-md
+              ${isAvailable ? 'translate-x-3 sm:translate-x-5' : 'translate-x-0.5'}
             `}
           />
         </button>

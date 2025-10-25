@@ -10,7 +10,7 @@ function NavItem({ to, icon, label, badge, collapsed = false, onClick }) {
       to={to}
       onClick={onClick}
       className={`
-        flex items-center gap-3 px-3 py-2.5 rounded-xl
+        flex items-center gap-3 px-3 py-2.5 rounded-xl w-full
         transition-all duration-200 relative group touch-target
         ${collapsed ? 'justify-center' : ''}
         ${isActive 
@@ -30,7 +30,7 @@ function NavItem({ to, icon, label, badge, collapsed = false, onClick }) {
       
       {/* Icon - with smooth transition */}
       <span className={`
-        icon-container transition-all duration-200
+        icon-container transition-all duration-200 flex-shrink-0
         ${isActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-gray-700'}
       `}>
         {icon}
@@ -38,13 +38,13 @@ function NavItem({ to, icon, label, badge, collapsed = false, onClick }) {
       
       {/* Label - hidden when collapsed */}
       {!collapsed && (
-        <span className="flex-1 text-sm">{label}</span>
+        <span className="flex-1 text-sm whitespace-nowrap">{label}</span>
       )}
       
       {/* Badge - hidden when collapsed */}
       {!collapsed && badge && (
         <span className={`
-          inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full
+          inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full flex-shrink-0
           text-[10px] font-bold transition-all
           ${badge.variant === 'danger'
             ? 'bg-red-500 text-white'
