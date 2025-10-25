@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-function InboxLayout({ 
-  filters, 
-  quickActions, 
-  questionList, 
+function InboxLayout({
+  filters,
+  quickActions,
+  questionList,
+  pagination,
   questionDetail,
   selectedQuestion,
-  isMobile = false 
+  isMobile = false
 }) {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [splitRatio, setSplitRatio] = useState(50); // Percentage for left panel
@@ -91,9 +92,16 @@ function InboxLayout({
         )}
 
         {/* Question List - Scrollable */}
-        <div className="flex-1 overflow-hidden min-h-0">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {questionList}
         </div>
+
+        {/* Pagination - Fixed at bottom */}
+        {pagination && (
+          <div className="flex-shrink-0 border-t border-gray-200 bg-white">
+            {pagination}
+          </div>
+        )}
       </div>
 
       {/* Resize Handle - Desktop Only */}

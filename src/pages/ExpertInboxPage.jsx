@@ -314,43 +314,101 @@ function ExpertInboxPage() {
             />
           }
           questionList={
-            <>
-              <QuestionListView
-                questions={filteredQuestions}
-                selectedQuestions={selectedQuestions}
-                activeQuestionId={selectedQuestion?.id}
-                onSelectQuestion={toggleSelectQuestion}
-                onQuestionClick={handleQuestionClick}
-                onSelectAll={handleSelectAll}
-              />
-
-              {/* Pagination Controls */}
-              {pagination && pagination.total_pages > 1 && (
-                <div className="mt-4 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200">
-                  <div className="text-sm text-gray-700">
-                    Page <span className="font-medium">{pagination.page}</span> of{' '}
-                    <span className="font-medium">{pagination.total_pages}</span>
-                    {' '}({pagination.total} total questions)
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handlePrevPage}
-                      disabled={!pagination.has_prev}
-                      className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={handleNextPage}
-                      disabled={!pagination.has_next}
-                      className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  </div>
+            <QuestionListView
+              questions={filteredQuestions}
+              selectedQuestions={selectedQuestions}
+              activeQuestionId={selectedQuestion?.id}
+              onSelectQuestion={toggleSelectQuestion}
+              onQuestionClick={handleQuestionClick}
+              onSelectAll={handleSelectAll}
+            />
+          }
+          pagination={
+            pagination && pagination.total_pages > 1 ? (
+              <div className="flex items-center justify-between px-4 py-3">
+                <div className="text-xs text-gray-600">
+                  <span className="font-semibold">{((pagination.page - 1) * 10) + 1}-{Math.min(pagination.page * 10, pagination.total)}</span>
+                  {' '}of{' '}
+                  <span className="font-semibold">{pagination.total}</span>
                 </div>
-              )}
-            </>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePrevPage}
+                    disabled={!pagination.has_prev}
+                    className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Previous page"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="hidden sm:flex items-center gap-1">
+                    {(() => {
+                      const pages = [];
+                      const maxVisible = 5;
+                      const totalPages = pagination.total_pages;
+                      const currentPage = pagination.page;
+
+                      if (totalPages <= maxVisible) {
+                        for (let i = 1; i <= totalPages; i++) {
+                          pages.push(i);
+                        }
+                      } else {
+                        if (currentPage <= 3) {
+                          pages.push(1, 2, 3, 4, '...', totalPages);
+                        } else if (currentPage >= totalPages - 2) {
+                          pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+                        } else {
+                          pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+                        }
+                      }
+
+                      return pages.map((page, index) => (
+                        page === '...' ? (
+                          <span key={`ellipsis-${index}`} className="px-2 text-gray-400 text-xs">
+                            ...
+                          </span>
+                        ) : (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`
+                              min-w-[28px] h-7 px-2 rounded text-xs font-medium
+                              transition-colors
+                              ${currentPage === page
+                                ? 'bg-indigo-600 text-white'
+                                : 'hover:bg-gray-100 text-gray-700'
+                              }
+                            `}
+                          >
+                            {page}
+                          </button>
+                        )
+                      ));
+                    })()}
+                  </div>
+
+                  {/* Mobile: Just show current page */}
+                  <div className="sm:hidden text-xs font-medium text-gray-700">
+                    Page {pagination.page} of {pagination.total_pages}
+                  </div>
+
+                  <button
+                    onClick={handleNextPage}
+                    disabled={!pagination.has_next}
+                    className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Next page"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ) : null
           }
           questionDetail={
             <QuestionDetailPanel
