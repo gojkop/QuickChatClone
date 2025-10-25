@@ -40,34 +40,66 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
 
   return (
     <div className="relative">
+      {/* Mobile version - Icon + Toggle only */}
+      <div className="flex items-center gap-1 md:hidden">
+        {isAvailable ? (
+          <Wifi size={16} className="text-green-600" />
+        ) : (
+          <WifiOff size={16} className="text-gray-400" />
+        )}
+        <button
+          onClick={handleToggle}
+          disabled={isToggling}
+          className={`
+            relative inline-flex h-5 w-9 items-center rounded-full
+            transition-all duration-300
+            ${isAvailable
+              ? 'bg-green-500'
+              : 'bg-gray-300'
+            }
+            ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          `}
+          title={isAvailable ? 'Turn off availability' : 'Turn on availability'}
+          aria-label={isAvailable ? 'Turn off availability' : 'Turn on availability'}
+        >
+          <span
+            className={`
+              inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-all duration-300 shadow-sm
+              ${isAvailable ? 'translate-x-5' : 'translate-x-0.5'}
+            `}
+          />
+        </button>
+      </div>
+
+      {/* Desktop version - Full button with text */}
       <div className={`
-        flex items-center gap-1.5 sm:gap-2.5 px-1.5 sm:px-3 py-1 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300
+        hidden md:flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-300
         ${isAvailable
           ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200'
           : 'bg-white border border-gray-200'
         }
       `}>
         {/* Status Indicator with icon */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-2">
           {isAvailable ? (
-            <Wifi size={12} className="text-green-600 animate-pulse-premium sm:w-4 sm:h-4" />
+            <Wifi size={16} className="text-green-600 animate-pulse-premium" />
           ) : (
-            <WifiOff size={12} className="text-gray-400 sm:w-4 sm:h-4" />
+            <WifiOff size={16} className="text-gray-400" />
           )}
-          <span className={`text-[10px] sm:text-sm font-semibold whitespace-nowrap ${isAvailable ? 'text-green-700' : 'text-gray-600'}`}>
+          <span className={`text-sm font-semibold whitespace-nowrap ${isAvailable ? 'text-green-700' : 'text-gray-600'}`}>
             {isAvailable ? 'Available' : 'Away'}
           </span>
         </div>
 
-        {/* Divider - hidden on mobile */}
-        <div className={`hidden sm:block w-px h-4 ${isAvailable ? 'bg-green-300' : 'bg-gray-300'}`} />
+        {/* Divider */}
+        <div className={`w-px h-4 ${isAvailable ? 'bg-green-300' : 'bg-gray-300'}`} />
 
         {/* Toggle Switch - Premium */}
         <button
           onClick={handleToggle}
           disabled={isToggling}
           className={`
-            relative inline-flex h-3.5 w-6 sm:h-5 sm:w-9 items-center rounded-full
+            relative inline-flex h-5 w-9 items-center rounded-full
             transition-all duration-300 focus-ring
             ${isAvailable
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 shadow-success'
@@ -80,8 +112,8 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
         >
           <span
             className={`
-              inline-block h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 transform rounded-full bg-white transition-all duration-300 shadow-md
-              ${isAvailable ? 'translate-x-3 sm:translate-x-5' : 'translate-x-0.5'}
+              inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-all duration-300 shadow-md
+              ${isAvailable ? 'translate-x-5' : 'translate-x-0.5'}
             `}
           />
         </button>
@@ -91,15 +123,15 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
       {showFeedback && (
         <div className="absolute top-full mt-2 right-0 z-50 animate-fadeInUp">
           <div className={`
-            px-4 py-2.5 rounded-lg shadow-lg border backdrop-blur-sm whitespace-nowrap
+            px-3 py-2 md:px-4 md:py-2.5 rounded-lg shadow-lg border backdrop-blur-sm whitespace-nowrap text-xs md:text-sm
             ${isAvailable
               ? 'bg-green-50/95 border-green-200 text-green-800'
               : 'bg-gray-50/95 border-gray-200 text-gray-800'
             }
           `}>
             <div className="flex items-center gap-2">
-              <span className="text-lg">✓</span>
-              <span className="text-sm font-medium">
+              <span className="text-base md:text-lg">✓</span>
+              <span className="font-medium">
                 You are now {isAvailable ? 'available' : 'away'} to receive questions
               </span>
             </div>

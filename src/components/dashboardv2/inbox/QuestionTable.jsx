@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, User, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { MessageSquare, User, Clock, CheckCircle } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
@@ -25,23 +25,34 @@ function QuestionTable({
   const isAnswered = (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
   const getQuestionTitle = (question) => {
-    if (question.question_text) return question.question_text;
-    if (question.video_url) return 'Video Question';
-    if (question.question_details) {
-      const firstLine = question.question_details.split('\n')[0];
+    // Priority 1: question_text
+    if (question.question_text?.trim()) {
+      return question.question_text;
+    }
+    
+    // Priority 2: First line of question_details
+    if (question.question_details?.trim()) {
+      const firstLine = question.question_details.split('\n')[0].trim();
       return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
     }
-    return `Question from ${question.user_name || 'user'}`;
+    
+    // Priority 3: Just show it's a video/audio question
+    if (question.video_url) {
+      return 'Video Question';
+    }
+    
+    // Last resort: Question ID
+    return `Question #${question.id}`;
   };
 
   const allSelected = questions.length > 0 && selectedQuestions.length === questions.length;
   const someSelected = selectedQuestions.length > 0 && !allSelected;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
       {/* Table Header - Sticky */}
       <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
-        <div className="grid grid-cols-[40px_minmax(200px,1fr)_140px_100px_80px] gap-3 px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+        <div className="grid grid-cols-[40px_1fr_150px_100px_80px] gap-3 px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wide">
           <div className="flex items-center justify-center">
             <input 
               type="checkbox" 
@@ -56,14 +67,14 @@ function QuestionTable({
             />
           </div>
           <div>Question</div>
-          <div>User</div>
+          <div>Asker</div>
           <div className="text-right">Price</div>
           <div className="text-right">Time</div>
         </div>
       </div>
 
       {/* Table Body - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto w-full">
         {questions.map((question) => {
           const answered = isAnswered(question);
           const isActive = question.id === activeQuestionId;
@@ -74,7 +85,7 @@ function QuestionTable({
               key={question.id}
               onClick={() => onQuestionClick(question)}
               className={`
-                grid grid-cols-[40px_minmax(200px,1fr)_140px_100px_80px] gap-3 px-4 py-3
+                grid grid-cols-[40px_1fr_150px_100px_80px] gap-3 px-4 py-3
                 border-b border-gray-200 cursor-pointer
                 transition-all duration-150
                 hover:bg-indigo-50/50
@@ -128,15 +139,17 @@ function QuestionTable({
                 </div>
               </div>
 
-              {/* User */}
-              <div className="flex items-center gap-1.5 text-xs text-gray-600 truncate">
-                <User size={12} className="flex-shrink-0 text-gray-400" />
-                <span className="truncate">{question.user_name || 'Anonymous'}</span>
+              {/* Asker - Show name AND email if available */}
+              <div className="flex flex-col justify-center text-xs text-gray-600 truncate">
+                <span className="truncate font-medium">{question.user_name || 'Anonymous'}</span>
+                {question.user_email && (
+                  <span className="truncate text-gray-500">{question.user_email}</span>
+                )}
               </div>
 
               {/* Price */}
               <div className={`
-                text-right text-sm font-bold
+                flex items-center justify-end text-sm font-bold
                 ${answered ? 'text-gray-500' : 'text-green-700'}
               `}>
                 {formatCurrency(question.price_cents)}

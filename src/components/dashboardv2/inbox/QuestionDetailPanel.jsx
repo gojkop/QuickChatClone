@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MoreVertical, MessageSquare } from 'lucide-react';
+import { X, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MoreVertical, MessageSquare, Mail } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
@@ -27,13 +27,24 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
 
   // Helper to get question title
   const getQuestionTitle = (question) => {
-    if (question.question_text) return question.question_text;
-    if (question.video_url) return 'Video Question';
-    if (question.question_details) {
-      const firstLine = question.question_details.split('\n')[0];
+    // Priority 1: question_text
+    if (question.question_text?.trim()) {
+      return question.question_text;
+    }
+    
+    // Priority 2: First line of question_details
+    if (question.question_details?.trim()) {
+      const firstLine = question.question_details.split('\n')[0].trim();
       return firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
     }
-    return `Question from ${question.user_name || 'user'}`;
+    
+    // Priority 3: Just show it's a video question
+    if (question.video_url) {
+      return 'Video Question';
+    }
+    
+    // Last resort: Question ID
+    return `Question #${question.id}`;
   };
 
   if (!question) {
@@ -73,8 +84,8 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
 
   return (
     <div className={`
-      h-full flex flex-col bg-white
-      ${isMobile ? 'fixed inset-0 z-50' : 'border-l border-gray-200'}
+      h-full flex flex-col bg-white w-full
+      ${isMobile ? 'fixed inset-0 z-50' : ''}
     `}>
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-gray-200">
@@ -217,12 +228,17 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
             <div className="grid grid-cols-1 gap-3 text-sm">
               <div className="flex items-center gap-2 text-gray-600">
                 <User size={16} className="text-gray-400" />
-                <span className="font-medium">From:</span>
-                <span>{question.user_name || 'Anonymous'}</span>
-                {question.user_email && (
-                  <span className="text-gray-500">({question.user_email})</span>
-                )}
+                <span className="font-medium">Asker:</span>
+                <span className="font-semibold">{question.user_name || 'Anonymous'}</span>
               </div>
+
+              {question.user_email && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Mail size={16} className="text-gray-400" />
+                  <span className="font-medium">Email:</span>
+                  <span className="text-indigo-600">{question.user_email}</span>
+                </div>
+              )}
 
               <div className="flex items-center gap-2 text-gray-600">
                 <Calendar size={16} className="text-gray-400" />

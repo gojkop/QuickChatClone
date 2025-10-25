@@ -9,7 +9,7 @@ function InboxLayout({
   isMobile = false 
 }) {
   return (
-    <div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[minmax(320px,400px)_minmax(600px,1fr)]">
+    <div className="h-[calc(100vh-4rem)] w-full grid grid-cols-1 lg:grid-cols-[minmax(320px,400px)_1fr]">
       {/* Left Panel: Filters + Question List */}
       <div className={`
         flex flex-col border-r border-gray-200 bg-gray-50
@@ -33,7 +33,7 @@ function InboxLayout({
         </div>
       </div>
 
-      {/* Right Panel: Question Detail */}
+      {/* Right Panel: Question Detail - takes remaining space */}
       <div className={`
         overflow-hidden bg-white
         ${isMobile && !selectedQuestion ? 'hidden' : 'flex'}
