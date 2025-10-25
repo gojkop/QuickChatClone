@@ -258,23 +258,21 @@ function ExpertDashboardPage() {
   }, [tabFilteredQuestions, sortBy]);
 
   // ✅ Server-side tab counts
-  // Use pagination.total for accurate count of current tab
-  // For inactive tabs, we use cached counts from tabCounts state
+  // Use tabCounts for all badge numbers (updated when data is fetched)
   const { pendingCount, answeredCount, allCount, hiddenCount } = useMemo(() => {
     const safeAllQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-    const currentTabTotal = pagination?.total || 0;
 
-    // Update the count for the active tab with server data
+    // Use cached counts from tabCounts - these are updated in fetchQuestionsPage
     const counts = {
-      pendingCount: activeTab === 'pending' ? currentTabTotal : tabCounts.pending,
-      answeredCount: activeTab === 'answered' ? currentTabTotal : tabCounts.answered,
-      allCount: activeTab === 'all' ? currentTabTotal : tabCounts.all,
+      pendingCount: tabCounts.pending,
+      answeredCount: tabCounts.answered,
+      allCount: tabCounts.all,
       // Hidden count is calculated from current page questions (less accurate but acceptable)
       hiddenCount: safeAllQuestions.filter(q => q.hidden === true).length
     };
 
     return counts;
-  }, [allQuestions, pagination, activeTab, tabCounts]);
+  }, [allQuestions, tabCounts]);
 
   // ✅ Server-side pagination with filter_type parameter
   const fetchQuestionsPage = async (page = 1, tab = activeTab) => {
