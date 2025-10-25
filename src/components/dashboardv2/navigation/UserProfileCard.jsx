@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useProfile } from '@/context/ProfileContext'; // ← NEW
 
 function UserProfileCard({ collapsed = false, onClick }) {
-  const { user } = useAuth();
+  const { user } = useProfile();
   const { expertProfile } = useProfile(); // ← NEW: Get profile from context
   const [imageError, setImageError] = useState(false);
 

@@ -4,7 +4,7 @@ import { useProfile } from '@/context/ProfileContext'; // ← NEW
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 
 function WelcomeHero() {
-  const { user } = useAuth();
+  const { user } = useProfile();
   const { expertProfile } = useProfile(); // ← NEW: Get profile from context
   const [copied, setCopied] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
