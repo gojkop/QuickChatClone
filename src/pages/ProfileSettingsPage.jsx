@@ -679,7 +679,7 @@ function ProfileSettingsPage() {
                             step="1"
                             placeholder="75"
                             required={formData.tier1_enabled !== false}
-                            className="w-full pl-8 pr-3 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+                            className="w-full pl-10 pr-3 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
                           />
                         </div>
                       </div>
@@ -697,7 +697,7 @@ function ProfileSettingsPage() {
                             step="1"
                             placeholder="48"
                             required={formData.tier1_enabled !== false}
-                            className="w-full pl-3 pr-14 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+                            className="w-full pl-3 pr-16 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-medium">hours</span>
                         </div>
@@ -755,7 +755,7 @@ function ProfileSettingsPage() {
                             step="1"
                             placeholder="150"
                             required={formData.tier2_enabled}
-                            className="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+                            className="w-full pl-10 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
                           />
                         </div>
                       </div>
@@ -774,7 +774,7 @@ function ProfileSettingsPage() {
                             step="1"
                             placeholder="300"
                             required={formData.tier2_enabled}
-                            className="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+                            className="w-full pl-10 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
                           />
                         </div>
                       </div>
@@ -792,7 +792,7 @@ function ProfileSettingsPage() {
                             step="1"
                             placeholder="48"
                             required={formData.tier2_enabled}
-                            className="w-full pl-3 pr-10 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+                            className="w-full pl-3 pr-16 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-medium">hrs</span>
                         </div>
@@ -812,7 +812,7 @@ function ProfileSettingsPage() {
                           min="0"
                           step="1"
                           placeholder="100"
-                          className="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                          className="w-full pl-10 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                         />
                       </div>
                       <p className="text-xs text-gray-600 mt-1">Automatically decline offers below this amount</p>
@@ -1022,7 +1022,7 @@ function ProfileSettingsPage() {
                         value={currentSocials[key] || ''}
                         onChange={(e) => handleSocialChange(key, e.target.value)}
                         placeholder={placeholder}
-                        className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                        className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                         aria-label={key}
                       />
                     </div>
