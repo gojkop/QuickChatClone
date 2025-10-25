@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const XANO_BASE_URL = process.env.XANO_BASE_URL;
+  const XANO_PUBLIC_API_URL = process.env.XANO_PUBLIC_API_URL;
   const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
 
   try {
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
     // Fetch all pending offers from Xano
     const offersResponse = await fetch(
-      `${XANO_BASE_URL}/questions/pending-offers?x_api_key=${XANO_INTERNAL_API_KEY}`,
+      `${XANO_PUBLIC_API_URL}/questions/pending-offers?x_api_key=${XANO_INTERNAL_API_KEY}`,
       {
         method: 'GET',
         headers: {
@@ -133,7 +133,7 @@ export default async function handler(req, res) {
         // 2. Update question status in Xano to "offer_expired"
         try {
           const updateResponse = await fetch(
-            `${XANO_BASE_URL}/question/${questionId}/expire-offer?x_api_key=${XANO_INTERNAL_API_KEY}`,
+            `${XANO_PUBLIC_API_URL}/question/${questionId}/expire-offer?x_api_key=${XANO_INTERNAL_API_KEY}`,
             {
               method: 'POST',
               headers: {
