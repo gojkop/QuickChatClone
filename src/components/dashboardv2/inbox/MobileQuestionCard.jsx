@@ -22,14 +22,17 @@ function MobileQuestionCard({
   };
 
   const getQuestionTitle = (question) => {
-    // Priority 1: question_text
-    if (question.question_text?.trim()) {
-      return question.question_text;
+    // Try both field formats (old dashboard uses 'title', new uses 'question_text')
+    const titleText = question.title || question.question_text;
+    
+    if (titleText?.trim()) {
+      return titleText;
     }
     
-    // Priority 2: First line of question_details
-    if (question.question_details?.trim()) {
-      const firstLine = question.question_details.split('\n')[0].trim();
+    // Priority 2: First line of text/question_details
+    const detailsText = question.text || question.question_details;
+    if (detailsText?.trim()) {
+      const firstLine = detailsText.split('\n')[0].trim();
       return firstLine.length > 60 ? firstLine.substring(0, 60) + '...' : firstLine;
     }
     
@@ -59,6 +62,14 @@ function MobileQuestionCard({
     if (hasVideo) return <Video size={14} className="text-indigo-600 flex-shrink-0 mt-0.5" />;
     if (hasAudio) return <Mic size={14} className="text-indigo-600 flex-shrink-0 mt-0.5" />;
     return <MessageSquare size={14} className="text-indigo-600 flex-shrink-0 mt-0.5" />;
+  };
+
+  const getAskerName = (question) => {
+    return question.user_name || question.name || 'Anonymous';
+  };
+
+  const getAskerEmail = (question) => {
+    return question.user_email || question.email || '';
   };
 
   const isAnswered = question.status === 'closed' || question.status === 'answered' || question.answered_at;
@@ -105,12 +116,12 @@ function MobileQuestionCard({
           <div className="flex flex-col gap-0.5 mb-2 text-xs">
             <div className="flex items-center gap-1 text-gray-600">
               <User size={11} className="flex-shrink-0 text-gray-400" />
-              <span className="font-medium truncate">{question.user_name || 'Anonymous'}</span>
+              <span className="font-medium truncate">{getAskerName(question)}</span>
             </div>
-            {question.user_email && question.user_email.trim() && (
+            {getAskerEmail(question) && (
               <div className="flex items-center gap-1 text-gray-500 ml-[15px]">
                 <Mail size={10} className="flex-shrink-0" />
-                <span className="truncate text-[11px]">{question.user_email}</span>
+                <span className="truncate text-[11px]">{getAskerEmail(question)}</span>
               </div>
             )}
           </div>

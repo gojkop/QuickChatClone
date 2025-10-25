@@ -25,14 +25,18 @@ function QuestionTable({
   const isAnswered = (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
   const getQuestionTitle = (question) => {
-    // Priority 1: question_text (title field)
-    if (question.question_text?.trim()) {
-      return question.question_text;
+    // Try both field formats (old dashboard uses 'title', new uses 'question_text')
+    const titleText = question.title || question.question_text;
+    
+    // Priority 1: title/question_text
+    if (titleText?.trim()) {
+      return titleText;
     }
     
-    // Priority 2: First line of question_details
-    if (question.question_details?.trim()) {
-      const firstLine = question.question_details.split('\n')[0].trim();
+    // Priority 2: First line of text/question_details
+    const detailsText = question.text || question.question_details;
+    if (detailsText?.trim()) {
+      const firstLine = detailsText.split('\n')[0].trim();
       return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
     }
     
@@ -62,6 +66,14 @@ function QuestionTable({
     if (hasVideo) return <Video size={13} className="text-indigo-600 flex-shrink-0" />;
     if (hasAudio) return <Mic size={13} className="text-indigo-600 flex-shrink-0" />;
     return <MessageSquare size={13} className="text-indigo-600 flex-shrink-0" />;
+  };
+
+  const getAskerName = (question) => {
+    return question.user_name || question.name || 'Anonymous';
+  };
+
+  const getAskerEmail = (question) => {
+    return question.user_email || question.email || '';
   };
 
   const allSelected = questions.length > 0 && selectedQuestions.length === questions.length;
@@ -100,6 +112,8 @@ function QuestionTable({
           const isSelected = selectedQuestions.includes(question.id);
           const title = getQuestionTitle(question);
           const mediaIcon = getMediaIcon(question);
+          const askerName = getAskerName(question);
+          const askerEmail = getAskerEmail(question);
 
           return (
             <div
@@ -164,16 +178,16 @@ function QuestionTable({
               </div>
 
               {/* Asker - Name + Email */}
-              <div className="flex flex-col justify-center text-[11px] min-w-0" title={question.user_email || ''}>
+              <div className="flex flex-col justify-center text-[11px] min-w-0" title={askerEmail || ''}>
                 <div className="flex items-center gap-1 truncate">
                   <User size={10} className="flex-shrink-0 text-gray-400" />
                   <span className="truncate font-medium text-gray-700">
-                    {question.user_name || 'Anonymous'}
+                    {askerName}
                   </span>
                 </div>
-                {question.user_email && question.user_email.trim() && (
+                {askerEmail && (
                   <span className="truncate text-gray-500 ml-[14px]">
-                    {question.user_email}
+                    {askerEmail}
                   </span>
                 )}
               </div>

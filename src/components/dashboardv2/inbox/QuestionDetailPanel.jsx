@@ -47,16 +47,19 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
 
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
-  // Helper to get question title
+  // Helper to get question title (try both field formats)
   const getQuestionTitle = (question) => {
-    // Priority 1: question_text
-    if (question.question_text?.trim()) {
-      return question.question_text;
+    // Try both field formats (old dashboard uses 'title', new uses 'question_text')
+    const titleText = question.title || question.question_text;
+    
+    if (titleText?.trim()) {
+      return titleText;
     }
     
-    // Priority 2: First line of question_details
-    if (question.question_details?.trim()) {
-      const firstLine = question.question_details.split('\n')[0].trim();
+    // Priority 2: First line of text/question_details
+    const detailsText = question.text || question.question_details;
+    if (detailsText?.trim()) {
+      const firstLine = detailsText.split('\n')[0].trim();
       return firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
     }
     
@@ -71,6 +74,20 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
     
     // Last resort: Question ID
     return `Question #${question.id}`;
+  };
+
+  // Helper to get question details text
+  const getQuestionDetails = (question) => {
+    return question.text || question.question_details || '';
+  };
+
+  // Helper to get asker info
+  const getAskerName = (question) => {
+    return question.user_name || question.name || 'Anonymous';
+  };
+
+  const getAskerEmail = (question) => {
+    return question.user_email || question.email || '';
   };
 
   if (!question) {
@@ -106,6 +123,11 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
   };
 
   const isAnswered = question.status === 'closed' || question.status === 'answered' || question.answered_at;
+  
+  const questionTitle = getQuestionTitle(question);
+  const questionDetails = getQuestionDetails(question);
+  const askerName = getAskerName(question);
+  const askerEmail = getAskerEmail(question);
 
   return (
     <div className={`
@@ -127,7 +149,7 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                 </button>
               )}
               <h2 className="text-xl lg:text-2xl font-bold text-gray-900 line-clamp-2 flex-1">
-                {getQuestionTitle(question)}
+                {questionTitle}
               </h2>
               <span className="text-sm text-gray-400 font-mono flex-shrink-0">Q-{question.id}</span>
             </div>
@@ -177,18 +199,18 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
               <div className="flex items-center gap-2 text-gray-700">
                 <User size={15} className="text-gray-400 flex-shrink-0" />
                 <span className="font-medium min-w-[70px]">Asker:</span>
-                <span className="font-semibold">{question.user_name || 'Anonymous'}</span>
+                <span className="font-semibold">{askerName}</span>
               </div>
 
-              {question.user_email && question.user_email.trim() && (
+              {askerEmail && (
                 <div className="flex items-center gap-2 text-gray-700">
                   <Mail size={15} className="text-gray-400 flex-shrink-0" />
                   <span className="font-medium min-w-[70px]">Email:</span>
                   <a 
-                    href={`mailto:${question.user_email}`}
+                    href={`mailto:${askerEmail}`}
                     className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
                   >
-                    {question.user_email}
+                    {askerEmail}
                   </a>
                 </div>
               )}
@@ -215,23 +237,16 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
             </div>
           </div>
 
-          {/* Question Title (if different from header) */}
-          {question.question_text && question.question_text.trim() && (
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">{question.question_text}</h3>
-            </div>
-          )}
-
           {/* Written Context/Details */}
-          {question.question_details && question.question_details.trim() && (
+          {questionDetails && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <FileText size={16} className="text-indigo-600" />
-                <h3 className="text-sm font-semibold text-gray-900">Additional Context</h3>
+                <h3 className="text-sm font-semibold text-gray-900">Question Text</h3>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                  {question.question_details}
+                  {questionDetails}
                 </p>
               </div>
             </div>
