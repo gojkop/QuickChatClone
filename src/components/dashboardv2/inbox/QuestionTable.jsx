@@ -1,4 +1,3 @@
-📁 FILE 1: CREATE /src/components/dashboardv2/inbox/QuestionTable.jsx
 import React from 'react';
 import { MessageSquare, User, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
