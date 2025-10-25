@@ -415,21 +415,6 @@ function ProfileSettingsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with Completeness Badge */}
         <div className="mb-8">
-          <button
-            onClick={() => {
-              if (hasUnsavedChanges) {
-                if (window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
-                  navigate('/dashboard');
-                }
-              } else {
-                navigate('/dashboard');
-              }
-            }}
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Back to Dashboard
-          </button>
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-black text-gray-900 mb-2">Profile Settings</h1>
