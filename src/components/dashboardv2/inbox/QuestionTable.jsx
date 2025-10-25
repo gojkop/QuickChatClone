@@ -1,8 +1,17 @@
-import React from 'react';
-import { MessageSquare, User, Clock, CheckCircle, Video, Mic } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageSquare, User, Clock, CheckCircle, Video, Mic, GripVertical } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
+
+// Column width configuration (in pixels)
+const DEFAULT_COLUMN_WIDTHS = {
+  checkbox: 40,
+  question: 400,
+  asker: 220,
+  price: 100,
+  time: 90,
+};
 
 function QuestionTable({ 
   questions, 
@@ -12,6 +21,49 @@ function QuestionTable({
   onQuestionClick,
   onSelectAll
 }) {
+  const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
+  const [resizing, setResizing] = useState(null);
+  const tableRef = useRef(null);
+
+  useEffect(() => {
+    if (!resizing) return;
+
+    const handleMouseMove = (e) => {
+      const column = resizing.column;
+      const startX = resizing.startX;
+      const startWidth = resizing.startWidth;
+      const diff = e.clientX - startX;
+      const newWidth = Math.max(80, startWidth + diff); // Minimum 80px
+
+      setColumnWidths(prev => ({
+        ...prev,
+        [column]: newWidth
+      }));
+    };
+
+    const handleMouseUp = () => {
+      setResizing(null);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [resizing]);
+
+  const startResize = (column, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResizing({
+      column,
+      startX: e.clientX,
+      startWidth: columnWidths[column]
+    });
+  };
+
   const getRelativeTime = (timestamp) => {
     const now = Date.now() / 1000;
     const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
@@ -25,22 +77,18 @@ function QuestionTable({
   const isAnswered = (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
   const getQuestionTitle = (question) => {
-    // Try both field formats (old dashboard uses 'title', new uses 'question_text')
     const titleText = question.title || question.question_text;
     
-    // Priority 1: title/question_text
     if (titleText?.trim()) {
       return titleText;
     }
     
-    // Priority 2: First line of text/question_details
     const detailsText = question.text || question.question_details;
     if (detailsText?.trim()) {
       const firstLine = detailsText.split('\n')[0].trim();
       return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
     }
     
-    // Priority 3: Based on media type
     const hasVideo = question.recording_segments?.some(s => 
       s.metadata?.mode === 'video' || s.metadata?.mode === 'screen' || s.metadata?.mode === 'screen-camera'
     );
@@ -49,7 +97,6 @@ function QuestionTable({
     if (hasVideo) return 'Video Question';
     if (hasAudio) return 'Audio Question';
     
-    // Last resort: Show Q-ID only (will be displayed separately)
     return 'Question';
   };
 
@@ -79,12 +126,19 @@ function QuestionTable({
   const allSelected = questions.length > 0 && selectedQuestions.length === questions.length;
   const someSelected = selectedQuestions.length > 0 && !allSelected;
 
+  // Calculate grid template columns
+  const gridTemplateColumns = `${columnWidths.checkbox}px ${columnWidths.question}px ${columnWidths.asker}px ${columnWidths.price}px ${columnWidths.time}px`;
+
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full overflow-hidden" ref={tableRef}>
       {/* Table Header - Sticky */}
       <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
-        <div className="grid grid-cols-[32px_1fr_180px_90px_70px] gap-2 px-3 py-2.5 text-[11px] font-semibold text-gray-600 uppercase tracking-wide">
-          <div className="flex items-center justify-center">
+        <div 
+          className="grid gap-2 px-3 py-2.5 text-[11px] font-semibold text-gray-600 uppercase tracking-wide"
+          style={{ gridTemplateColumns }}
+        >
+          {/* Checkbox Column */}
+          <div className="flex items-center justify-center relative">
             <input 
               type="checkbox" 
               checked={allSelected}
@@ -97,9 +151,44 @@ function QuestionTable({
               className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
             />
           </div>
-          <div>Question</div>
-          <div>Asker</div>
-          <div className="text-right">Price</div>
+
+          {/* Question Column */}
+          <div className="relative flex items-center">
+            <span>Question</span>
+            <button
+              onMouseDown={(e) => startResize('question', e)}
+              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize"
+            >
+              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+            </button>
+          </div>
+
+          {/* Asker Column */}
+          <div className="relative flex items-center">
+            <span>Asker</span>
+            <button
+              onMouseDown={(e) => startResize('asker', e)}
+              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize"
+            >
+              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+            </button>
+          </div>
+
+          {/* Price Column */}
+          <div className="relative flex items-center justify-end">
+            <span>Price</span>
+            <button
+              onMouseDown={(e) => startResize('price', e)}
+              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize"
+            >
+              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+            </button>
+          </div>
+
+          {/* Time Column */}
           <div className="text-right">Time</div>
         </div>
       </div>
@@ -120,7 +209,7 @@ function QuestionTable({
               key={question.id}
               onClick={() => onQuestionClick(question)}
               className={`
-                grid grid-cols-[32px_1fr_180px_90px_70px] gap-2 px-3 py-2.5
+                grid gap-2 px-3 py-2.5
                 border-b border-gray-200 cursor-pointer
                 transition-all duration-150
                 hover:bg-indigo-50/50
@@ -128,6 +217,7 @@ function QuestionTable({
                 ${isSelected && !isActive ? 'bg-blue-50/50' : ''}
                 ${answered ? 'opacity-60' : ''}
               `}
+              style={{ gridTemplateColumns }}
             >
               {/* Checkbox */}
               <div className="flex items-center justify-center">
@@ -144,10 +234,10 @@ function QuestionTable({
               </div>
 
               {/* Question Title + Q-ID + Badges */}
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0 overflow-hidden">
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                   {mediaIcon}
-                  <div className="flex items-baseline gap-1.5 min-w-0">
+                  <div className="flex items-baseline gap-1.5 min-w-0 flex-1">
                     <span className={`
                       text-[13px] leading-tight truncate
                       ${answered ? 'text-gray-600' : 'text-gray-900 font-medium'}
@@ -178,7 +268,7 @@ function QuestionTable({
               </div>
 
               {/* Asker - Name + Email */}
-              <div className="flex flex-col justify-center text-[11px] min-w-0" title={askerEmail || ''}>
+              <div className="flex flex-col justify-center text-[11px] min-w-0 overflow-hidden" title={askerEmail || ''}>
                 <div className="flex items-center gap-1 truncate">
                   <User size={10} className="flex-shrink-0 text-gray-400" />
                   <span className="truncate font-medium text-gray-700">
@@ -194,21 +284,26 @@ function QuestionTable({
 
               {/* Price */}
               <div className={`
-                flex items-center justify-end text-[13px] font-bold
+                flex items-center justify-end text-[13px] font-bold overflow-hidden
                 ${answered ? 'text-gray-500' : 'text-green-700'}
               `}>
                 {formatCurrency(question.price_cents)}
               </div>
 
               {/* Time */}
-              <div className="flex items-center justify-end gap-1 text-[11px] text-gray-500">
-                <Clock size={11} className="text-gray-400" />
-                <span>{getRelativeTime(question.created_at)}</span>
+              <div className="flex items-center justify-end gap-1 text-[11px] text-gray-500 overflow-hidden">
+                <Clock size={11} className="text-gray-400 flex-shrink-0" />
+                <span className="truncate">{getRelativeTime(question.created_at)}</span>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Resize Overlay */}
+      {resizing && (
+        <div className="fixed inset-0 z-50 cursor-col-resize" />
+      )}
     </div>
   );
 }

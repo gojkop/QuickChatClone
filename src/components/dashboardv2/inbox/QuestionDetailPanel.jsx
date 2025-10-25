@@ -16,7 +16,6 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
   const getAttachments = () => {
     if (!question?.attachments) return [];
     if (Array.isArray(question.attachments)) return question.attachments;
-    // If it's a string (JSON), try to parse it
     if (typeof question.attachments === 'string') {
       try {
         const parsed = JSON.parse(question.attachments);
@@ -47,23 +46,20 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
 
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
-  // Helper to get question title (try both field formats)
+  // Helper to get question title
   const getQuestionTitle = (question) => {
-    // Try both field formats (old dashboard uses 'title', new uses 'question_text')
     const titleText = question.title || question.question_text;
     
     if (titleText?.trim()) {
       return titleText;
     }
     
-    // Priority 2: First line of text/question_details
     const detailsText = question.text || question.question_details;
     if (detailsText?.trim()) {
       const firstLine = detailsText.split('\n')[0].trim();
       return firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
     }
     
-    // Priority 3: Based on media type
     const hasVideo = mediaSegments.some(s => 
       s.metadata?.mode === 'video' || s.metadata?.mode === 'screen' || s.metadata?.mode === 'screen-camera'
     );
@@ -72,7 +68,6 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
     if (hasVideo) return 'Video Question';
     if (hasAudio) return 'Audio Question';
     
-    // Last resort: Question ID
     return `Question #${question.id}`;
   };
 
@@ -134,24 +129,24 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
       h-full flex flex-col bg-white w-full
       ${isMobile ? 'fixed inset-0 z-50' : ''}
     `}>
-      {/* Header */}
-      <div className="flex-shrink-0 p-4 lg:p-6 border-b border-gray-200 bg-white">
-        <div className="flex items-start justify-between gap-4">
+      {/* Header - Fixed */}
+      <div className="flex-shrink-0 p-3 lg:p-4 border-b border-gray-200 bg-white">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               {isMobile && (
                 <button
                   onClick={onClose}
-                  className="p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
                   aria-label="Close"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               )}
-              <h2 className="text-xl lg:text-2xl font-bold text-gray-900 line-clamp-2 flex-1">
+              <h2 className="text-lg lg:text-xl font-bold text-gray-900 line-clamp-2 flex-1">
                 {questionTitle}
               </h2>
-              <span className="text-sm text-gray-400 font-mono flex-shrink-0">Q-{question.id}</span>
+              <span className="text-xs text-gray-400 font-mono flex-shrink-0">Q-{question.id}</span>
             </div>
             
             <div className="flex items-center gap-2 flex-wrap">
@@ -160,16 +155,16 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                 <SLAIndicator question={question} showLabel={true} />
               )}
               {isAnswered && (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
                   ✓ Answered
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex-shrink-0 flex items-center gap-3">
+          <div className="flex-shrink-0 flex items-center gap-2">
             <div className="text-right">
-              <div className={`text-2xl lg:text-3xl font-black ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
+              <div className={`text-xl lg:text-2xl font-black ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
                 {formatCurrency(question.price_cents)}
               </div>
             </div>
@@ -177,35 +172,35 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
             {!isMobile && (
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Close detail"
                 aria-label="Close"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4 lg:p-6 space-y-6">
+      {/* Content - Scrollable with proper height */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="p-3 lg:p-4 space-y-4">
           
           {/* Question Metadata */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Question Details</h3>
-            <div className="grid grid-cols-1 gap-2.5 text-sm">
+          <div className="bg-gray-50 rounded-lg p-3">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">Question Details</h3>
+            <div className="grid grid-cols-1 gap-2 text-sm">
               <div className="flex items-center gap-2 text-gray-700">
-                <User size={15} className="text-gray-400 flex-shrink-0" />
-                <span className="font-medium min-w-[70px]">Asker:</span>
-                <span className="font-semibold">{askerName}</span>
+                <User size={14} className="text-gray-400 flex-shrink-0" />
+                <span className="font-medium min-w-[60px]">Asker:</span>
+                <span className="font-semibold truncate">{askerName}</span>
               </div>
 
               {askerEmail && (
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Mail size={15} className="text-gray-400 flex-shrink-0" />
-                  <span className="font-medium min-w-[70px]">Email:</span>
+                  <Mail size={14} className="text-gray-400 flex-shrink-0" />
+                  <span className="font-medium min-w-[60px]">Email:</span>
                   <a 
                     href={`mailto:${askerEmail}`}
                     className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
@@ -216,19 +211,19 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
               )}
 
               <div className="flex items-center gap-2 text-gray-700">
-                <Calendar size={15} className="text-gray-400 flex-shrink-0" />
-                <span className="font-medium min-w-[70px]">Asked:</span>
-                <span>{formatDate(question.created_at)}</span>
+                <Calendar size={14} className="text-gray-400 flex-shrink-0" />
+                <span className="font-medium min-w-[60px]">Asked:</span>
+                <span className="truncate">{formatDate(question.created_at)}</span>
                 <span className="text-gray-500 text-xs">({getRelativeTime(question.created_at)})</span>
               </div>
 
               {question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Clock size={15} className="text-gray-400 flex-shrink-0" />
-                  <span className="font-medium min-w-[70px]">SLA:</span>
-                  <span>{question.sla_hours_snapshot}h response time</span>
+                  <Clock size={14} className="text-gray-400 flex-shrink-0" />
+                  <span className="font-medium min-w-[60px]">SLA:</span>
+                  <span className="truncate">{question.sla_hours_snapshot}h response time</span>
                   {!isAnswered && (
-                    <span className="text-orange-600 font-medium text-xs">
+                    <span className="text-orange-600 font-medium text-xs truncate">
                       (expires {formatDate(question.created_at + question.sla_hours_snapshot * 3600)})
                     </span>
                   )}
@@ -240,23 +235,23 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
           {/* Written Context/Details */}
           {questionDetails && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <FileText size={16} className="text-indigo-600" />
+              <div className="flex items-center gap-2 mb-2">
+                <FileText size={15} className="text-indigo-600" />
                 <h3 className="text-sm font-semibold text-gray-900">Question Text</h3>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
                   {questionDetails}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Media Segments (Videos/Audio/Screen Recordings) */}
+          {/* Media Segments */}
           {mediaSegments && mediaSegments.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Video size={16} className="text-indigo-600" />
+              <div className="flex items-center gap-2 mb-2">
+                <Video size={15} className="text-indigo-600" />
                 <h3 className="text-sm font-semibold text-gray-900">
                   Media Recordings ({mediaSegments.length})
                 </h3>
@@ -284,7 +279,7 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                     return (
                       <div key={segment.id || index} className="bg-gray-900 rounded-lg overflow-hidden">
                         {mediaSegments.length > 1 && (
-                          <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
+                          <div className="px-3 py-2 bg-gray-800 flex items-center justify-between">
                             <span className="text-xs font-semibold text-gray-300">
                               Part {index + 1} - {modeLabel}
                             </span>
@@ -307,9 +302,9 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                             />
                           </div>
                         ) : isAudio && segment.url ? (
-                          <div className="p-4 flex flex-col items-center justify-center">
+                          <div className="p-3 flex flex-col items-center justify-center">
                             <div className="flex items-center gap-2 mb-2 text-gray-300">
-                              <Mic size={16} />
+                              <Mic size={15} />
                               <span className="text-sm font-medium">{modeLabel}</span>
                             </div>
                             <audio controls className="w-full max-w-md" preload="metadata">
@@ -328,13 +323,13 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
           {/* File Attachments */}
           {attachments.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <ImageIcon size={16} className="text-indigo-600" />
+              <div className="flex items-center gap-2 mb-2">
+                <ImageIcon size={15} className="text-indigo-600" />
                 <h3 className="text-sm font-semibold text-gray-900">
                   File Attachments ({attachments.length})
                 </h3>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {attachments.map((attachment, index) => (
                   <div
                     key={index}
@@ -344,11 +339,11 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                       <img
                         src={attachment.url}
                         alt={attachment.name || `Attachment ${index + 1}`}
-                        className="w-full h-32 object-cover"
+                        className="w-full h-24 object-cover"
                       />
                     ) : (
-                      <div className="w-full h-32 bg-gray-100 flex items-center justify-center">
-                        <FileText size={32} className="text-gray-400" />
+                      <div className="w-full h-24 bg-gray-100 flex items-center justify-center">
+                        <FileText size={28} className="text-gray-400" />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -360,7 +355,7 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                         download
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <Download size={20} className="text-gray-900" />
+                        <Download size={18} className="text-gray-900" />
                       </a>
                     </div>
                     {attachment.name && (
@@ -376,13 +371,13 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
 
           {/* Answer (if answered) */}
           {isAnswered && question.answer_text && question.answer_text.trim() && (
-            <div className="pt-6 border-t border-gray-200">
-              <div className="flex items-center gap-2 mb-3">
-                <MessageSquare size={16} className="text-green-600" />
+            <div className="pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageSquare size={15} className="text-green-600" />
                 <h3 className="text-sm font-semibold text-gray-900">Your Answer</h3>
               </div>
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-gray-700 whitespace-pre-wrap text-sm">
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-gray-700 whitespace-pre-wrap text-sm break-words">
                   {question.answer_text}
                 </p>
                 {question.answered_at && (
@@ -393,28 +388,31 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
               </div>
             </div>
           )}
+
+          {/* Bottom padding for mobile */}
+          <div className="h-20 lg:h-4"></div>
         </div>
       </div>
 
-      {/* Footer Actions */}
-      <div className="flex-shrink-0 p-4 lg:p-6 border-t border-gray-200 bg-gray-50">
+      {/* Footer Actions - Fixed */}
+      <div className="flex-shrink-0 p-3 lg:p-4 border-t border-gray-200 bg-gray-50">
         {!isAnswered ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={onAnswer}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
             >
-              <Play size={20} />
+              <Play size={18} />
               <span>Answer This Question</span>
             </button>
 
             <div className="relative">
               <button
                 onClick={() => setShowActions(!showActions)}
-                className="px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-3 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 aria-label="More actions"
               >
-                <MoreVertical size={20} />
+                <MoreVertical size={18} />
               </button>
 
               {showActions && (
@@ -423,11 +421,11 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                     className="fixed inset-0 z-10" 
                     onClick={() => setShowActions(false)}
                   />
-                  <div className="absolute bottom-full right-0 mb-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-20">
-                    <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors rounded-t-lg">
+                  <div className="absolute bottom-full right-0 mb-2 w-44 bg-white border border-gray-200 rounded-lg shadow-xl z-20">
+                    <button className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors rounded-t-lg">
                       Hide Question
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors text-red-600 rounded-b-lg">
+                    <button className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors text-red-600 rounded-b-lg">
                       Decline & Refund
                     </button>
                   </div>
@@ -436,12 +434,12 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
             </div>
           </div>
         ) : (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <CheckCircle size={16} className="text-green-600" />
+              <CheckCircle size={15} className="text-green-600" />
               <span>This question has been answered</span>
             </div>
-            <button className="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors">
+            <button className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors">
               View Public Answer
             </button>
           </div>
