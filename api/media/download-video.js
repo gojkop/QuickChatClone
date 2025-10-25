@@ -6,26 +6,81 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { url } = req.query;
+  const { url, video_id } = req.query;
 
-  if (!url) {
-    return res.status(400).json({ error: 'Missing url parameter' });
+  // Handle both url and video_id parameters
+  let downloadUrl = url;
+
+  if (!downloadUrl && video_id) {
+    // For Cloudflare Stream videos, get the default download link
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const apiToken = process.env.CLOUDFLARE_STREAM_API_TOKEN;
+
+    try {
+      // Get video details from Cloudflare Stream API
+      const videoInfoResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${video_id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,
+          },
+        }
+      );
+
+      if (!videoInfoResponse.ok) {
+        console.error('Failed to fetch video info from Cloudflare:', await videoInfoResponse.text());
+        return res.status(424).json({ error: 'Failed to get video info from Cloudflare Stream' });
+      }
+
+      const videoInfo = await videoInfoResponse.json();
+
+      // Check if download is available
+      if (!videoInfo.result?.meta?.downloadedFrom) {
+        // Try to get the download URL - Cloudflare provides the original uploaded file
+        // Use the dash manifest URL as fallback
+        downloadUrl = `https://customer-${accountId}.cloudflarestream.com/${video_id}/downloads/default.mp4`;
+      } else {
+        downloadUrl = videoInfo.result.meta.downloadedFrom;
+      }
+    } catch (error) {
+      console.error('Error fetching Cloudflare Stream video info:', error);
+      return res.status(424).json({ error: 'Failed to retrieve video download URL' });
+    }
   }
 
-  // Validate that this is actually a Cloudflare Stream URL to prevent abuse
-  if (!url.includes('cloudflarestream.com')) {
-    return res.status(400).json({ error: 'Invalid URL - must be Cloudflare Stream URL' });
+  if (!downloadUrl) {
+    return res.status(400).json({ error: 'Missing url or video_id parameter' });
+  }
+
+  // Validate that this is actually a Cloudflare URL to prevent abuse
+  if (!downloadUrl.includes('cloudflare')) {
+    return res.status(400).json({ error: 'Invalid URL - must be Cloudflare URL' });
   }
 
   try {
-    // Fetch the video file from Cloudflare Stream
-    const response = await fetch(url);
+    console.log('📥 Downloading video from:', downloadUrl);
+
+    // Fetch the video file
+    const response = await fetch(downloadUrl);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch video: ${response.status}`);
+      console.error(`Failed to fetch video: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+
+      // Check if this is a "downloads not enabled" error
+      if (response.status === 404 || response.status === 403) {
+        return res.status(424).json({
+          error: 'Video downloads not available',
+          message: 'This video was uploaded without download enabled. Videos can only be viewed in the browser.',
+          details: `Status: ${response.status}`
+        });
+      }
+
+      throw new Error(`Failed to fetch video: ${response.status} - ${errorText}`);
     }
 
-    // Get the content type from the Cloudflare response
+    // Get the content type from the response
     const contentType = response.headers.get('content-type') || 'video/mp4';
 
     // Stream the video file to the client with proper headers
@@ -33,12 +88,14 @@ export default async function handler(req, res) {
     res.setHeader('Content-Disposition', 'attachment'); // Force download
     res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
 
-    // Pipe the Cloudflare response to the client
+    // Pipe the response to the client
     const buffer = await response.arrayBuffer();
     res.send(Buffer.from(buffer));
 
+    console.log('✅ Video download completed');
+
   } catch (error) {
     console.error('Error proxying video download:', error);
-    res.status(500).json({ error: 'Failed to download video file' });
+    res.status(500).json({ error: 'Failed to download video file', details: error.message });
   }
 }

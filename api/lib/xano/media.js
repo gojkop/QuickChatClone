@@ -8,30 +8,26 @@ const XANO_BASE_URL = process.env.XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.x
 
 /**
  * Create media_asset record in Xano
- * ⭐ UPDATED: Now supports segmentIndex and metadata
+ * ⭐ UPDATED: Removed owner_type/owner_id (now using FK-only architecture)
  */
 export async function createMediaAsset({
-  ownerType,
-  ownerId,
   provider,
   assetId,
   duration = 0,
   status = 'processing',
   url,
-  segmentIndex = 0,  // ⭐ NEW
-  metadata = null,    // ⭐ NEW
+  segmentIndex = 0,
+  metadata = null,
 }) {
   try {
     const payload = {
-      owner_type: ownerType,
-      owner_id: ownerId,
       provider,
       asset_id: assetId,
       duration_sec: duration,
       status,
       url,
-      segment_index: segmentIndex,  // ⭐ NEW
-      metadata: metadata ? JSON.stringify(metadata) : null,  // ⭐ NEW
+      segment_index: segmentIndex,
+      metadata: metadata ? JSON.stringify(metadata) : null,
     };
 
     console.log('Creating media_asset in Xano:', payload);
@@ -125,27 +121,13 @@ export async function getMediaAssetsBatch(ids) {
 }
 
 /**
- * Get all media_assets for an owner
- * ⭐ NEW: Fetch all segments for a question
+ * @deprecated This function is obsolete with FK-only architecture
+ * Media assets are now accessed via question.media_asset_id or answer.media_asset_id
+ * Use getMediaAsset(id) or getMediaAssetsBatch([ids]) instead
  */
 export async function getMediaAssetsByOwner(ownerType, ownerId) {
-  try {
-    const response = await fetch(
-      `${XANO_BASE_URL}/media_asset?owner_type=${ownerType}&owner_id=${ownerId}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Failed to get media_assets: ${response.status}`);
-    }
-
-    const assets = await response.json();
-    
-    // Sort by segment_index
-    return assets.sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0));
-  } catch (error) {
-    console.error('Error getting media_assets:', error);
-    throw error;
-  }
+  console.warn('⚠️  getMediaAssetsByOwner is deprecated - use FK-based lookups instead');
+  throw new Error('getMediaAssetsByOwner is deprecated - owner_id/owner_type columns have been removed');
 }
 
 /**

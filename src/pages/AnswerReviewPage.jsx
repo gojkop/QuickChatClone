@@ -84,7 +84,47 @@ function AnswerReviewPage() {
             }
             return [];
           })(),
-          media_assets: rawData.media_asset || [],
+          // Extract segments from metadata for multi-segment recordings (same as answer logic)
+          media_assets: (() => {
+            if (!rawData.media_asset || rawData.media_asset.length === 0) {
+              return [];
+            }
+
+            const mainAsset = rawData.media_asset[0];
+
+            // Parse metadata if it's a JSON string
+            let metadata = mainAsset.metadata;
+            if (typeof metadata === 'string') {
+              try {
+                metadata = JSON.parse(metadata);
+              } catch (e) {
+                console.warn('Failed to parse question media metadata:', e);
+                metadata = {};
+              }
+            }
+
+            // Check if this is a multi-segment recording
+            if (metadata?.type === 'multi-segment' && metadata?.segments) {
+              return metadata.segments.map(segment => ({
+                id: segment.uid,
+                url: segment.playback_url,
+                duration_sec: segment.duration,
+                segment_index: segment.segment_index,
+                metadata: {
+                  mode: segment.mode
+                }
+              }));
+            }
+
+            // Otherwise return the main asset as a single item
+            return [{
+              id: mainAsset.id,
+              url: mainAsset.url,
+              duration_sec: mainAsset.duration_sec,
+              segment_index: 0,
+              metadata: metadata
+            }];
+          })(),
           // Answer is an object, not an array - extract segments from metadata
           // IMPORTANT: answer might be null/undefined when no answer exists yet
           answer: (rawData.answer && typeof rawData.answer === 'object' && rawData.answer.id) ? {
@@ -97,12 +137,23 @@ function AnswerReviewPage() {
               if (!rawData.media_asset_answer || rawData.media_asset_answer.length === 0) {
                 return [];
               }
-              
+
               const mainAsset = rawData.media_asset_answer[0];
-              
+
+              // Parse metadata if it's a JSON string
+              let metadata = mainAsset.metadata;
+              if (typeof metadata === 'string') {
+                try {
+                  metadata = JSON.parse(metadata);
+                } catch (e) {
+                  console.warn('Failed to parse answer media metadata:', e);
+                  metadata = {};
+                }
+              }
+
               // Check if this is a multi-segment recording
-              if (mainAsset.metadata?.type === 'multi-segment' && mainAsset.metadata?.segments) {
-                return mainAsset.metadata.segments.map(segment => ({
+              if (metadata?.type === 'multi-segment' && metadata?.segments) {
+                return metadata.segments.map(segment => ({
                   id: segment.uid,
                   url: segment.playback_url,
                   duration_sec: segment.duration,
@@ -112,14 +163,14 @@ function AnswerReviewPage() {
                   }
                 }));
               }
-              
+
               // Otherwise return the main asset as a single item
               return [{
                 id: mainAsset.id,
                 url: mainAsset.url,
                 duration_sec: mainAsset.duration_sec,
                 segment_index: 0,
-                metadata: mainAsset.metadata
+                metadata: metadata
               }];
             })(),
             // Parse attachments if they exist (could be on answer object or empty)
@@ -156,6 +207,18 @@ function AnswerReviewPage() {
         }
         
         console.log('✅ Transformed data:', transformedData);
+        console.log('🎥 Question media details:', {
+          rawMediaAsset: rawData.media_asset?.[0],
+          transformedMediaAssets: transformedData.media_assets,
+          mediaCount: transformedData.media_assets?.length || 0,
+          isMultiSegment: rawData.media_asset?.[0]?.metadata?.type === 'multi-segment',
+          segmentCount: rawData.media_asset?.[0]?.metadata?.segment_count
+        });
+        console.log('📎 Question attachments details:', {
+          rawAttachments: rawData.attachments,
+          transformedAttachments: transformedData.attachments,
+          attachmentCount: transformedData.attachments?.length || 0
+        });
         console.log('🎥 Answer details:', {
           hasAnswer: !!transformedData.answer,
           answerExists: !!(rawData.answer && rawData.answer.id),
@@ -168,7 +231,13 @@ function AnswerReviewPage() {
         });
         console.log('🔗 Expert handle:', transformedData.expert_profile?.handle);
         setData(transformedData);
-        
+
+        // Auto-expand question section if there are attachments or media
+        if ((transformedData.media_assets?.length > 0) || (transformedData.attachments?.length > 0)) {
+          setShowQuestion(true);
+          console.log('✅ Auto-expanding question section (has media or attachments)');
+        }
+
       } catch (err) {
         console.error('❌ Error fetching review data:', err);
         setError(err.message);
@@ -527,32 +596,18 @@ function AnswerReviewPage() {
               <p className="text-sm text-gray-600 truncate">{data.expert_profile?.professional_title || 'Expert'}</p>
             </div>
             
-            {/* Action Buttons */}
+            {/* Action Button */}
             {expertHandle && (
-              <div className="flex flex-col gap-2 flex-shrink-0">
-                <a
-                  href={`/ask?expert=${expertHandle}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border border-indigo-200 hover:border-indigo-300 transition-all"
-                  title="Ask another question"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <span className="hidden sm:inline whitespace-nowrap">Ask Another</span>
-                  <span className="sm:hidden">Ask</span>
-                </a>
-                <a
-                  href={`/u/${expertHandle}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 border border-gray-200 hover:border-indigo-200 transition-all"
-                  title="View expert profile"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="hidden sm:inline whitespace-nowrap">View Profile</span>
-                  <span className="sm:hidden">Profile</span>
-                </a>
-              </div>
+              <a
+                href={`/u/${expertHandle}`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 border border-indigo-600 hover:border-indigo-700 transition-all shadow-sm hover:shadow-md flex-shrink-0"
+                title="View expert profile or ask another question"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="whitespace-nowrap">View Profile</span>
+              </a>
             )}
           </div>
         </div>
@@ -834,9 +889,9 @@ function AnswerReviewPage() {
             </div>
             
             <div className="flex items-center gap-2">
-              {!showQuestion && data.media_assets?.length > 0 && (
+              {!showQuestion && (data.media_assets?.length > 0 || data.attachments?.length > 0) && (
                 <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium hidden sm:inline">
-                  {data.media_assets.length} {data.media_assets.length === 1 ? 'part' : 'parts'}
+                  {(data.media_assets?.length || 0) + (data.attachments?.length || 0)} {((data.media_assets?.length || 0) + (data.attachments?.length || 0)) === 1 ? 'item' : 'items'}
                 </span>
               )}
               <svg 
@@ -864,23 +919,27 @@ function AnswerReviewPage() {
                 </div>
               )}
 
-              {data.media_assets && data.media_assets.length > 0 && (
+              {/* Question Attachments - Combined Media & Files */}
+              {((data.media_assets && data.media_assets.length > 0) || (data.attachments && data.attachments.length > 0)) && (
                 <div className="space-y-3">
-                  {data.media_assets
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Question Attachments</p>
+
+                  {/* Media (videos/audio) */}
+                  {data.media_assets && data.media_assets.length > 0 && data.media_assets
                     .sort((a, b) => a.segment_index - b.segment_index)
                     .map((segment, arrayIndex) => {
-                      const isVideo = segment.metadata?.mode === 'video' || 
-                                      segment.metadata?.mode === 'screen' || 
+                      const isVideo = segment.metadata?.mode === 'video' ||
+                                      segment.metadata?.mode === 'screen' ||
                                       segment.metadata?.mode === 'screen-camera' ||
                                       segment.url?.includes('cloudflarestream.com');
-                      const isAudio = segment.metadata?.mode === 'audio' || 
-                                      segment.url?.includes('.webm') || 
+                      const isAudio = segment.metadata?.mode === 'audio' ||
+                                      segment.url?.includes('.webm') ||
                                       !isVideo;
-                      
+
                       const videoId = isVideo ? getStreamVideoId(segment.url) : null;
                       const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
                       const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-                      
+
                       return (
                         <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
                           {data.media_assets.length > 1 && (
@@ -893,7 +952,7 @@ function AnswerReviewPage() {
                               </span>
                             </div>
                           )}
-                          
+
                           {isVideo && videoId && customerCode ? (
                             <div className="w-full aspect-video bg-black">
                               <iframe
@@ -914,13 +973,9 @@ function AnswerReviewPage() {
                         </div>
                       );
                     })}
-                </div>
-              )}
 
-              {data.attachments && data.attachments.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Attachments</p>
-                  {data.attachments.map((file, index) => (
+                  {/* File Attachments */}
+                  {data.attachments && data.attachments.length > 0 && data.attachments.map((file, index) => (
                     <a
                       key={index}
                       href={file.url}

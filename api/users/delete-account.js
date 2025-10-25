@@ -79,11 +79,12 @@ export default async function handler(req, res) {
     const userType = expertProfileId ? 'expert' : 'asker';
     console.log('User Type:', userType);
 
-    // Step 1: Delete all media_asset records owned by user's answers
+    // Step 1: Delete all media_asset records from user's answers (FK-based)
     console.log('Step 1: Deleting answer media assets...');
     try {
-      const answerMediaResponse = await fetch(
-        `${process.env.XANO_BASE_URL}/media_asset?owner_type=answer`,
+      // Fetch user's answers to get media_asset_ids
+      const answersResponse = await fetch(
+        `${process.env.XANO_BASE_URL}/me/answers`,
         {
           method: 'GET',
           headers: {
@@ -93,26 +94,28 @@ export default async function handler(req, res) {
         }
       );
 
-      if (answerMediaResponse.ok) {
-        const answerMedia = await answerMediaResponse.json();
-        console.log(`Found ${answerMedia.length} answer media assets`);
+      if (answersResponse.ok) {
+        const answers = await answersResponse.json();
+        console.log(`Found ${answers.length} answers`);
 
-        // Delete each media asset
-        for (const media of answerMedia) {
-          try {
-            await fetch(
-              `${process.env.XANO_BASE_URL}/media_asset/${media.id}`,
-              {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-              }
-            );
-            console.log(`✅ Deleted media asset ${media.id}`);
-          } catch (err) {
-            console.error(`❌ Failed to delete media asset ${media.id}:`, err.message);
+        // Delete media assets referenced by answers
+        for (const answer of answers) {
+          if (answer.media_asset_id) {
+            try {
+              await fetch(
+                `${process.env.XANO_BASE_URL}/media_asset/${answer.media_asset_id}`,
+                {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+              console.log(`✅ Deleted answer media asset ${answer.media_asset_id}`);
+            } catch (err) {
+              console.error(`❌ Failed to delete answer media ${answer.media_asset_id}:`, err.message);
+            }
           }
         }
       }

@@ -162,15 +162,12 @@ function AskQuestionPage() {
         
         try {
           const response = await apiClient.post('/media_asset', {
-            owner_type: 'question',
-            owner_id: 0, // Placeholder - Xano will update this
             provider: 'cloudflare_stream',
             asset_id: firstSegment.uid,
             duration_sec: Math.round(totalDuration),
             status: 'ready',
             url: firstSegment.playbackUrl,
             metadata: JSON.stringify(metadata),
-            segment_index: null, // Parent record
           });
 
           mediaAssetId = response.data?.id;

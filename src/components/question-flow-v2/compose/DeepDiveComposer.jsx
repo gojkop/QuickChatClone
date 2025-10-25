@@ -65,16 +65,47 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
   const handleMessageChange = (value) => {
     setAskerMessage(value);
     if (onUpdate) {
-      onUpdate({ 
-        tierSpecific: { 
-          ...data?.tierSpecific, 
-          askerMessage: value 
-        } 
+      onUpdate({
+        tierSpecific: {
+          ...data?.tierSpecific,
+          askerMessage: value
+        }
       });
     }
   };
 
+  const handleContinue = () => {
+    if (!title.trim() || title.length < 5) {
+      alert('Please enter a question title (at least 5 characters)');
+      return;
+    }
+
+    if (!proposedPrice || parseFloat(proposedPrice) <= 0) {
+      alert('Please enter a valid offer amount');
+      return;
+    }
+
+    const questionData = {
+      title,
+      text,
+      recordings: segmentUpload.getSuccessfulSegments(),
+      attachments: attachmentUpload?.uploads?.filter(u => u.result).map(u => u.result) || [],
+      tierSpecific: {
+        proposedPrice,
+        askerMessage
+      }
+    };
+
+    onUpdate(questionData);
+    onContinue();
+  };
+
   const hasRecordings = segmentUpload.segments && segmentUpload.segments.length > 0;
+  const canContinue = title.trim().length >= 5
+    && proposedPrice
+    && parseFloat(proposedPrice) > 0
+    && !segmentUpload.hasUploading
+    && !(attachmentUpload?.uploads?.some(u => u.uploading) || false);
 
   return (
     <div className="space-y-6 pb-4 sm:pb-6">
@@ -164,8 +195,8 @@ function DeepDiveComposer({ expert, tierConfig, data, onUpdate, onContinue }) {
       {/* Desktop-only Continue Button */}
       <div className="hidden sm:block pt-6 border-t mt-6">
         <button
-          onClick={onContinue}
-          disabled={!title.trim() || title.length < 5 || !proposedPrice || parseFloat(proposedPrice) <= 0}
+          onClick={handleContinue}
+          disabled={!canContinue}
           className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Continue to Review →

@@ -53,8 +53,6 @@ export async function submitQuestion(payload) {
   let mediaAsset = null;
   if (streamData) {
     mediaAsset = await createMediaAsset({
-      ownerType: 'question',
-      ownerId: question.id,
       provider: 'cloudflare_stream',
       assetId: streamData.uid,
       duration: streamData.duration,

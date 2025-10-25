@@ -1,8 +1,10 @@
 # QuickChat Media Upload System - Complete Documentation
 
-**Version**: 3.0 - Production Ready  
-**Last Updated**: October 7, 2025  
+**Version**: 4.0 - FK-Only Architecture
+**Last Updated**: October 24, 2025
 **Status**: ✅ All Systems Working
+
+**⚠️ BREAKING CHANGE:** Version 4.0 removes `owner_type` and `owner_id` from media_asset table. See migration guide below.
 
 ---
 
@@ -794,6 +796,39 @@ Status: 415 Unsupported Media Type
 
 ## Migration Guide
 
+### v4.0 Migration (Owner ID Removal)
+
+**See complete migration documentation:** [`MEDIA-ASSET-MIGRATION-OCT-2025.md`](./MEDIA-ASSET-MIGRATION-OCT-2025.md)
+
+**Quick Summary:**
+- Removed `owner_type` and `owner_id` columns from media_asset table
+- Questions/Answers now reference media via FK only (`media_asset_id`)
+- All code updated to use FK-based lookups
+
+**Required Changes:**
+```javascript
+// Before (v3.0)
+await apiClient.post('/media_asset', {
+  owner_type: 'question',
+  owner_id: questionId,
+  provider: 'cloudflare_stream',
+  // ...
+});
+
+// After (v4.0)
+await apiClient.post('/media_asset', {
+  provider: 'cloudflare_stream',
+  asset_id: uid,
+  duration_sec: duration,
+  status: 'ready',
+  url: playbackUrl,
+  metadata: JSON.stringify(metadata),
+});
+
+// Then link via FK
+question.media_asset_id = mediaAssetId;
+```
+
 ### From Old System to Current
 
 If upgrading from base64 upload system:
@@ -1051,7 +1086,15 @@ git push origin main
 
 ## Version History
 
-### v3.0 (October 7, 2025) - Current
+### v4.0 (October 24, 2025) - Current
+- ✅ **BREAKING:** Removed owner_id/owner_type from media_asset table
+- ✅ Migrated to FK-only architecture
+- ✅ Updated all frontend/backend code
+- ✅ Enhanced expert dashboard with download functionality
+- ✅ Improved media display with segment transformation
+- See [`MEDIA-ASSET-MIGRATION-OCT-2025.md`](./MEDIA-ASSET-MIGRATION-OCT-2025.md)
+
+### v3.0 (October 7, 2025)
 - ✅ Fixed R2 public URL configuration
 - ✅ Added audio upload to R2
 - ✅ Fixed attachment 401 errors
