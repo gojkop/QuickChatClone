@@ -67,20 +67,20 @@ function InboxLayout({
       className="w-full h-[calc(100vh-4rem)] flex flex-col lg:flex-row overflow-hidden relative"
     >
       {/* Left Panel: Filters + Question List */}
-      <div 
+      <div
         className={`
-          flex flex-col border-r border-gray-200 bg-gray-50
+          flex flex-col border-r border-gray-200 bg-gray-50 overflow-hidden
           ${(isMobileView || isTablet) && selectedQuestion ? 'hidden' : 'flex'}
-          ${isDesktop ? 'h-full' : 'h-full'}
         `}
         style={{
           width: isDesktop ? `${splitRatio}%` : '100%',
           minWidth: isDesktop ? '320px' : undefined,
           maxWidth: isDesktop ? '70%' : undefined,
+          height: '100%',
         }}
       >
-        {/* Filters - Scrollable */}
-        <div className="flex-shrink-0 overflow-y-auto border-b border-gray-200 bg-white max-h-[40vh] lg:max-h-[50vh]">
+        {/* Filters - Scrollable with reduced max height */}
+        <div className="flex-shrink-0 overflow-y-auto border-b border-gray-200 bg-white max-h-[30vh] lg:max-h-[35vh]">
           {filters}
         </div>
 
@@ -91,14 +91,14 @@ function InboxLayout({
           </div>
         )}
 
-        {/* Question List - Scrollable with proper overflow containment */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        {/* Question List - Takes remaining space, scrolls internally */}
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {questionList}
         </div>
 
         {/* Pagination - Fixed at bottom */}
         {pagination && (
-          <div className="flex-shrink-0 border-t border-gray-200 bg-white z-10">
+          <div className="flex-shrink-0 bg-white relative z-20">
             {pagination}
           </div>
         )}
