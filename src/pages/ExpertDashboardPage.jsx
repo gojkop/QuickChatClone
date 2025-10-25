@@ -188,24 +188,6 @@ function ExpertDashboardPage() {
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
 
-  // Helper function to calculate remaining time in seconds for sorting
-  const getRemainingTime = (question) => {
-    if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
-      return Infinity;
-    }
-
-    const now = Date.now() / 1000;
-    const createdAtSeconds = question.created_at > 4102444800 
-      ? question.created_at / 1000 
-      : question.created_at;
-    
-    const elapsed = now - createdAtSeconds;
-    const slaSeconds = question.sla_hours_snapshot * 3600;
-    const remaining = slaSeconds - elapsed;
-    
-    return remaining;
-  };
-
   // ✅ Server-side filtering: Questions are already filtered by tab on server
   // Only apply showHidden toggle for 'all' tab (client-side)
   const tabFilteredQuestions = useMemo(() => {
@@ -220,42 +202,11 @@ function ExpertDashboardPage() {
     return safeQuestions;
   }, [allQuestions, activeTab, showHidden]);
 
-  // ✅ OPTIMIZED: Client-side sorting with useMemo - NO API CALLS when sort changes
+  // ✅ Server-side sorting: Questions are already sorted from server
+  // No client-side sorting needed - just use the filtered questions as-is
   const sortedQuestions = useMemo(() => {
-    if (!tabFilteredQuestions || !Array.isArray(tabFilteredQuestions)) {
-      return [];
-    }
-    
-    const sorted = [...tabFilteredQuestions];
-    
-    switch (sortBy) {
-      case 'time_left':
-        return sorted.sort((a, b) => {
-          const isPendingA = a.status === 'paid' && !a.answered_at;
-          const isPendingB = b.status === 'paid' && !b.answered_at;
-          
-          if (isPendingA && isPendingB) {
-            return getRemainingTime(a) - getRemainingTime(b);
-          }
-          return 0;
-        });
-      
-      case 'price_high':
-        return sorted.sort((a, b) => (b.price_cents || 0) - (a.price_cents || 0));
-      
-      case 'price_low':
-        return sorted.sort((a, b) => (a.price_cents || 0) - (b.price_cents || 0));
-      
-      case 'date_new':
-        return sorted.sort((a, b) => b.created_at - a.created_at);
-      
-      case 'date_old':
-        return sorted.sort((a, b) => a.created_at - b.created_at);
-      
-      default:
-        return sorted;
-    }
-  }, [tabFilteredQuestions, sortBy]);
+    return tabFilteredQuestions;
+  }, [tabFilteredQuestions]);
 
   // ✅ Server-side tab counts
   // Use tabCounts for all badge numbers (updated when data is fetched)
@@ -274,15 +225,16 @@ function ExpertDashboardPage() {
     return counts;
   }, [allQuestions, tabCounts]);
 
-  // ✅ Server-side pagination with filter_type parameter
-  const fetchQuestionsPage = async (page = 1, tab = activeTab) => {
+  // ✅ Server-side pagination with filter_type and sort_by parameters
+  const fetchQuestionsPage = async (page = 1, tab = activeTab, sort = sortBy) => {
     try {
       const params = new URLSearchParams();
       params.append('page', page);
       params.append('per_page', 10);
       params.append('filter_type', tab); // Use filter_type for proper server-side filtering
+      params.append('sort_by', sort); // Use sort_by for server-side sorting
 
-      console.log(`⚡ Fetching questions page ${page} for tab '${tab}'...`);
+      console.log(`⚡ Fetching questions page ${page} for tab '${tab}' with sort '${sort}'...`);
       const response = await apiClient.get(`/me/questions?${params.toString()}`);
 
       // Handle response format
@@ -328,7 +280,7 @@ function ExpertDashboardPage() {
   // Refresh questions (reset to page 1)
   const refreshQuestions = async () => {
     setCurrentPage(1);
-    await fetchQuestionsPage(1);
+    await fetchQuestionsPage(1, activeTab, sortBy);
   };
   
   // First question celebration
@@ -364,10 +316,10 @@ function ExpertDashboardPage() {
         // Fetch profile, initial questions, and all tab counts in PARALLEL
         const [profileResponse, pendingResult, answeredResult, allResult] = await Promise.all([
           apiClient.get('/me/profile'),
-          fetchQuestionsPage(1, 'pending'), // Fetch first page of pending questions
+          fetchQuestionsPage(1, 'pending', 'time_left'), // Fetch first page of pending questions with default sort
           // Fetch counts for other tabs (just metadata, no question data needed)
-          apiClient.get('/me/questions?filter_type=answered&page=1&per_page=1'),
-          apiClient.get('/me/questions?filter_type=all&page=1&per_page=1')
+          apiClient.get('/me/questions?filter_type=answered&page=1&per_page=1&sort_by=time_left'),
+          apiClient.get('/me/questions?filter_type=all&page=1&per_page=1&sort_by=time_left')
         ]);
 
         // Update tab counts from the parallel fetches
@@ -446,14 +398,14 @@ function ExpertDashboardPage() {
     }
   }, [location.hash, allQuestions, navigate]);
 
-  // ⚡ Server-side pagination: Fetch page 1 when tab changes
+  // ⚡ Server-side pagination: Fetch page 1 when tab or sort changes
   useEffect(() => {
     if (!isLoading) {
       setCurrentPage(1);
-      fetchQuestionsPage(1, activeTab); // Pass activeTab to fetch correct questions
+      fetchQuestionsPage(1, activeTab, sortBy); // Pass activeTab and sortBy to fetch correct questions
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, sortBy]);
 
   const handleFirstQuestionAnswer = () => {
     if (firstQuestion) {
@@ -628,7 +580,7 @@ function ExpertDashboardPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-      await fetchQuestionsPage(newPage, activeTab); // Pass current tab
+      await fetchQuestionsPage(newPage, activeTab, sortBy); // Pass current tab and sort
     } catch (err) {
       console.error('Failed to fetch page:', err);
       // Optionally show error message to user

@@ -32,8 +32,15 @@ The Expert Dashboard (`/expert/dashboard`) was experiencing severe performance i
   - `filter_type=pending` - Returns only unanswered paid questions
   - `filter_type=answered` - Returns only answered questions
   - `filter_type=all` - Returns all questions (except pending offers)
+- **Added `sort_by` parameter** for server-side sorting:
+  - `sort_by=time_left` - Sort by remaining SLA time (urgent first)
+  - `sort_by=price_high` - Sort by price (high to low)
+  - `sort_by=price_low` - Sort by price (low to high)
+  - `sort_by=date_new` - Sort by created_at (newest first)
+  - `sort_by=date_old` - Sort by created_at (oldest first)
 - **Removed N+1 query**: Eliminated the `foreach` loop that fetched media assets
 - **Server-side filtering using lambda**: Filters questions before pagination for accurate counts
+- **Server-side sorting using lambda**: Sorts ALL questions before pagination (not just current page)
 - **New response format**:
 ```json
 {
@@ -210,6 +217,7 @@ const { data: analytics, isLoading } = useAnalyticsQuery({
 6. **Server-side analytics**: Pre-calculated metrics eliminate need to fetch 1000+ questions
 7. **Dedicated count endpoint**: Navbar gets count without fetching question data
 8. **Consistent page size**: All pages use 10 items for uniform performance
+9. **Server-side sorting**: Sorts ALL questions at database level, not just current page (enables sorting across 200+ questions)
 
 ## Testing
 
@@ -357,8 +365,8 @@ The old expert dashboard has been completely converted to server-side pagination
 7. Pagination shows "Page 1 of 12"
 
 **Remaining Limitations**:
-- ⚠️ Sorting (by time/price/date) only works on the current 10 questions per page
 - ⚠️ Hidden toggle (on "All" tab) works only on current page
+- ✅ Sorting (by time/price/date) works across ALL questions (server-side)
 - These are acceptable trade-offs for performance
 
 **Performance Impact**:
