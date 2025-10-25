@@ -43,7 +43,7 @@ function RecentActivity({ questions = [] }) {
           <div
             key={question.id}
             className="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
-            onClick={() => navigate(`/expert-v2/inbox#question-${question.id}`)}
+            onClick={() => navigate(`/dashboard/inbox#question-${question.id}`)}
           >
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="flex-1 min-w-0">
@@ -71,7 +71,7 @@ function RecentActivity({ questions = [] }) {
       </div>
 
       <button
-        onClick={() => navigate('/expert-v2/inbox')}
+        onClick={() => navigate('/dashboard/inbox')}
         className="mt-4 w-full py-2.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors"
       >
         View All Questions →

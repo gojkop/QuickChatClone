@@ -25,7 +25,7 @@ function ActionRequired({ urgentCount = 0, pendingOffersCount = 0 }) {
                   {urgentCount} Question{urgentCount > 1 ? 's' : ''} Expiring Soon (&lt;12h)
                 </div>
                 <button
-                  onClick={() => navigate('/expert-v2/inbox')}
+                  onClick={() => navigate('/dashboard/inbox')}
                   className="text-sm font-semibold text-red-700 hover:text-red-800 inline-flex items-center gap-1 group"
                 >
                   View Urgent Questions
@@ -45,7 +45,7 @@ function ActionRequired({ urgentCount = 0, pendingOffersCount = 0 }) {
                   {pendingOffersCount} Deep Dive Offer{pendingOffersCount > 1 ? 's' : ''} Pending Review
                 </div>
                 <button
-                  onClick={() => navigate('/expert-v2/inbox')}
+                  onClick={() => navigate('/dashboard/inbox')}
                   className="text-sm font-semibold text-amber-700 hover:text-amber-800 inline-flex items-center gap-1 group"
                 >
                   Review Offers

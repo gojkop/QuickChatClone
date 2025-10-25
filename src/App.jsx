@@ -63,9 +63,11 @@ const AppLayout = () => {
   // Also hide on pages with their own isolated design
   const isPublicProfile = location.pathname.startsWith('/u/');
   const isAnswerReview = location.pathname.startsWith('/r/');
+  const isDashboardV2 = location.pathname.startsWith('/dashboard');
+
   
   // Combined condition for hiding navbar/footer
-  const shouldHideLayout = hideLayout || isPublicProfile || isAnswerReview;
+  const shouldHideLayout = hideLayout || isPublicProfile || isAnswerReview || isDashboardV2;
 
   return (
     <div className="App bg-canvas min-h-screen flex flex-col">

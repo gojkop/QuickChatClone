@@ -38,20 +38,20 @@ function DashboardSidebar({ collapsed = false, pendingCount = 0 }) {
         {/* Main Section */}
         <NavSection title="Main" collapsed={collapsed}>
           <NavItem
-            to="/expert-v2"
+            to="/dashboard"
             icon={<Home size={20} />}
             label="Dashboard"
             collapsed={collapsed}
           />
           <NavItem
-            to="/expert-v2/inbox"
+            to="/dashboard/inbox"
             icon={<Inbox size={20} />}
             label="Inbox"
             badge={pendingCount > 0 ? { count: pendingCount, variant: 'danger', pulse: true } : null}
             collapsed={collapsed}
           />
           <NavItem
-            to="/expert-v2/analytics"
+            to="/dashboard/analytics"
             icon={<BarChart3 size={20} />}
             label="Analytics"
             collapsed={collapsed}
@@ -68,7 +68,7 @@ function DashboardSidebar({ collapsed = false, pendingCount = 0 }) {
             collapsed={collapsed}
           />
           <NavItem
-            to="/expert-v2/payments"
+            to="/dashboard/payments"
             icon={<DollarSign size={20} />}
             label="Payments"
             collapsed={collapsed}

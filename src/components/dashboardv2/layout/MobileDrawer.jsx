@@ -50,20 +50,20 @@ function MobileDrawer({ isOpen, onClose, pendingCount = 0 }) {
         <div className="flex-1 overflow-y-auto py-4 px-3">
           <NavSection title="Main">
             <NavItem
-              to="/expert-v2"
+              to="/dashboard"
               icon={<Home size={20} />}
               label="Dashboard"
               onClick={onClose}
             />
             <NavItem
-              to="/expert-v2/inbox"
+              to="/dashboard/inbox"
               icon={<Inbox size={20} />}
               label="Inbox"
               badge={pendingCount > 0 ? { count: pendingCount, variant: 'danger', pulse: true } : null}
               onClick={onClose}
             />
             <NavItem
-              to="/expert-v2/analytics"
+              to="/dashboard/analytics"
               icon={<BarChart3 size={20} />}
               label="Analytics"
               onClick={onClose}
@@ -79,7 +79,7 @@ function MobileDrawer({ isOpen, onClose, pendingCount = 0 }) {
               onClick={onClose}
             />
             <NavItem
-              to="/expert-v2/payments"
+              to="/dashboard/payments"
               icon={<DollarSign size={20} />}
               label="Payments"
               onClick={onClose}
