@@ -13,15 +13,14 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
   const navigate = useNavigate();
 
   return (
-<aside className={`
-  fixed top-0 right-0 h-16 bg-white border-b border-gray-200 z-30
-  transition-all duration-300 h-screen fixed left-0 top-0 z-40
-  ${collapsed ? 'w-20' : 'w-64'}
-`}>
-
+    <aside className={`
+      hidden lg:flex flex-col bg-white border-r border-gray-200
+      transition-all duration-300 h-screen fixed left-0 top-0 z-40
+      ${collapsed ? 'w-16' : 'w-60'}
+    `}>
       {/* Logo */}
       <div className={`
-        h-16 border-b border-gray-200 flex items-center
+        h-16 border-b border-gray-200 flex items-center flex-shrink-0
         ${collapsed ? 'justify-center px-3' : 'px-5'}
       `}>
         <img
@@ -33,7 +32,7 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
         />
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - Takes remaining space */}
       <nav className="flex-1 overflow-y-auto py-4 px-3">
         <NavSection title="Main" collapsed={collapsed}>
           <NavItem
@@ -95,32 +94,35 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
         </NavSection>
       </nav>
 
-      {/* User Profile Footer */}
-      <div className="p-3 border-t border-gray-200">
+      {/* User Profile Footer - Sticks to bottom */}
+      <div className="flex-shrink-0 p-3 border-t border-gray-200">
         <UserProfileCard
           collapsed={collapsed}
           onClick={() => navigate('/dashboard/account')}
         />
       </div>
 
-      {/* Collapse Toggle */}
-      <button
-        onClick={onToggle}
-        className={`
-          absolute -right-3 top-20 w-6 h-6 rounded-full bg-white border-2 border-gray-200
-          flex items-center justify-center hover:bg-gray-50 transition-colors z-10
-        `}
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      >
-        <svg 
-          className={`w-3 h-3 text-gray-600 transition-transform ${collapsed ? 'rotate-180' : ''}`}
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
+      {/* Collapse Toggle - Only show when onToggle is provided */}
+      {onToggle && (
+        <button
+          onClick={onToggle}
+          className={`
+            absolute -right-3 top-20 w-6 h-6 rounded-full bg-white border-2 border-gray-200
+            flex items-center justify-center hover:bg-gray-50 transition-colors z-10 shadow-md
+          `}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+          <svg 
+            className={`w-3 h-3 text-gray-600 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
     </aside>
   );
 }
