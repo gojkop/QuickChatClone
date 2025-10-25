@@ -6,11 +6,12 @@ import InboxLayout from '@/components/dashboardv2/inbox/InboxLayout';
 import QuestionFilters from '@/components/dashboardv2/inbox/QuestionFilters';
 import QuickActions from '@/components/dashboardv2/inbox/QuickActions';
 import QuestionListView from '@/components/dashboardv2/inbox/QuestionListView';
+import QuestionDetailPanel from '@/components/dashboardv2/inbox/QuestionDetailPanel';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
 import { useInbox } from '@/hooks/dashboardv2/useInbox';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 
-// Import the QuestionDetailModal from old dashboard (reuse it)
+// Import modal for answering (reuse from old dashboard)
 import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
 
 function ExpertInboxPage() {
@@ -21,7 +22,8 @@ function ExpertInboxPage() {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
-  const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [showAnswerModal, setShowAnswerModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const metrics = useMetrics(questions);
   const {
@@ -35,6 +37,17 @@ function ExpertInboxPage() {
     totalCount,
     filteredCount,
   } = useInbox(questions);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Load data
   useEffect(() => {
@@ -57,7 +70,7 @@ function ExpertInboxPage() {
     loadData();
   }, []);
 
-  // Handle URL hash for question details
+  // Handle URL hash for question selection
   useEffect(() => {
     const hash = location.hash;
     
@@ -69,11 +82,15 @@ function ExpertInboxPage() {
         
         if (question) {
           setSelectedQuestion(question);
-          setShowQuestionModal(true);
         }
       }
+    } else if (hash === '') {
+      // Auto-select first question on desktop
+      if (!isMobile && filteredQuestions.length > 0 && !selectedQuestion) {
+        setSelectedQuestion(filteredQuestions[0]);
+      }
     }
-  }, [location.hash, questions]);
+  }, [location.hash, questions, isMobile, filteredQuestions]);
 
   // Refresh questions
   const refreshQuestions = async () => {
@@ -102,24 +119,7 @@ function ExpertInboxPage() {
     }
   };
 
-  const handleBulkUnhide = async () => {
-    if (selectedQuestions.length === 0) return;
-    
-    try {
-      await Promise.all(
-        selectedQuestions.map(id => 
-          apiClient.post(`/expert/questions/${id}/unhide`)
-        )
-      );
-      await refreshQuestions();
-      clearSelection();
-    } catch (err) {
-      console.error('Failed to unhide questions:', err);
-    }
-  };
-
   const handleExport = () => {
-    // Simple CSV export
     const selectedQs = questions.filter(q => selectedQuestions.includes(q.id));
     
     const csv = [
@@ -145,16 +145,22 @@ function ExpertInboxPage() {
 
   const handleQuestionClick = (question) => {
     setSelectedQuestion(question);
-    setShowQuestionModal(true);
     navigate(`/dashboard/inbox#question-${question.id}`, { replace: false });
   };
 
-  const handleCloseModal = () => {
-    setShowQuestionModal(false);
+  const handleCloseDetail = () => {
     setSelectedQuestion(null);
     if (location.hash.startsWith('#question-')) {
       navigate('/dashboard/inbox', { replace: true });
     }
+  };
+
+  const handleAnswerQuestion = () => {
+    setShowAnswerModal(true);
+  };
+
+  const handleCloseAnswerModal = () => {
+    setShowAnswerModal(false);
   };
 
   const handleAvailabilityChange = (newStatus) => {
@@ -175,57 +181,69 @@ function ExpertInboxPage() {
   }
 
   return (
-    <DashboardLayout
-      breadcrumbs={[
-        { label: 'Dashboard', path: '/dashboard' },
-        { label: 'Inbox' }
-      ]}
-      pendingCount={metrics.pendingCount}
-      isAvailable={profile?.accepting_questions ?? true}
-      onAvailabilityChange={handleAvailabilityChange}
-    >
-      <InboxLayout
-        filters={
-          <QuestionFilters
-            filters={filters}
-            onFilterChange={updateFilter}
-            filteredCount={filteredCount}
-            totalCount={totalCount}
-          />
-        }
-        quickActions={
-          <QuickActions
-            selectedCount={selectedQuestions.length}
-            totalVisible={filteredCount}
-            onSelectAll={selectAll}
-            onClearSelection={clearSelection}
-            onBulkHide={handleBulkHide}
-            onBulkUnhide={handleBulkUnhide}
-            onExport={handleExport}
-          />
-        }
+    <>
+      <DashboardLayout
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/dashboard' },
+          { label: 'Inbox' }
+        ]}
+        pendingCount={metrics.pendingCount}
+        isAvailable={profile?.accepting_questions ?? true}
+        onAvailabilityChange={handleAvailabilityChange}
       >
-        <QuestionListView
-          questions={filteredQuestions}
-          selectedQuestions={selectedQuestions}
-          onSelectQuestion={toggleSelectQuestion}
-          onQuestionClick={handleQuestionClick}
+        <InboxLayout
+          selectedQuestion={selectedQuestion}
+          isMobile={isMobile}
+          filters={
+            <QuestionFilters
+              filters={filters}
+              onFilterChange={updateFilter}
+              filteredCount={filteredCount}
+              totalCount={totalCount}
+            />
+          }
+          quickActions={
+            <QuickActions
+              selectedCount={selectedQuestions.length}
+              onClearSelection={clearSelection}
+              onBulkHide={handleBulkHide}
+              onExport={handleExport}
+            />
+          }
+          questionList={
+            <QuestionListView
+              questions={filteredQuestions}
+              selectedQuestions={selectedQuestions}
+              activeQuestionId={selectedQuestion?.id}
+              onSelectQuestion={toggleSelectQuestion}
+              onQuestionClick={handleQuestionClick}
+            />
+          }
+          questionDetail={
+            <QuestionDetailPanel
+              question={selectedQuestion}
+              onClose={handleCloseDetail}
+              onAnswer={handleAnswerQuestion}
+              isMobile={isMobile}
+            />
+          }
         />
-      </InboxLayout>
+      </DashboardLayout>
 
-      {/* Question Detail Modal - Reuse from old dashboard */}
-      {profile && (
+      {/* Answer Modal - Reuse from old dashboard */}
+      {profile && selectedQuestion && (
         <QuestionDetailModal
-          isOpen={showQuestionModal}
-          onClose={handleCloseModal}
+          isOpen={showAnswerModal}
+          onClose={handleCloseAnswerModal}
           question={selectedQuestion}
           userId={profile?.user?.id || profile?.id}
           onAnswerSubmitted={() => {
             refreshQuestions();
+            handleCloseAnswerModal();
           }}
         />
       )}
-    </DashboardLayout>
+    </>
   );
 }
 

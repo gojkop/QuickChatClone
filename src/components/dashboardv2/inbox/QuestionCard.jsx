@@ -1,10 +1,16 @@
 import React from 'react';
-import { MessageSquare, User, Calendar, MoreVertical } from 'lucide-react';
+import { User, Calendar, CheckCircle } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 
-function QuestionCard({ question, isSelected, onSelect, onClick }) {
+function QuestionCard({ 
+  question, 
+  isSelected, 
+  isActive = false,
+  onSelect, 
+  onClick 
+}) {
   const getRelativeTime = (timestamp) => {
     const now = Date.now() / 1000;
     const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
@@ -20,18 +26,20 @@ function QuestionCard({ question, isSelected, onSelect, onClick }) {
   return (
     <div
       className={`
-        relative p-4 border rounded-lg transition-all cursor-pointer
-        ${isSelected 
-          ? 'border-indigo-300 bg-indigo-50 shadow-sm' 
+        relative p-3 border rounded-lg transition-all cursor-pointer
+        ${isActive 
+          ? 'border-indigo-500 bg-indigo-50 shadow-md ring-2 ring-indigo-200' 
+          : isSelected
+          ? 'border-indigo-300 bg-indigo-50'
           : isAnswered
-          ? 'border-gray-200 bg-gray-50 hover:border-gray-300'
-          : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-sm'
+          ? 'border-gray-200 bg-white hover:border-gray-300'
+          : 'border-gray-200 bg-white hover:border-indigo-200 hover:shadow-sm'
         }
       `}
       onClick={onClick}
     >
       {/* Selection Checkbox */}
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-3 left-3 z-10">
         <input
           type="checkbox"
           checked={isSelected}
@@ -44,66 +52,41 @@ function QuestionCard({ question, isSelected, onSelect, onClick }) {
       </div>
 
       {/* Main Content */}
-      <div className="ml-8">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex-1 min-w-0">
-            <h3 className={`text-sm font-semibold mb-1 line-clamp-2 ${isAnswered ? 'text-gray-600' : 'text-gray-900'}`}>
-              {question.question_text || 'Untitled Question'}
-            </h3>
-            
-            {/* Badges */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <PriorityBadge question={question} />
-              {!isAnswered && <SLAIndicator question={question} showLabel={true} />}
-              {isAnswered && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-semibold">
-                  ✓ Answered
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Price */}
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <span className={`text-lg font-bold ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
-              {formatCurrency(question.price_cents)}
-            </span>
-          </div>
+      <div className="ml-7">
+        {/* Title & Price */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className={`text-sm font-semibold line-clamp-2 flex-1 ${isAnswered ? 'text-gray-600' : 'text-gray-900'}`}>
+            {question.question_text || 'Untitled Question'}
+          </h3>
+          <span className={`text-base font-bold flex-shrink-0 ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
+            {formatCurrency(question.price_cents)}
+          </span>
         </div>
 
-        {/* Question Preview */}
-        {question.question_details && (
-          <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-            {question.question_details}
-          </p>
-        )}
-
-        {/* Footer */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center gap-4">
-            {question.user_name && (
-              <span className="flex items-center gap-1">
-                <User size={12} />
-                {question.user_name}
-              </span>
-            )}
-            <span className="flex items-center gap-1">
-              <Calendar size={12} />
-              {getRelativeTime(question.created_at)}
+        {/* Badges */}
+        <div className="flex items-center gap-2 flex-wrap mb-2">
+          <PriorityBadge question={question} />
+          {!isAnswered && <SLAIndicator question={question} showLabel={false} />}
+          {isAnswered && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-semibold">
+              <CheckCircle size={12} />
+              Answered
             </span>
-          </div>
+          )}
+        </div>
 
-          {/* More Actions */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              // Handle more actions
-            }}
-            className="p-1 rounded hover:bg-gray-200 transition-colors"
-          >
-            <MoreVertical size={14} />
-          </button>
+        {/* Footer Meta */}
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          {question.user_name && (
+            <span className="flex items-center gap-1 truncate">
+              <User size={12} className="flex-shrink-0" />
+              <span className="truncate">{question.user_name}</span>
+            </span>
+          )}
+          <span className="flex items-center gap-1 flex-shrink-0">
+            <Calendar size={12} />
+            {getRelativeTime(question.created_at)}
+          </span>
         </div>
       </div>
     </div>

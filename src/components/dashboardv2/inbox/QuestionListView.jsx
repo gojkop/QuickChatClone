@@ -6,26 +6,30 @@ import { Inbox } from 'lucide-react';
 function QuestionListView({ 
   questions, 
   selectedQuestions,
+  activeQuestionId,
   onSelectQuestion,
   onQuestionClick 
 }) {
   if (questions.length === 0) {
     return (
-      <EmptyState
-        icon={Inbox}
-        title="No questions found"
-        description="Try adjusting your filters or check back later for new questions."
-      />
+      <div className="py-8">
+        <EmptyState
+          icon={Inbox}
+          title="No questions found"
+          description="Try adjusting your filters or check back later for new questions."
+        />
+      </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {questions.map((question) => (
         <QuestionCard
           key={question.id}
           question={question}
           isSelected={selectedQuestions.includes(question.id)}
+          isActive={question.id === activeQuestionId}
           onSelect={onSelectQuestion}
           onClick={() => onQuestionClick(question)}
         />
