@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import apiClient from '@/api';
+import { useProfile } from '@/context/ProfileContext'; // ← NEW
 import { Wifi, WifiOff } from 'lucide-react';
 
 function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
+  const { updateAvailability, isUpdatingAvailability } = useProfile(); // ← NEW
   const [isAvailable, setIsAvailable] = useState(initialAvailable ?? true);
-  const [isToggling, setIsToggling] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+
+  // ← NEW: Sync with prop changes
+  useEffect(() => {
+    if (initialAvailable !== undefined) {
+      setIsAvailable(initialAvailable);
+    }
+  }, [initialAvailable]);
 
   useEffect(() => {
     if (showFeedback) {
@@ -15,26 +22,22 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
   }, [showFeedback]);
 
   const handleToggle = async () => {
-    if (isToggling) return;
+    if (isUpdatingAvailability) return; // ← MODIFIED: Use mutation loading state
 
     const newStatus = !isAvailable;
-    setIsToggling(true);
 
     try {
-      await apiClient.post('/expert/profile/availability', {
-        accepting_questions: newStatus
-      });
+      // ← MODIFIED: Use ProfileContext mutation
+      updateAvailability(newStatus);
+      
+      // Optimistic update
       setIsAvailable(newStatus);
       onToggle?.(newStatus);
       setShowFeedback(true);
     } catch (error) {
       console.error('Failed to update availability:', error);
-      // Optimistically update anyway
-      setIsAvailable(newStatus);
-      onToggle?.(newStatus);
-      setShowFeedback(true);
-    } finally {
-      setIsToggling(false);
+      // Revert on error
+      setIsAvailable(!newStatus);
     }
   };
 
@@ -49,7 +52,7 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
         )}
         <button
           onClick={handleToggle}
-          disabled={isToggling}
+          disabled={isUpdatingAvailability}
           className={`
             relative inline-flex h-4 w-7 items-center rounded-full flex-shrink-0
             transition-all duration-300
@@ -57,7 +60,7 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
               ? 'bg-green-500'
               : 'bg-gray-300'
             }
-            ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+            ${isUpdatingAvailability ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           `}
           title={isAvailable ? 'Turn off availability' : 'Turn on availability'}
           aria-label={isAvailable ? 'Turn off availability' : 'Turn on availability'}
@@ -97,7 +100,7 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
         {/* Toggle Switch - Premium */}
         <button
           onClick={handleToggle}
-          disabled={isToggling}
+          disabled={isUpdatingAvailability}
           className={`
             relative inline-flex h-5 w-9 items-center rounded-full
             transition-all duration-300 focus-ring
@@ -105,7 +108,7 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 shadow-success'
               : 'bg-gray-300'
             }
-            ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
+            ${isUpdatingAvailability ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
           `}
           title={isAvailable ? 'Turn off availability' : 'Turn on availability'}
           aria-label={isAvailable ? 'Turn off availability' : 'Turn on availability'}

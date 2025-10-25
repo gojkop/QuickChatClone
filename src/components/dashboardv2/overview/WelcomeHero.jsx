@@ -1,26 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import apiClient from '@/api';
+import { useProfile } from '@/context/ProfileContext'; // ← NEW
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 
 function WelcomeHero() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState(null);
+  const { expertProfile } = useProfile(); // ← NEW: Get profile from context
   const [copied, setCopied] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await apiClient.get('/me/profile');
-        setProfile(response.data.expert_profile || {});
-      } catch (error) {
-        console.error('Failed to fetch profile:', error);
-      }
-    };
-
-    fetchProfile();
-  }, []);
+  // ← REMOVED: useEffect that fetches profile - no longer needed!
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -30,8 +19,8 @@ function WelcomeHero() {
   };
 
   const handleCopyProfileLink = () => {
-    if (profile?.handle) {
-      const url = `${window.location.origin}/u/${profile.handle}`;
+    if (expertProfile?.handle) {
+      const url = `${window.location.origin}/u/${expertProfile.handle}`;
       navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -47,12 +36,12 @@ function WelcomeHero() {
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
             {getGreeting()}, {userName}! 👋
           </h1>
-          {profile?.handle && profile.public && (
+          {expertProfile?.handle && expertProfile.public && (
             <>
               {/* Desktop version - connected buttons */}
               <div className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg">
                 <a 
-                  href={`/u/${profile.handle}`}
+                  href={`/u/${expertProfile.handle}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 hover:opacity-80 transition"
@@ -62,7 +51,7 @@ function WelcomeHero() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                   <span className="text-xs font-semibold text-indigo-600 max-w-[100px] truncate">
-                    /u/{profile.handle}
+                    /u/{expertProfile.handle}
                   </span>
                 </a>
                 <div className="w-px h-4 bg-indigo-200 mx-1"></div>
@@ -126,13 +115,13 @@ function WelcomeHero() {
         </p>
       </div>
 
-      {profile && (
+      {expertProfile && (
         <QRCodeModal
           isOpen={isQRModalOpen}
           onClose={() => setIsQRModalOpen(false)}
-          profileUrl={`${window.location.origin}/u/${profile.handle}`}
+          profileUrl={`${window.location.origin}/u/${expertProfile.handle}`}
           expertName={user?.name || 'Expert'}
-          handle={profile.handle}
+          handle={expertProfile.handle}
         />
       )}
     </>

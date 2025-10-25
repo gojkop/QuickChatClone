@@ -12,8 +12,18 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  // reduce caching surprises
-  config.headers["Cache-Control"] = "no-store";
+  
+  // ← MODIFIED: Smart caching strategy
+  // Cache profile and questions for short periods (React Query handles this better)
+  // But we still set cache headers for browser-level caching
+  if (config.url === '/me/profile' || config.url === '/me/questions') {
+    // Allow caching for 30 seconds, but must revalidate
+    config.headers["Cache-Control"] = "max-age=30, must-revalidate";
+  } else {
+    // Don't cache other requests
+    config.headers["Cache-Control"] = "no-store";
+  }
+  
   return config;
 });
 

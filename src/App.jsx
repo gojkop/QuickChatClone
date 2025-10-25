@@ -1,9 +1,11 @@
 // client/src/App.jsx
 import React from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { CookieConsentProvider } from './context/CookieConsentContext';  // ← FIRST
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // ← NEW
+import { CookieConsentProvider } from './context/CookieConsentContext';
 import { AuthProvider } from './context/AuthContext';
 import { FeatureFlagsProvider } from './context/FeatureFlagsContext';
+import { ProfileProvider } from './context/ProfileContext'; // ← NEW
 
 // Import Page Components
 import HomePage from '@/pages/HomePage';
@@ -19,7 +21,6 @@ import TermsPage from '@/pages/TermsPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import InvitePage from '@/pages/InvitePage';
 import InviteSentPage from '@/pages/InviteSentPage';
-// import AskQuestionPage from '@/pages/AskQuestionPage';
 import QuestionSentPage from '@/pages/QuestionSentPage';
 import AnswerReviewPage from '@/pages/AnswerReviewPage';
 import FeedbackWidget from '@/components/common/FeedbackWidget';
@@ -34,11 +35,22 @@ import ExpertAnalyticsPage from '@/pages/ExpertAnalyticsPage';
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
 import AccountSettingsPage from '@/pages/AccountSettingsPage';
 
-
 // Import Common Components
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
+
+// ← NEW: Create React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 60 seconds
+      cacheTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false, // Don't refetch on window focus by default
+      retry: 1, // Retry failed requests once
+    },
+  },
+});
 
 const AppLayout = () => {
   const location = useLocation();
@@ -53,13 +65,13 @@ const AppLayout = () => {
   ].includes(location.pathname);
 
   const RedirectWithParams = () => {
-  const location = useLocation();
-  return <Navigate to={{
-    pathname: '/ask-v2',
-    search: location.search,
-    hash: location.hash
-  }} replace />;
-};
+    const location = useLocation();
+    return <Navigate to={{
+      pathname: '/ask-v2',
+      search: location.search,
+      hash: location.hash
+    }} replace />;
+  };
 
   
   // Also hide on pages with their own isolated design
@@ -99,7 +111,7 @@ const AppLayout = () => {
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
           <Route path="/auth/magic-link" element={<MagicLinkCallbackPage />} />
 
-          {/* Protected Routes - Expert Dashboard and Marketing */}
+          {/* Protected Routes - Expert Dashboard (Legacy) */}
           <Route 
             path="/expert" 
             element={
@@ -108,35 +120,45 @@ const AppLayout = () => {
               </ProtectedRoute>
             } 
           />
+
+          {/* ← NEW: Dashboard V2 Routes with ProfileProvider */}
           <Route 
             path="/dashboard" 
             element={
               <ProtectedRoute>
-              <ExpertDashboardPageV2 />
+                <ProfileProvider>
+                  <ExpertDashboardPageV2 />
+                </ProfileProvider>
               </ProtectedRoute>
             } 
           />
           <Route 
-             path="/dashboard/inbox" 
-             element={
-               <ProtectedRoute>
-               <ExpertInboxPage />
+            path="/dashboard/inbox" 
+            element={
+              <ProtectedRoute>
+                <ProfileProvider>
+                  <ExpertInboxPage />
+                </ProfileProvider>
               </ProtectedRoute>
-          } 
+            } 
           />
-         <Route 
-             path="/dashboard/analytics" 
-             element={
-                 <ProtectedRoute>
-                <ExpertAnalyticsPage />
-                  </ProtectedRoute>
-         } 
-        />
+          <Route 
+            path="/dashboard/analytics" 
+            element={
+              <ProtectedRoute>
+                <ProfileProvider>
+                  <ExpertAnalyticsPage />
+                </ProfileProvider>
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/dashboard/profile" 
             element={
               <ProtectedRoute>
-                <ProfileSettingsPage />
+                <ProfileProvider>
+                  <ProfileSettingsPage />
+                </ProfileProvider>
               </ProtectedRoute>
             } 
           />
@@ -144,10 +166,14 @@ const AppLayout = () => {
             path="/dashboard/account" 
             element={
               <ProtectedRoute>
-                <AccountSettingsPage />
+                <ProfileProvider>
+                  <AccountSettingsPage />
+                </ProfileProvider>
               </ProtectedRoute>
             } 
           />
+
+          {/* Marketing (legacy - no ProfileProvider needed) */}
           <Route 
             path="/expert/marketing" 
             element={
@@ -163,20 +189,22 @@ const AppLayout = () => {
         import.meta.env.VITE_SHOW_FEEDBACK === 'true') && (
         <FeedbackWidget />
       )}
-        <CookieConsentBanner /> 
+      <CookieConsentBanner /> 
     </div>
   );
-}
+};
 
 function App() {
   return (
-    <CookieConsentProvider>          {/* ← OUTERMOST */}
-      <AuthProvider>
-        <FeatureFlagsProvider>
-          <AppLayout />              {/* Everything inside here has access */}
-        </FeatureFlagsProvider>
-      </AuthProvider>
-    </CookieConsentProvider>
+    <QueryClientProvider client={queryClient}> {/* ← NEW: Wrap with QueryClientProvider */}
+      <CookieConsentProvider>
+        <AuthProvider>
+          <FeatureFlagsProvider>
+            <AppLayout />
+          </FeatureFlagsProvider>
+        </AuthProvider>
+      </CookieConsentProvider>
+    </QueryClientProvider>
   );
 }
 

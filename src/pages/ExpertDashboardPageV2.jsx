@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '@/api';
+import { useProfile } from '@/context/ProfileContext'; // ← NEW
+import { useQuestionsQuery } from '@/hooks/useQuestionsQuery'; // ← NEW
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
 import WelcomeHero from '@/components/dashboardv2/overview/WelcomeHero';
 import MetricsGrid from '@/components/dashboardv2/metrics/MetricsGrid';
@@ -12,38 +13,23 @@ import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 
 function ExpertDashboardPageV2() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  
+  // ← NEW: Use ProfileContext instead of fetching
+  const { profile, expertProfile, isLoading: profileLoading, error: profileError } = useProfile();
+  
+  // ← NEW: Use React Query for questions
+  const { data: questions = [], isLoading: questionsLoading, error: questionsError } = useQuestionsQuery();
 
   const metrics = useMetrics(questions);
 
-  // Load dashboard data
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [profileRes, questionsRes] = await Promise.all([
-          apiClient.get('/me/profile'),
-          apiClient.get('/me/questions'),
-        ]);
-
-        setProfile(profileRes.data.expert_profile || {});
-        setQuestions(questionsRes.data || []);
-      } catch (err) {
-        console.error('Failed to load dashboard:', err);
-        setError('Could not load dashboard data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
   const handleAvailabilityChange = (newStatus) => {
-    setProfile(prev => ({ ...prev, accepting_questions: newStatus }));
+    // ProfileContext will handle the update
+    // This is now just for optimistic UI updates if needed
   };
+
+  // ← MODIFIED: Combined loading state
+  const isLoading = profileLoading || questionsLoading;
+  const error = profileError || questionsError;
 
   if (isLoading) {
     return (
@@ -57,7 +43,7 @@ function ExpertDashboardPageV2() {
     return (
       <DashboardLayout breadcrumbs={[{ label: 'Dashboard' }]}>
         <div className="text-center py-12">
-          <p className="text-red-600">{error}</p>
+          <p className="text-red-600">Could not load dashboard data</p>
         </div>
       </DashboardLayout>
     );
@@ -67,9 +53,9 @@ function ExpertDashboardPageV2() {
     <DashboardLayout
       breadcrumbs={[{ label: 'Dashboard' }]}
       pendingCount={metrics.pendingCount}
-      isAvailable={profile?.accepting_questions ?? true}
+      isAvailable={expertProfile?.accepting_questions ?? true}
       onAvailabilityChange={handleAvailabilityChange}
-      searchData={{ questions }}  // NEW
+      searchData={{ questions }}
     >
       {/* Welcome Hero */}
       <WelcomeHero />

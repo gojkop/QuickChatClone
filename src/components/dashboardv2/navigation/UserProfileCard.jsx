@@ -1,27 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import apiClient from '@/api';
+import { useProfile } from '@/context/ProfileContext'; // ← NEW
 
 function UserProfileCard({ collapsed = false, onClick }) {
   const { user } = useAuth();
-  const [avatarUrl, setAvatarUrl] = useState(null);
+  const { expertProfile } = useProfile(); // ← NEW: Get profile from context
   const [imageError, setImageError] = useState(false);
 
-  useEffect(() => {
-    const fetchAvatar = async () => {
-      try {
-        const response = await apiClient.get('/me/profile');
-        const expertData = response.data?.expert_profile || {};
-        setAvatarUrl(expertData.avatar_url || null);
-      } catch (error) {
-        console.error('Failed to fetch user avatar:', error);
-      }
-    };
+  // ← REMOVED: useEffect that fetches avatar - no longer needed!
 
-    if (user) {
-      fetchAvatar();
-    }
-  }, [user]);
+  const avatarUrl = expertProfile?.avatar_url; // ← NEW: Get from context
 
   const getInitials = (name) => {
     if (!name) return '?';
