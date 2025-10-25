@@ -70,32 +70,35 @@ function MobileQuestionCard({
         
         <div className="flex-1 min-w-0 pr-6">
           {/* Question Title */}
-          <div className="flex items-start gap-1.5 mb-1.5">
+          <div className="flex items-start gap-1.5 mb-2">
             {question.video_url && (
               <MessageSquare size={14} className="text-indigo-600 flex-shrink-0 mt-0.5" />
             )}
-            <h3 className={`text-sm font-medium line-clamp-2 ${isAnswered ? 'text-gray-600' : 'text-gray-900'}`}>
+            <h3 className={`text-sm font-medium line-clamp-2 flex-1 ${isAnswered ? 'text-gray-600' : 'text-gray-900'}`}>
               {getQuestionTitle(question)}
             </h3>
           </div>
           
-          {/* Asker Info - Name + Email */}
-          <div className="flex items-center gap-2 mb-2 text-xs text-gray-600">
-            <div className="flex items-center gap-1 min-w-0 flex-1">
-              <User size={12} className="flex-shrink-0 text-gray-400" />
-              <span className="truncate font-medium">{question.user_name || 'Anonymous'}</span>
+          {/* Asker Info */}
+          <div className="flex items-center gap-2 mb-2 text-xs">
+            <div className="flex items-center gap-1 text-gray-600">
+              <User size={11} className="flex-shrink-0 text-gray-400" />
+              <span className="font-medium">{question.user_name || 'Anonymous'}</span>
             </div>
-            {question.user_email && (
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Mail size={12} className="text-gray-400" />
-                <span className="text-gray-500 truncate max-w-[120px]">{question.user_email}</span>
-              </div>
+            {question.user_email && question.user_email.trim() && (
+              <>
+                <span className="text-gray-300">•</span>
+                <div className="flex items-center gap-1 text-gray-500 truncate">
+                  <Mail size={11} className="flex-shrink-0" />
+                  <span className="truncate">{question.user_email}</span>
+                </div>
+              </>
             )}
           </div>
           
           {/* Bottom Row: Price, Time, Badges */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
               {/* Price */}
               <div className={`text-sm font-bold ${isAnswered ? 'text-gray-500' : 'text-green-700'}`}>
                 {formatCurrency(question.price_cents)}
@@ -103,7 +106,7 @@ function MobileQuestionCard({
               
               {/* Time */}
               <div className="flex items-center gap-1 text-xs text-gray-500">
-                <Clock size={12} />
+                <Clock size={11} />
                 <span>{getRelativeTime(question.created_at)}</span>
               </div>
             </div>
@@ -111,11 +114,11 @@ function MobileQuestionCard({
             {/* Badges */}
             <div className="flex items-center gap-1 flex-shrink-0">
               <PriorityBadge question={question} />
-              {!isAnswered && question.sla_hours_snapshot && (
+              {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
                 <SLAIndicator question={question} showLabel={false} compact={true} />
               )}
               {isAnswered && (
-                <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+                <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-green-100 text-green-700">
                   <CheckCircle size={10} />
                   <span className="text-[10px] font-semibold">Done</span>
                 </div>
@@ -125,7 +128,7 @@ function MobileQuestionCard({
         </div>
       </div>
 
-      {/* Chevron indicator - Smaller */}
+      {/* Chevron indicator */}
       <ChevronRight 
         size={16} 
         className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"

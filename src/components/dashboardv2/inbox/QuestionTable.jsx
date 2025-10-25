@@ -52,7 +52,7 @@ function QuestionTable({
     <div className="flex flex-col h-full w-full">
       {/* Table Header - Sticky */}
       <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
-        <div className="grid grid-cols-[40px_1fr_150px_100px_80px] gap-3 px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+        <div className="grid grid-cols-[32px_1fr_140px_90px_70px] gap-2 px-3 py-2.5 text-[11px] font-semibold text-gray-600 uppercase tracking-wide">
           <div className="flex items-center justify-center">
             <input 
               type="checkbox" 
@@ -63,7 +63,7 @@ function QuestionTable({
                 }
               }}
               onChange={() => onSelectAll && onSelectAll()}
-              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
             />
           </div>
           <div>Question</div>
@@ -85,11 +85,11 @@ function QuestionTable({
               key={question.id}
               onClick={() => onQuestionClick(question)}
               className={`
-                grid grid-cols-[40px_1fr_150px_100px_80px] gap-3 px-4 py-3
+                grid grid-cols-[32px_1fr_140px_90px_70px] gap-2 px-3 py-2.5
                 border-b border-gray-200 cursor-pointer
                 transition-all duration-150
                 hover:bg-indigo-50/50
-                ${isActive ? 'bg-indigo-50 border-l-4 border-l-indigo-600 pl-[14px]' : ''}
+                ${isActive ? 'bg-indigo-50 border-l-4 border-l-indigo-600 pl-[10px]' : ''}
                 ${isSelected && !isActive ? 'bg-blue-50/50' : ''}
                 ${answered ? 'opacity-60' : ''}
               `}
@@ -104,18 +104,18 @@ function QuestionTable({
                     onSelectQuestion(question.id);
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
               </div>
 
               {/* Question Text + Badges */}
               <div className="flex items-center gap-2 min-w-0">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
                   {question.video_url && (
-                    <MessageSquare size={14} className="text-indigo-600 flex-shrink-0" />
+                    <MessageSquare size={13} className="text-indigo-600 flex-shrink-0" />
                   )}
                   <span className={`
-                    text-sm truncate
+                    text-[13px] leading-tight truncate
                     ${answered ? 'text-gray-600' : 'text-gray-900 font-medium'}
                   `}>
                     {getQuestionTitle(question)}
@@ -127,9 +127,9 @@ function QuestionTable({
                   <PriorityBadge question={question} />
                   
                   {answered && (
-                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-100 text-green-700">
-                      <CheckCircle size={12} />
-                      <span className="text-xs font-semibold">Done</span>
+                    <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+                      <CheckCircle size={10} />
+                      <span className="text-[10px] font-semibold">Done</span>
                     </div>
                   )}
                   
@@ -139,25 +139,23 @@ function QuestionTable({
                 </div>
               </div>
 
-              {/* Asker - Show name AND email if available */}
-              <div className="flex flex-col justify-center text-xs text-gray-600 truncate">
+              {/* Asker - Show name (email in tooltip) */}
+              <div className="flex items-center text-[12px] text-gray-600 truncate" title={question.user_email || ''}>
+                <User size={11} className="flex-shrink-0 text-gray-400 mr-1" />
                 <span className="truncate font-medium">{question.user_name || 'Anonymous'}</span>
-                {question.user_email && (
-                  <span className="truncate text-gray-500">{question.user_email}</span>
-                )}
               </div>
 
               {/* Price */}
               <div className={`
-                flex items-center justify-end text-sm font-bold
+                flex items-center justify-end text-[13px] font-bold
                 ${answered ? 'text-gray-500' : 'text-green-700'}
               `}>
                 {formatCurrency(question.price_cents)}
               </div>
 
               {/* Time */}
-              <div className="flex items-center justify-end gap-1 text-xs text-gray-500">
-                <Clock size={12} className="text-gray-400" />
+              <div className="flex items-center justify-end gap-1 text-[11px] text-gray-500">
+                <Clock size={11} className="text-gray-400" />
                 <span>{getRelativeTime(question.created_at)}</span>
               </div>
             </div>

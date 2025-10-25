@@ -9,11 +9,12 @@ function InboxLayout({
   isMobile = false 
 }) {
   return (
-    <div className="h-[calc(100vh-4rem)] w-full grid grid-cols-1 lg:grid-cols-[minmax(320px,400px)_1fr]">
-      {/* Left Panel: Filters + Question List */}
+    <div className="h-[calc(100vh-4rem)] w-full flex flex-col lg:flex-row">
+      {/* Left Panel: Filters + Question List - 50% on desktop */}
       <div className={`
         flex flex-col border-r border-gray-200 bg-gray-50
         ${isMobile && selectedQuestion ? 'hidden' : 'flex'}
+        lg:w-1/2
       `}>
         {/* Filters - Scrollable */}
         <div className="flex-shrink-0 overflow-y-auto border-b border-gray-200 bg-white">
@@ -33,10 +34,11 @@ function InboxLayout({
         </div>
       </div>
 
-      {/* Right Panel: Question Detail - takes remaining space */}
+      {/* Right Panel: Question Detail - 50% on desktop */}
       <div className={`
-        overflow-hidden bg-white
+        flex flex-col bg-white
         ${isMobile && !selectedQuestion ? 'hidden' : 'flex'}
+        lg:w-1/2
       `}>
         {questionDetail}
       </div>
