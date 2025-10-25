@@ -38,6 +38,14 @@ The Expert Dashboard (`/expert/dashboard`) was experiencing severe performance i
   - `sort_by=price_low` - Sort by price (low to high)
   - `sort_by=date_new` - Sort by created_at (newest first)
   - `sort_by=date_old` - Sort by created_at (oldest first)
+- **Added `price_min` and `price_max` parameters** for price range filtering:
+  - `price_min=50` - Only questions with price >= $50
+  - `price_max=200` - Only questions with price <= $200
+  - Prices are in dollars (not cents)
+- **Added `search` parameter** for text search:
+  - `search=urgent` - Searches in title, question_text, and user_name
+  - Case-insensitive partial matching
+  - Used in Inbox page for instant search across all questions
 - **Removed N+1 query**: Eliminated the `foreach` loop that fetched media assets
 - **Server-side filtering using lambda**: Filters questions before pagination for accurate counts
 - **Server-side sorting using lambda**: Sorts ALL questions before pagination (not just current page)
@@ -243,6 +251,18 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
   "https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ/me/questions?filter_type=all&page=1&per_page=10"
 ```
 
+**Test Search**:
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ/me/questions?filter_type=all&search=urgent&page=1&per_page=10"
+```
+
+**Test Price Range + Search**:
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ/me/questions?filter_type=pending&price_min=50&price_max=200&search=question&sort_by=price_high&page=1&per_page=10"
+```
+
 **Expected response**:
 ```json
 {
@@ -422,4 +442,5 @@ If you encounter any issues with this optimization:
 
 **Date**: October 25, 2025
 **Author**: Claude Code
-**Status**: ✅ Implementation Complete, Testing Pending
+**Status**: ✅ Implementation Complete & Deployed
+**Last Updated**: October 25, 2025 - Added server-side sorting support

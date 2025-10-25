@@ -36,29 +36,66 @@ function ExpertInboxPage() {
     toggleSelectQuestion,
     selectAll,
     clearSelection,
-    totalCount,
-    filteredCount,
+    filteredCount, // After client-side search filter
   } = useInbox(questions);
+
+  // Use server-side pagination total as the true total count
+  const totalCount = pagination?.total || questions.length;
 
   // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load data
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.status, filters.sortBy, filters.priceMin, filters.priceMax, filters.searchQuery]);
+
+  // Load data with server-side filtering
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
+        // Build query params for server-side filtering
+        const params = new URLSearchParams();
+        params.append('page', currentPage);
+        params.append('per_page', 10);
+
+        // Map status filter to filter_type
+        if (filters.status === 'pending') {
+          params.append('filter_type', 'pending');
+        } else if (filters.status === 'answered') {
+          params.append('filter_type', 'answered');
+        } else {
+          params.append('filter_type', 'all');
+        }
+
+        // Add sort
+        params.append('sort_by', filters.sortBy || 'time_left');
+
+        // Add price range if not default
+        if (filters.priceMin > 0) {
+          params.append('price_min', filters.priceMin);
+        }
+        if (filters.priceMax < 10000) {
+          params.append('price_max', filters.priceMax);
+        }
+
+        // Add search query
+        if (filters.searchQuery && filters.searchQuery.trim()) {
+          params.append('search', filters.searchQuery.trim());
+        }
+
         const [profileRes, questionsRes] = await Promise.all([
           apiClient.get('/me/profile'),
-          apiClient.get(`/me/questions?page=${currentPage}&per_page=10`),
+          apiClient.get(`/me/questions?${params.toString()}`),
         ]);
 
         setProfile(profileRes.data.expert_profile || {});
@@ -73,7 +110,7 @@ function ExpertInboxPage() {
     };
 
     loadData();
-  }, [currentPage]);
+  }, [currentPage, filters.status, filters.sortBy, filters.priceMin, filters.priceMax, filters.searchQuery]);
 
   // Handle URL hash for question selection
   useEffect(() => {
@@ -100,7 +137,37 @@ function ExpertInboxPage() {
   // Refresh questions
   const refreshQuestions = async () => {
     try {
-      const response = await apiClient.get(`/me/questions?page=${currentPage}&per_page=10`);
+      // Build query params for server-side filtering
+      const params = new URLSearchParams();
+      params.append('page', currentPage);
+      params.append('per_page', 10);
+
+      // Map status filter to filter_type
+      if (filters.status === 'pending') {
+        params.append('filter_type', 'pending');
+      } else if (filters.status === 'answered') {
+        params.append('filter_type', 'answered');
+      } else {
+        params.append('filter_type', 'all');
+      }
+
+      // Add sort
+      params.append('sort_by', filters.sortBy || 'time_left');
+
+      // Add price range if not default
+      if (filters.priceMin > 0) {
+        params.append('price_min', filters.priceMin);
+      }
+      if (filters.priceMax < 10000) {
+        params.append('price_max', filters.priceMax);
+      }
+
+      // Add search query
+      if (filters.searchQuery && filters.searchQuery.trim()) {
+        params.append('search', filters.searchQuery.trim());
+      }
+
+      const response = await apiClient.get(`/me/questions?${params.toString()}`);
       // Handle new paginated response format
       setQuestions(response.data?.questions || response.data || []);
       setPagination(response.data?.pagination || null);

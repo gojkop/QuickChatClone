@@ -5,16 +5,20 @@ import apiClient from '@/api';
  * Hook to fetch paginated questions for the current expert
  * @param {Object} params - Query parameters
  * @param {string} params.status - Filter by question status (e.g., 'paid', 'answered')
+ * @param {string} params.filterType - Filter by tab type: 'pending', 'answered', 'all'
+ * @param {string} params.sortBy - Sort order: 'time_left', 'price_high', 'price_low', 'date_new', 'date_old'
  * @param {number} params.page - Page number (default: 1)
  * @param {number} params.perPage - Items per page (default: 10)
  * @param {Object} options - Additional React Query options
  */
-export function useQuestionsQuery({ status, page = 1, perPage = 10 } = {}, options = {}) {
+export function useQuestionsQuery({ status, filterType, sortBy, page = 1, perPage = 10 } = {}, options = {}) {
   return useQuery({
-    queryKey: ['questions', { status, page, perPage }],
+    queryKey: ['questions', { status, filterType, sortBy, page, perPage }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (status) params.append('status', status);
+      if (filterType) params.append('filter_type', filterType);
+      if (sortBy) params.append('sort_by', sortBy);
       params.append('page', page);
       params.append('per_page', perPage);
 

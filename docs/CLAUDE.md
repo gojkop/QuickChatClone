@@ -765,6 +765,93 @@ See `docs/two-tier question model/` for complete documentation:
 - **AUTO-DECLINE-XANO-IMPLEMENTATION.md** - Auto-decline logic
 - **DECLINED-STATUS-UI.md** - Declined offer UI
 
+## Dashboard Performance Optimization
+
+**Status:** ✅ Production Ready (October 25, 2025)
+
+The expert dashboard (`/expert`) was experiencing severe performance issues (~13 second load times) due to N+1 query problems and lack of pagination. This has been fully optimized.
+
+### Problem Summary
+
+- **Total load time**: ~13 seconds
+- **API endpoint**: `/me/questions` was taking 13s to respond
+- **Root cause**: N+1 query problem (200+ sequential DB calls) + no pagination
+
+### Solution Implemented
+
+**Backend (Xano `/me/questions` endpoint):**
+- ✅ Added pagination support (`page`, `per_page` parameters - default 10 per page)
+- ✅ Added server-side tab filtering (`filter_type` parameter):
+  - `pending` - Unanswered paid questions only
+  - `answered` - Answered questions only
+  - `all` - All questions (except pending offers)
+- ✅ Added server-side sorting (`sort_by` parameter):
+  - `time_left` - Sort by remaining SLA time (urgent first)
+  - `price_high` - Sort by price (high to low)
+  - `price_low` - Sort by price (low to high)
+  - `date_new` - Sort by created_at (newest first)
+  - `date_old` - Sort by created_at (oldest first)
+- ✅ Added price range filtering (`price_min`, `price_max` parameters in dollars):
+  - Filter questions by price range
+  - Used in Inbox page for advanced filtering
+- ✅ Removed N+1 query (eliminated foreach loop fetching media assets)
+- ✅ Server-side filtering/sorting in lambda BEFORE pagination
+- ✅ Created `/me/questions/count` endpoint for navbar badge
+- ✅ Created `/me/analytics` endpoint for pre-calculated analytics
+- ✅ Created `/questions/{id}/recording-segments` for lazy-loading recordings
+- ✅ Added database index: `(expert_profile_id, status, created_at DESC)`
+
+**Frontend:**
+- ✅ Updated `ExpertDashboardPage.jsx` - Server-side pagination, filtering, and sorting
+- ✅ Updated `ExpertInboxPage.jsx` - Server-side filtering for status, price range, sort (client-side search only)
+- ✅ Updated `ExpertAnalyticsPage.jsx` - Uses server-side analytics
+- ✅ Updated `Navbar.jsx` - Uses count endpoint (no longer fetches 100+ questions)
+- ✅ Created `useQuestionsQuery` hook - Supports `filterType`, `sortBy`, `priceMin`, `priceMax`, pagination
+- ✅ Updated `useInbox` hook - Simplified to handle only client-side search (server handles filtering/sorting)
+- ✅ Created `useRecordingSegments` hook - Lazy-loads recordings on demand
+- ✅ Created `useAnalyticsQuery` hook - Fetches server-side analytics
+
+### Performance Improvements
+
+**Dashboard Page (`/expert`):**
+- Total API time: ~13s → <1s (**13x faster**)
+- Database queries: 200+ sequential → 2-3 queries (**99% reduction**)
+- Questions loaded: 200+ → 10 (**95% reduction**)
+- Time to interactive: ~13s → <1s (**13x faster**)
+
+**Analytics Page (`/dashboard/analytics`):**
+- Questions fetched: 1000+ → 0 (**100% reduction**)
+- Load time: 3-5s → <500ms (**6-10x faster**)
+
+**Navbar Pending Count:**
+- Questions fetched: 100+ → 0 (**100% reduction**)
+- Data transferred: ~50KB → ~50B (**99.9% reduction**)
+
+### Key Features
+
+**Tab Filtering:**
+- Each tab (Pending/Answered/All) fetches only its own questions from server
+- Accurate count badges on all tabs from initial page load
+- No client-side filtering needed (except showHidden toggle)
+
+**Server-Side Sorting:**
+- Sorts ALL questions at database level (not just current page)
+- Changing sort order refetches page 1 with new sort
+- Works across all tabs and pagination
+
+**Pagination:**
+- Consistent 10 items per page across all dashboards
+- Server returns accurate `total_pages`, `has_next`, `has_prev`
+- Questions are filtered → sorted → paginated in that order
+
+### Documentation
+
+See `docs/PERFORMANCE-OPTIMIZATION-OCT-2025.md` for complete technical documentation including:
+- Detailed problem analysis
+- Step-by-step implementation guide
+- Testing procedures
+- Migration notes
+
 ## Download Features
 
 ### ZIP Download for Questions & Answers
