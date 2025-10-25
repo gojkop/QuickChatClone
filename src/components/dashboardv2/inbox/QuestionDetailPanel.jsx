@@ -7,6 +7,24 @@ import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) {
   const [showActions, setShowActions] = useState(false);
 
+  // Helper to safely get attachments array
+  const getAttachments = () => {
+    if (!question?.attachments) return [];
+    if (Array.isArray(question.attachments)) return question.attachments;
+    // If it's a string (JSON), try to parse it
+    if (typeof question.attachments === 'string') {
+      try {
+        const parsed = JSON.parse(question.attachments);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const attachments = getAttachments();
+
   if (!question) {
     return (
       <div className="h-full flex items-center justify-center text-gray-500">
@@ -135,17 +153,17 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
             </div>
           )}
 
-          {/* Attachments */}
-          {question.attachments && question.attachments.length > 0 && (
+          {/* Attachments - FIXED */}
+          {attachments.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <ImageIcon size={16} className="text-indigo-600" />
                 <h3 className="text-sm font-semibold text-gray-900">
-                  Attachments ({question.attachments.length})
+                  Attachments ({attachments.length})
                 </h3>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {question.attachments.map((attachment, index) => (
+                {attachments.map((attachment, index) => (
                   <div
                     key={index}
                     className="relative group border border-gray-200 rounded-lg overflow-hidden hover:border-indigo-300 transition-colors"
