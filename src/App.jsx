@@ -30,9 +30,7 @@ import CookieConsentBanner from '@/components/common/CookieConsentBanner';
 import AskQuestionPageV2 from '@/pages/AskQuestionPageV2';
 import ExpertDashboardPageV2 from '@/pages/ExpertDashboardPageV2';
 import ExpertInboxPage from '@/pages/ExpertInboxPage';
-
-
-
+import ExpertAnalyticsPage from '@/pages/ExpertAnalyticsPage';
 
 
 // Import Common Components
@@ -123,6 +121,14 @@ const AppLayout = () => {
                <ExpertInboxPage />
               </ProtectedRoute>
           } 
+         <Route 
+             path="/dashboard/analytics" 
+             element={
+                 <ProtectedRoute>
+                <ExpertAnalyticsPage />
+                  </ProtectedRoute>
+         } 
+        />
         />
           <Route 
             path="/expert/marketing" 
