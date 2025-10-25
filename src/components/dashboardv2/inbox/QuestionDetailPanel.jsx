@@ -132,9 +132,9 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
       h-full flex flex-col bg-white w-full overflow-hidden
       ${isMobile ? 'fixed inset-0 z-50' : ''}
     `}>
-      {/* 🟢 DEBUG BANNER - REMOVE AFTER VERIFICATION */}
-      <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 text-center">
-        ✓ DEPLOYED v3.0 - QuestionDetailPanel FIXED (Price visible + No zeros + Layout fixed)
+      {/* Debug Banner - RESPONSIVE VERSION */}
+      <div className="bg-green-500 text-white text-xs font-bold text-center py-1">
+        ✓ RESPONSIVE v4.0 - DetailPanel FIXED (Price visible + No zeros + Layout fixed)
       </div>
 
       {/* Header - FIXED LAYOUT */}

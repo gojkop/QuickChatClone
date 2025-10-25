@@ -4,13 +4,14 @@ import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 
-// Column width configuration (in pixels)
+// Column width configuration (in percentages of container width)
+// These percentages allow the table to be fully responsive
 const DEFAULT_COLUMN_WIDTHS = {
-  checkbox: 40,
-  question: 380,
-  asker: 260,  // Increased for email display
-  price: 100,
-  time: 90,
+  checkbox: 5,    // ~40-50px on most screens
+  question: 44,   // Largest column for question text
+  asker: 30,      // Room for name + email
+  price: 12,      // Price display
+  time: 9,        // Relative time
 };
 
 // Throttle utility for better performance
@@ -37,20 +38,35 @@ function QuestionTable({
   const [resizing, setResizing] = useState(null);
   const tableRef = useRef(null);
 
-  // Throttled resize handler for better performance
+  // Throttled resize handler for better performance (now works with percentages)
   const handleResize = useCallback(
     throttle((clientX) => {
-      if (!resizing) return;
-      
+      if (!resizing || !tableRef.current) return;
+
       const column = resizing.column;
       const startX = resizing.startX;
       const startWidth = resizing.startWidth;
+      const tableWidth = tableRef.current.offsetWidth;
+
+      // Calculate pixel difference and convert to percentage
       const diff = clientX - startX;
-      const newWidth = Math.max(80, startWidth + diff);
+      const percentDiff = (diff / tableWidth) * 100;
+      const newWidth = startWidth + percentDiff;
+
+      // Minimum widths in percentage (roughly equivalent to 60-80px on 800px container)
+      const minWidths = {
+        checkbox: 4,
+        question: 15,
+        asker: 15,
+        price: 8,
+        time: 6
+      };
+
+      const finalWidth = Math.max(minWidths[column] || 5, newWidth);
 
       setColumnWidths(prev => ({
         ...prev,
-        [column]: newWidth
+        [column]: finalWidth
       }));
     }, 16), // ~60fps
     [resizing]
@@ -150,14 +166,14 @@ function QuestionTable({
   const allSelected = questions.length > 0 && selectedQuestions.length === questions.length;
   const someSelected = selectedQuestions.length > 0 && !allSelected;
 
-  // Calculate grid template columns
-  const gridTemplateColumns = `${columnWidths.checkbox}px ${columnWidths.question}px ${columnWidths.asker}px ${columnWidths.price}px ${columnWidths.time}px`;
+  // Calculate grid template columns (responsive percentages)
+  const gridTemplateColumns = `${columnWidths.checkbox}% ${columnWidths.question}% ${columnWidths.asker}% ${columnWidths.price}% ${columnWidths.time}%`;
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden" ref={tableRef}>
-      {/* 🟢 DEBUG BANNER - REMOVE AFTER VERIFICATION */}
-      <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 text-center">
-        ✓ DEPLOYED v3.0 - QuestionTable FIXED (Email + Throttle + Resize + No zeros)
+      {/* Debug Banner - RESPONSIVE VERSION */}
+      <div className="bg-green-500 text-white text-xs font-bold text-center py-1">
+        ✓ RESPONSIVE v4.0 - Table now uses flexible % widths (Email + Throttle + Resize + No zeros)
       </div>
 
       {/* Table Header - Sticky */}
