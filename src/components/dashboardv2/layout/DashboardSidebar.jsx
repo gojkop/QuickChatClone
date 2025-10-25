@@ -98,7 +98,6 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
       <div className="flex-shrink-0 p-3 border-t border-gray-200">
         <UserProfileCard
           collapsed={collapsed}
-          onClick={() => navigate('/dashboard/account')}
         />
       </div>
 

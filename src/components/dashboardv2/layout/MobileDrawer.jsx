@@ -110,7 +110,7 @@ function MobileDrawer({ isOpen, onClose, pendingCount = 0 }) {
 
         {/* User Profile Footer */}
         <div className="p-3 border-t border-gray-200">
-          <UserProfileCard onClick={onClose} />
+          <UserProfileCard />
         </div>
       </aside>
     </>
