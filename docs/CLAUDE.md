@@ -600,6 +600,17 @@ The system uses a dedicated `payment_table_structure` table (separate from `ques
 **Cron Jobs (Every 15 minutes):**
 - `/api/cron/cancel-expired-offers` - Cancels payments for Deep Dive offers not accepted within 24h
 - `/api/cron/cancel-expired-slas` - Cancels payments for questions not answered within SLA
+- `/api/cron/cleanup-orphaned-media` - Cleans up orphaned media files (runs daily at 3 AM UTC)
+
+**Cron Job Xano Endpoints (Public API):**
+- `GET /questions/pending-offers` - Returns pending Deep Dive offers for expiration check
+- `GET /questions/expired-sla` - Returns questions past SLA deadline
+- `POST /question/{id}/expire-offer` - Updates question status to offer_expired
+- `POST /question/{id}/expire-sla` - Updates question status for SLA expiration
+
+**Note:** All cron job endpoints use `XANO_PUBLIC_API_URL` and authenticate with `x_api_key` query parameter.
+
+**Documentation:** See `docs/two-tier question model/AUTOMATED-EXPIRATION-SYSTEM.md` for complete cron job documentation
 
 **Payment Intent Metadata:**
 
