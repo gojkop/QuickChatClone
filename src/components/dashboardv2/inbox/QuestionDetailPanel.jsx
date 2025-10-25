@@ -68,7 +68,7 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
     if (hasVideo) return 'Video Question';
     if (hasAudio) return 'Audio Question';
     
-    return `Question #${question.id}`;
+    return `Question`;
   };
 
   // Helper to get question details text
@@ -126,53 +126,58 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
 
   return (
     <div className={`
-      h-full flex flex-col bg-white w-full
+      h-full flex flex-col bg-white w-full overflow-hidden
       ${isMobile ? 'fixed inset-0 z-50' : ''}
     `}>
-      {/* Header - Fixed */}
+      {/* Header - Fixed, proper width management */}
       <div className="flex-shrink-0 p-3 lg:p-4 border-b border-gray-200 bg-white">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              {isMobile && (
-                <button
-                  onClick={onClose}
-                  className="p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-                  aria-label="Close"
-                >
-                  <X size={18} />
-                </button>
-              )}
-              <h2 className="text-lg lg:text-xl font-bold text-gray-900 line-clamp-2 flex-1">
-                {questionTitle}
-              </h2>
-              <span className="text-xs text-gray-400 font-mono flex-shrink-0">Q-{question.id}</span>
-            </div>
+        <div className="flex items-start gap-2 w-full">
+          {/* Left: Back button (mobile) + Title + Q-ID */}
+          <div className="flex-1 min-w-0 flex items-start gap-2">
+            {isMobile && (
+              <button
+                onClick={onClose}
+                className="flex-shrink-0 p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            )}
             
-            <div className="flex items-center gap-2 flex-wrap">
-              <PriorityBadge question={question} />
-              {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
-                <SLAIndicator question={question} showLabel={true} />
-              )}
-              {isAnswered && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
-                  ✓ Answered
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-2 mb-2">
+                <h2 className="flex-1 text-base lg:text-lg font-bold text-gray-900 line-clamp-2 min-w-0 break-words">
+                  {questionTitle}
+                </h2>
+                <span className="flex-shrink-0 text-xs text-gray-400 font-mono whitespace-nowrap">
+                  Q-{question.id}
                 </span>
-              )}
+              </div>
+              
+              <div className="flex items-center gap-2 flex-wrap">
+                <PriorityBadge question={question} />
+                {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
+                  <SLAIndicator question={question} showLabel={true} />
+                )}
+                {isAnswered && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
+                    ✓ Answered
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
+          {/* Right: Price + Close button */}
           <div className="flex-shrink-0 flex items-center gap-2">
-            <div className="text-right">
-              <div className={`text-xl lg:text-2xl font-black ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
-                {formatCurrency(question.price_cents)}
-              </div>
+            <div className={`text-lg lg:text-xl font-black whitespace-nowrap ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
+              {formatCurrency(question.price_cents)}
             </div>
             
             {!isMobile && (
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex-shrink-0 p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Close detail"
                 aria-label="Close"
               >
@@ -183,7 +188,7 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
         </div>
       </div>
 
-      {/* Content - Scrollable with proper height */}
+      {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto overscroll-contain">
         <div className="p-3 lg:p-4 space-y-4">
           
@@ -193,14 +198,14 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
             <div className="grid grid-cols-1 gap-2 text-sm">
               <div className="flex items-center gap-2 text-gray-700">
                 <User size={14} className="text-gray-400 flex-shrink-0" />
-                <span className="font-medium min-w-[60px]">Asker:</span>
+                <span className="font-medium min-w-[60px] flex-shrink-0">Asker:</span>
                 <span className="font-semibold truncate">{askerName}</span>
               </div>
 
               {askerEmail && (
                 <div className="flex items-center gap-2 text-gray-700">
                   <Mail size={14} className="text-gray-400 flex-shrink-0" />
-                  <span className="font-medium min-w-[60px]">Email:</span>
+                  <span className="font-medium min-w-[60px] flex-shrink-0">Email:</span>
                   <a 
                     href={`mailto:${askerEmail}`}
                     className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
@@ -210,23 +215,27 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                 </div>
               )}
 
-              <div className="flex items-center gap-2 text-gray-700">
-                <Calendar size={14} className="text-gray-400 flex-shrink-0" />
-                <span className="font-medium min-w-[60px]">Asked:</span>
-                <span className="truncate">{formatDate(question.created_at)}</span>
-                <span className="text-gray-500 text-xs">({getRelativeTime(question.created_at)})</span>
+              <div className="flex items-start gap-2 text-gray-700">
+                <Calendar size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
+                <span className="font-medium min-w-[60px] flex-shrink-0">Asked:</span>
+                <div className="flex flex-col">
+                  <span>{formatDate(question.created_at)}</span>
+                  <span className="text-gray-500 text-xs">({getRelativeTime(question.created_at)})</span>
+                </div>
               </div>
 
               {question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Clock size={14} className="text-gray-400 flex-shrink-0" />
-                  <span className="font-medium min-w-[60px]">SLA:</span>
-                  <span className="truncate">{question.sla_hours_snapshot}h response time</span>
-                  {!isAnswered && (
-                    <span className="text-orange-600 font-medium text-xs truncate">
-                      (expires {formatDate(question.created_at + question.sla_hours_snapshot * 3600)})
-                    </span>
-                  )}
+                <div className="flex items-start gap-2 text-gray-700">
+                  <Clock size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span className="font-medium min-w-[60px] flex-shrink-0">SLA:</span>
+                  <div className="flex flex-col">
+                    <span>{question.sla_hours_snapshot}h response time</span>
+                    {!isAnswered && (
+                      <span className="text-orange-600 font-medium text-xs">
+                        Expires {formatDate(question.created_at + question.sla_hours_snapshot * 3600)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -275,6 +284,8 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                     const modeLabel = segment.metadata?.mode === 'screen' ? 'Screen Recording' :
                                      segment.metadata?.mode === 'screen-camera' ? 'Screen + Camera' :
                                      isVideo ? 'Video' : 'Audio';
+                    
+                    const duration = segment.duration_sec || segment.duration || 0;
 
                     return (
                       <div key={segment.id || index} className="bg-gray-900 rounded-lg overflow-hidden">
@@ -283,9 +294,9 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                             <span className="text-xs font-semibold text-gray-300">
                               Part {index + 1} - {modeLabel}
                             </span>
-                            {(segment.duration_sec || segment.duration) && (segment.duration_sec > 0 || segment.duration > 0) && (
+                            {duration > 0 && (
                               <span className="text-xs text-gray-400">
-                                {isVideo ? '🎥' : '🎤'} {segment.duration_sec || segment.duration}s
+                                {isVideo ? '🎥' : '🎤'} {duration}s
                               </span>
                             )}
                           </div>

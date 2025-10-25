@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageSquare, User, Clock, CheckCircle, Video, Mic, GripVertical } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
@@ -7,10 +7,22 @@ import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 // Column width configuration (in pixels)
 const DEFAULT_COLUMN_WIDTHS = {
   checkbox: 40,
-  question: 400,
-  asker: 220,
+  question: 380,
+  asker: 240,
   price: 100,
   time: 90,
+};
+
+// Throttle utility for better performance
+const throttle = (fn, ms) => {
+  let lastCall = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - lastCall >= ms) {
+      lastCall = now;
+      fn(...args);
+    }
+  };
 };
 
 function QuestionTable({ 
@@ -25,20 +37,30 @@ function QuestionTable({
   const [resizing, setResizing] = useState(null);
   const tableRef = useRef(null);
 
-  useEffect(() => {
-    if (!resizing) return;
-
-    const handleMouseMove = (e) => {
+  // Throttled resize handler for better performance
+  const handleResize = useCallback(
+    throttle((clientX) => {
+      if (!resizing) return;
+      
       const column = resizing.column;
       const startX = resizing.startX;
       const startWidth = resizing.startWidth;
-      const diff = e.clientX - startX;
-      const newWidth = Math.max(80, startWidth + diff); // Minimum 80px
+      const diff = clientX - startX;
+      const newWidth = Math.max(80, startWidth + diff);
 
       setColumnWidths(prev => ({
         ...prev,
         [column]: newWidth
       }));
+    }, 16), // ~60fps
+    [resizing]
+  );
+
+  useEffect(() => {
+    if (!resizing) return;
+
+    const handleMouseMove = (e) => {
+      handleResize(e.clientX);
     };
 
     const handleMouseUp = () => {
@@ -52,7 +74,7 @@ function QuestionTable({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [resizing]);
+  }, [resizing, handleResize]);
 
   const startResize = (column, e) => {
     e.preventDefault();
@@ -65,6 +87,7 @@ function QuestionTable({
   };
 
   const getRelativeTime = (timestamp) => {
+    if (!timestamp) return '';
     const now = Date.now() / 1000;
     const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
     const diff = now - createdAt;
@@ -189,7 +212,16 @@ function QuestionTable({
           </div>
 
           {/* Time Column */}
-          <div className="text-right">Time</div>
+          <div className="relative flex items-center justify-end">
+            <span>Time</span>
+            <button
+              onMouseDown={(e) => startResize('time', e)}
+              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize"
+            >
+              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -267,8 +299,8 @@ function QuestionTable({
                 </div>
               </div>
 
-              {/* Asker - Name + Email */}
-              <div className="flex flex-col justify-center text-[11px] min-w-0 overflow-hidden" title={askerEmail || ''}>
+              {/* Asker - Name + Email on separate lines */}
+              <div className="flex flex-col justify-center text-[11px] min-w-0 overflow-hidden" title={askerEmail || askerName}>
                 <div className="flex items-center gap-1 truncate">
                   <User size={10} className="flex-shrink-0 text-gray-400" />
                   <span className="truncate font-medium text-gray-700">
@@ -276,7 +308,7 @@ function QuestionTable({
                   </span>
                 </div>
                 {askerEmail && (
-                  <span className="truncate text-gray-500 ml-[14px]">
+                  <span className="truncate text-gray-500 ml-[14px] text-[10px]">
                     {askerEmail}
                   </span>
                 )}
