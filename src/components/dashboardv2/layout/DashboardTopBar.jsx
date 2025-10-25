@@ -2,6 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import AvailabilityToggle from '../navigation/AvailabilityToggle';
 import { Search, Bell, Menu, Settings2 } from 'lucide-react';
+import GlobalSearch from '../search/GlobalSearch';
+
 
 function DashboardTopBar({ 
   breadcrumbs = [], 
@@ -9,7 +11,8 @@ function DashboardTopBar({
   onToggleSidebar,
   onToggleMobileMenu,
   isAvailable,
-  onAvailabilityChange
+  onAvailabilityChange,
+  onOpenSearch  // NEW
 }) {
   const navigate = useNavigate();
 
@@ -67,20 +70,7 @@ function DashboardTopBar({
 
         {/* Center: Search (Desktop) */}
         <div className="hidden md:flex flex-1 max-w-md mx-8">
-          <div className="relative w-full">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search questions, answers..."
-              className="
-                w-full pl-10 pr-4 py-2 
-                bg-gray-50 border border-gray-200 rounded-lg
-                text-sm placeholder-gray-500
-                focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white
-                transition-all
-              "
-            />
-          </div>
+  <GlobalSearch onClick={onOpenSearch} />
         </div>
 
         {/* Right: Actions */}

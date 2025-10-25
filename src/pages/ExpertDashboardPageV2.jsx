@@ -69,6 +69,7 @@ function ExpertDashboardPageV2() {
       pendingCount={metrics.pendingCount}
       isAvailable={profile?.accepting_questions ?? true}
       onAvailabilityChange={handleAvailabilityChange}
+      searchData={{ questions }}  // NEW
     >
       {/* Welcome Hero */}
       <WelcomeHero />

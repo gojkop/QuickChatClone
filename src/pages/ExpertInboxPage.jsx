@@ -190,6 +190,7 @@ function ExpertInboxPage() {
         pendingCount={metrics.pendingCount}
         isAvailable={profile?.accepting_questions ?? true}
         onAvailabilityChange={handleAvailabilityChange}
+        searchData={{ questions }}  // NEW
       >
         <InboxLayout
           selectedQuestion={selectedQuestion}
