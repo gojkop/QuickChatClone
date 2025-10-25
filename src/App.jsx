@@ -121,6 +121,7 @@ const AppLayout = () => {
                <ExpertInboxPage />
               </ProtectedRoute>
           } 
+          />
          <Route 
              path="/dashboard/analytics" 
              element={
@@ -128,7 +129,6 @@ const AppLayout = () => {
                 <ExpertAnalyticsPage />
                   </ProtectedRoute>
          } 
-        />
         />
           <Route 
             path="/expert/marketing" 
