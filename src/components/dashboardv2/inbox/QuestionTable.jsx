@@ -62,14 +62,34 @@ function QuestionTable({
         time: 6
       };
 
-      const finalWidth = Math.max(minWidths[column] || 5, newWidth);
+      // Apply minimum width constraint
+      const minConstrainedWidth = Math.max(minWidths[column] || 5, newWidth);
+
+      // Calculate what the total width would be with this new column width
+      const totalWidth = Object.keys(columnWidths).reduce((sum, key) => {
+        if (key === column) {
+          return sum + minConstrainedWidth;
+        }
+        return sum + columnWidths[key];
+      }, 0);
+
+      // Maximum width constraint: ensure total never exceeds 100%
+      // This prevents columns from being pushed off-screen behind the detail panel
+      let finalWidth = minConstrainedWidth;
+      if (totalWidth > 100) {
+        // Reduce the new width to keep total at 100%
+        const excess = totalWidth - 100;
+        finalWidth = minConstrainedWidth - excess;
+        // Still respect minimum width
+        finalWidth = Math.max(minWidths[column] || 5, finalWidth);
+      }
 
       setColumnWidths(prev => ({
         ...prev,
         [column]: finalWidth
       }));
     }, 16), // ~60fps
-    [resizing]
+    [resizing, columnWidths]
   );
 
   useEffect(() => {
