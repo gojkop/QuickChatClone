@@ -20,6 +20,8 @@ function ExpertInboxPage() {
   
   const [profile, setProfile] = useState(null);
   const [questions, setQuestions] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [showAnswerModal, setShowAnswerModal] = useState(false);
@@ -52,14 +54,17 @@ function ExpertInboxPage() {
   // Load data
   useEffect(() => {
     const loadData = async () => {
+      setIsLoading(true);
       try {
         const [profileRes, questionsRes] = await Promise.all([
           apiClient.get('/me/profile'),
-          apiClient.get('/me/questions'),
+          apiClient.get(`/me/questions?page=${currentPage}&per_page=10`),
         ]);
 
         setProfile(profileRes.data.expert_profile || {});
-        setQuestions(questionsRes.data || []);
+        // Handle new paginated response format
+        setQuestions(questionsRes.data?.questions || questionsRes.data || []);
+        setPagination(questionsRes.data?.pagination || null);
       } catch (err) {
         console.error('Failed to load inbox data:', err);
       } finally {
@@ -68,7 +73,7 @@ function ExpertInboxPage() {
     };
 
     loadData();
-  }, []);
+  }, [currentPage]);
 
   // Handle URL hash for question selection
   useEffect(() => {
@@ -95,11 +100,33 @@ function ExpertInboxPage() {
   // Refresh questions
   const refreshQuestions = async () => {
     try {
-      const response = await apiClient.get('/me/questions');
-      setQuestions(response.data || []);
+      const response = await apiClient.get(`/me/questions?page=${currentPage}&per_page=10`);
+      // Handle new paginated response format
+      setQuestions(response.data?.questions || response.data || []);
+      setPagination(response.data?.pagination || null);
     } catch (err) {
       console.error('Failed to refresh questions:', err);
     }
+  };
+
+  // Pagination handlers
+  const handleNextPage = () => {
+    if (pagination?.has_next) {
+      setCurrentPage(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (pagination?.has_prev) {
+      setCurrentPage(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Bulk actions
@@ -220,14 +247,43 @@ function ExpertInboxPage() {
             />
           }
           questionList={
-            <QuestionListView
-              questions={filteredQuestions}
-              selectedQuestions={selectedQuestions}
-              activeQuestionId={selectedQuestion?.id}
-              onSelectQuestion={toggleSelectQuestion}
-              onQuestionClick={handleQuestionClick}
-              onSelectAll={handleSelectAll}
-            />
+            <>
+              <QuestionListView
+                questions={filteredQuestions}
+                selectedQuestions={selectedQuestions}
+                activeQuestionId={selectedQuestion?.id}
+                onSelectQuestion={toggleSelectQuestion}
+                onQuestionClick={handleQuestionClick}
+                onSelectAll={handleSelectAll}
+              />
+
+              {/* Pagination Controls */}
+              {pagination && pagination.total_pages > 1 && (
+                <div className="mt-4 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200">
+                  <div className="text-sm text-gray-700">
+                    Page <span className="font-medium">{pagination.page}</span> of{' '}
+                    <span className="font-medium">{pagination.total_pages}</span>
+                    {' '}({pagination.total} total questions)
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handlePrevPage}
+                      disabled={!pagination.has_prev}
+                      className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={handleNextPage}
+                      disabled={!pagination.has_next}
+                      className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           }
           questionDetail={
             <QuestionDetailPanel

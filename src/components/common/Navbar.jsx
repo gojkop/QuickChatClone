@@ -50,20 +50,18 @@ function Navbar() {
     }
 
     try {
-      // ✅ OPTIMIZATION: Use query parameters to filter on backend
-      // This returns only pending questions instead of all questions
-      const response = await apiClient.get('/me/questions?status=paid');
-      const questions = response.data || [];
-      
-      // Filter for questions that haven't been answered yet
-      const pendingCount = questions.filter(q => !q.answered_at).length;
-      
+      // ✅ OPTIMIZATION: Use dedicated count endpoint
+      // This returns just a count without fetching all question data
+      const response = await apiClient.get('/me/questions/count?status=paid&unanswered=true');
+
+      const pendingCount = response.data?.count || 0;
+
       // Update cache
       cacheRef.current = {
         pendingCount,
         timestamp: Date.now()
       };
-      
+
       console.log('🔄 Fetched and cached pending count:', pendingCount);
       return pendingCount;
     } catch (err) {

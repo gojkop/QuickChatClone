@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { calculateAnalytics } from '@/utils/dashboardv2/analyticsCalculator';
+import { useState } from 'react';
+import { useAnalyticsQuery } from '@/hooks/useAnalyticsQuery';
 
 export function useAnalytics(questions = []) {
   const [dateRange, setDateRange] = useState(() => {
@@ -8,9 +8,11 @@ export function useAnalytics(questions = []) {
     return { start, end };
   });
 
-  const analytics = useMemo(() => {
-    return calculateAnalytics(questions, dateRange);
-  }, [questions, dateRange]);
+  // Use server-side analytics instead of client-side calculation
+  const { data: analytics, isLoading, error } = useAnalyticsQuery({
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  });
 
   const setPresetRange = (preset) => {
     const end = Date.now();
@@ -41,9 +43,21 @@ export function useAnalytics(questions = []) {
   };
 
   return {
-    analytics,
+    analytics: analytics || {
+      total_questions: 0,
+      total_revenue_cents: 0,
+      answered_count: 0,
+      paid_count: 0,
+      pending_count: 0,
+      refunded_count: 0,
+      avg_response_time_hours: 0,
+      completion_rate: 0,
+      revenue_by_month: [],
+    },
     dateRange,
     setPresetRange,
     setCustomRange,
+    isLoading,
+    error,
   };
 }
