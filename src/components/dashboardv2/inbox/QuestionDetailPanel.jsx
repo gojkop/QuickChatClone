@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { X, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MoreVertical, MessageSquare, Mail } from 'lucide-react';
+import { X, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MoreVertical, MessageSquare, Mail, Video, Mic } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 
 function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) {
   const [showActions, setShowActions] = useState(false);
+
+  // Helper to get media segments
+  const getMediaSegments = () => {
+    return question?.recording_segments || question?.media_asset || [];
+  };
 
   // Helper to safely get attachments array
   const getAttachments = () => {
@@ -23,7 +28,24 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
     return [];
   };
 
+  const mediaSegments = getMediaSegments();
   const attachments = getAttachments();
+
+  // Helper to get Cloudflare Stream video ID
+  const getStreamVideoId = (url) => {
+    if (!url) return null;
+    const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
+    return match ? match[1] : null;
+  };
+
+  // Helper to get customer code
+  const getCustomerCode = (url) => {
+    if (!url) return null;
+    const match = url.match(/https:\/\/(customer-[a-zA-Z0-9]+)\.cloudflarestream\.com/);
+    return match ? match[1] : null;
+  };
+
+  const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
   // Helper to get question title
   const getQuestionTitle = (question) => {
@@ -38,10 +60,14 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
       return firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
     }
     
-    // Priority 3: Just show it's a video question
-    if (question.video_url) {
-      return 'Video Question';
-    }
+    // Priority 3: Based on media type
+    const hasVideo = mediaSegments.some(s => 
+      s.metadata?.mode === 'video' || s.metadata?.mode === 'screen' || s.metadata?.mode === 'screen-camera'
+    );
+    const hasAudio = mediaSegments.some(s => s.metadata?.mode === 'audio');
+    
+    if (hasVideo) return 'Video Question';
+    if (hasAudio) return 'Audio Question';
     
     // Last resort: Question ID
     return `Question #${question.id}`;
@@ -90,7 +116,7 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
       <div className="flex-shrink-0 p-4 lg:p-6 border-b border-gray-200 bg-white">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-2">
               {isMobile && (
                 <button
                   onClick={onClose}
@@ -100,14 +126,17 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                   <X size={20} />
                 </button>
               )}
-              <h2 className="text-xl lg:text-2xl font-bold text-gray-900 line-clamp-2">
+              <h2 className="text-xl lg:text-2xl font-bold text-gray-900 line-clamp-2 flex-1">
                 {getQuestionTitle(question)}
               </h2>
+              <span className="text-sm text-gray-400 font-mono flex-shrink-0">Q-{question.id}</span>
             </div>
             
             <div className="flex items-center gap-2 flex-wrap">
               <PriorityBadge question={question} />
-              {!isAnswered && <SLAIndicator question={question} showLabel={true} />}
+              {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
+                <SLAIndicator question={question} showLabel={true} />
+              )}
               {isAnswered && (
                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
                   ✓ Answered
@@ -140,53 +169,154 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
       {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 lg:p-6 space-y-6">
-          {/* Video Question */}
-          {question.video_url && (
+          
+          {/* Question Metadata */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Question Details</h3>
+            <div className="grid grid-cols-1 gap-2.5 text-sm">
+              <div className="flex items-center gap-2 text-gray-700">
+                <User size={15} className="text-gray-400 flex-shrink-0" />
+                <span className="font-medium min-w-[70px]">Asker:</span>
+                <span className="font-semibold">{question.user_name || 'Anonymous'}</span>
+              </div>
+
+              {question.user_email && question.user_email.trim() && (
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Mail size={15} className="text-gray-400 flex-shrink-0" />
+                  <span className="font-medium min-w-[70px]">Email:</span>
+                  <a 
+                    href={`mailto:${question.user_email}`}
+                    className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
+                  >
+                    {question.user_email}
+                  </a>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 text-gray-700">
+                <Calendar size={15} className="text-gray-400 flex-shrink-0" />
+                <span className="font-medium min-w-[70px]">Asked:</span>
+                <span>{formatDate(question.created_at)}</span>
+                <span className="text-gray-500 text-xs">({getRelativeTime(question.created_at)})</span>
+              </div>
+
+              {question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Clock size={15} className="text-gray-400 flex-shrink-0" />
+                  <span className="font-medium min-w-[70px]">SLA:</span>
+                  <span>{question.sla_hours_snapshot}h response time</span>
+                  {!isAnswered && (
+                    <span className="text-orange-600 font-medium text-xs">
+                      (expires {formatDate(question.created_at + question.sla_hours_snapshot * 3600)})
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Question Title (if different from header) */}
+          {question.question_text && question.question_text.trim() && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Play size={16} className="text-indigo-600" />
-                <h3 className="text-sm font-semibold text-gray-900">Video Question</h3>
-                {question.video_duration && question.video_duration > 0 && (
-                  <span className="text-xs text-gray-500">
-                    ({Math.floor(question.video_duration / 60)}:{String(question.video_duration % 60).padStart(2, '0')})
-                  </span>
-                )}
-              </div>
-              <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden">
-                <video 
-                  src={question.video_url} 
-                  controls 
-                  className="w-full h-full"
-                  poster={question.video_thumbnail_url}
-                >
-                  Your browser does not support video playback.
-                </video>
-              </div>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">{question.question_text}</h3>
             </div>
           )}
 
-          {/* Written Context */}
+          {/* Written Context/Details */}
           {question.question_details && question.question_details.trim() && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <FileText size={16} className="text-indigo-600" />
-                <h3 className="text-sm font-semibold text-gray-900">Written Context</h3>
+                <h3 className="text-sm font-semibold text-gray-900">Additional Context</h3>
               </div>
-              <div className="prose prose-sm max-w-none">
-                <p className="text-gray-700 whitespace-pre-wrap">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
                   {question.question_details}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Attachments */}
+          {/* Media Segments (Videos/Audio/Screen Recordings) */}
+          {mediaSegments && mediaSegments.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Video size={16} className="text-indigo-600" />
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Media Recordings ({mediaSegments.length})
+                </h3>
+              </div>
+              <div className="space-y-3">
+                {mediaSegments
+                  .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
+                  .map((segment, index) => {
+                    const isVideo = segment.metadata?.mode === 'video' ||
+                                    segment.metadata?.mode === 'screen' ||
+                                    segment.metadata?.mode === 'screen-camera' ||
+                                    segment.url?.includes('cloudflarestream.com');
+                    const isAudio = segment.metadata?.mode === 'audio' ||
+                                    segment.url?.includes('.webm') ||
+                                    !isVideo;
+
+                    const videoId = isVideo ? getStreamVideoId(segment.url) : null;
+                    const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+                    const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+                    
+                    const modeLabel = segment.metadata?.mode === 'screen' ? 'Screen Recording' :
+                                     segment.metadata?.mode === 'screen-camera' ? 'Screen + Camera' :
+                                     isVideo ? 'Video' : 'Audio';
+
+                    return (
+                      <div key={segment.id || index} className="bg-gray-900 rounded-lg overflow-hidden">
+                        {mediaSegments.length > 1 && (
+                          <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
+                            <span className="text-xs font-semibold text-gray-300">
+                              Part {index + 1} - {modeLabel}
+                            </span>
+                            {(segment.duration_sec || segment.duration) && (segment.duration_sec > 0 || segment.duration > 0) && (
+                              <span className="text-xs text-gray-400">
+                                {isVideo ? '🎥' : '🎤'} {segment.duration_sec || segment.duration}s
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {isVideo && videoId && customerCode ? (
+                          <div className="w-full aspect-video bg-black">
+                            <iframe
+                              src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                              style={{ border: 'none', width: '100%', height: '100%' }}
+                              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                              allowFullScreen={true}
+                              title={`Video segment ${index + 1}`}
+                            />
+                          </div>
+                        ) : isAudio && segment.url ? (
+                          <div className="p-4 flex flex-col items-center justify-center">
+                            <div className="flex items-center gap-2 mb-2 text-gray-300">
+                              <Mic size={16} />
+                              <span className="text-sm font-medium">{modeLabel}</span>
+                            </div>
+                            <audio controls className="w-full max-w-md" preload="metadata">
+                              <source src={segment.url} type="audio/webm" />
+                              Your browser does not support audio playback.
+                            </audio>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* File Attachments */}
           {attachments.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <ImageIcon size={16} className="text-indigo-600" />
                 <h3 className="text-sm font-semibold text-gray-900">
-                  Attachments ({attachments.length})
+                  File Attachments ({attachments.length})
                 </h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -228,51 +358,6 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
               </div>
             </div>
           )}
-
-          {/* Question Metadata */}
-          <div className="pt-6 border-t border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Question Details</h3>
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div className="flex items-center gap-2 text-gray-700">
-                <User size={16} className="text-gray-400 flex-shrink-0" />
-                <span className="font-medium min-w-[80px]">Asker:</span>
-                <span className="font-semibold">{question.user_name || 'Anonymous'}</span>
-              </div>
-
-              {question.user_email && question.user_email.trim() && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Mail size={16} className="text-gray-400 flex-shrink-0" />
-                  <span className="font-medium min-w-[80px]">Email:</span>
-                  <a 
-                    href={`mailto:${question.user_email}`}
-                    className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
-                  >
-                    {question.user_email}
-                  </a>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 text-gray-700">
-                <Calendar size={16} className="text-gray-400 flex-shrink-0" />
-                <span className="font-medium min-w-[80px]">Asked:</span>
-                <span>{formatDate(question.created_at)}</span>
-                <span className="text-gray-500">({getRelativeTime(question.created_at)})</span>
-              </div>
-
-              {question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Clock size={16} className="text-gray-400 flex-shrink-0" />
-                  <span className="font-medium min-w-[80px]">SLA:</span>
-                  <span>{question.sla_hours_snapshot}h response time</span>
-                  {!isAnswered && (
-                    <span className="text-orange-600 font-medium">
-                      (expires {formatDate(question.created_at + question.sla_hours_snapshot * 3600)})
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* Answer (if answered) */}
           {isAnswered && question.answer_text && question.answer_text.trim() && (

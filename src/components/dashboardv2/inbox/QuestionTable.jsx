@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, User, Clock, CheckCircle } from 'lucide-react';
+import { MessageSquare, User, Clock, CheckCircle, Video, Mic } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
@@ -25,7 +25,7 @@ function QuestionTable({
   const isAnswered = (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
   const getQuestionTitle = (question) => {
-    // Priority 1: question_text
+    // Priority 1: question_text (title field)
     if (question.question_text?.trim()) {
       return question.question_text;
     }
@@ -36,13 +36,32 @@ function QuestionTable({
       return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
     }
     
-    // Priority 3: Just show it's a video/audio question
-    if (question.video_url) {
-      return 'Video Question';
+    // Priority 3: Based on media type
+    const hasVideo = question.recording_segments?.some(s => 
+      s.metadata?.mode === 'video' || s.metadata?.mode === 'screen' || s.metadata?.mode === 'screen-camera'
+    );
+    const hasAudio = question.recording_segments?.some(s => s.metadata?.mode === 'audio');
+    
+    if (hasVideo) return 'Video Question';
+    if (hasAudio) return 'Audio Question';
+    
+    // Last resort: Show Q-ID only (will be displayed separately)
+    return 'Question';
+  };
+
+  const getMediaIcon = (question) => {
+    if (!question.recording_segments || question.recording_segments.length === 0) {
+      return null;
     }
     
-    // Last resort: Question ID
-    return `Question #${question.id}`;
+    const hasVideo = question.recording_segments.some(s => 
+      s.metadata?.mode === 'video' || s.metadata?.mode === 'screen' || s.metadata?.mode === 'screen-camera'
+    );
+    const hasAudio = question.recording_segments.some(s => s.metadata?.mode === 'audio');
+    
+    if (hasVideo) return <Video size={13} className="text-indigo-600 flex-shrink-0" />;
+    if (hasAudio) return <Mic size={13} className="text-indigo-600 flex-shrink-0" />;
+    return <MessageSquare size={13} className="text-indigo-600 flex-shrink-0" />;
   };
 
   const allSelected = questions.length > 0 && selectedQuestions.length === questions.length;
@@ -52,7 +71,7 @@ function QuestionTable({
     <div className="flex flex-col h-full w-full">
       {/* Table Header - Sticky */}
       <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
-        <div className="grid grid-cols-[32px_1fr_140px_90px_70px] gap-2 px-3 py-2.5 text-[11px] font-semibold text-gray-600 uppercase tracking-wide">
+        <div className="grid grid-cols-[32px_1fr_180px_90px_70px] gap-2 px-3 py-2.5 text-[11px] font-semibold text-gray-600 uppercase tracking-wide">
           <div className="flex items-center justify-center">
             <input 
               type="checkbox" 
@@ -79,13 +98,15 @@ function QuestionTable({
           const answered = isAnswered(question);
           const isActive = question.id === activeQuestionId;
           const isSelected = selectedQuestions.includes(question.id);
+          const title = getQuestionTitle(question);
+          const mediaIcon = getMediaIcon(question);
 
           return (
             <div
               key={question.id}
               onClick={() => onQuestionClick(question)}
               className={`
-                grid grid-cols-[32px_1fr_140px_90px_70px] gap-2 px-3 py-2.5
+                grid grid-cols-[32px_1fr_180px_90px_70px] gap-2 px-3 py-2.5
                 border-b border-gray-200 cursor-pointer
                 transition-all duration-150
                 hover:bg-indigo-50/50
@@ -108,18 +129,21 @@ function QuestionTable({
                 />
               </div>
 
-              {/* Question Text + Badges */}
+              {/* Question Title + Q-ID + Badges */}
               <div className="flex items-center gap-2 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                  {question.video_url && (
-                    <MessageSquare size={13} className="text-indigo-600 flex-shrink-0" />
-                  )}
-                  <span className={`
-                    text-[13px] leading-tight truncate
-                    ${answered ? 'text-gray-600' : 'text-gray-900 font-medium'}
-                  `}>
-                    {getQuestionTitle(question)}
-                  </span>
+                  {mediaIcon}
+                  <div className="flex items-baseline gap-1.5 min-w-0">
+                    <span className={`
+                      text-[13px] leading-tight truncate
+                      ${answered ? 'text-gray-600' : 'text-gray-900 font-medium'}
+                    `}>
+                      {title}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
+                      Q-{question.id}
+                    </span>
+                  </div>
                 </div>
                 
                 {/* Inline badges */}
@@ -133,16 +157,25 @@ function QuestionTable({
                     </div>
                   )}
                   
-                  {!answered && question.sla_hours_snapshot && (
+                  {!answered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
                     <SLAIndicator question={question} compact={true} showLabel={false} />
                   )}
                 </div>
               </div>
 
-              {/* Asker - Show name (email in tooltip) */}
-              <div className="flex items-center text-[12px] text-gray-600 truncate" title={question.user_email || ''}>
-                <User size={11} className="flex-shrink-0 text-gray-400 mr-1" />
-                <span className="truncate font-medium">{question.user_name || 'Anonymous'}</span>
+              {/* Asker - Name + Email */}
+              <div className="flex flex-col justify-center text-[11px] min-w-0" title={question.user_email || ''}>
+                <div className="flex items-center gap-1 truncate">
+                  <User size={10} className="flex-shrink-0 text-gray-400" />
+                  <span className="truncate font-medium text-gray-700">
+                    {question.user_name || 'Anonymous'}
+                  </span>
+                </div>
+                {question.user_email && question.user_email.trim() && (
+                  <span className="truncate text-gray-500 ml-[14px]">
+                    {question.user_email}
+                  </span>
+                )}
               </div>
 
               {/* Price */}

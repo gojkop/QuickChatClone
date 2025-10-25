@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Clock, CheckCircle, MessageSquare, ChevronRight, Mail } from 'lucide-react';
+import { User, Clock, CheckCircle, MessageSquare, ChevronRight, Mail, Video, Mic } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
@@ -33,13 +33,32 @@ function MobileQuestionCard({
       return firstLine.length > 60 ? firstLine.substring(0, 60) + '...' : firstLine;
     }
     
-    // Priority 3: Just show it's a video question
-    if (question.video_url) {
-      return 'Video Question';
+    // Priority 3: Based on media type
+    const hasVideo = question.recording_segments?.some(s => 
+      s.metadata?.mode === 'video' || s.metadata?.mode === 'screen' || s.metadata?.mode === 'screen-camera'
+    );
+    const hasAudio = question.recording_segments?.some(s => s.metadata?.mode === 'audio');
+    
+    if (hasVideo) return 'Video Question';
+    if (hasAudio) return 'Audio Question';
+    
+    // Last resort
+    return 'Question';
+  };
+
+  const getMediaIcon = () => {
+    if (!question.recording_segments || question.recording_segments.length === 0) {
+      return null;
     }
     
-    // Last resort: Question ID
-    return `Question #${question.id}`;
+    const hasVideo = question.recording_segments.some(s => 
+      s.metadata?.mode === 'video' || s.metadata?.mode === 'screen' || s.metadata?.mode === 'screen-camera'
+    );
+    const hasAudio = question.recording_segments.some(s => s.metadata?.mode === 'audio');
+    
+    if (hasVideo) return <Video size={14} className="text-indigo-600 flex-shrink-0 mt-0.5" />;
+    if (hasAudio) return <Mic size={14} className="text-indigo-600 flex-shrink-0 mt-0.5" />;
+    return <MessageSquare size={14} className="text-indigo-600 flex-shrink-0 mt-0.5" />;
   };
 
   const isAnswered = question.status === 'closed' || question.status === 'answered' || question.answered_at;
@@ -56,7 +75,7 @@ function MobileQuestionCard({
       `}
     >
       <div className="flex items-start gap-2.5">
-        {/* Checkbox - Smaller and cleaner */}
+        {/* Checkbox */}
         <input
           type="checkbox"
           checked={isSelected}
@@ -69,30 +88,30 @@ function MobileQuestionCard({
         />
         
         <div className="flex-1 min-w-0 pr-6">
-          {/* Question Title */}
+          {/* Question Title + Q-ID */}
           <div className="flex items-start gap-1.5 mb-2">
-            {question.video_url && (
-              <MessageSquare size={14} className="text-indigo-600 flex-shrink-0 mt-0.5" />
-            )}
-            <h3 className={`text-sm font-medium line-clamp-2 flex-1 ${isAnswered ? 'text-gray-600' : 'text-gray-900'}`}>
-              {getQuestionTitle(question)}
-            </h3>
+            {getMediaIcon()}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <h3 className={`text-sm font-medium flex-1 min-w-0 ${isAnswered ? 'text-gray-600' : 'text-gray-900'}`}>
+                  {getQuestionTitle(question)}
+                </h3>
+                <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">Q-{question.id}</span>
+              </div>
+            </div>
           </div>
           
-          {/* Asker Info */}
-          <div className="flex items-center gap-2 mb-2 text-xs">
+          {/* Asker Info - Name + Email */}
+          <div className="flex flex-col gap-0.5 mb-2 text-xs">
             <div className="flex items-center gap-1 text-gray-600">
               <User size={11} className="flex-shrink-0 text-gray-400" />
-              <span className="font-medium">{question.user_name || 'Anonymous'}</span>
+              <span className="font-medium truncate">{question.user_name || 'Anonymous'}</span>
             </div>
             {question.user_email && question.user_email.trim() && (
-              <>
-                <span className="text-gray-300">•</span>
-                <div className="flex items-center gap-1 text-gray-500 truncate">
-                  <Mail size={11} className="flex-shrink-0" />
-                  <span className="truncate">{question.user_email}</span>
-                </div>
-              </>
+              <div className="flex items-center gap-1 text-gray-500 ml-[15px]">
+                <Mail size={10} className="flex-shrink-0" />
+                <span className="truncate text-[11px]">{question.user_email}</span>
+              </div>
             )}
           </div>
           

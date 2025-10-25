@@ -5,7 +5,7 @@ import NavItem from '../navigation/NavItem';
 import UserProfileCard from '../navigation/UserProfileCard';
 import { 
   Home, Inbox, BarChart3, PieChart, DollarSign,
-  User, Settings, HelpCircle
+  Settings, User, HelpCircle
 } from 'lucide-react';
 import logo from '@/assets/images/logo-mindpick.svg';
 
@@ -88,15 +88,15 @@ function MobileDrawer({ isOpen, onClose, pendingCount = 0 }) {
 
           <NavSection title="Settings">
             <NavItem
-              to="/expert#profile-settings"
-              icon={<User size={20} />}
+              to="/dashboard/profile"
+              icon={<Settings size={20} />}
               label="Profile"
               onClick={onClose}
             />
             <NavItem
-              to="/expert#account-settings"
-              icon={<Settings size={20} />}
-              label="Settings"
+              to="/dashboard/account"
+              icon={<User size={20} />}
+              label="Account"
               onClick={onClose}
             />
             <NavItem

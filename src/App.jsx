@@ -31,6 +31,8 @@ import AskQuestionPageV2 from '@/pages/AskQuestionPageV2';
 import ExpertDashboardPageV2 from '@/pages/ExpertDashboardPageV2';
 import ExpertInboxPage from '@/pages/ExpertInboxPage';
 import ExpertAnalyticsPage from '@/pages/ExpertAnalyticsPage';
+import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
+import AccountSettingsPage from '@/pages/AccountSettingsPage';
 
 
 // Import Common Components
@@ -130,6 +132,22 @@ const AppLayout = () => {
                   </ProtectedRoute>
          } 
         />
+          <Route 
+            path="/dashboard/profile" 
+            element={
+              <ProtectedRoute>
+                <ProfileSettingsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard/account" 
+            element={
+              <ProtectedRoute>
+                <AccountSettingsPage />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/expert/marketing" 
             element={

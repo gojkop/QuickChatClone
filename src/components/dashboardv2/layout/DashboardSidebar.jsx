@@ -5,22 +5,19 @@ import NavItem from '../navigation/NavItem';
 import UserProfileCard from '../navigation/UserProfileCard';
 import {
   Home, Inbox, BarChart3, PieChart, DollarSign,
-  User, Settings, HelpCircle
+  Settings, User, HelpCircle
 } from 'lucide-react';
 import logo from '@/assets/images/logo-mindpick.svg';
 
-function DashboardSidebar({ collapsed = false, pendingCount = 0 }) {
+function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
   const navigate = useNavigate();
 
   return (
-    <aside 
-      className={`
-        fixed left-0 top-0 bottom-0 bg-white border-r border-gray-200
-        transition-all duration-300 ease-out z-40
-        ${collapsed ? 'w-16' : 'w-60'}
-        hidden lg:flex flex-col
-      `}
-    >
+    <aside className={`
+      hidden lg:flex flex-col bg-white border-r border-gray-200
+      transition-all duration-300 h-screen sticky top-0
+      ${collapsed ? 'w-20' : 'w-64'}
+    `}>
       {/* Logo */}
       <div className={`
         h-16 border-b border-gray-200 flex items-center
@@ -36,8 +33,7 @@ function DashboardSidebar({ collapsed = false, pendingCount = 0 }) {
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-4 px-3">
-        {/* Main Section */}
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
         <NavSection title="Main" collapsed={collapsed}>
           <NavItem
             to="/dashboard"
@@ -60,7 +56,6 @@ function DashboardSidebar({ collapsed = false, pendingCount = 0 }) {
           />
         </NavSection>
 
-        {/* Business Section */}
         <NavSection title="Business" collapsed={collapsed}>
           <NavItem
             to="/expert/marketing"
@@ -77,18 +72,17 @@ function DashboardSidebar({ collapsed = false, pendingCount = 0 }) {
           />
         </NavSection>
 
-        {/* Settings Section */}
         <NavSection title="Settings" collapsed={collapsed}>
           <NavItem
-            to="/expert#profile-settings"
-            icon={<User size={20} />}
+            to="/dashboard/profile"
+            icon={<Settings size={20} />}
             label="Profile"
             collapsed={collapsed}
           />
           <NavItem
-            to="/expert#account-settings"
-            icon={<Settings size={20} />}
-            label="Settings"
+            to="/dashboard/account"
+            icon={<User size={20} />}
+            label="Account"
             collapsed={collapsed}
           />
           <NavItem
@@ -98,15 +92,34 @@ function DashboardSidebar({ collapsed = false, pendingCount = 0 }) {
             collapsed={collapsed}
           />
         </NavSection>
-      </div>
+      </nav>
 
       {/* User Profile Footer */}
       <div className="p-3 border-t border-gray-200">
-        <UserProfileCard 
+        <UserProfileCard
           collapsed={collapsed}
-          onClick={() => navigate('/expert#account-settings')}
+          onClick={() => navigate('/dashboard/account')}
         />
       </div>
+
+      {/* Collapse Toggle */}
+      <button
+        onClick={onToggle}
+        className={`
+          absolute -right-3 top-20 w-6 h-6 rounded-full bg-white border-2 border-gray-200
+          flex items-center justify-center hover:bg-gray-50 transition-colors z-10
+        `}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <svg 
+          className={`w-3 h-3 text-gray-600 transition-transform ${collapsed ? 'rotate-180' : ''}`}
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
     </aside>
   );
 }
