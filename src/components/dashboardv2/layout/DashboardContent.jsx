@@ -14,7 +14,7 @@ function DashboardContent({ children, sidebarCollapsed }) {
         bg-gray-50 pt-16
         transition-all duration-300 ease-out
         ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-60'}
-        ${!isFullWidth ? 'min-h-[calc(100vh-4rem)]' : ''}
+        ${!isFullWidth ? 'h-screen overflow-y-auto' : ''}
       `}
     >
       {isFullWidth ? (
