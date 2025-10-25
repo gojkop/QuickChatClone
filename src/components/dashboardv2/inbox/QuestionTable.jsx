@@ -154,6 +154,10 @@ function QuestionTable({
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden" ref={tableRef}>
+      {/* DEBUG MARKER - Remove after verification */}
+      <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 text-center">
+        ✓ QuestionTable v2.1 - FIXED VERSION (throttle + email + resize)
+      </div>
       {/* Table Header - Sticky */}
       <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
         <div 

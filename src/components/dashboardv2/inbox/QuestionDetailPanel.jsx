@@ -129,6 +129,10 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
       h-full flex flex-col bg-white w-full overflow-hidden
       ${isMobile ? 'fixed inset-0 z-50' : ''}
     `}>
+      {/* DEBUG MARKER - Remove after verification */}
+      <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 text-center">
+        ✓ QuestionDetailPanel v2.1 - FIXED VERSION (layout + no zeros)
+      </div>
       {/* Header - Fixed, proper width management */}
       <div className="flex-shrink-0 p-3 lg:p-4 border-b border-gray-200 bg-white">
         <div className="flex items-start gap-2 w-full">
