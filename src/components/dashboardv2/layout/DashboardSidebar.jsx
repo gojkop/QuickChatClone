@@ -95,11 +95,11 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
       </nav>
 
       {/* User Profile Footer - Sticks to bottom */}
-      <div className="flex-shrink-0 p-3 border-t border-gray-200">
-        <UserProfileCard
-          collapsed={collapsed}
-          onClick={() => navigate('/dashboard/account')}
-        />
+      <div className={`
+        flex-shrink-0 border-t border-gray-200 overflow-visible
+        ${collapsed ? 'p-2' : 'p-3'}
+      `}>
+        <UserProfileCard collapsed={collapsed} />
       </div>
 
       {/* Collapse Toggle - Only show when onToggle is provided */}

@@ -47,7 +47,7 @@ export function ProfileProvider({ children }) {
   const value = {
     profile,
     expertProfile: profile?.expert_profile || null,
-    user: profile ? { id: profile.id, email: profile.email, name: profile.name } : null,
+    user: profile ? { id: profile.id, email: profile.email, name: profile.user?.name } : null,
     isLoading,
     error,
     refetch,
