@@ -9,7 +9,7 @@ function InboxLayout({
   isMobile = false 
 }) {
   return (
-    <div className="h-[calc(100vh-4rem)] w-full flex flex-col lg:flex-row">
+<div className="w-full flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)]">
       {/* Left Panel: Filters + Question List - 50% on desktop */}
       <div className={`
         flex flex-col border-r border-gray-200 bg-gray-50

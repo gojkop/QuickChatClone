@@ -82,9 +82,9 @@ function QuestionListView({
   }
 
   return (
-    <div className="flex flex-col h-full">
+<div className="flex flex-col h-full w-full overflow-hidden">
       {/* Question List - Scrollable */}
-      <div className="flex-1 overflow-hidden">
+  <div className="flex-1 overflow-y-auto">
         {isMobile ? (
           // Mobile: Card-based layout
           <div className="h-full overflow-y-auto">

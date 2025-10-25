@@ -14,7 +14,7 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
 
   return (
 <aside className={`
-  hidden lg:flex flex-col bg-white border-r border-gray-200
+  fixed top-0 right-0 h-16 bg-white border-b border-gray-200 z-30
   transition-all duration-300 h-screen fixed left-0 top-0 z-40
   ${collapsed ? 'w-20' : 'w-64'}
 `}>
