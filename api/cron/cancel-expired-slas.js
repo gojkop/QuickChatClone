@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const XANO_BASE_URL = process.env.XANO_BASE_URL;
+  const XANO_PUBLIC_API_URL = process.env.XANO_PUBLIC_API_URL;
   const XANO_INTERNAL_API_KEY = process.env.XANO_INTERNAL_API_KEY;
 
   try {
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     // - status is "accepted" or "in_progress" (not answered yet)
     // - sla_deadline is in the past
     const questionsResponse = await fetch(
-      `${XANO_BASE_URL}/questions/expired-sla?x_api_key=${XANO_INTERNAL_API_KEY}`,
+      `${XANO_PUBLIC_API_URL}/questions/expired-sla?x_api_key=${XANO_INTERNAL_API_KEY}`,
       {
         method: 'GET',
         headers: {
@@ -141,7 +141,7 @@ export default async function handler(req, res) {
         // 2. Update question status in Xano to "sla_expired"
         try {
           const updateResponse = await fetch(
-            `${XANO_BASE_URL}/question/${questionId}/expire-sla?x_api_key=${XANO_INTERNAL_API_KEY}`,
+            `${XANO_PUBLIC_API_URL}/question/${questionId}/expire-sla?x_api_key=${XANO_INTERNAL_API_KEY}`,
             {
               method: 'POST',
               headers: {
