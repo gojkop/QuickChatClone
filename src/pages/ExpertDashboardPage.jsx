@@ -206,34 +206,18 @@ function ExpertDashboardPage() {
     return remaining;
   };
 
-  // ⚡ Temporary client-side filtering until Xano endpoint is enhanced
-  // TODO: Remove this once filter_type parameter is implemented in Xano
+  // ✅ Server-side filtering: Questions are already filtered by tab on server
+  // Only apply showHidden toggle for 'all' tab (client-side)
   const tabFilteredQuestions = useMemo(() => {
     const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
 
-    let filtered = safeQuestions.filter(q => q.pricing_status !== 'offer_pending');
-
-    if (activeTab === 'pending') {
-      // Pending is filtered server-side (status=paid), but need to filter for !answered_at client-side
-      filtered = filtered.filter(q => {
-        const isUnanswered = !q.answered_at;
-        const isNotDeclined = q.pricing_status !== 'offer_declined' && q.status !== 'declined';
-        const isNotHidden = q.hidden !== true;
-        return isUnanswered && isNotDeclined && isNotHidden;
-      });
-    } else if (activeTab === 'answered') {
-      // Answered tab: client-side filter
-      filtered = filtered.filter(q =>
-        q.status === 'closed' || q.status === 'answered' || q.answered_at
-      );
-    } else if (activeTab === 'all') {
-      // All tab: respect showHidden toggle
-      if (!showHidden) {
-        filtered = filtered.filter(q => !q.hidden);
-      }
+    // For 'all' tab, respect the showHidden toggle
+    if (activeTab === 'all' && !showHidden) {
+      return safeQuestions.filter(q => !q.hidden);
     }
 
-    return filtered;
+    // For pending/answered tabs, questions are already properly filtered server-side
+    return safeQuestions;
   }, [allQuestions, activeTab, showHidden]);
 
   // ✅ OPTIMIZED: Client-side sorting with useMemo - NO API CALLS when sort changes
@@ -292,26 +276,20 @@ function ExpertDashboardPage() {
     return counts;
   }, [allQuestions, pagination, activeTab, tabCounts]);
 
-  // ✅ Server-side pagination - temporary solution using status filter
-  // TODO: Update to use filter_type parameter once Xano endpoint is enhanced
+  // ✅ Server-side pagination with filter_type parameter
   const fetchQuestionsPage = async (page = 1, tab = activeTab) => {
     try {
       const params = new URLSearchParams();
       params.append('page', page);
       params.append('per_page', 10);
-
-      // Temporary: Use status filter for pending, fetch all for others
-      if (tab === 'pending') {
-        params.append('status', 'paid');
-      }
-      // For 'answered' and 'all', don't filter by status (fetch all)
+      params.append('filter_type', tab); // Use filter_type for proper server-side filtering
 
       console.log(`⚡ Fetching questions page ${page} for tab '${tab}'...`);
       const response = await apiClient.get(`/me/questions?${params.toString()}`);
 
       // Handle response format
       const data = response.data;
-      const questions = data?.questions || data || [];
+      const questions = data?.questions || [];
       const paginationData = data?.pagination || null;
 
       setAllQuestions(questions);
@@ -339,9 +317,9 @@ function ExpertDashboardPage() {
     }
   };
 
-  // ✅ Server-side pagination: Questions are already paginated from server
-  // Tab filtering is done server-side (via status parameter)
-  // Additional client-side filtering applied for specific cases (e.g., !answered_at for pending)
+  // ✅ Server-side pagination: Questions are already paginated and filtered from server
+  // Tab filtering is done server-side using filter_type parameter
+  // Server returns accurate pagination.total for each tab
   const paginatedQuestions = useMemo(() => {
     return {
       questions: sortedQuestions, // Already limited to 10 from server, filtered by tab
