@@ -29,6 +29,8 @@ import HowItWorksPage from '@/pages/HowItWorksPage';
 import CookieConsentBanner from '@/components/common/CookieConsentBanner';
 import AskQuestionPageV2 from '@/pages/AskQuestionPageV2';
 import ExpertDashboardPageV2 from '@/pages/ExpertDashboardPageV2';
+import ExpertInboxPage from '@/pages/ExpertInboxPage';
+
 
 
 
@@ -114,6 +116,14 @@ const AppLayout = () => {
               </ProtectedRoute>
             } 
           />
+          <Route 
+             path="/dashboard/inbox" 
+             element={
+               <ProtectedRoute>
+               <ExpertInboxPage />
+              </ProtectedRoute>
+          } 
+        />
           <Route 
             path="/expert/marketing" 
             element={
