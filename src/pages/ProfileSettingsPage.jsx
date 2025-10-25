@@ -944,22 +944,6 @@ function ProfileSettingsPage() {
   </div>
 </div>
 
-                  <div className="flex items-center justify-between mt-1">
-                    <a
-                      href="https://www.markdownguide.org/basic-syntax/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-gray-500 hover:text-indigo-600 flex items-center gap-1"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Markdown guide
-                    </a>
-                    <div className="text-xs text-gray-400">{(formData.bio || '').length}/600</div>
-                  </div>
-                </div>
-
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-gray-700">Ask me about</label>
