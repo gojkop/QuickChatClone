@@ -73,7 +73,7 @@ function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen overflow-hidden bg-gray-50">
       {/* Desktop Sidebar */}
       <DashboardSidebar 
         collapsed={sidebarCollapsed}
