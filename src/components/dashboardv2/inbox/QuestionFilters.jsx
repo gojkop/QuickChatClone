@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Filter, X, ChevronDown, Search } from 'lucide-react';
 
 function QuestionFilters({ filters, onFilterChange, filteredCount, totalCount }) {
@@ -6,31 +6,50 @@ function QuestionFilters({ filters, onFilterChange, filteredCount, totalCount })
   const [searchInput, setSearchInput] = useState(filters.searchQuery || '');
   const [priceMinInput, setPriceMinInput] = useState(filters.priceMin);
   const [priceMaxInput, setPriceMaxInput] = useState(filters.priceMax);
+  const isUserTypingRef = useRef(false);
+
+  // Sync props to local state only when not actively typing
+  useEffect(() => {
+    if (!isUserTypingRef.current) {
+      setPriceMinInput(filters.priceMin);
+      setPriceMaxInput(filters.priceMax);
+      setSearchInput(filters.searchQuery || '');
+    }
+  }, [filters.priceMin, filters.priceMax, filters.searchQuery]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchInput(value);
+    isUserTypingRef.current = true;
+
     clearTimeout(window.searchTimeout);
     window.searchTimeout = setTimeout(() => {
       onFilterChange('searchQuery', value);
+      isUserTypingRef.current = false;
     }, 300);
   };
 
   const handlePriceMinChange = (e) => {
     const value = Number(e.target.value);
     setPriceMinInput(value);
+    isUserTypingRef.current = true;
+
     clearTimeout(window.priceMinTimeout);
     window.priceMinTimeout = setTimeout(() => {
       onFilterChange('priceMin', value);
+      isUserTypingRef.current = false;
     }, 500);
   };
 
   const handlePriceMaxChange = (e) => {
     const value = Number(e.target.value);
     setPriceMaxInput(value);
+    isUserTypingRef.current = true;
+
     clearTimeout(window.priceMaxTimeout);
     window.priceMaxTimeout = setTimeout(() => {
       onFilterChange('priceMax', value);
+      isUserTypingRef.current = false;
     }, 500);
   };
 
@@ -179,12 +198,6 @@ function QuestionFilters({ filters, onFilterChange, filteredCount, totalCount })
           )}
         </div>
       )}
-
-      {/* Results Count */}
-      <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600">
-        <span className="font-semibold text-gray-900">{filteredCount}</span> of{' '}
-        <span className="font-semibold text-gray-900">{totalCount}</span>
-      </div>
     </div>
   );
 }

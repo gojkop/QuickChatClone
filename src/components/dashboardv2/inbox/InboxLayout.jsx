@@ -91,14 +91,14 @@ function InboxLayout({
           </div>
         )}
 
-        {/* Question List - Scrollable */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Question List - Scrollable with proper overflow containment */}
+        <div className="flex-1 min-h-0 overflow-hidden">
           {questionList}
         </div>
 
         {/* Pagination - Fixed at bottom */}
         {pagination && (
-          <div className="flex-shrink-0 border-t border-gray-200 bg-white">
+          <div className="flex-shrink-0 border-t border-gray-200 bg-white z-10">
             {pagination}
           </div>
         )}

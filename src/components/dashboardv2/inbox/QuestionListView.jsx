@@ -44,10 +44,10 @@ function QuestionListView({
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto">
+    <div className="h-full w-full flex flex-col overflow-hidden">
       {isMobile ? (
         // Mobile: Card-based layout
-        <div className="h-full">
+        <div className="flex-1 overflow-y-auto">
           {questions.map((question) => (
             <MobileQuestionCard
               key={question.id}
@@ -61,14 +61,16 @@ function QuestionListView({
         </div>
       ) : (
         // Desktop: Table layout
-        <QuestionTable
-          questions={questions}
-          selectedQuestions={selectedQuestions}
-          activeQuestionId={activeQuestionId}
-          onSelectQuestion={onSelectQuestion}
-          onQuestionClick={onQuestionClick}
-          onSelectAll={handleSelectAll}
-        />
+        <div className="flex-1 overflow-hidden">
+          <QuestionTable
+            questions={questions}
+            selectedQuestions={selectedQuestions}
+            activeQuestionId={activeQuestionId}
+            onSelectQuestion={onSelectQuestion}
+            onQuestionClick={onQuestionClick}
+            onSelectAll={handleSelectAll}
+          />
+        </div>
       )}
     </div>
   );
