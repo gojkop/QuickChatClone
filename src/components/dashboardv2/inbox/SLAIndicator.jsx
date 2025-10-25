@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, AlertTriangle } from 'lucide-react';
+import { Clock, AlertTriangle, Zap } from 'lucide-react';
 
-function SLAIndicator({ question, showLabel = true }) {
+function SLAIndicator({ question, showLabel = true, compact = false }) {
   const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
@@ -43,18 +43,32 @@ function SLAIndicator({ question, showLabel = true }) {
   const isUrgent = hours < 12;
   const isCritical = hours < 6;
 
-  const getColor = () => {
-    if (isCritical) return 'text-red-600 bg-red-50 border-red-200';
-    if (isUrgent) return 'text-orange-600 bg-orange-50 border-orange-200';
-    return 'text-blue-600 bg-blue-50 border-blue-200';
+  const getStyles = () => {
+    if (isCritical) return {
+      bg: 'bg-gradient-to-r from-red-50 to-rose-50',
+      border: 'border-red-200',
+      text: 'text-red-700',
+      icon: AlertTriangle,
+      progressBg: 'bg-red-500',
+    };
+    if (isUrgent) return {
+      bg: 'bg-gradient-to-r from-orange-50 to-amber-50',
+      border: 'border-orange-200',
+      text: 'text-orange-700',
+      icon: Clock,
+      progressBg: 'bg-orange-500',
+    };
+    return {
+      bg: 'bg-gradient-to-r from-blue-50 to-indigo-50',
+      border: 'border-blue-200',
+      text: 'text-blue-700',
+      icon: Zap,
+      progressBg: 'bg-blue-500',
+    };
   };
 
-  const getProgressColor = () => {
-    if (isCritical) return 'bg-red-500';
-    if (isUrgent) return 'bg-orange-500';
-    return 'bg-blue-500';
-  };
-
+  const styles = getStyles();
+  const Icon = styles.icon;
   const progressPercentage = Math.max(0, Math.min(100, (timeLeft / (question.sla_hours_snapshot * 3600)) * 100));
 
   const formatTime = () => {
@@ -69,23 +83,31 @@ function SLAIndicator({ question, showLabel = true }) {
     return `${minutes}m`;
   };
 
+  if (compact) {
+    return (
+      <span className={`badge-premium ${styles.bg} ${styles.border} ${styles.text} border`}>
+        <Icon size={12} className={`icon-container ${isCritical ? 'animate-pulse-premium' : ''}`} />
+        <span className="font-bold">{formatTime()}</span>
+      </span>
+    );
+  }
+
   return (
-    <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border ${getColor()} transition-colors`}>
-      {isCritical ? (
-        <AlertTriangle size={14} className="flex-shrink-0 animate-pulse" />
-      ) : (
-        <Clock size={14} className="flex-shrink-0" />
-      )}
+    <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl border ${styles.bg} ${styles.border} ${styles.text} transition-all duration-300 shadow-sm`}>
+      <Icon 
+        size={14} 
+        className={`icon-container ${isCritical ? 'animate-pulse-premium' : ''}`}
+      />
       
       {showLabel && (
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold whitespace-nowrap">
+          <span className="text-xs font-bold whitespace-nowrap">
             {formatTime()} left
           </span>
           {/* Progress bar */}
-          <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-16 h-1.5 bg-white/50 rounded-full overflow-hidden shadow-inner">
             <div 
-              className={`h-full rounded-full transition-all duration-300 ${getProgressColor()}`}
+              className={`h-full rounded-full transition-all duration-500 ${styles.progressBg}`}
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
@@ -93,7 +115,7 @@ function SLAIndicator({ question, showLabel = true }) {
       )}
       
       {!showLabel && (
-        <span className="text-xs font-semibold">
+        <span className="text-xs font-bold">
           {formatTime()}
         </span>
       )}
