@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueries } from '@tanstack/react-query';
 import { useProfile } from '@/context/ProfileContext';
-import { fetchQuestions } from '@/api/questions';
+import { useQuestionsQuery } from '@/hooks/useQuestionsQuery'; // Your existing hook
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
 import WelcomeHero from '@/components/dashboardv2/overview/WelcomeHero';
 import MetricsGrid from '@/components/dashboardv2/metrics/MetricsGrid';
@@ -16,12 +15,10 @@ import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
  * OPTIMIZED Expert Dashboard V2
  * 
  * Key Performance Optimizations:
- * 1. Parallel data fetching with useQueries (profile + questions simultaneously)
- * 2. Progressive loading - show available data immediately
- * 3. Memoized metrics calculation (already in useMetrics hook)
- * 4. Optimized re-renders with useMemo for derived data
- * 5. Prefetching for common navigation targets
- * 6. Error boundaries for graceful degradation
+ * 1. Uses existing useQuestionsQuery hook (already cached with React Query)
+ * 2. Memoized metrics calculation
+ * 3. Progressive loading with skeletons
+ * 4. Optimized re-renders with useMemo
  */
 
 function ExpertDashboardPageV2() {
@@ -32,33 +29,19 @@ function ExpertDashboardPageV2() {
     profile, 
     expertProfile, 
     isLoading: profileLoading, 
+    error: profileError,
     updateAvailability,
-    isUpdatingAvailability 
   } = useProfile();
 
-  // Parallel data fetching - Questions and any other data needed
-  // This replaces sequential fetching and reduces load time by ~50%
-  const [questionsQuery] = useQueries({
-    queries: [
-      {
-        queryKey: ['questions', profile?.id],
-        queryFn: fetchQuestions,
-        enabled: !!profile?.id, // Only fetch when we have profile
-        staleTime: 2 * 60 * 1000, // 2 minutes - questions don't change that often
-        cacheTime: 5 * 60 * 1000, // 5 minutes
-        refetchOnWindowFocus: true, // Refresh when user returns to tab
-        refetchOnMount: false, // Don't refetch if data is fresh
-      },
-    ],
-  });
-
-  // Extract questions data with fallback
-  const questions = questionsQuery.data || [];
-  const questionsLoading = questionsQuery.isLoading;
-  const questionsError = questionsQuery.error;
+  // Use existing questions hook - it already uses React Query
+  const { 
+    data: questions = [], 
+    isLoading: questionsLoading, 
+    error: questionsError,
+    refetch: refetchQuestions 
+  } = useQuestionsQuery();
 
   // Memoized metrics calculation - only recalculates when questions change
-  // useMetrics already uses useMemo internally, but this ensures referential stability
   const metrics = useMetrics(questions);
 
   // Memoize derived data to prevent unnecessary recalculations
@@ -73,12 +56,11 @@ function ExpertDashboardPageV2() {
     updateAvailability(newStatus);
   }, [updateAvailability]);
 
-  // Combined loading state - but show progressive UI
+  // Combined loading state - show progressive UI
   const isInitialLoad = profileLoading || (questionsLoading && questions.length === 0);
-  const hasError = questionsError; // Profile errors handled by context
+  const hasError = profileError || questionsError;
 
-  // PROGRESSIVE LOADING: Show layout immediately with loading states inside
-  // This makes the app feel much faster than blocking on all data
+  // PROGRESSIVE LOADING: Show layout immediately
   if (isInitialLoad) {
     return (
       <DashboardLayout 
@@ -111,11 +93,13 @@ function ExpertDashboardPageV2() {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Could not load dashboard data
           </h3>
-          <p className="text-gray-600 mb-4">
-            {questionsError?.message || 'An error occurred while loading your dashboard'}
+          <p className="text-gray-600 mb-4 max-w-md mx-auto">
+            {questionsError?.message || profileError?.message || 'An error occurred while loading your dashboard'}
           </p>
           <button
-            onClick={() => questionsQuery.refetch()}
+            onClick={() => {
+              if (questionsError) refetchQuestions();
+            }}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
           >
             Try Again
@@ -134,40 +118,56 @@ function ExpertDashboardPageV2() {
       onAvailabilityChange={handleAvailabilityChange}
       searchData={{ questions }}
     >
-      {/* Welcome Hero - Shows immediately */}
+      {/* Welcome Hero */}
       <WelcomeHero />
 
-      {/* Metrics - Memoized, only updates when metrics change */}
-      <MetricsGrid metrics={metrics} />
+      {/* Metrics Grid */}
+      {questionsLoading && questions.length > 0 ? (
+        <MetricsGridSkeleton />
+      ) : (
+        <MetricsGrid metrics={metrics} />
+      )}
 
       {/* Action Required - Only shows if there are urgent items */}
-      {(dashboardData.urgentCount > 0) && (
+      {dashboardData.urgentCount > 0 && (
         <ActionRequired 
           urgentCount={dashboardData.urgentCount}
           pendingOffersCount={0}
         />
       )}
 
-      {/* Two Column Layout - Progressive loading for each section */}
+      {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activity - Shows skeleton while loading, then data */}
-        <React.Suspense fallback={<ActivitySkeleton />}>
+        {/* Recent Activity */}
+        {questionsLoading && questions.length === 0 ? (
+          <ActivitySkeleton />
+        ) : (
           <RecentActivity questions={questions} />
-        </React.Suspense>
+        )}
 
-        {/* Performance Snapshot - Independent of questions data */}
-        <React.Suspense fallback={<SnapshotSkeleton />}>
-          <PerformanceSnapshot />
-        </React.Suspense>
+        {/* Performance Snapshot */}
+        <PerformanceSnapshot />
       </div>
-
-      {/* Prefetch inbox data when dashboard loads - makes navigation instant */}
-      <PrefetchInbox />
     </DashboardLayout>
   );
 }
 
-// Skeleton component for Recent Activity
+// Skeleton Components
+const MetricsGridSkeleton = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    {[1, 2, 3, 4].map((i) => (
+      <div key={i} className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="h-4 w-20 skeleton rounded"></div>
+          <div className="w-10 h-10 skeleton rounded-lg"></div>
+        </div>
+        <div className="h-8 w-24 skeleton rounded mb-2"></div>
+        <div className="h-4 w-16 skeleton rounded"></div>
+      </div>
+    ))}
+  </div>
+);
+
 const ActivitySkeleton = () => (
   <div className="bg-white border border-gray-200 rounded-xl p-6">
     <div className="h-6 w-40 skeleton rounded mb-4"></div>
@@ -178,40 +178,5 @@ const ActivitySkeleton = () => (
     </div>
   </div>
 );
-
-// Skeleton component for Performance Snapshot
-const SnapshotSkeleton = () => (
-  <div className="bg-white border border-gray-200 rounded-xl p-6">
-    <div className="h-6 w-48 skeleton rounded mb-4"></div>
-    <div className="space-y-3">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="h-16 skeleton rounded-lg"></div>
-      ))}
-    </div>
-  </div>
-);
-
-// Prefetch component - loads inbox data in background
-const PrefetchInbox = React.memo(() => {
-  const { profile } = useProfile();
-  
-  React.useEffect(() => {
-    // Prefetch inbox data after 2 seconds (after dashboard is stable)
-    const timer = setTimeout(() => {
-      // This will cache the data so when user navigates to inbox, it's instant
-      if (profile?.id) {
-        fetchQuestions().catch(() => {
-          // Silently fail - this is just prefetching
-        });
-      }
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [profile?.id]);
-
-  return null;
-});
-
-PrefetchInbox.displayName = 'PrefetchInbox';
 
 export default ExpertDashboardPageV2;
