@@ -25,6 +25,17 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
 
   const attachments = getAttachments();
 
+  // Helper to get question title
+  const getQuestionTitle = (question) => {
+    if (question.question_text) return question.question_text;
+    if (question.video_url) return 'Video Question';
+    if (question.question_details) {
+      const firstLine = question.question_details.split('\n')[0];
+      return firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
+    }
+    return `Question from ${question.user_name || 'user'}`;
+  };
+
   if (!question) {
     return (
       <div className="h-full flex items-center justify-center text-gray-500">
@@ -78,8 +89,8 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                   <X size={20} />
                 </button>
               )}
-              <h2 className="text-xl font-bold text-gray-900 truncate">
-                {question.question_text || 'Untitled Question'}
+              <h2 className="text-xl font-bold text-gray-900 line-clamp-2">
+                {getQuestionTitle(question)}
               </h2>
             </div>
             
@@ -153,7 +164,7 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
             </div>
           )}
 
-          {/* Attachments - FIXED */}
+          {/* Attachments */}
           {attachments.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">

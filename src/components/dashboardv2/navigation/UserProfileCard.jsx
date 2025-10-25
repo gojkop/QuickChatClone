@@ -1,8 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import apiClient from '@/api';
 
 function UserProfileCard({ collapsed = false, onClick }) {
   const { user } = useAuth();
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      try {
+        const response = await apiClient.get('/me/profile');
+        const expertData = response.data?.expert_profile || {};
+        setAvatarUrl(expertData.avatar_url || null);
+      } catch (error) {
+        console.error('Failed to fetch user avatar:', error);
+      }
+    };
+
+    if (user) {
+      fetchAvatar();
+    }
+  }, [user]);
 
   const getInitials = (name) => {
     if (!name) return '?';
@@ -17,6 +36,26 @@ function UserProfileCard({ collapsed = false, onClick }) {
   const userName = user?.name || 'Expert';
   const userEmail = user?.email || '';
 
+  const renderAvatar = () => {
+    if (avatarUrl && !imageError) {
+      return (
+        <img
+          src={avatarUrl}
+          alt={userName}
+          className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+          onError={() => setImageError(true)}
+        />
+      );
+    }
+
+    // Fallback to initials
+    return (
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm">
+        {getInitials(userName)}
+      </div>
+    );
+  };
+
   return (
     <button
       onClick={onClick}
@@ -28,9 +67,7 @@ function UserProfileCard({ collapsed = false, onClick }) {
       title={collapsed ? userName : undefined}
     >
       {/* Avatar */}
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm">
-        {getInitials(userName)}
-      </div>
+      {renderAvatar()}
 
       {/* User Info - hidden when collapsed */}
       {!collapsed && (

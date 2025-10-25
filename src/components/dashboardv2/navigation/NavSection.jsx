@@ -2,13 +2,13 @@ import React from 'react';
 
 function NavSection({ title, children, collapsed = false }) {
   return (
-    <div className="mb-6">
+    <div className="mb-5">
       {!collapsed && (
-        <div className="px-3 mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+        <div className="px-3 mb-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
           {title}
         </div>
       )}
-      <nav className="space-y-1">
+      <nav className="space-y-0.5">
         {children}
       </nav>
     </div>

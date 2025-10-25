@@ -83,6 +83,7 @@ export function useInbox(questions = []) {
       const query = filters.searchQuery.toLowerCase();
       filtered = filtered.filter(q => 
         (q.question_text || '').toLowerCase().includes(query) ||
+        (q.question_details || '').toLowerCase().includes(query) ||
         (q.user_name || '').toLowerCase().includes(query)
       );
     }

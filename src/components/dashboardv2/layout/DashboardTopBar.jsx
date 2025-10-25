@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AvailabilityToggle from '../navigation/AvailabilityToggle';
+import NotificationPanel from '../navigation/NotificationPanel';
 import { Search, Bell, Menu, Settings2 } from 'lucide-react';
 import GlobalSearch from '../search/GlobalSearch';
 
 
-function DashboardTopBar({ 
-  breadcrumbs = [], 
-  sidebarCollapsed, 
+function DashboardTopBar({
+  breadcrumbs = [],
+  sidebarCollapsed,
   onToggleSidebar,
   onToggleMobileMenu,
   isAvailable,
@@ -15,6 +16,7 @@ function DashboardTopBar({
   onOpenSearch  // NEW
 }) {
   const navigate = useNavigate();
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   return (
     <header 
@@ -82,13 +84,23 @@ function DashboardTopBar({
           />
 
           {/* Notifications */}
-          <button
-            className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            title="Notifications"
-          >
-            <Bell size={20} className="text-gray-600" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              className={`
+                relative p-2 rounded-lg transition-colors
+                ${isNotificationsOpen ? 'bg-gray-100' : 'hover:bg-gray-100'}
+              `}
+              title="Notifications"
+            >
+              <Bell size={20} className="text-gray-600" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            </button>
+            <NotificationPanel
+              isOpen={isNotificationsOpen}
+              onClose={() => setIsNotificationsOpen(false)}
+            />
+          </div>
 
           {/* Settings */}
           <button

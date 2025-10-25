@@ -167,6 +167,14 @@ function ExpertInboxPage() {
     setProfile(prev => ({ ...prev, accepting_questions: newStatus }));
   };
 
+  const handleSelectAll = () => {
+    if (selectedQuestions.length === filteredQuestions.length) {
+      clearSelection();
+    } else {
+      selectAll();
+    }
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout 
@@ -190,7 +198,7 @@ function ExpertInboxPage() {
         pendingCount={metrics.pendingCount}
         isAvailable={profile?.accepting_questions ?? true}
         onAvailabilityChange={handleAvailabilityChange}
-        searchData={{ questions }}  // NEW
+        searchData={{ questions }}
       >
         <InboxLayout
           selectedQuestion={selectedQuestion}
@@ -218,6 +226,7 @@ function ExpertInboxPage() {
               activeQuestionId={selectedQuestion?.id}
               onSelectQuestion={toggleSelectQuestion}
               onQuestionClick={handleQuestionClick}
+              onSelectAll={handleSelectAll}
             />
           }
           questionDetail={

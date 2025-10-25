@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import NavSection from '../navigation/NavSection';
 import NavItem from '../navigation/NavItem';
 import UserProfileCard from '../navigation/UserProfileCard';
-import { 
+import {
   Home, Inbox, BarChart3, PieChart, DollarSign,
   User, Settings, HelpCircle
 } from 'lucide-react';
+import logo from '@/assets/images/logo-mindpick.svg';
 
 function DashboardSidebar({ collapsed = false, pendingCount = 0 }) {
   const navigate = useNavigate();
@@ -23,14 +24,15 @@ function DashboardSidebar({ collapsed = false, pendingCount = 0 }) {
       {/* Logo */}
       <div className={`
         h-16 border-b border-gray-200 flex items-center
-        ${collapsed ? 'justify-center px-3' : 'px-5 gap-2'}
+        ${collapsed ? 'justify-center px-3' : 'px-5'}
       `}>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-black text-sm">mP</span>
-        </div>
-        {!collapsed && (
-          <span className="text-lg font-black text-gray-900">mindPick</span>
-        )}
+        <img
+          src={logo}
+          alt="mindPick"
+          className={`transition-all duration-300 ${
+            collapsed ? 'h-8 w-auto' : 'h-9 w-auto'
+          }`}
+        />
       </div>
 
       {/* Navigation */}

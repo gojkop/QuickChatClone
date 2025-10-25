@@ -44,14 +44,15 @@ function NavItem({ to, icon, label, badge, collapsed = false, onClick }) {
       {/* Badge - hidden when collapsed */}
       {!collapsed && badge && (
         <span className={`
-          badge-premium
-          ${badge.variant === 'danger' 
-            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm' 
+          inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full
+          text-[10px] font-bold transition-all
+          ${badge.variant === 'danger'
+            ? 'bg-red-500 text-white'
             : badge.variant === 'success'
-            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-sm'
+            ? 'bg-green-500 text-white text-[9px] px-1'
             : 'bg-gray-200 text-gray-700'
           }
-          ${badge.pulse ? 'animate-pulse-premium' : ''}
+          ${badge.pulse ? 'animate-pulse' : ''}
         `}>
           {badge.count}
         </span>
