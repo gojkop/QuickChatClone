@@ -362,12 +362,22 @@ function ExpertDashboardPage() {
       try {
         console.log('⚡ Starting parallel data fetch...');
         const startTime = Date.now();
-        
-        // Fetch profile and questions in PARALLEL (not sequential)
-        const [profileResponse] = await Promise.all([
+
+        // Fetch profile, initial questions, and all tab counts in PARALLEL
+        const [profileResponse, pendingResult, answeredResult, allResult] = await Promise.all([
           apiClient.get('/me/profile'),
-          fetchQuestionsPage(1) // Fetch first page of questions
+          fetchQuestionsPage(1, 'pending'), // Fetch first page of pending questions
+          // Fetch counts for other tabs (just metadata, no question data needed)
+          apiClient.get('/me/questions?filter_type=answered&page=1&per_page=1'),
+          apiClient.get('/me/questions?filter_type=all&page=1&per_page=1')
         ]);
+
+        // Update tab counts from the parallel fetches
+        setTabCounts({
+          pending: pendingResult?.pagination?.total || 0,
+          answered: answeredResult.data?.pagination?.total || 0,
+          all: allResult.data?.pagination?.total || 0
+        });
 
         const fetchTime = Date.now() - startTime;
         console.log(`✅ Parallel fetch completed in ${fetchTime}ms`);
