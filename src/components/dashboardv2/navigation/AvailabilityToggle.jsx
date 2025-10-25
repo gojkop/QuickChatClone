@@ -40,7 +40,7 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
 
   return (
     <div className="relative">
-      {/* Mobile version - Small icon + tiny toggle */}
+      {/* Mobile version - Small icon + horizontal toggle */}
       <div className="flex items-center gap-1.5 md:hidden">
         {isAvailable ? (
           <Wifi size={14} className="text-green-600 flex-shrink-0" />
@@ -64,8 +64,8 @@ function AvailabilityToggle({ isAvailable: initialAvailable, onToggle }) {
         >
           <span
             className={`
-              inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-all duration-300 shadow-sm
-              ${isAvailable ? 'translate-x-4' : 'translate-x-0.5'}
+              inline-block h-3 w-3 transform rounded-full bg-white transition-all duration-300 shadow-sm
+              ${isAvailable ? 'translate-x-3.5' : 'translate-x-0.5'}
             `}
           />
         </button>
