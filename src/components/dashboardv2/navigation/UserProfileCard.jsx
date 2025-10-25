@@ -89,9 +89,9 @@ function UserProfileCard({ collapsed = false }) {
       <button
         onClick={toggleMenu}
         className={`
-          w-full flex items-center gap-3 p-3 rounded-lg
-          hover:bg-gray-100 transition-colors group
-          ${collapsed ? 'justify-center' : ''}
+          w-full flex items-center p-3 rounded-lg
+          hover:bg-gray-100 group
+          ${collapsed ? 'justify-center' : 'gap-3'}
           ${menuOpen ? 'bg-gray-100' : ''}
         `}
         title={collapsed ? userName : undefined}
@@ -103,32 +103,33 @@ function UserProfileCard({ collapsed = false }) {
 
         {/* User Info - hidden when collapsed */}
         {!collapsed && (
-          <div className="flex-1 text-left min-w-0">
-            <div className="text-sm font-semibold text-gray-900 truncate">
-              {userName}
+          <>
+            <div className="flex-1 text-left min-w-0">
+              <div className="text-sm font-semibold text-gray-900 truncate">
+                {userName}
+              </div>
+              <div className="text-xs text-gray-500 truncate">
+                {userEmail}
+              </div>
             </div>
-            <div className="text-xs text-gray-500 truncate">
-              {userEmail}
-            </div>
-          </div>
-        )}
 
-        {/* Chevron - hidden when collapsed */}
-        {!collapsed && (
-          <svg 
-            className={`w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0 transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`}
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-          </svg>
+            {/* Chevron - only when not collapsed */}
+            <svg 
+              className={`w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0 transition-transform duration-100 ${menuOpen ? 'rotate-180' : ''}`}
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+            </svg>
+          </>
         )}
       </button>
 
       {/* Dropdown Menu */}
       {menuOpen && (
         <UserProfileMenu 
+          collapsed={collapsed}
           onClose={() => setMenuOpen(false)}
           onToast={showToast}
         />

@@ -1004,7 +1004,21 @@ a {
     background-position: 200% center;
   }
 }
+/* Fast slide-up animation for dropdown menus */
+@keyframes slide-up-fast {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
+.animate-slide-up-fast {
+  animation: slide-up-fast 0.1s ease-out;
+}
 /* ===================================
    LANDING PAGE PREMIUM ENHANCEMENTS - PHASE 3
    =================================== */

@@ -5,7 +5,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { Globe, Copy, Check, LogOut } from 'lucide-react';
 import MenuDivider from './MenuDivider';
 
-function UserProfileMenu({ onClose, onToast }) {
+function UserProfileMenu({ onClose, onToast, collapsed = false }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { user, expertProfile, updateAvailability, isUpdatingAvailability } = useProfile();
@@ -54,7 +54,14 @@ function UserProfileMenu({ onClose, onToast }) {
   };
 
   return (
-    <div className="absolute bottom-full left-0 mb-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 animate-slide-up">
+    <div 
+      className={`
+        absolute bottom-full mb-2 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-[60]
+        animate-slide-up-fast
+        ${collapsed ? 'left-full ml-2' : 'left-0 w-72'}
+      `}
+      style={collapsed ? { minWidth: '288px' } : {}}
+    >
       {/* Header - User Info */}
       <div className="px-4 py-3">
         <div className="font-semibold text-gray-900 text-sm truncate">
@@ -72,21 +79,21 @@ function UserProfileMenu({ onClose, onToast }) {
         <>
           <button
             onClick={handleViewPublicProfile}
-            className="w-full px-4 py-2.5 flex items-center gap-3 text-left text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group"
+            className="w-full px-4 py-2.5 flex items-center gap-3 text-left text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 group"
           >
-            <Globe size={18} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
+            <Globe size={18} className="text-gray-400 group-hover:text-indigo-600" />
             <span className="font-medium">View Public Profile</span>
           </button>
 
           <button
             onClick={handleCopyProfileLink}
             disabled={copiedLink}
-            className="w-full px-4 py-2.5 flex items-center gap-3 text-left text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group disabled:opacity-60"
+            className="w-full px-4 py-2.5 flex items-center gap-3 text-left text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 group disabled:opacity-60"
           >
             {copiedLink ? (
               <Check size={18} className="text-green-600" />
             ) : (
-              <Copy size={18} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
+              <Copy size={18} className="text-gray-400 group-hover:text-indigo-600" />
             )}
             <span className="font-medium">
               {copiedLink ? 'Link Copied!' : 'Copy Profile Link'}
@@ -110,9 +117,10 @@ function UserProfileMenu({ onClose, onToast }) {
             onClick={handleToggleAcceptingQuestions}
             disabled={isUpdatingAvailability}
             className={`
-              relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+              relative inline-flex h-6 w-11 items-center rounded-full
               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
               disabled:opacity-50 disabled:cursor-not-allowed
+              transition-colors duration-150
               ${acceptingQuestions ? 'bg-indigo-600' : 'bg-gray-300'}
             `}
             role="switch"
@@ -120,7 +128,7 @@ function UserProfileMenu({ onClose, onToast }) {
           >
             <span
               className={`
-                inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-150
                 ${acceptingQuestions ? 'translate-x-6' : 'translate-x-1'}
               `}
             />
@@ -133,7 +141,7 @@ function UserProfileMenu({ onClose, onToast }) {
       {/* Sign Out */}
       <button
         onClick={handleSignOut}
-        className="w-full px-4 py-2.5 flex items-center gap-3 text-left text-sm text-red-600 hover:bg-red-50 transition-colors group font-medium"
+        className="w-full px-4 py-2.5 flex items-center gap-3 text-left text-sm text-red-600 hover:bg-red-50 group font-medium"
       >
         <LogOut size={18} className="text-red-500" />
         <span>Sign Out</span>
