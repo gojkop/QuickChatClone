@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MoreVertical, MessageSquare, Mail, Video, Mic } from 'lucide-react';
+import { X, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MoreVertical, MessageSquare, Mail, Video, Mic, CheckCircle } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
@@ -96,10 +96,12 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
   }
 
   const getRelativeTime = (timestamp) => {
+    if (!timestamp) return '';
     const now = Date.now() / 1000;
     const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
     const diff = now - createdAt;
     
+    if (diff < 60) return 'just now';
     if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
     const days = Math.floor(diff / 86400);
@@ -107,6 +109,7 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
   };
 
   const formatDate = (timestamp) => {
+    if (!timestamp) return '';
     const date = new Date((timestamp > 4102444800 ? timestamp / 1000 : timestamp) * 1000);
     return date.toLocaleString('en-US', { 
       month: 'short', 
@@ -129,64 +132,62 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
       h-full flex flex-col bg-white w-full overflow-hidden
       ${isMobile ? 'fixed inset-0 z-50' : ''}
     `}>
-      {/* DEBUG MARKER - Remove after verification */}
-      <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 text-center">
-        ✓ QuestionDetailPanel v2.1 - FIXED VERSION (layout + no zeros)
-      </div>
-      {/* Header - Fixed, proper width management */}
-      <div className="flex-shrink-0 p-3 lg:p-4 border-b border-gray-200 bg-white">
-        <div className="flex items-start gap-2 w-full">
-          {/* Left: Back button (mobile) + Title + Q-ID */}
-          <div className="flex-1 min-w-0 flex items-start gap-2">
-            {isMobile && (
-              <button
-                onClick={onClose}
-                className="flex-shrink-0 p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Close"
-              >
-                <X size={18} />
-              </button>
-            )}
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start gap-2 mb-2">
-                <h2 className="flex-1 text-base lg:text-lg font-bold text-gray-900 line-clamp-2 min-w-0 break-words">
-                  {questionTitle}
-                </h2>
-                <span className="flex-shrink-0 text-xs text-gray-400 font-mono whitespace-nowrap">
-                  Q-{question.id}
-                </span>
+      {/* Header - FIXED LAYOUT */}
+      <div className="flex-shrink-0 border-b border-gray-200 bg-white">
+        {/* Top Row: Title + Price + Close */}
+        <div className="p-3 lg:p-4">
+          <div className="flex items-start justify-between gap-3">
+            {/* Left: Title only (mobile has back button) */}
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {isMobile && (
+                <button
+                  onClick={onClose}
+                  className="flex-shrink-0 p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Close"
+                >
+                  <X size={18} />
+                </button>
+              )}
+              
+              <h2 className="flex-1 text-base lg:text-lg font-bold text-gray-900 line-clamp-2 break-words">
+                {questionTitle}
+              </h2>
+            </div>
+
+            {/* Right: Price + Close (ALWAYS VISIBLE) */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className={`text-lg lg:text-xl font-black whitespace-nowrap ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
+                {formatCurrency(question.price_cents)}
               </div>
               
-              <div className="flex items-center gap-2 flex-wrap">
-                <PriorityBadge question={question} />
-                {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
-                  <SLAIndicator question={question} showLabel={true} />
-                )}
-                {isAnswered && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
-                    ✓ Answered
-                  </span>
-                )}
-              </div>
+              {!isMobile && (
+                <button
+                  onClick={onClose}
+                  className="flex-shrink-0 p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Close detail"
+                  aria-label="Close"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Right: Price + Close button */}
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <div className={`text-lg lg:text-xl font-black whitespace-nowrap ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
-              {formatCurrency(question.price_cents)}
-            </div>
-            
-            {!isMobile && (
-              <button
-                onClick={onClose}
-                className="flex-shrink-0 p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Close detail"
-                aria-label="Close"
-              >
-                <X size={18} />
-              </button>
+        {/* Bottom Row: Q-ID + Badges */}
+        <div className="px-3 lg:px-4 pb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-400 font-mono">
+              Q-{question.id}
+            </span>
+            <PriorityBadge question={question} />
+            {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
+              <SLAIndicator question={question} showLabel={true} />
+            )}
+            {isAnswered && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
+                ✓ Answered
+              </span>
             )}
           </div>
         </div>
@@ -219,14 +220,16 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                 </div>
               )}
 
-              <div className="flex items-start gap-2 text-gray-700">
-                <Calendar size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
-                <span className="font-medium min-w-[60px] flex-shrink-0">Asked:</span>
-                <div className="flex flex-col">
-                  <span>{formatDate(question.created_at)}</span>
-                  <span className="text-gray-500 text-xs">({getRelativeTime(question.created_at)})</span>
+              {question.created_at && (
+                <div className="flex items-start gap-2 text-gray-700">
+                  <Calendar size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span className="font-medium min-w-[60px] flex-shrink-0">Asked:</span>
+                  <div className="flex flex-col">
+                    <span>{formatDate(question.created_at)}</span>
+                    <span className="text-gray-500 text-xs">({getRelativeTime(question.created_at)})</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
                 <div className="flex items-start gap-2 text-gray-700">
@@ -234,7 +237,7 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                   <span className="font-medium min-w-[60px] flex-shrink-0">SLA:</span>
                   <div className="flex flex-col">
                     <span>{question.sla_hours_snapshot}h response time</span>
-                    {!isAnswered && (
+                    {!isAnswered && question.created_at && (
                       <span className="text-orange-600 font-medium text-xs">
                         Expires {formatDate(question.created_at + question.sla_hours_snapshot * 3600)}
                       </span>
@@ -293,18 +296,16 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
 
                     return (
                       <div key={segment.id || index} className="bg-gray-900 rounded-lg overflow-hidden">
-                        {mediaSegments.length > 1 && (
-                          <div className="px-3 py-2 bg-gray-800 flex items-center justify-between">
-                            <span className="text-xs font-semibold text-gray-300">
-                              Part {index + 1} - {modeLabel}
+                        <div className="px-3 py-2 bg-gray-800 flex items-center justify-between">
+                          <span className="text-xs font-semibold text-gray-300">
+                            {mediaSegments.length > 1 ? `Part ${index + 1} - ${modeLabel}` : modeLabel}
+                          </span>
+                          {duration > 0 && (
+                            <span className="text-xs text-gray-400">
+                              {isVideo ? '🎥' : '🎤'} {Math.floor(duration)}s
                             </span>
-                            {duration > 0 && (
-                              <span className="text-xs text-gray-400">
-                                {isVideo ? '🎥' : '🎤'} {duration}s
-                              </span>
-                            )}
-                          </div>
-                        )}
+                          )}
+                        </div>
 
                         {isVideo && videoId && customerCode ? (
                           <div className="w-full aspect-video bg-black">

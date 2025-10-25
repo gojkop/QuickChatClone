@@ -8,7 +8,7 @@ import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 const DEFAULT_COLUMN_WIDTHS = {
   checkbox: 40,
   question: 380,
-  asker: 240,
+  asker: 260,  // Increased for email display
   price: 100,
   time: 90,
 };
@@ -92,6 +92,7 @@ function QuestionTable({
     const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
     const diff = now - createdAt;
     
+    if (diff < 60) return 'now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
     return `${Math.floor(diff / 86400)}d`;
@@ -154,10 +155,6 @@ function QuestionTable({
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden" ref={tableRef}>
-      {/* DEBUG MARKER - Remove after verification */}
-      <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 text-center">
-        ✓ QuestionTable v2.1 - FIXED VERSION (throttle + email + resize)
-      </div>
       {/* Table Header - Sticky */}
       <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
         <div 
@@ -180,50 +177,50 @@ function QuestionTable({
           </div>
 
           {/* Question Column */}
-          <div className="relative flex items-center">
+          <div className="relative flex items-center pr-2">
             <span>Question</span>
             <button
               onMouseDown={(e) => startResize('question', e)}
-              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize"
+              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize column"
             >
-              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
             </button>
           </div>
 
           {/* Asker Column */}
-          <div className="relative flex items-center">
+          <div className="relative flex items-center pr-2">
             <span>Asker</span>
             <button
               onMouseDown={(e) => startResize('asker', e)}
-              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize"
+              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize column"
             >
-              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
             </button>
           </div>
 
           {/* Price Column */}
-          <div className="relative flex items-center justify-end">
+          <div className="relative flex items-center justify-end pr-2">
             <span>Price</span>
             <button
               onMouseDown={(e) => startResize('price', e)}
-              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize"
+              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize column"
             >
-              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
             </button>
           </div>
 
           {/* Time Column */}
-          <div className="relative flex items-center justify-end">
+          <div className="relative flex items-center justify-end pr-2">
             <span>Time</span>
             <button
               onMouseDown={(e) => startResize('time', e)}
-              className="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize"
+              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
+              title="Drag to resize column"
             >
-              <GripVertical size={12} className="text-gray-400 group-hover:text-indigo-600" />
+              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
             </button>
           </div>
         </div>
@@ -304,7 +301,7 @@ function QuestionTable({
               </div>
 
               {/* Asker - Name + Email on separate lines */}
-              <div className="flex flex-col justify-center text-[11px] min-w-0 overflow-hidden" title={askerEmail || askerName}>
+              <div className="flex flex-col justify-center text-[11px] min-w-0 overflow-hidden" title={`${askerName}${askerEmail ? `\n${askerEmail}` : ''}`}>
                 <div className="flex items-center gap-1 truncate">
                   <User size={10} className="flex-shrink-0 text-gray-400" />
                   <span className="truncate font-medium text-gray-700">
@@ -338,7 +335,7 @@ function QuestionTable({
 
       {/* Resize Overlay */}
       {resizing && (
-        <div className="fixed inset-0 z-50 cursor-col-resize" />
+        <div className="fixed inset-0 z-50 cursor-col-resize bg-indigo-500/5" />
       )}
     </div>
   );
