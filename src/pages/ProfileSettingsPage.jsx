@@ -1,587 +1,915 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
 import apiClient from '@/api';
+import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
 import AvatarUpload from '@/components/dashboard/AvatarUpload';
+import CharityDonationSelector from '@/components/dashboard/CharityDonationSelector';
+import CharitySelector from '@/components/dashboard/CharitySelector';
 import ReactMarkdown from 'react-markdown';
-import { Twitter, Linkedin, Github, Globe, DollarSign, Heart } from 'lucide-react';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
+import { Twitter, Linkedin, Github, Globe, ArrowLeft } from 'lucide-react';
 
 function ProfileSettingsPage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    handle: '',
-    isPublic: true,
-    avatar: null,
-    title: '',
-    tagline: '',
-    bio: '',
-    expertiseTags: [],
-    quickConsultPrice: '',
-    deepDivePrice: '',
-    twitter: '',
-    linkedin: '',
-    github: '',
-    website: '',
-    charityEnabled: false,
-    charityPercentage: 5,
-  });
-
-  // UI state
-  const [newTag, setNewTag] = useState('');
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [expertiseInput, setExpertiseInput] = useState('');
   const [showBioPreview, setShowBioPreview] = useState(false);
 
+  // Convert profile data (cents) to form data (dollars) for initial state
+  const convertProfileToFormData = (profile) => {
+    return {
+      ...profile,
+      tier1_price_usd: profile.tier1_price_cents ? profile.tier1_price_cents / 100 : '',
+      tier2_min_price_usd: profile.tier2_min_price_cents ? profile.tier2_min_price_cents / 100 : '',
+      tier2_max_price_usd: profile.tier2_max_price_cents ? profile.tier2_max_price_cents / 100 : '',
+      tier2_auto_decline_below_usd: profile.tier2_auto_decline_below_cents ? profile.tier2_auto_decline_below_cents / 100 : ''
+    };
+  };
+
+  const [formData, setFormData] = useState({});
+
+  // Load profile data
   useEffect(() => {
-    fetchProfile();
+    const loadProfile = async () => {
+      try {
+        const response = await apiClient.get('/me/profile');
+        const expertProfile = response.data.expert_profile || {};
+        const processedProfile = {
+          ...expertProfile,
+          user: response.data.user,
+          isPublic: expertProfile.public,
+          avatar_url: expertProfile.avatar_url || null,
+          charity_percentage: expertProfile.charity_percentage || 0,
+          selected_charity: expertProfile.selected_charity || null,
+          accepting_questions: expertProfile.accepting_questions ?? true,
+          daily_digest_enabled: expertProfile.daily_digest_enabled !== false,
+          tier1_enabled: expertProfile.tier1_enabled !== false,
+          tier1_price_cents: expertProfile.tier1_price_cents,
+          tier1_sla_hours: expertProfile.tier1_sla_hours || '',
+          tier1_description: expertProfile.tier1_description || '',
+          tier2_enabled: expertProfile.tier2_enabled || false,
+          tier2_min_price_cents: expertProfile.tier2_min_price_cents,
+          tier2_max_price_cents: expertProfile.tier2_max_price_cents,
+          tier2_sla_hours: expertProfile.tier2_sla_hours || '',
+          tier2_auto_decline_below_cents: expertProfile.tier2_auto_decline_below_cents,
+          tier2_description: expertProfile.tier2_description || ''
+        };
+        setProfile(processedProfile);
+        setFormData(convertProfileToFormData(processedProfile));
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+        setError('Could not load profile data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const response = await apiClient.get('/me/profile');
-      const profileData = response.data;
-      setProfile(profileData);
-
-      // Populate form with existing data
-      setFormData({
-        handle: profileData.handle || '',
-        isPublic: profileData.is_public ?? true,
-        avatar: profileData.avatar_url || null,
-        title: profileData.title || '',
-        tagline: profileData.tagline || '',
-        bio: profileData.bio || '',
-        expertiseTags: profileData.expertise || [],
-        quickConsultPrice: profileData.quick_consult_price || '',
-        deepDivePrice: profileData.deep_dive_price || '',
-        twitter: profileData.social_links?.twitter || '',
-        linkedin: profileData.social_links?.linkedin || '',
-        github: profileData.social_links?.github || '',
-        website: profileData.social_links?.website || '',
-        charityEnabled: profileData.charity_enabled || false,
-        charityPercentage: profileData.charity_percentage || 5,
-      });
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
+    const { id, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [id]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleAvatarChange = (avatarUrl) => {
-    setFormData({ ...formData, avatar: avatarUrl });
+  const handleSocialChange = (platform, value) => {
+    setFormData(prev => ({
+      ...prev,
+      socials: { ...(prev.socials || {}), [platform]: value }
+    }));
   };
 
-  const handleAddTag = () => {
-    if (newTag.trim() && formData.expertiseTags.length < 6 && !formData.expertiseTags.includes(newTag.trim())) {
-      setFormData({
-        ...formData,
-        expertiseTags: [...formData.expertiseTags, newTag.trim()],
+  const handleAddExpertise = (e) => {
+    if (e.key === 'Enter' && expertiseInput.trim()) {
+      e.preventDefault();
+      const newTag = expertiseInput.trim();
+      const currentExpertise = Array.isArray(formData.expertise) ? formData.expertise : [];
+      
+      if (currentExpertise.length >= 6) {
+        setError('Maximum 6 expertise tags allowed. Remove a tag to add a new one.');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+      
+      if (!currentExpertise.includes(newTag)) {
+        setFormData(prev => ({
+          ...prev,
+          expertise: [...currentExpertise, newTag]
+        }));
+        setError('');
+      }
+      setExpertiseInput('');
+    }
+  };
+
+  const handleRemoveExpertise = (tag) => {
+    const currentExpertise = Array.isArray(formData.expertise) ? formData.expertise : [];
+    setFormData(prev => ({
+      ...prev,
+      expertise: currentExpertise.filter(t => t !== tag)
+    }));
+    if (error && error.includes('Maximum 6 expertise tags')) {
+      setError('');
+    }
+  };
+
+  const handleAvatarChange = (uploadResult) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      avatar_url: uploadResult.url,
+      avatar_key: uploadResult.key
+    }));
+  };
+
+  const handleCharityPercentageChange = (percentage) => {
+    setFormData(prev => ({ ...prev, charity_percentage: percentage }));
+  };
+
+  const handleCharityChange = (charityId) => {
+    setFormData(prev => ({ ...prev, selected_charity: charityId }));
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      await apiClient.post('/upload/profile-picture', { 
+        image_url: null 
       });
-      setNewTag('');
+      
+      setFormData(prev => ({ ...prev, avatar_url: null, avatar_key: null }));
+      localStorage.removeItem('qc_avatar');
+    } catch (err) {
+      console.error('Error removing avatar:', err);
+      setError('Failed to remove avatar. Please try again.');
     }
   };
 
-  const handleRemoveTag = (tagToRemove) => {
-    setFormData({
-      ...formData,
-      expertiseTags: formData.expertiseTags.filter((tag) => tag !== tagToRemove),
-    });
-  };
-
-  const handleSave = async () => {
-    // Validation
-    if (!formData.handle) {
-      alert('Profile handle is required');
-      return;
-    }
-
-    if (formData.quickConsultPrice && isNaN(formData.quickConsultPrice)) {
-      alert('Quick consult price must be a valid number');
-      return;
-    }
-
-    if (formData.deepDivePrice && isNaN(formData.deepDivePrice)) {
-      alert('Deep dive price must be a valid number');
-      return;
-    }
-
+  const handleSave = async (e) => {
+    e.preventDefault();
     setIsSaving(true);
-    setSaveSuccess(false);
+    setError('');
+    setSuccessMessage('');
+
+    // Validate mandatory fields
+    if (!formData.handle || formData.handle.trim() === '') {
+      setError('Profile handle is required');
+      setIsSaving(false);
+      return;
+    }
+
+    // Tier validation
+    if (!formData.tier1_enabled && !formData.tier2_enabled) {
+      setError('At least one pricing tier must be enabled');
+      setIsSaving(false);
+      return;
+    }
+
+    // Tier 1 validation
+    if (formData.tier1_enabled !== false) {
+      if (!formData.tier1_price_usd || formData.tier1_price_usd <= 0) {
+        setError('Quick Consult price must be greater than $0');
+        setIsSaving(false);
+        return;
+      }
+      if (!formData.tier1_sla_hours || formData.tier1_sla_hours <= 0) {
+        setError('Quick Consult response time must be at least 1 hour');
+        setIsSaving(false);
+        return;
+      }
+    }
+
+    // Tier 2 validation
+    if (formData.tier2_enabled) {
+      if (!formData.tier2_min_price_usd || formData.tier2_min_price_usd <= 0) {
+        setError('Deep Dive minimum price must be greater than $0');
+        setIsSaving(false);
+        return;
+      }
+      if (!formData.tier2_max_price_usd || formData.tier2_max_price_usd <= 0) {
+        setError('Deep Dive maximum price must be greater than $0');
+        setIsSaving(false);
+        return;
+      }
+      if (Number(formData.tier2_min_price_usd) >= Number(formData.tier2_max_price_usd)) {
+        setError('Deep Dive minimum price must be less than maximum price');
+        setIsSaving(false);
+        return;
+      }
+      if (!formData.tier2_sla_hours || formData.tier2_sla_hours <= 0) {
+        setError('Deep Dive response time must be at least 1 hour');
+        setIsSaving(false);
+        return;
+      }
+      if (formData.tier2_auto_decline_below_usd &&
+          Number(formData.tier2_auto_decline_below_usd) > Number(formData.tier2_min_price_usd)) {
+        setError('Auto-decline threshold must be less than or equal to minimum price');
+        setIsSaving(false);
+        return;
+      }
+    }
 
     try {
-      const updateData = {
-        handle: formData.handle,
-        is_public: formData.isPublic,
-        avatar_url: formData.avatar,
-        title: formData.title,
-        tagline: formData.tagline,
+      const payload = {
+        price_cents: formData.tier1_enabled !== false
+          ? Number(formData.tier1_price_usd) * 100
+          : Number(formData.tier2_min_price_usd) * 100,
+        sla_hours: formData.tier1_enabled !== false
+          ? Number(formData.tier1_sla_hours)
+          : Number(formData.tier2_sla_hours),
         bio: formData.bio,
-        expertise: formData.expertiseTags,
-        quick_consult_price: formData.quickConsultPrice ? parseFloat(formData.quickConsultPrice) : null,
-        deep_dive_price: formData.deepDivePrice ? parseFloat(formData.deepDivePrice) : null,
-        social_links: {
-          twitter: formData.twitter,
-          linkedin: formData.linkedin,
-          github: formData.github,
-          website: formData.website,
-        },
-        charity_enabled: formData.charityEnabled,
-        charity_percentage: formData.charityPercentage,
+        public: formData.isPublic,
+        handle: formData.handle,
+        tier1_enabled: formData.tier1_enabled !== false,
+        tier1_price_cents: formData.tier1_enabled !== false
+          ? Number(formData.tier1_price_usd) * 100
+          : (profile.tier1_price_cents || Number(formData.tier1_price_usd) * 100),
+        tier1_sla_hours: formData.tier1_enabled !== false
+          ? Number(formData.tier1_sla_hours)
+          : (profile.tier1_sla_hours || Number(formData.tier1_sla_hours)),
+        tier1_description: formData.tier1_enabled !== false
+          ? (formData.tier1_description || null)
+          : (profile.tier1_description || formData.tier1_description || null),
+        tier2_enabled: formData.tier2_enabled || false,
+        tier2_pricing_mode: 'range',
+        tier2_min_price_cents: formData.tier2_enabled
+          ? (formData.tier2_min_price_usd ? Number(formData.tier2_min_price_usd) * 100 : null)
+          : (profile.tier2_min_price_cents || (formData.tier2_min_price_usd ? Number(formData.tier2_min_price_usd) * 100 : null)),
+        tier2_max_price_cents: formData.tier2_enabled
+          ? (formData.tier2_max_price_usd ? Number(formData.tier2_max_price_usd) * 100 : null)
+          : (profile.tier2_max_price_cents || (formData.tier2_max_price_usd ? Number(formData.tier2_max_price_usd) * 100 : null)),
+        tier2_sla_hours: formData.tier2_enabled
+          ? (formData.tier2_sla_hours ? Number(formData.tier2_sla_hours) : null)
+          : (profile.tier2_sla_hours || (formData.tier2_sla_hours ? Number(formData.tier2_sla_hours) : null)),
+        tier2_auto_decline_below_cents: formData.tier2_enabled
+          ? (formData.tier2_auto_decline_below_usd ? Number(formData.tier2_auto_decline_below_usd) * 100 : null)
+          : (profile.tier2_auto_decline_below_cents || (formData.tier2_auto_decline_below_usd ? Number(formData.tier2_auto_decline_below_usd) * 100 : null)),
+        tier2_description: formData.tier2_enabled
+          ? (formData.tier2_description || null)
+          : (profile.tier2_description || formData.tier2_description || null),
+        currency: 'USD',
+        professional_title: formData.professional_title || '',
+        tagline: formData.tagline || '',
+        expertise: Array.isArray(formData.expertise) ? formData.expertise : [],
+        socials: formData.socials || {},
+        charity_percentage: Number(formData.charity_percentage) || 0,
+        selected_charity: formData.selected_charity || null,
+        accepting_questions: formData.accepting_questions,
+        daily_digest_enabled: formData.daily_digest_enabled !== false
       };
 
-      await apiClient.put('/me/profile', updateData);
+      await apiClient.put('/me/profile', payload);
 
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      // Update availability status
+      try {
+        await apiClient.post('/expert/profile/availability', {
+          accepting_questions: formData.accepting_questions
+        });
+      } catch (availabilityErr) {
+        console.warn('Failed to update availability status:', availabilityErr);
+      }
 
-      // Refresh profile data
-      fetchProfile();
-    } catch (error) {
-      console.error('Failed to update profile:', error);
-      alert(`Failed to update profile: ${error.response?.data?.error || error.message}`);
+      setSuccessMessage('Profile settings saved successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error("Save settings error:", err);
+      if (err.response?.status === 409) {
+        setError("That handle is already taken.");
+      } else {
+        setError(err.response?.data?.message || "Could not save settings.");
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (loading) {
+  const currentExpertise = Array.isArray(formData.expertise) ? formData.expertise : [];
+  const currentSocials = formData.socials || {};
+
+  if (isLoading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <DashboardLayout breadcrumbs={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Profile Settings' }]}>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading profile settings...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
-      {/* Fixed container with max-width to prevent infinite scrolling */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
+    <DashboardLayout breadcrumbs={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Profile Settings' }]}>
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2">
-            Profile Settings
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Manage your public profile, pricing, and professional information
-          </p>
+        <div className="mb-6">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Dashboard
+          </button>
+          <h1 className="text-3xl font-black text-gray-900 mb-2">Profile Settings</h1>
+          <p className="text-gray-600">Manage your expert profile and preferences</p>
         </div>
 
         {/* Success Message */}
-        {saveSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center gap-2 text-green-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="font-semibold">Profile updated successfully!</span>
-            </div>
+        {successMessage && (
+          <div className="mb-6 flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg animate-fadeInDown">
+            <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm text-green-800 font-medium">{successMessage}</span>
           </div>
         )}
 
-        {/* Content Sections */}
-        <div className="space-y-6 sm:space-y-8">
-          {/* Avatar & Basic Info */}
-          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-              Profile Picture
-            </h2>
-            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-              <AvatarUpload
-                currentAvatar={formData.avatar}
-                onAvatarChange={handleAvatarChange}
-                userName={profile?.user?.name || 'User'}
-              />
-              <div className="flex-1 min-w-0 w-full">
-                <p className="text-sm text-gray-600 mb-4">
-                  Upload a professional photo that represents you. This will be visible on your public profile.
-                </p>
-                <div className="space-y-4">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg animate-fadeInDown">
+            <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm text-red-800 font-medium">{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSave} className="space-y-6">
+          {/* Avatar & Profile Visibility */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-xl p-5 border border-indigo-100">
+              <div className="space-y-4">
+                {/* Avatar - centered */}
+                <div className="flex flex-col items-center gap-2">
+                  <AvatarUpload 
+                    currentAvatar={formData.avatar_url || null}
+                    onChange={handleAvatarChange}
+                  />
+                  
+                  {formData.avatar_url && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      className="text-xs text-gray-600 hover:text-red-600 font-medium transition-colors flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Remove photo
+                    </button>
+                  )}
+                </div>
+                
+                {/* Fields */}
+                <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Profile Handle
+                      Profile Handle <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
-                      <span className="inline-flex items-center px-3 sm:px-4 py-2.5 bg-gray-50 text-gray-700 font-medium text-sm whitespace-nowrap">
+                    <div className="flex items-stretch">
+                      <span className="inline-flex items-center px-4 bg-white/80 border border-r-0 border-gray-300 rounded-l-lg text-sm text-gray-600 font-semibold">
                         /u/
                       </span>
-                      <input
-                        type="text"
-                        name="handle"
-                        value={formData.handle}
-                        onChange={handleChange}
-                        className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 border-0 focus:ring-0 text-sm sm:text-base"
-                        placeholder="yourhandle"
+                      <input 
+                        id="handle" 
+                        type="text" 
+                        value={formData.handle || ''} 
+                        onChange={handleChange} 
+                        className="flex-1 px-4 py-2.5 bg-white/80 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium" 
+                        placeholder="your-handle"
+                        required
                       />
                     </div>
-                    {formData.handle && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Your profile URL: {window.location.origin}/u/{formData.handle}
-                      </p>
-                    )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="isPublic"
-                      name="isPublic"
-                      checked={formData.isPublic}
-                      onChange={handleChange}
-                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                    <label htmlFor="isPublic" className="text-sm text-gray-700 cursor-pointer">
-                      Make my profile public
+
+                  {/* Public Profile Toggle */}
+                  <div className="flex items-center justify-between bg-white/70 rounded-lg px-4 py-3 border border-indigo-200/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900">Public Profile</div>
+                        <div className="text-xs text-gray-600">Make your profile discoverable</div>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                      <input 
+                        id="isPublic" 
+                        type="checkbox" 
+                        checked={formData.isPublic || false} 
+                        onChange={handleChange} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-indigo-600 peer-checked:to-violet-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Accepting Questions Toggle */}
+                  <div className="flex items-center justify-between bg-white/70 rounded-lg px-4 py-3 border border-green-200/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900">Accepting Questions</div>
+                        <div className="text-xs text-gray-600">Allow people to ask you questions</div>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                      <input 
+                        id="accepting_questions" 
+                        type="checkbox" 
+                        checked={formData.accepting_questions || false} 
+                        onChange={handleChange} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-green-600 peer-checked:to-emerald-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Daily Digest Toggle */}
+                  <div className="flex items-center justify-between bg-white/70 rounded-lg px-4 py-3 border border-blue-200/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900">Daily Question Digest</div>
+                        <div className="text-xs text-gray-600">Get a daily email of pending questions (8 AM UTC)</div>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                      <input 
+                        id="daily_digest_enabled" 
+                        type="checkbox" 
+                        checked={formData.daily_digest_enabled !== false} 
+                        onChange={handleChange} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-cyan-600"></div>
                     </label>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
+          </div>
+
+{/* Pricing Tiers */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-6 bg-gradient-to-b from-indigo-600 to-violet-600 rounded-full"></span>
+              Pricing Tiers
+            </h4>
+
+            {/* Quick Consult (Tier 1) */}
+            <div className="mb-4 border-2 border-blue-200 rounded-lg p-4 bg-blue-50/50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">⚡</span>
+                  <h5 className="font-bold text-gray-900">Quick Consult</h5>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.tier1_enabled !== false}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tier1_enabled: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-blue-700"></div>
+                </label>
+              </div>
+
+              {formData.tier1_enabled !== false && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Fixed Price <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                        <input
+                          type="number"
+                          value={formData.tier1_price_usd || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, tier1_price_usd: e.target.value }))}
+                          min="1"
+                          step="1"
+                          placeholder="75"
+                          required={formData.tier1_enabled !== false}
+                          className="w-full pl-8 pr-3 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Response Time <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={formData.tier1_sla_hours || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, tier1_sla_hours: e.target.value }))}
+                          min="1"
+                          step="1"
+                          placeholder="48"
+                          required={formData.tier1_enabled !== false}
+                          className="w-full pl-3 pr-14 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-medium">hours</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                      Description (Optional)
+                    </label>
+                    <textarea
+                      value={formData.tier1_description || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tier1_description: e.target.value }))}
+                      rows={2}
+                      placeholder="Best for quick, focused questions..."
+                      className="w-full px-3 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs resize-none"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Deep Dive (Tier 2) */}
+            <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50/50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎯</span>
+                  <h5 className="font-bold text-gray-900">Deep Dive</h5>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.tier2_enabled || false}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tier2_enabled: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-purple-700"></div>
+                </label>
+              </div>
+
+              {formData.tier2_enabled && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Min Price <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                        <input
+                          type="number"
+                          value={formData.tier2_min_price_usd || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, tier2_min_price_usd: e.target.value }))}
+                          min="1"
+                          step="1"
+                          placeholder="150"
+                          required={formData.tier2_enabled}
+                          className="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Max Price <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                        <input
+                          type="number"
+                          value={formData.tier2_max_price_usd || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, tier2_max_price_usd: e.target.value }))}
+                          min="1"
+                          step="1"
+                          placeholder="300"
+                          required={formData.tier2_enabled}
+                          className="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Response Time <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={formData.tier2_sla_hours || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, tier2_sla_hours: e.target.value }))}
+                          min="1"
+                          step="1"
+                          placeholder="48"
+                          required={formData.tier2_enabled}
+                          className="w-full pl-3 pr-10 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-medium">hrs</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                      Auto-Decline Below (Optional)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                      <input
+                        type="number"
+                        value={formData.tier2_auto_decline_below_usd || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, tier2_auto_decline_below_usd: e.target.value }))}
+                        min="0"
+                        step="1"
+                        placeholder="100"
+                        className="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">Automatically decline offers below this amount</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                      Description (Optional)
+                    </label>
+                    <textarea
+                      value={formData.tier2_description || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tier2_description: e.target.value }))}
+                      rows={2}
+                      placeholder="Best for complex, in-depth questions..."
+                      className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-xs resize-none"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Validation Note */}
+            {!formData.tier1_enabled && !formData.tier2_enabled && (
+              <p className="text-xs text-red-600 mt-2">⚠️ At least one pricing tier must be enabled</p>
+            )}
+          </div>
 
           {/* Professional Identity */}
-          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-6 bg-gradient-to-b from-indigo-600 to-violet-600 rounded-full"></span>
               Professional Identity
-            </h2>
+            </h4>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Professional Title
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
-                  placeholder="e.g., Senior Software Engineer, Marketing Consultant"
+                <label className="block text-sm font-medium text-gray-700 mb-2">Professional Title</label>
+                <input 
+                  id="professional_title" 
+                  type="text" 
+                  value={formData.professional_title || ''} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" 
+                  placeholder="e.g., Senior Product Designer"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Tagline
-                </label>
-                <input
-                  type="text"
-                  name="tagline"
-                  value={formData.tagline}
-                  onChange={handleChange}
-                  className="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
-                  placeholder="A short, catchy description of what you do"
-                  maxLength={100}
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tagline</label>
+                <input 
+                  id="tagline" 
+                  type="text" 
+                  value={formData.tagline || ''} 
+                  onChange={handleChange} 
+                  maxLength="100"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" 
+                  placeholder="A brief, catchy description of what you do"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {formData.tagline.length}/100 characters
-                </p>
               </div>
+
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Bio
+                  <label className="block text-sm font-medium text-gray-700">
+                    Bio <span className="text-xs text-gray-500">(Supports Markdown)</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowBioPreview(!showBioPreview)}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
                   >
-                    {showBioPreview ? 'Edit' : 'Preview'}
+                    {showBioPreview ? (
+                      <>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Edit
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Preview
+                      </>
+                    )}
                   </button>
                 </div>
+                
                 {showBioPreview ? (
-                  <div className="w-full min-h-[120px] px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 prose prose-sm max-w-none">
-                    <ReactMarkdown>{formData.bio || '*No bio yet*'}</ReactMarkdown>
+                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg min-h-[120px]">
+                    <div className="prose prose-sm max-w-none prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-strong:font-bold">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeSanitize]}
+                      >
+                        {formData.bio || '*No bio yet. Start typing to see your formatted bio here.*'}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 ) : (
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    rows={6}
-                    className="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base resize-none"
-                    placeholder="Tell people about your experience, expertise, and what makes you unique. Markdown supported."
+                  <textarea 
+                    id="bio" 
+                    rows="5" 
+                    value={formData.bio || ''} 
+                    onChange={handleChange} 
+                    maxLength="600" 
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-sm leading-relaxed font-mono"
+                    placeholder="Tell people about your expertise. Use **bold**, *italic*, or [links](url) for formatting..."
                   />
                 )}
-                <p className="text-xs text-gray-500 mt-1">
-                  Markdown supported (bold, italic, lists, links, etc.)
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Expertise Tags */}
-          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-              Areas of Expertise
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Add Tags (Max 6)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                    disabled={formData.expertiseTags.length >= 6}
-                    className="flex-1 px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base"
-                    placeholder="e.g., React, Marketing, Business Strategy"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddTag}
-                    disabled={formData.expertiseTags.length >= 6 || !newTag.trim()}
-                    className="px-4 sm:px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base whitespace-nowrap"
+                
+                <div className="flex items-center justify-between mt-1">
+                  <a 
+                    href="https://www.markdownguide.org/basic-syntax/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-gray-500 hover:text-indigo-600 flex items-center gap-1"
                   >
-                    Add
-                  </button>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Markdown guide
+                  </a>
+                  <div className="text-xs text-gray-400">{(formData.bio || '').length}/600</div>
                 </div>
               </div>
-              {formData.expertiseTags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.expertiseTags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="hover:text-indigo-900"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
 
-          {/* Pricing */}
-          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-              Pricing Tiers
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
-                <h3 className="font-bold text-gray-900 mb-2 text-sm sm:text-base">Quick Consult</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mb-3">
-                  Short, focused answers (24-48 hours)
-                </p>
-                <div className="relative">
-                  <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-600 font-medium text-sm sm:text-base">
-                    $
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Ask me about</label>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${currentExpertise.length >= 6 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                    {currentExpertise.length}/6
                   </span>
-                  <input
-                    type="number"
-                    name="quickConsultPrice"
-                    value={formData.quickConsultPrice}
-                    onChange={handleChange}
-                    className="w-full pl-6 sm:pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
                 </div>
-              </div>
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
-                <h3 className="font-bold text-gray-900 mb-2 text-sm sm:text-base">Deep Dive</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mb-3">
-                  Comprehensive, detailed responses (3-5 days)
-                </p>
-                <div className="relative">
-                  <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-600 font-medium text-sm sm:text-base">
-                    $
-                  </span>
-                  <input
-                    type="number"
-                    name="deepDivePrice"
-                    value={formData.deepDivePrice}
-                    onChange={handleChange}
-                    className="w-full pl-6 sm:pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
+                <input 
+                  type="text"
+                  value={expertiseInput}
+                  onChange={(e) => setExpertiseInput(e.target.value)}
+                  onKeyDown={handleAddExpertise}
+                  placeholder={currentExpertise.length >= 6 ? "Maximum tags reached" : "Type a tag and press Enter to add"}
+                  disabled={currentExpertise.length >= 6}
+                  className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm ${currentExpertise.length >= 6 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                />
+                {currentExpertise.length >= 6 && (
+                  <p className="text-xs text-amber-600 mt-2 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    Maximum 6 tags reached. Remove a tag to add another.
+                  </p>
+                )}
+                {currentExpertise.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {currentExpertise.map((tag, idx) => (
+                      <span 
+                        key={idx} 
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium shadow-sm"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExpertise(tag)}
+                          className="hover:bg-indigo-100 rounded-full p-1"
+                          aria-label={`Remove ${tag}`}
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-          </section>
+          </div>
 
           {/* Social Links */}
-          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-6 bg-gradient-to-b from-indigo-600 to-violet-600 rounded-full"></span>
               Social Links
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Twitter
-                </label>
-                <div className="relative">
-                  <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Twitter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </span>
-                  <input
-                    type="text"
-                    name="twitter"
-                    value={formData.twitter}
-                    onChange={handleChange}
-                    className="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
-                    placeholder="https://twitter.com/yourhandle"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  LinkedIn
-                </label>
-                <div className="relative">
-                  <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Linkedin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </span>
-                  <input
-                    type="text"
-                    name="linkedin"
-                    value={formData.linkedin}
-                    onChange={handleChange}
-                    className="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
-                    placeholder="https://linkedin.com/in/yourprofile"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  GitHub
-                </label>
-                <div className="relative">
-                  <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Github className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </span>
-                  <input
-                    type="text"
-                    name="github"
-                    value={formData.github}
-                    onChange={handleChange}
-                    className="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
-                    placeholder="https://github.com/yourusername"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Website
-                </label>
-                <div className="relative">
-                  <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </span>
-                  <input
-                    type="text"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleChange}
-                    className="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
-                    placeholder="https://yourwebsite.com"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Charity Donation */}
-          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                  Charity Donation
-                </h2>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Donate a percentage of your earnings to charity automatically
-                </p>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="charityEnabled"
-                  name="charityEnabled"
-                  checked={formData.charityEnabled}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                />
-                <label htmlFor="charityEnabled" className="text-sm text-gray-700 cursor-pointer">
-                  Enable automatic charity donations
-                </label>
-              </div>
-              {formData.charityEnabled && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Donation Percentage
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      name="charityPercentage"
-                      min="1"
-                      max="50"
-                      value={formData.charityPercentage}
-                      onChange={handleChange}
-                      className="flex-1"
-                    />
-                    <span className="text-lg font-bold text-indigo-600 w-12 text-right">
-                      {formData.charityPercentage}%
+              <span className="text-sm font-normal text-gray-500">(Optional)</span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { key: 'twitter', placeholder: 'twitter.com/username', icon: Twitter, label: 'Twitter / X' },
+                { key: 'linkedin', placeholder: 'linkedin.com/in/username', icon: Linkedin, label: 'LinkedIn' },
+                { key: 'github', placeholder: 'github.com/username', icon: Github, label: 'GitHub' },
+                { key: 'website', placeholder: 'yourwebsite.com', icon: Globe, label: 'Website' }
+              ].map(({ key, placeholder, icon: IconComponent, label }) => (
+                <div key={key}>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">{label}</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 flex items-center justify-center w-5">
+                      <IconComponent className="w-4 h-4" />
                     </span>
+                    <input 
+                      type="text" 
+                      value={currentSocials[key] || ''} 
+                      onChange={(e) => handleSocialChange(key, e.target.value)}
+                      placeholder={placeholder}
+                      className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" 
+                      aria-label={key}
+                    />
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {formData.charityPercentage}% of your earnings will be donated to selected charities
-                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Charity */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-6 bg-gradient-to-b from-indigo-600 to-violet-600 rounded-full"></span>
+              Give Back to Charity
+              <span className="text-sm font-normal text-gray-500">(Optional)</span>
+            </h4>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Donation Percentage</label>
+                <CharityDonationSelector 
+                  value={formData.charity_percentage || 0}
+                  onChange={handleCharityPercentageChange}
+                />
+              </div>
+              
+              {formData.charity_percentage > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Charity</label>
+                  <CharitySelector 
+                    value={formData.selected_charity}
+                    onChange={handleCharityChange}
+                    donationPercentage={formData.charity_percentage}
+                  />
                 </div>
               )}
             </div>
-          </section>
+          </div>
 
-          {/* Save Button - Sticky at bottom on mobile */}
-          <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 sm:relative sm:border-0 sm:p-0 -mx-4 sm:mx-0">
+          {/* Save Button */}
+          <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
             <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              className="px-6 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              {isSaving ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving Changes...
-                </span>
-              ) : (
-                'Save Changes'
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-8 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+            >
+              {isSaving && (
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               )}
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </DashboardLayout>
   );

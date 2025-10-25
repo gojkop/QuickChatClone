@@ -27,6 +27,7 @@
     "react-easy-crop": "^5.0.8",
     "react-markdown": "^9.0.1",
     "react-router-dom": "^6.22.3",
+    "@tanstack/react-query": "^5.62.15",  // ← NEW (version may vary)
     "recharts": "^2.10.3",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.0",
