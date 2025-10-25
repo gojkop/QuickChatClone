@@ -22,7 +22,6 @@ import InviteSentPage from '@/pages/InviteSentPage';
 // import AskQuestionPage from '@/pages/AskQuestionPage';
 import QuestionSentPage from '@/pages/QuestionSentPage';
 import AnswerReviewPage from '@/pages/AnswerReviewPage';
-// import TestAICoachPage from '@/pages/TestAICoachPage';
 import FeedbackWidget from '@/components/common/FeedbackWidget';
 import FeedbackDashboardPage from '@/pages/FeedbackDashboardPage'; 
 import ExpertMarketingPage from '@/pages/ExpertMarketingPage';
@@ -84,7 +83,6 @@ const AppLayout = () => {
           <Route path="/question-sent" element={<QuestionSentPage />} />
           <Route path="/u/:handle" element={<PublicProfilePage />} />
           <Route path="/r/:token" element={<AnswerReviewPage />} />
-//          <Route path="/test-ai-coach" element={<TestAICoachPage />} />
           <Route path="/feedback-dashboard" element={<FeedbackDashboardPage />} /> 
           <Route path="/how-it-works" element={<HowItWorksPage />} /> 
           <Route path="/ask-v2" element={<AskQuestionPageV2 />} />
