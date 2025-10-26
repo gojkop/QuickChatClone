@@ -492,24 +492,27 @@ function ExpertInboxPageV2() {
   const handleBulkHide = async () => {
     if (selectedIds.length === 0) return;
 
-    const hiddenQuestions = questions.filter(q => selectedIds.includes(q.id));
-
     try {
-      // Hide questions
+      const idsToHide = [...selectedIds];
+
       await Promise.all(
-        selectedIds.map(id =>
-          apiClient.post(`/expert/questions/${id}/hide`)
+        idsToHide.map(id =>
+          apiClient.post('/question/hidden', {
+            question_id: id,
+            hidden: true
+          })
         )
       );
 
-      // Push undo action
       const undoId = pushUndo({
-        description: `Hidden ${selectedIds.length} question(s)`,
+        description: `Hidden ${idsToHide.length} question(s)`,
         undo: async () => {
-          // Restore hidden questions
           await Promise.all(
-            hiddenQuestions.map(q =>
-              apiClient.post(`/expert/questions/${q.id}/unhide`)
+            idsToHide.map(id =>
+              apiClient.post('/question/hidden', {
+                question_id: id,
+                hidden: false
+              })
             )
           );
           await refreshQuestions();
@@ -519,8 +522,8 @@ function ExpertInboxPageV2() {
 
       await refreshQuestions();
       clearSelection();
-      
-      success(`Hidden ${selectedIds.length} question(s)`, {
+
+      success(`Hidden ${idsToHide.length} question(s)`, {
         action: {
           label: 'Undo',
           onClick: () => executeUndo(undoId)
@@ -528,10 +531,59 @@ function ExpertInboxPageV2() {
         duration: 10000
       });
 
-      announceToScreenReader(`Hidden ${selectedIds.length} questions. Press undo to restore.`);
+      announceToScreenReader(`Hidden ${idsToHide.length} questions. Press undo to restore.`);
     } catch (err) {
       console.error('Failed to hide questions:', err);
       error('Failed to hide questions');
+    }
+  };
+
+  const handleBulkUnhide = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      const idsToUnhide = [...selectedIds];
+
+      await Promise.all(
+        idsToUnhide.map(id =>
+          apiClient.post('/question/hidden', {
+            question_id: id,
+            hidden: false
+          })
+        )
+      );
+
+      const undoId = pushUndo({
+        description: `Unhidden ${idsToUnhide.length} question(s)`,
+        undo: async () => {
+          await Promise.all(
+            idsToUnhide.map(id =>
+              apiClient.post('/question/hidden', {
+                question_id: id,
+                hidden: true
+              })
+            )
+          );
+          await refreshQuestions();
+          success('Questions hidden again');
+        }
+      });
+
+      await refreshQuestions();
+      clearSelection();
+
+      success(`Unhidden ${idsToUnhide.length} question(s)`, {
+        action: {
+          label: 'Undo',
+          onClick: () => executeUndo(undoId)
+        },
+        duration: 10000
+      });
+
+      announceToScreenReader(`Unhidden ${idsToUnhide.length} questions.`);
+    } catch (err) {
+      console.error('Failed to unhide questions:', err);
+      error('Failed to unhide questions');
     }
   };
 
@@ -680,8 +732,10 @@ function ExpertInboxPageV2() {
               <div className="flex-shrink-0 p-3 bg-white border-b border-gray-200">
                 <QuickActions
                   selectedCount={selectedCount}
+                  selectedQuestions={questions.filter(q => selectedIds.includes(q.id))}
                   onClearSelection={clearSelection}
                   onBulkHide={handleBulkHide}
+                  onBulkUnhide={handleBulkUnhide}
                   onExport={handleExport}
                 />
               </div>
