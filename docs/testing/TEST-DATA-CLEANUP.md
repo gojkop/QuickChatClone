@@ -156,14 +156,17 @@ XANO_INTERNAL_API_KEY=your_internal_api_key_here
 
 **Function Stack:**
 1. Validate API key
-2. Query all test questions (`payment_intent_id LIKE 'pi_test_%'`)
-3. For each test question:
+2. Query all questions from database
+3. Filter test questions using lambda (JavaScript `.startsWith("pi_test_")`)
+4. For each test question:
    - Query and delete answers
    - Delete answer media assets
    - Delete question media asset
    - Delete payment record
-4. Delete all test questions
+   - Delete question itself
 5. Return deletion counts
+
+**Note:** Uses JavaScript filtering instead of SQL `LIKE` operator because Xano's `LIKE` operator doesn't reliably work in all contexts.
 
 **Key Security Features:**
 - ✅ Requires internal API key (no public access)
@@ -330,10 +333,14 @@ This is normal if:
 
 ### Double-Check Safety
 
-The cleanup query uses a specific pattern match:
+The cleanup uses JavaScript filtering to identify test questions:
 
-```sql
-WHERE payment_intent_id LIKE 'pi_test_%'
+```javascript
+// In Xano lambda
+var paymentId = question.payment_intent_id || "";
+if (paymentId.startsWith("pi_test_")) {
+  // This is a test question - safe to delete
+}
 ```
 
 Real Stripe payment intents **never** match this pattern:

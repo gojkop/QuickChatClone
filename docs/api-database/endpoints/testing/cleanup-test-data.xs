@@ -13,8 +13,29 @@ query "internal/test-data/cleanup" verb=DELETE {
     }
 
     db.query question {
-      where = $db.question.payment_intent_id like "pi_test_%"
       return = {type: "list"}
+    } as $all_questions
+
+    api.lambda {
+      code = """
+        var testQuestions = [];
+
+        for (var i = 0; i < $var.all_questions.length; i++) {
+          var paymentId = $var.all_questions[i].payment_intent_id || "";
+          if (paymentId.startsWith("pi_test_")) {
+            testQuestions.push($var.all_questions[i]);
+          }
+        }
+
+        console.log("🔍 DEBUG - Total questions in DB: " + $var.all_questions.length);
+        console.log("🔍 DEBUG - Found test questions: " + testQuestions.length);
+        for (var i = 0; i < testQuestions.length; i++) {
+          console.log("  Question " + (i+1) + ": ID=" + testQuestions[i].id + ", payment_intent_id=" + testQuestions[i].payment_intent_id);
+        }
+
+        return testQuestions;
+      """
+      timeout = 10
     } as $test_questions
 
     foreach ($test_questions) {
