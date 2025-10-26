@@ -1,4 +1,4 @@
-export function calculateAnalytics(questions = [], dateRange = { start: null, end: null }) {
+export function calculateAnalytics(questions = [], answers = [], dateRange = { start: null, end: null }) {
   // Filter questions by date range
   const filteredQuestions = filterByDateRange(questions, dateRange);
   const answeredQuestions = filteredQuestions.filter(q => q.answered_at);
@@ -29,13 +29,15 @@ export function calculateAnalytics(questions = [], dateRange = { start: null, en
 
   const responseTimeDistribution = calculateResponseTimeDistribution(responseTimes);
 
-  // Rating calculations
-  const ratedQuestions = answeredQuestions.filter(q => q.rating);
-  const avgRating = ratedQuestions.length > 0
-    ? ratedQuestions.reduce((sum, q) => sum + q.rating, 0) / ratedQuestions.length
+  // Rating calculations - use answers array (ratings stored in answers table)
+  const ratedAnswers = Array.isArray(answers)
+    ? answers.filter(a => a.rating && a.rating >= 1 && a.rating <= 5)
+    : [];
+  const avgRating = ratedAnswers.length > 0
+    ? ratedAnswers.reduce((sum, a) => sum + a.rating, 0) / ratedAnswers.length
     : 0;
 
-  const ratingDistribution = calculateRatingDistribution(ratedQuestions);
+  const ratingDistribution = calculateRatingDistribution(ratedAnswers);
 
   // Question volume over time
   const questionVolume = calculateQuestionVolume(filteredQuestions, dateRange);
@@ -133,10 +135,10 @@ function calculateResponseTimeDistribution(responseTimes) {
   return buckets;
 }
 
-function calculateRatingDistribution(questions) {
+function calculateRatingDistribution(answers) {
   const distribution = [1, 2, 3, 4, 5].map(rating => ({
     rating,
-    count: questions.filter(q => q.rating === rating).length,
+    count: answers.filter(a => a.rating === rating).length,
   }));
 
   return distribution;
