@@ -55,6 +55,7 @@ QuickChat (mindPick) is a video-based Q&A platform connecting askers with expert
 |----------|-------------|
 | [`api-database/README.md`](./api-database/README.md) | Complete API & Database documentation index |
 | [`api-database/endpoints/README.md`](./api-database/endpoints/README.md) | Xano endpoint implementations (organized by feature) |
+| [`api-database/endpoints/README-XANOSCRIPT.md`](./api-database/endpoints/README-XANOSCRIPT.md) | **XanoScript (.xs) file format guide** |
 | [`api-database/security/README.md`](./api-database/security/README.md) | Security audits, reviews, and fixes |
 | [`api-database/guides/README.md`](./api-database/guides/README.md) | Implementation guides and troubleshooting |
 | [`api-database/migrations/README.md`](./api-database/migrations/README.md) | Database migration documentation |
@@ -64,6 +65,8 @@ QuickChat (mindPick) is a video-based Q&A platform connecting askers with expert
 - [Internal Endpoints](./api-database/guides/xano-internal-endpoints.md) - Internal/cron job endpoints
 - [Lambda Troubleshooting](./api-database/guides/XANO-LAMBDA-TROUBLESHOOTING.md) - Common Xano issues
 - [Security Audit (Oct 2025)](./api-database/security/ENDPOINT-AUDIT-OCT-2025.md) - Current security status
+
+**Note:** All Xano endpoint implementations use `.xs` extension (XanoScript format). See [README-XANOSCRIPT.md](./api-database/endpoints/README-XANOSCRIPT.md) for details.
 
 ---
 
