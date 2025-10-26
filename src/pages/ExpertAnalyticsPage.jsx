@@ -21,7 +21,7 @@ function ExpertAnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const metrics = useMetrics(questions);
-  const { analytics, dateRange, setPresetRange } = useAnalytics(questions);
+  const { analytics, dateRange, setPresetRange, isLoading: analyticsLoading, error: analyticsError } = useAnalytics(questions);
 
   // Load data
   useEffect(() => {
@@ -29,11 +29,12 @@ function ExpertAnalyticsPage() {
       try {
         const [profileRes, questionsRes] = await Promise.all([
           apiClient.get('/me/profile'),
-          apiClient.get('/me/questions'),
+          apiClient.get('/me/questions?page=1&per_page=10'), // Only need recent questions for display
         ]);
 
         setProfile(profileRes.data.expert_profile || {});
-        setQuestions(questionsRes.data || []);
+        // Handle new paginated response format
+        setQuestions(questionsRes.data?.questions || questionsRes.data || []);
       } catch (err) {
         console.error('Failed to load analytics data:', err);
       } finally {
@@ -48,15 +49,15 @@ function ExpertAnalyticsPage() {
     setProfile(prev => ({ ...prev, accepting_questions: newStatus }));
   };
 
-  if (isLoading) {
+  if (isLoading || analyticsLoading) {
     return (
-      <DashboardLayout 
+      <DashboardLayout
         breadcrumbs={[
           { label: 'Dashboard', path: '/dashboard' },
           { label: 'Analytics' }
         ]}
       >
-        <LoadingState />
+        <LoadingState text={analyticsLoading ? "Loading analytics..." : "Loading..."} />
       </DashboardLayout>
     );
   }

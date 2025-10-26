@@ -58,7 +58,8 @@ export function useMarketing() {
       
       // Calculate stats from questions
       const questionsResponse = await apiClient.get('/me/questions');
-      const questions = questionsResponse.data || [];
+      // Handle new paginated response format
+      const questions = questionsResponse.data?.questions || questionsResponse.data || [];
       
       const answeredQuestions = questions.filter(q => 
         q.status === 'answered' || q.status === 'closed'

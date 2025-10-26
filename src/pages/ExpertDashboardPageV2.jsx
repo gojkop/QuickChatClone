@@ -34,12 +34,16 @@ function ExpertDashboardPageV2() {
   } = useProfile();
 
   // Use existing questions hook - it already uses React Query
-  const { 
-    data: questions = [], 
-    isLoading: questionsLoading, 
+  // Now supports pagination - loading first 10 questions only
+  const {
+    data: questionsData,
+    isLoading: questionsLoading,
     error: questionsError,
-    refetch: refetchQuestions 
-  } = useQuestionsQuery();
+    refetch: refetchQuestions
+  } = useQuestionsQuery({ page: 1, perPage: 10 });
+
+  const questions = questionsData?.questions || [];
+  const pagination = questionsData?.pagination;
 
   // Memoized metrics calculation - only recalculates when questions change
   const metrics = useMetrics(questions);

@@ -1,17 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Filter, X, ChevronDown, Search } from 'lucide-react';
 
 function QuestionFilters({ filters, onFilterChange, filteredCount, totalCount }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchInput, setSearchInput] = useState(filters.searchQuery || '');
+  const [priceMinInput, setPriceMinInput] = useState(filters.priceMin);
+  const [priceMaxInput, setPriceMaxInput] = useState(filters.priceMax);
+  const isUserTypingRef = useRef(false);
+
+  // Sync props to local state only when not actively typing
+  useEffect(() => {
+    if (!isUserTypingRef.current) {
+      setPriceMinInput(filters.priceMin);
+      setPriceMaxInput(filters.priceMax);
+      setSearchInput(filters.searchQuery || '');
+    }
+  }, [filters.priceMin, filters.priceMax, filters.searchQuery]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchInput(value);
+    isUserTypingRef.current = true;
+
     clearTimeout(window.searchTimeout);
     window.searchTimeout = setTimeout(() => {
       onFilterChange('searchQuery', value);
+      isUserTypingRef.current = false;
     }, 300);
+  };
+
+  const handlePriceMinChange = (e) => {
+    const value = Number(e.target.value);
+    setPriceMinInput(value);
+    isUserTypingRef.current = true;
+
+    clearTimeout(window.priceMinTimeout);
+    window.priceMinTimeout = setTimeout(() => {
+      onFilterChange('priceMin', value);
+      isUserTypingRef.current = false;
+    }, 500);
+  };
+
+  const handlePriceMaxChange = (e) => {
+    const value = Number(e.target.value);
+    setPriceMaxInput(value);
+    isUserTypingRef.current = true;
+
+    clearTimeout(window.priceMaxTimeout);
+    window.priceMaxTimeout = setTimeout(() => {
+      onFilterChange('priceMax', value);
+      isUserTypingRef.current = false;
+    }, 500);
   };
 
   const statusOptions = [
@@ -36,12 +75,14 @@ function QuestionFilters({ filters, onFilterChange, filteredCount, totalCount })
     filters.searchQuery !== '';
 
   const clearFilters = () => {
+    setPriceMinInput(0);
+    setPriceMaxInput(10000);
+    setSearchInput('');
     onFilterChange('priceMin', 0);
     onFilterChange('priceMax', 10000);
     onFilterChange('slaFilter', 'all');
     onFilterChange('questionType', 'all');
     onFilterChange('searchQuery', '');
-    setSearchInput('');
   };
 
   return (
@@ -117,16 +158,16 @@ function QuestionFilters({ filters, onFilterChange, filteredCount, totalCount })
               <input
                 type="number"
                 placeholder="Min"
-                value={filters.priceMin}
-                onChange={(e) => onFilterChange('priceMin', Number(e.target.value))}
+                value={priceMinInput}
+                onChange={handlePriceMinChange}
                 className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <span className="text-gray-500 text-xs">—</span>
               <input
                 type="number"
                 placeholder="Max"
-                value={filters.priceMax}
-                onChange={(e) => onFilterChange('priceMax', Number(e.target.value))}
+                value={priceMaxInput}
+                onChange={handlePriceMaxChange}
                 className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -157,12 +198,6 @@ function QuestionFilters({ filters, onFilterChange, filteredCount, totalCount })
           )}
         </div>
       )}
-
-      {/* Results Count */}
-      <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600">
-        <span className="font-semibold text-gray-900">{filteredCount}</span> of{' '}
-        <span className="font-semibold text-gray-900">{totalCount}</span>
-      </div>
     </div>
   );
 }

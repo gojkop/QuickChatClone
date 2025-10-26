@@ -156,7 +156,10 @@ function ExpertDashboardPage() {
   const { setProfileData } = useAuth();
   const [profile, setProfile] = useState(null);
   const [allQuestions, setAllQuestions] = useState([]); // ⚡ SINGLE source of truth for questions
+  const [pagination, setPagination] = useState(null); // Server-side pagination metadata
+  const [tabCounts, setTabCounts] = useState({ pending: 0, answered: 0, all: 0 }); // Server-side tab counts
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingPage, setIsFetchingPage] = useState(false); // Loading state for page changes
   const [error, setError] = useState('');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -185,146 +188,99 @@ function ExpertDashboardPage() {
 
   const dollarsFromCents = (cents) => Math.round((cents || 0) / 100);
 
-  // Helper function to calculate remaining time in seconds for sorting
-  const getRemainingTime = (question) => {
-    if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
-      return Infinity;
-    }
-
-    const now = Date.now() / 1000;
-    const createdAtSeconds = question.created_at > 4102444800 
-      ? question.created_at / 1000 
-      : question.created_at;
-    
-    const elapsed = now - createdAtSeconds;
-    const slaSeconds = question.sla_hours_snapshot * 3600;
-    const remaining = slaSeconds - elapsed;
-    
-    return remaining;
-  };
-
-  // ⚡ PHASE 1 OPTIMIZATION: Client-side filtering by tab (instant, no API calls)
+  // ✅ Server-side filtering: Questions are already filtered by tab on server
+  // Only apply showHidden toggle for 'all' tab (client-side)
   const tabFilteredQuestions = useMemo(() => {
     const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-    
-    // Always filter out pending Deep Dive offers (they appear in PendingOffersSection)
-    let filtered = safeQuestions.filter(q => q.pricing_status !== 'offer_pending');
 
-    // Tab-specific filtering
-    if (activeTab === 'pending') {
-      // Pending tab: Only unanswered, non-declined, non-hidden questions
-      filtered = filtered.filter(q => {
-        const isUnanswered = q.status === 'paid' && !q.answered_at;
-        const isNotDeclined = q.pricing_status !== 'offer_declined' && q.status !== 'declined';
-        const isNotHidden = q.hidden !== true;
-        return isUnanswered && isNotDeclined && isNotHidden;
-      });
-    } else if (activeTab === 'answered') {
-      // Answered tab: Only answered questions
-      filtered = filtered.filter(q => 
-        q.status === 'closed' || q.status === 'answered' || q.answered_at
-      );
-    } else if (activeTab === 'all') {
-      // All tab: Show everything, but filter out hidden if showHidden is false
-      if (!showHidden) {
-        filtered = filtered.filter(q => !q.hidden);
-      }
+    // For 'all' tab, respect the showHidden toggle
+    if (activeTab === 'all' && !showHidden) {
+      return safeQuestions.filter(q => !q.hidden);
     }
 
-    return filtered;
+    // For pending/answered tabs, questions are already properly filtered server-side
+    return safeQuestions;
   }, [allQuestions, activeTab, showHidden]);
 
-  // ✅ OPTIMIZED: Client-side sorting with useMemo - NO API CALLS when sort changes
+  // ✅ Server-side sorting: Questions are already sorted from server
+  // No client-side sorting needed - just use the filtered questions as-is
   const sortedQuestions = useMemo(() => {
-    if (!tabFilteredQuestions || !Array.isArray(tabFilteredQuestions)) {
-      return [];
-    }
-    
-    const sorted = [...tabFilteredQuestions];
-    
-    switch (sortBy) {
-      case 'time_left':
-        return sorted.sort((a, b) => {
-          const isPendingA = a.status === 'paid' && !a.answered_at;
-          const isPendingB = b.status === 'paid' && !b.answered_at;
-          
-          if (isPendingA && isPendingB) {
-            return getRemainingTime(a) - getRemainingTime(b);
-          }
-          return 0;
-        });
-      
-      case 'price_high':
-        return sorted.sort((a, b) => (b.price_cents || 0) - (a.price_cents || 0));
-      
-      case 'price_low':
-        return sorted.sort((a, b) => (a.price_cents || 0) - (b.price_cents || 0));
-      
-      case 'date_new':
-        return sorted.sort((a, b) => b.created_at - a.created_at);
-      
-      case 'date_old':
-        return sorted.sort((a, b) => a.created_at - b.created_at);
-      
-      default:
-        return sorted;
-    }
-  }, [tabFilteredQuestions, sortBy]);
+    return tabFilteredQuestions;
+  }, [tabFilteredQuestions]);
 
-  // ✅ OPTIMIZED: Calculate counts with useMemo
+  // ✅ Server-side tab counts
+  // Use tabCounts for all badge numbers (updated when data is fetched)
   const { pendingCount, answeredCount, allCount, hiddenCount } = useMemo(() => {
     const safeAllQuestions = Array.isArray(allQuestions) ? allQuestions : [];
 
-    return {
-      // Pending: Only unanswered, non-declined, non-hidden questions
-      pendingCount: safeAllQuestions.filter(q => {
-        const isUnanswered = q.status === 'paid' && !q.answered_at;
-        const isNotPendingOffer = q.pricing_status !== 'offer_pending';
-        const isNotDeclined = q.pricing_status !== 'offer_declined' && q.status !== 'declined';
-        const isNotHidden = q.hidden !== true;
-        return isUnanswered && isNotPendingOffer && isNotDeclined && isNotHidden;
-      }).length,
-
-      // Answered: Only answered questions
-      answeredCount: safeAllQuestions.filter(q =>
-        q.status === 'closed' || q.status === 'answered' || q.answered_at
-      ).length,
-
-      // All: Everything except pending offers (includes declined, expired, hidden)
-      allCount: safeAllQuestions.filter(q =>
-        q.pricing_status !== 'offer_pending'
-      ).length,
-
+    // Use cached counts from tabCounts - these are updated in fetchQuestionsPage
+    const counts = {
+      pendingCount: tabCounts.pending,
+      answeredCount: tabCounts.answered,
+      allCount: tabCounts.all,
+      // Hidden count is calculated from current page questions (less accurate but acceptable)
       hiddenCount: safeAllQuestions.filter(q => q.hidden === true).length
     };
-  }, [allQuestions]);
 
-  // ✅ OPTIMIZED: Paginated questions with useMemo
-  const paginatedQuestions = useMemo(() => {
-    const totalPages = Math.ceil(sortedQuestions.length / QUESTIONS_PER_PAGE);
-    const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
-    const endIndex = startIndex + QUESTIONS_PER_PAGE;
-    return {
-      questions: sortedQuestions.slice(startIndex, endIndex),
-      totalPages
-    };
-  }, [sortedQuestions, currentPage]);
+    return counts;
+  }, [allQuestions, tabCounts]);
 
-  // ⚡ PHASE 1 OPTIMIZATION: Refresh questions function (single fetch)
-  const refreshQuestions = async () => {
+  // ✅ Server-side pagination with filter_type and sort_by parameters
+  const fetchQuestionsPage = async (page = 1, tab = activeTab, sort = sortBy) => {
     try {
-      console.log('⚡ Refreshing questions...');
-      const response = await apiClient.get('/me/questions');
-      setAllQuestions(response.data || []);
-      setCurrentPage(1); // Reset to first page
-      console.log(`✅ Refreshed ${response.data?.length || 0} questions`);
+      const params = new URLSearchParams();
+      params.append('page', page);
+      params.append('per_page', 10);
+      params.append('filter_type', tab); // Use filter_type for proper server-side filtering
+      params.append('sort_by', sort); // Use sort_by for server-side sorting
+
+      console.log(`⚡ Fetching questions page ${page} for tab '${tab}' with sort '${sort}'...`);
+      const response = await apiClient.get(`/me/questions?${params.toString()}`);
+
+      // Handle response format
+      const data = response.data;
+      const questions = data?.questions || [];
+      const paginationData = data?.pagination || null;
+
+      setAllQuestions(questions);
+      setPagination(paginationData);
+
+      // Update tab count for the fetched tab
+      if (paginationData && paginationData.total !== undefined) {
+        setTabCounts(prev => ({
+          ...prev,
+          [tab]: paginationData.total
+        }));
+      }
+
+      console.log(`✅ Fetched ${questions.length} questions for page ${page}, total: ${paginationData?.total || 0}`);
+
+      return { questions, pagination: paginationData };
     } catch (err) {
       console.error("Failed to fetch questions:", err);
       if (err.response?.status !== 404) {
         console.error("Error fetching questions:", err.message);
       }
       setAllQuestions([]);
+      setPagination(null);
+      throw err;
     }
+  };
+
+  // ✅ Server-side pagination: Questions are already paginated and filtered from server
+  // Tab filtering is done server-side using filter_type parameter
+  // Server returns accurate pagination.total for each tab
+  const paginatedQuestions = useMemo(() => {
+    return {
+      questions: sortedQuestions, // Already limited to 10 from server, filtered by tab
+      totalPages: pagination?.total_pages || 1
+    };
+  }, [sortedQuestions, pagination]);
+
+  // Refresh questions (reset to page 1)
+  const refreshQuestions = async () => {
+    setCurrentPage(1);
+    await fetchQuestionsPage(1, activeTab, sortBy);
   };
   
   // First question celebration
@@ -356,13 +312,23 @@ function ExpertDashboardPage() {
       try {
         console.log('⚡ Starting parallel data fetch...');
         const startTime = Date.now();
-        
-        // Fetch profile and questions in PARALLEL (not sequential)
-        const [profileResponse, questionsResponse] = await Promise.all([
+
+        // Fetch profile, initial questions, and all tab counts in PARALLEL
+        const [profileResponse, pendingResult, answeredResult, allResult] = await Promise.all([
           apiClient.get('/me/profile'),
-          apiClient.get('/me/questions')
+          fetchQuestionsPage(1, 'pending', 'time_left'), // Fetch first page of pending questions with default sort
+          // Fetch counts for other tabs (just metadata, no question data needed)
+          apiClient.get('/me/questions?filter_type=answered&page=1&per_page=1&sort_by=time_left'),
+          apiClient.get('/me/questions?filter_type=all&page=1&per_page=1&sort_by=time_left')
         ]);
-        
+
+        // Update tab counts from the parallel fetches
+        setTabCounts({
+          pending: pendingResult?.pagination?.total || 0,
+          answered: answeredResult.data?.pagination?.total || 0,
+          all: allResult.data?.pagination?.total || 0
+        });
+
         const fetchTime = Date.now() - startTime;
         console.log(`✅ Parallel fetch completed in ${fetchTime}ms`);
 
@@ -392,13 +358,10 @@ function ExpertDashboardPage() {
           tier2_auto_decline_below_usd: expertProfile.tier2_auto_decline_below_cents ? dollarsFromCents(expertProfile.tier2_auto_decline_below_cents) : '',
           tier2_description: expertProfile.tier2_description || ''
         };
-        
+
         setProfile(processedProfile);
         setProfileData(profileResponse.data); // Share profile with AuthContext
-        
-        // Set questions (single source of truth)
-        setAllQuestions(questionsResponse.data || []);
-        
+
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
         setError("Could not load your dashboard. Please try refreshing the page.");
@@ -435,10 +398,14 @@ function ExpertDashboardPage() {
     }
   }, [location.hash, allQuestions, navigate]);
 
-  // ⚡ PHASE 1 OPTIMIZATION: Reset to page 1 when tab changes (no refetch needed!)
+  // ⚡ Server-side pagination: Fetch page 1 when tab or sort changes
   useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab]);
+    if (!isLoading) {
+      setCurrentPage(1);
+      fetchQuestionsPage(1, activeTab, sortBy); // Pass activeTab and sortBy to fetch correct questions
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, sortBy]);
 
   const handleFirstQuestionAnswer = () => {
     if (firstQuestion) {
@@ -605,9 +572,21 @@ function ExpertDashboardPage() {
     }
   };
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = async (newPage) => {
+    if (newPage === currentPage || isFetchingPage) return;
+
+    setIsFetchingPage(true);
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    try {
+      await fetchQuestionsPage(newPage, activeTab, sortBy); // Pass current tab and sort
+    } catch (err) {
+      console.error('Failed to fetch page:', err);
+      // Optionally show error message to user
+    } finally {
+      setIsFetchingPage(false);
+    }
   };
 
   if (isLoading) {
