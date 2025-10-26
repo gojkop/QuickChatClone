@@ -35,6 +35,7 @@ import ExpertInboxPageV2 from '@/pages/ExpertInboxPageV2';
 import ExpertAnalyticsPage from '@/pages/ExpertAnalyticsPage';
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
 import AccountSettingsPage from '@/pages/AccountSettingsPage';
+import MarketingDashboardPage from '@/pages/MarketingDashboardPage';
 
 // Import Common Components
 import Navbar from '@/components/common/Navbar';
@@ -173,7 +174,17 @@ const AppLayout = () => {
               </ProtectedRoute>
             } 
           />
-
+{/* Marketing Dashboard - New v2 */}
+<Route 
+  path="/dashboard/marketing" 
+  element={
+    <ProtectedRoute>
+      <ProfileProvider>
+        <MarketingDashboardPage />
+      </ProfileProvider>
+    </ProtectedRoute>
+  } 
+/>
           {/* Marketing (legacy - no ProfileProvider needed) */}
           <Route 
             path="/expert/marketing" 
