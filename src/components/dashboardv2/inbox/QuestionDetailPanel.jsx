@@ -1,6 +1,6 @@
 // src/components/dashboardv2/inbox/QuestionDetailPanel.jsx
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Link, Loader } from 'lucide-react';
+import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Link, Loader, X } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
