@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '@/api';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
 import PanelContainer from '@/components/dashboardv2/inbox/PanelContainer';
-import QuestionFilters from '@/components/dashboardv2/inbox/QuestionFilters';
+import UnifiedToolbar from '@/components/dashboardv2/inbox/UnifiedToolbar';
+import PendingOffersBanner from '@/components/dashboardv2/inbox/PendingOffersBanner';
+import AdvancedFiltersPanel from '@/components/dashboardv2/inbox/AdvancedFiltersPanel';
 import QuickActions from '@/components/dashboardv2/inbox/QuickActions';
 import QuestionListView from '@/components/dashboardv2/inbox/QuestionListView';
 import VirtualQuestionTable from '@/components/dashboardv2/inbox/VirtualQuestionTable';
@@ -39,6 +41,8 @@ function ExpertInboxPageV2() {
   const [useVirtualization, setUseVirtualization] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [offerRefreshTrigger, setOfferRefreshTrigger] = useState(0);
 
 
   const metrics = useMetrics(questions);
@@ -472,6 +476,13 @@ function ExpertInboxPageV2() {
     }
   };
 
+  // Offer update handler
+  const handleOfferUpdate = () => {
+    // Refresh questions when an offer is accepted or declined
+    refreshQuestions();
+    setOfferRefreshTrigger(prev => prev + 1);
+  };
+
   // Pagination handlers
   const handleNextPage = () => {
     if (pagination?.has_next) {
@@ -721,15 +732,23 @@ function ExpertInboxPageV2() {
       case 'list':
         return (
           <div className="h-full flex flex-col overflow-hidden bg-gray-50">
-            {/* Filters */}
-            <div className="flex-shrink-0 overflow-y-auto border-b border-gray-200 bg-white max-h-[30vh] lg:max-h-[35vh]">
-              <QuestionFilters
+            {/* Unified Toolbar */}
+            <div className="flex-shrink-0">
+              <UnifiedToolbar
                 filters={filters}
                 onFilterChange={updateFilter}
                 filteredCount={filteredCount}
                 totalCount={totalCount}
+                onExport={handleExport}
+                onOpenAdvancedFilters={() => setIsFilterPanelOpen(true)}
               />
             </div>
+
+            {/* Pending Offers Banner */}
+            <PendingOffersBanner
+              onOfferUpdate={handleOfferUpdate}
+              onViewDetails={handleQuestionOpen}
+            />
 
             {/* Quick Actions */}
             {selectedCount > 0 && (
@@ -899,6 +918,14 @@ function ExpertInboxPageV2() {
           isOpen={showKeyboardHelp}
           onClose={() => setShowKeyboardHelp(false)}
         />
+
+        {/* Advanced Filters Panel */}
+        <AdvancedFiltersPanel
+          isOpen={isFilterPanelOpen}
+          onClose={() => setIsFilterPanelOpen(false)}
+          filters={filters}
+          onFilterChange={updateFilter}
+        />
       </DashboardLayout>
     );
   }
@@ -930,6 +957,14 @@ function ExpertInboxPageV2() {
       <KeyboardShortcutsModal
         isOpen={showKeyboardHelp}
         onClose={() => setShowKeyboardHelp(false)}
+      />
+
+      {/* Advanced Filters Panel */}
+      <AdvancedFiltersPanel
+        isOpen={isFilterPanelOpen}
+        onClose={() => setIsFilterPanelOpen(false)}
+        filters={filters}
+        onFilterChange={updateFilter}
       />
     </DashboardLayout>
   );
