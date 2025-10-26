@@ -41,47 +41,52 @@ function ExpertInboxPageV2() {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
 
 
-  const metrics = useMetrics(questions);
-const {
-  filters,
-  updateFilter,
-  filteredQuestions: baseFilteredQuestions,
-  selectedQuestions: legacySelected,
-  toggleSelectQuestion: legacyToggle,
-  selectAll: legacySelectAll,
-  clearSelection: legacyClear,
-  filteredCount,
-} = useInbox(questions);
+const metrics = useMetrics(questions);
+  const {
+    filters,
+    updateFilter,
+    filteredQuestions: baseFilteredQuestions,
+    selectedQuestions: legacySelected,
+    toggleSelectQuestion: legacyToggle,
+    selectAll: legacySelectAll,
+    clearSelection: legacyClear,
+    filteredCount,
+  } = useInbox(questions);
 
-// New Phase 3 hooks
-const { toasts, showToast, hideToast, success, error, info } = useToast();
-const { pinnedIds, togglePin, isPinned, sortWithPinned } = usePinnedQuestions();
-const { undoStack, pushUndo, executeUndo } = useUndoStack();
+  // New Phase 3 hooks
+  const { toasts, showToast, hideToast, success, error, info } = useToast();
+  const { pinnedIds, togglePin, isPinned, sortWithPinned } = usePinnedQuestions();
+  const { hiddenIds, hideMultiple, unhideMultiple, isHidden, filterHidden } = useHiddenQuestions();
+  const { undoStack, pushUndo, executeUndo } = useUndoStack();
 
-// MOVED: Sort questions BEFORE initializing useBulkSelect (line moved from 85)
-const filteredQuestions = sortWithPinned(baseFilteredQuestions);
+  // Panel stack management (MUST be called before isMobile is used)
+  const {
+    panels,
+    openPanel,
+    closePanel,
+    closeTopPanel,
+    closeAllPanels,
+    isPanelOpen,
+    getPanelData,
+    updatePanelData,
+    screenWidth
+  } = usePanelStack();
 
-// FIXED: Use filteredQuestions instead of baseFilteredQuestions
-const { 
-  selectedIds,
-  toggleSelect,
-  selectAll,
-  clearSelection,
-  selectedCount
-} = useBulkSelect(filteredQuestions);
+  const totalCount = pagination?.total || questions.length;
+  const isMobile = screenWidth < 768;
 
-// Panel stack management (continue with existing code)
-const {
-  panels,
-  openPanel,
-  closePanel,
-  closeTopPanel,
-  closeAllPanels,
-  isPanelOpen,
-  getPanelData,
-  updatePanelData,
-  screenWidth
-} = usePanelStack();
+  // Sort questions with pinned ones first, then filter hidden
+  const sortedQuestions = sortWithPinned(baseFilteredQuestions);
+  const filteredQuestions = filterHidden(sortedQuestions);
+
+  // FIXED: Use sorted and filtered questions for bulk select
+  const { 
+    selectedIds,
+    toggleSelect,
+    selectAll,
+    clearSelection,
+    selectedCount
+  } = useBulkSelect(filteredQuestions);
 
   // URL synchronization
   const { syncURL } = useURLSync({
