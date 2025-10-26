@@ -150,10 +150,12 @@ function QuestionTable({
 
   // ADDED: Hover preview handlers
   const handleMouseEnter = (question, event) => {
+      console.log('🔍 Hovering over question:', question.id); // ADD THIS
     const rect = event.currentTarget.getBoundingClientRect();
     setHoverPosition({ x: rect.right, y: rect.top });
     
     const timer = setTimeout(() => {
+          console.log('✅ Setting hover question:', question.id); // ADD THIS
       setHoveredQuestion(question);
     }, 300); // 300ms delay
     
