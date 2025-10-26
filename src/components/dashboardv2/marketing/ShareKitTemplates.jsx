@@ -6,7 +6,7 @@ import TemplateEditorModal from './TemplateEditorModal';
 
 const TEMPLATES_PER_PAGE = 6;
 
-export default function ShareKitTemplates({ campaigns, expertProfile, user, stats }) {
+export default function ShareKitTemplates({ campaigns = [], expertProfile = null, user = null, stats = null }) {
   const [currentStep, setCurrentStep] = useState('platform');
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState(null);

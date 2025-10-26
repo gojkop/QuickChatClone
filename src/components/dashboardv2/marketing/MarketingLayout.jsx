@@ -4,15 +4,16 @@ import CampaignList from './CampaignList';
 import ShareKitTemplates from './ShareKitTemplates';
 
 export default function MarketingLayout({ 
-  campaigns, 
-  trafficSources, 
-  insights, 
-  isLoading,
+  campaigns = [[]], 
+  trafficSources = [[]], 
+  insights = null, 
+  isLoading = false,
   createCampaign,
-  expertProfile,
-  user,
-  stats,
-}) {
+  expertProfile = null,
+  user = null,
+  stats = null,
+}) 
+{
   const [activeTab, setActiveTab] = useState('overview');
   const [showCampaignModal, setShowCampaignModal] = useState(false);
 
@@ -64,7 +65,7 @@ export default function MarketingLayout({
 
   return (
       <div className="space-y-6">
-        
+
         {/* Desktop Tab Navigation */}
         <div className="hidden sm:flex gap-2 mb-6 border-b border-gray-200 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (

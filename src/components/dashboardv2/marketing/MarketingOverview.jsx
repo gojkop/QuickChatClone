@@ -3,9 +3,9 @@
 import { useState } from 'react';
 
 export default function MarketingOverview({ 
-  campaigns, 
-  insights, 
-  trafficSources,
+  campaigns = [], 
+  insights = null, 
+  trafficSources = [],
   onNavigate 
 }) {
   // ✅ FIX: Calculate from trafficSources instead of campaigns

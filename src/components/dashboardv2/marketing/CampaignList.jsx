@@ -4,7 +4,7 @@ import CampaignCard from './CampaignCard';
 import CampaignDetailsModal from './CampaignDetailsModal';
 import BetaFeatureModal from './BetaFeatureModal';
 
-export default function CampaignList({ campaigns, onCreate }) {
+export default function CampaignList({ campaigns = [], onCreate }) {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('active');
