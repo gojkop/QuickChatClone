@@ -4,7 +4,8 @@
 // ⚡ PHASE 1 OPTIMIZATION: Added batch fetching capability
 // ============================================
 
-const XANO_BASE_URL = process.env.XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
+// Media_asset endpoints are in the Authentication API group (api:3B14WLbJ)
+const XANO_BASE_URL = process.env.XANO_AUTH_BASE_URL || process.env.XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:3B14WLbJ';
 
 /**
  * Create media_asset record in Xano

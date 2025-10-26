@@ -29,21 +29,27 @@ function QuestionDetailPanel({
       return;
     }
 
-    // If question already has media_asset or recording_segments, use those
-    if (question.recording_segments && question.recording_segments.length > 0) {
-      setMediaAssets(question.recording_segments);
+    // If question already has recording_segments, use those (already enriched)
+    if (question.recording_segments !== undefined) {
+      // Even if empty array, it means we already tried to fetch and failed
+      console.log(`✨ Using pre-enriched recording_segments for question ${question.id} (${question.recording_segments.length} segments)`);
+      setMediaAssets(Array.isArray(question.recording_segments) ? question.recording_segments : []);
       return;
     }
-    
+
+    // If question has media_asset array, use that
     if (question.media_asset && Array.isArray(question.media_asset) && question.media_asset.length > 0) {
+      console.log(`📦 Using media_asset array for question ${question.id}`);
       setMediaAssets(question.media_asset);
       return;
     }
 
-    // Otherwise fetch from API if media_asset_id exists
-    if (question.media_asset_id) {
+    // Only fetch from API if media_asset_id exists and we haven't enriched yet
+    if (question.media_asset_id && question.media_asset_id > 0) {
+      console.log(`🔄 Need to fetch media_asset ${question.media_asset_id} for question ${question.id}`);
       fetchMediaAssets();
     } else {
+      console.log(`❌ No media_asset_id for question ${question.id}`);
       setMediaAssets([]);
     }
   }, [question?.id, question?.media_asset_id]);
@@ -51,14 +57,19 @@ function QuestionDetailPanel({
   const fetchMediaAssets = async () => {
     setLoadingMedia(true);
     try {
+      console.log(`🎬 Fetching media_asset ${question.media_asset_id} for question ${question.id}`);
+
       // Fetch media_asset by ID (FK-only architecture)
       const response = await apiClient.get(`/media_asset/${question.media_asset_id}`);
       const mediaAsset = response.data;
 
       if (!mediaAsset) {
+        console.warn(`⚠️ Media_asset ${question.media_asset_id} returned empty data`);
         setMediaAssets([]);
         return;
       }
+
+      console.log(`✅ Successfully fetched media_asset ${question.media_asset_id}:`, mediaAsset);
 
       // Parse metadata if it's a string
       let metadata = mediaAsset.metadata;

@@ -93,7 +93,9 @@ export default async function handler(req, res) {
               url: seg.playback_url,
               duration_sec: seg.duration,
               segment_index: seg.segment_index,
-              metadata: { mode: seg.mode }
+              metadata: { mode: seg.mode },
+              provider: 'cloudflare_stream',
+              asset_id: seg.uid
             }));
           } else {
             // Single media file (legacy format)
@@ -102,7 +104,9 @@ export default async function handler(req, res) {
               url: mediaAsset.url,
               duration_sec: mediaAsset.duration_sec,
               segment_index: 0,
-              metadata: metadata
+              metadata: metadata,
+              provider: mediaAsset.provider,
+              asset_id: mediaAsset.asset_id
             }];
           }
         } else {
@@ -113,7 +117,7 @@ export default async function handler(req, res) {
       return {
         ...question,
         attachments: cleanedAttachments,
-        recording_segments: recordingSegments
+        recording_segments: recordingSegments  // Always set, even if empty array
       };
     });
 

@@ -92,11 +92,15 @@ const enrichQuestionWithMedia = async (question) => {
 
     return {
       ...question,
-      recording_segments: recordingSegments
+      recording_segments: recordingSegments  // Always set, even if empty
     };
   } catch (error) {
     console.warn(`Failed to fetch media_asset ${question.media_asset_id}:`, error.message);
-    return question;
+    // Return question with empty recording_segments to prevent re-fetch
+    return {
+      ...question,
+      recording_segments: []
+    };
   }
 };
 

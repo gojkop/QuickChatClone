@@ -277,7 +277,7 @@ function ExpertInboxPageV2() {
       return {
         ...question,
         attachments: cleanedAttachments,
-        recording_segments: recordingSegments
+        recording_segments: recordingSegments  // Always set, even if empty array
       };
     });
   };
