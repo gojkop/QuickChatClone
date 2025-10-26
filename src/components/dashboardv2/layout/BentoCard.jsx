@@ -1,16 +1,6 @@
 // src/components/dashboardv2/layout/BentoCard.jsx
 import React from 'react';
 
-/**
- * BentoCard - Individual card with flexible sizing
- * 
- * Sizes:
- * - small: 1x1 (default)
- * - wide: 2x1 (spans 2 columns)
- * - tall: 1x2 (spans 2 rows)
- * - large: 2x2 (spans 2 columns, 2 rows)
- * - extraWide: 3x1 (spans 3 columns)
- */
 function BentoCard({ 
   size = 'small', 
   children, 
@@ -19,12 +9,12 @@ function BentoCard({
   hoverable = false
 }) {
   const sizeClasses = {
-    small: 'lg:col-span-1 lg:row-span-1',       // 1x1
-    wide: 'lg:col-span-2 lg:row-span-1',        // 2x1
-    tall: 'lg:col-span-1 lg:row-span-2',        // 1x2
-    large: 'lg:col-span-2 lg:row-span-2',       // 2x2
-    extraWide: 'lg:col-span-3 lg:row-span-1',   // 3x1
-    full: 'lg:col-span-4 lg:row-span-1',        // 4x1
+    small: 'lg:col-span-1 lg:row-span-1',
+    wide: 'lg:col-span-2 lg:row-span-1',
+    tall: 'lg:col-span-1 lg:row-span-2',
+    large: 'lg:col-span-2 lg:row-span-2',
+    extraWide: 'lg:col-span-3 lg:row-span-1',
+    full: 'lg:col-span-4 lg:row-span-1',
   };
 
   const interactiveClasses = hoverable || onClick
@@ -37,7 +27,7 @@ function BentoCard({
         bg-white 
         border border-gray-200 
         rounded-xl 
-        p-4
+        p-3
         ${sizeClasses[size]}
         ${interactiveClasses}
         ${className}

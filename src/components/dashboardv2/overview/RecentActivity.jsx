@@ -44,11 +44,11 @@ function RecentActivity({ questions = [] }) {
 
   if (recentQuestions.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
-        <h2 className="text-lg font-bold text-gray-900 mb-3">Recent Questions</h2>
-        <div className="text-center py-8 text-gray-500">
-          <MessageSquare size={48} className="mx-auto mb-3 text-gray-300" strokeWidth={1.5} />
-          <p className="font-semibold text-gray-700 mb-1 text-sm">No pending questions</p>
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <h2 className="text-sm font-bold text-gray-900 mb-3">Recent Questions</h2>
+        <div className="text-center py-6 text-gray-500">
+          <MessageSquare size={40} className="mx-auto mb-2 text-gray-300" strokeWidth={1.5} />
+          <p className="font-semibold text-gray-700 mb-0.5 text-sm">No pending questions</p>
           <p className="text-xs">You're all caught up! 🎉</p>
         </div>
       </div>
@@ -56,48 +56,48 @@ function RecentActivity({ questions = [] }) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold text-gray-900">Recent Questions</h2>
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-bold text-gray-900">Recent Questions</h2>
         <span className="text-xs text-gray-500 font-medium">
           {recentQuestions.length} pending
         </span>
       </div>
       
-      <div className="space-y-2">
+      <div className="flex-1 space-y-1.5 overflow-y-auto">
         {recentQuestions.map((question) => (
           <div
             key={question.id}
-            className="group relative p-3 border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
+            className="group relative p-2 border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
             onMouseEnter={() => setHoveredQuestion(question.id)}
             onMouseLeave={() => setHoveredQuestion(null)}
             onClick={() => navigate(`/dashboard/inbox#question-${question.id}`)}
           >
-            <div className="flex items-start gap-2.5">
-              {/* Avatar */}
-              <div className={`flex-shrink-0 w-8 h-8 rounded-full ${getAvatarColor(question.user_name)} flex items-center justify-center text-white font-bold text-xs shadow-sm`}>
+            <div className="flex items-start gap-2">
+              {/* Avatar - SMALLER */}
+              <div className={`flex-shrink-0 w-7 h-7 rounded-full ${getAvatarColor(question.user_name)} flex items-center justify-center text-white font-bold text-xs shadow-sm`}>
                 {getInitials(question.user_name)}
               </div>
 
-              {/* Content */}
+              {/* Content - COMPACT */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-1">
+                <div className="flex items-start justify-between gap-2 mb-0.5">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 truncate text-xs">
                       {question.user_name || 'Anonymous'}
                     </p>
-                    <p className="text-xs text-gray-700 line-clamp-1 mt-0.5">
+                    <p className="text-xs text-gray-700 line-clamp-1">
                       {question.question_text || 'Untitled Question'}
                     </p>
                   </div>
-                  <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs font-bold border border-green-200">
+                  <span className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-md bg-green-50 text-green-700 text-xs font-bold border border-green-200">
                     {formatCurrency(question.price_cents)}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <span className="flex items-center gap-0.5">
-                    <Clock size={11} />
+                    <Clock size={10} />
                     {getRelativeTime(question.created_at)}
                   </span>
                   {question.tier && (
@@ -110,28 +110,28 @@ function RecentActivity({ questions = [] }) {
               </div>
             </div>
 
-            {/* Quick Actions (show on hover) */}
+            {/* Quick Actions - COMPACT */}
             {hoveredQuestion === question.id && (
-              <div className="absolute top-2 right-2 flex items-center gap-1.5 animate-fadeInScale">
+              <div className="absolute top-1.5 right-1.5 flex items-center gap-1 animate-fadeInScale">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/dashboard/inbox#question-${question.id}`);
                   }}
-                  className="p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-lg transition-colors"
+                  className="p-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-lg transition-colors"
                   title="View details"
                 >
-                  <Eye size={14} />
+                  <Eye size={12} />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/dashboard/inbox#question-${question.id}`);
                   }}
-                  className="p-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-lg transition-colors"
+                  className="p-1 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-lg transition-colors"
                   title="Answer now"
                 >
-                  <MessageCircle size={14} />
+                  <MessageCircle size={12} />
                 </button>
               </div>
             )}
@@ -141,7 +141,7 @@ function RecentActivity({ questions = [] }) {
 
       <button
         onClick={() => navigate('/dashboard/inbox')}
-        className="mt-3 w-full py-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-200"
+        className="mt-2 w-full py-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-200"
       >
         View All Questions →
       </button>
