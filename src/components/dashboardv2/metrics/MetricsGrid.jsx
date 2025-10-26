@@ -5,7 +5,6 @@ import { DollarSign, Clock, Star, AlertCircle } from 'lucide-react';
 import { formatCurrency, formatDuration } from '@/utils/dashboardv2/metricsCalculator';
 
 function MetricsGrid({ metrics }) {
-  // Generate mock sparkline data (replace with real data later)
   const generateSparkline = (trend) => {
     const baseValue = 50;
     const data = [];
@@ -18,7 +17,7 @@ function MetricsGrid({ metrics }) {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       <MetricCard
         label="This Month"
         value={formatCurrency(metrics.thisMonthRevenue * 100)}

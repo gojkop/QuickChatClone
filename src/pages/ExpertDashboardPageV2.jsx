@@ -94,14 +94,14 @@ function ExpertDashboardPageV2() {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Could not load dashboard data
           </h3>
-          <p className="text-gray-600 mb-4 max-w-md mx-auto">
+          <p className="text-gray-600 mb-4 max-w-md mx-auto text-sm">
             {questionsError?.message || profileError?.message || 'An error occurred while loading your dashboard'}
           </p>
           <button
             onClick={() => {
               if (questionsError) refetchQuestions();
             }}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
           >
             Try Again
           </button>
@@ -119,29 +119,31 @@ function ExpertDashboardPageV2() {
         onAvailabilityChange={handleAvailabilityChange}
         searchData={{ questions }}
       >
-        {/* Welcome Hero - Now Compact */}
+        {/* Welcome Hero - Compact */}
         <WelcomeHero />
 
-        {/* Metrics Grid - Enhanced with sparklines */}
+        {/* Metrics Grid - Compact with fixed sparklines */}
         <MetricsGrid metrics={metrics} />
 
         {/* Action Required - Only shows if urgent */}
         {dashboardData.urgentCount > 0 && (
-          <ActionRequired 
-            urgentCount={dashboardData.urgentCount}
-            pendingOffersCount={0}
-          />
+          <div className="mb-4">
+            <ActionRequired 
+              urgentCount={dashboardData.urgentCount}
+              pendingOffersCount={0}
+            />
+          </div>
         )}
 
-        {/* Two Column Layout for Recent Activity & Performance */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Two Column Layout - Compact */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <RecentActivity questions={questions} />
           <PerformanceSnapshot />
         </div>
 
-        {/* Marketing Preview - Now in its own row, not full width */}
+        {/* Marketing Preview - Compact */}
         {marketingEnabled && (
-          <div className="mb-6">
+          <div className="mb-4">
             <MarketingPreview 
               isEnabled={marketingEnabled}
               campaigns={campaigns}

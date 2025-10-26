@@ -58,7 +58,6 @@ function MetricCard({
         if (!startTime) startTime = currentTime;
         const progress = Math.min((currentTime - startTime) / duration, 1);
         
-        // Easing function for smooth animation
         const easeOutQuart = 1 - Math.pow(1 - progress, 4);
         
         setCount(Math.floor(easeOutQuart * end));
@@ -75,7 +74,6 @@ function MetricCard({
     return count;
   };
 
-  // Extract numeric value for animation
   const getNumericValue = (val) => {
     if (typeof val === 'number') return val;
     if (typeof val === 'string') {
@@ -88,7 +86,6 @@ function MetricCard({
   const numericValue = getNumericValue(value);
   const animatedValue = useCountUp(numericValue, 1200);
   
-  // Format the animated value back to original format
   const formatValue = (val) => {
     if (typeof value === 'string') {
       return value.replace(/[\d,]+/, val.toLocaleString());
@@ -98,13 +95,13 @@ function MetricCard({
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="h-4 w-20 skeleton rounded"></div>
-          <div className="w-10 h-10 skeleton rounded-lg"></div>
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="h-3 w-16 skeleton rounded"></div>
+          <div className="w-8 h-8 skeleton rounded-lg"></div>
         </div>
-        <div className="h-8 w-24 skeleton rounded mb-2"></div>
-        <div className="h-4 w-16 skeleton rounded"></div>
+        <div className="h-7 w-20 skeleton rounded mb-2"></div>
+        <div className="h-3 w-12 skeleton rounded"></div>
       </div>
     );
   }
@@ -113,7 +110,7 @@ function MetricCard({
 
   return (
     <div 
-      className="bg-white border border-gray-200 rounded-xl p-5 transition-all duration-300 hover:border-indigo-300 hover:shadow-xl hover:-translate-y-1 group cursor-pointer relative overflow-hidden"
+      className="bg-white border border-gray-200 rounded-xl p-4 transition-all duration-300 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5 group cursor-pointer relative overflow-hidden"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -121,29 +118,36 @@ function MetricCard({
       <div className="absolute inset-0 bg-gradient-to-br from-transparent to-gray-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       
       <div className="relative z-10">
-        <div className="flex items-start justify-between mb-3">
-          <div className="text-sm font-medium text-gray-600">
+        <div className="flex items-start justify-between mb-2">
+          <div className="text-xs font-medium text-gray-600">
             {label}
           </div>
           {Icon && (
-            <div className={`p-2.5 rounded-xl shadow-sm ${colorClasses[color].icon} transition-all duration-300 group-hover:scale-110 group-hover:shadow-md`}>
-              <Icon size={20} className="icon-container" />
+            <div className={`p-2 rounded-lg shadow-sm ${colorClasses[color].icon} transition-all duration-300 group-hover:scale-110`}>
+              <Icon size={16} className="icon-container" strokeWidth={2.5} />
             </div>
           )}
         </div>
         
-        <div className="text-3xl font-black text-gray-900 mb-2 tracking-tight">
+        <div className="text-2xl font-black text-gray-900 mb-1.5 tracking-tight">
           {formatValue(animatedValue)}
         </div>
 
-        {/* Sparkline Chart */}
+        {/* Sparkline Chart - FIXED: Thinner line, proper boundaries */}
         {sparklineData && sparklineData.length > 0 && (
-          <div className="mb-2 -mx-1 h-8">
-            <Sparklines data={sparklineData} width={100} height={32}>
+          <div className="mb-2 h-6 w-full overflow-hidden">
+            <Sparklines 
+              data={sparklineData} 
+              width={200} 
+              height={24}
+              margin={2}
+              min={Math.min(...sparklineData) * 0.95}
+              max={Math.max(...sparklineData) * 1.05}
+            >
               <SparklinesLine 
-                color={colorClasses[color].sparkline} 
+                color={colorClasses[color].sparkline}
                 style={{ 
-                  strokeWidth: 2, 
+                  strokeWidth: 1.5,
                   fill: 'none',
                   stroke: colorClasses[color].sparkline
                 }} 
@@ -159,12 +163,12 @@ function MetricCard({
 
         {/* Progress Bar (if goal is set) */}
         {goal && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
               <span>Goal Progress</span>
               <span className="font-semibold">{Math.round(progressPercent)}%</span>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
               <div 
                 className={`h-full ${colorClasses[color].progress} transition-all duration-1000 ease-out rounded-full`}
                 style={{ width: `${progressPercent}%` }}
@@ -175,7 +179,7 @@ function MetricCard({
 
         {/* Hover Tooltip */}
         {isHovered && (
-          <div className="absolute top-2 right-2 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg animate-fadeInScale z-20">
+          <div className="absolute top-1 right-1 bg-gray-900 text-white text-xs px-2 py-0.5 rounded shadow-lg animate-fadeInScale z-20">
             Click for details
           </div>
         )}

@@ -56,7 +56,7 @@ const metrics = useMetrics(questions);
   // New Phase 3 hooks
   const { toasts, showToast, hideToast, success, error, info } = useToast();
   const { pinnedIds, togglePin, isPinned, sortWithPinned } = usePinnedQuestions();
-  const { hiddenIds, hideMultiple, unhideMultiple, isHidden, filterHidden } = useHiddenQuestions();
+ // const { hiddenIds, hideMultiple, unhideMultiple, isHidden, filterHidden } = useHiddenQuestions();
   const { undoStack, pushUndo, executeUndo } = useUndoStack();
 
   // Panel stack management (MUST be called before isMobile is used)

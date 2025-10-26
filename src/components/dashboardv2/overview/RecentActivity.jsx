@@ -44,22 +44,22 @@ function RecentActivity({ questions = [] }) {
 
   if (recentQuestions.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Questions</h2>
-        <div className="text-center py-12 text-gray-500">
-          <MessageSquare size={56} className="mx-auto mb-4 text-gray-300" strokeWidth={1.5} />
-          <p className="font-semibold text-gray-700 mb-1">No pending questions</p>
-          <p className="text-sm">You're all caught up! 🎉</p>
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <h2 className="text-lg font-bold text-gray-900 mb-3">Recent Questions</h2>
+        <div className="text-center py-8 text-gray-500">
+          <MessageSquare size={48} className="mx-auto mb-3 text-gray-300" strokeWidth={1.5} />
+          <p className="font-semibold text-gray-700 mb-1 text-sm">No pending questions</p>
+          <p className="text-xs">You're all caught up! 🎉</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900">Recent Questions</h2>
-        <span className="text-sm text-gray-500 font-medium">
+    <div className="bg-white border border-gray-200 rounded-xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-bold text-gray-900">Recent Questions</h2>
+        <span className="text-xs text-gray-500 font-medium">
           {recentQuestions.length} pending
         </span>
       </div>
@@ -68,36 +68,36 @@ function RecentActivity({ questions = [] }) {
         {recentQuestions.map((question) => (
           <div
             key={question.id}
-            className="group relative p-4 border border-gray-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
+            className="group relative p-3 border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
             onMouseEnter={() => setHoveredQuestion(question.id)}
             onMouseLeave={() => setHoveredQuestion(null)}
             onClick={() => navigate(`/dashboard/inbox#question-${question.id}`)}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-2.5">
               {/* Avatar */}
-              <div className={`flex-shrink-0 w-10 h-10 rounded-full ${getAvatarColor(question.user_name)} flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
+              <div className={`flex-shrink-0 w-8 h-8 rounded-full ${getAvatarColor(question.user_name)} flex items-center justify-center text-white font-bold text-xs shadow-sm`}>
                 {getInitials(question.user_name)}
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-1.5">
+                <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate text-sm">
+                    <p className="font-semibold text-gray-900 truncate text-xs">
                       {question.user_name || 'Anonymous'}
                     </p>
-                    <p className="text-sm text-gray-700 line-clamp-1 mt-0.5">
+                    <p className="text-xs text-gray-700 line-clamp-1 mt-0.5">
                       {question.question_text || 'Untitled Question'}
                     </p>
                   </div>
-                  <span className="flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-sm font-bold border border-green-200">
+                  <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs font-bold border border-green-200">
                     {formatCurrency(question.price_cents)}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 text-xs text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} />
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span className="flex items-center gap-0.5">
+                    <Clock size={11} />
                     {getRelativeTime(question.created_at)}
                   </span>
                   {question.tier && (
@@ -112,26 +112,26 @@ function RecentActivity({ questions = [] }) {
 
             {/* Quick Actions (show on hover) */}
             {hoveredQuestion === question.id && (
-              <div className="absolute top-4 right-4 flex items-center gap-2 animate-fadeInScale">
+              <div className="absolute top-2 right-2 flex items-center gap-1.5 animate-fadeInScale">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/dashboard/inbox#question-${question.id}`);
                   }}
-                  className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg transition-colors"
+                  className="p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-lg transition-colors"
                   title="View details"
                 >
-                  <Eye size={16} />
+                  <Eye size={14} />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/dashboard/inbox#question-${question.id}`);
                   }}
-                  className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg transition-colors"
+                  className="p-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-lg transition-colors"
                   title="Answer now"
                 >
-                  <MessageCircle size={16} />
+                  <MessageCircle size={14} />
                 </button>
               </div>
             )}
@@ -141,7 +141,7 @@ function RecentActivity({ questions = [] }) {
 
       <button
         onClick={() => navigate('/dashboard/inbox')}
-        className="mt-4 w-full py-3 text-sm font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-colors border border-transparent hover:border-indigo-200"
+        className="mt-3 w-full py-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-200"
       >
         View All Questions →
       </button>
