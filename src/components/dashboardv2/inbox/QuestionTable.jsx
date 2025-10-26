@@ -150,12 +150,10 @@ function QuestionTable({
 
   // ADDED: Hover preview handlers
   const handleMouseEnter = (question, event) => {
-      console.log('🔍 Hovering over question:', question.id); // ADD THIS
     const rect = event.currentTarget.getBoundingClientRect();
     setHoverPosition({ x: rect.right, y: rect.top });
     
     const timer = setTimeout(() => {
-          console.log('✅ Setting hover question:', question.id); // ADD THIS
       setHoveredQuestion(question);
     }, 300); // 300ms delay
     
@@ -370,13 +368,25 @@ function QuestionTable({
         <div className="fixed inset-0 z-50 cursor-col-resize" />
       )}
 
-      {/* ADDED: Hover Preview */}
-      {hoveredQuestion && (
-        <QuestionPreview
-          question={hoveredQuestion}
-          position={hoverPosition}
-        />
-      )}
+     {/* ADDED: Hover Preview - SIMPLIFIED TEST */}
+{hoveredQuestion && (
+  <div
+    style={{
+      position: 'fixed',
+      left: hoverPosition.x + 20,
+      top: hoverPosition.y,
+      zIndex: 9999,
+      backgroundColor: 'red',
+      color: 'white',
+      padding: '20px',
+      border: '3px solid yellow',
+      fontSize: '20px',
+      fontWeight: 'bold'
+    }}
+  >
+    TEST PREVIEW: Q-{hoveredQuestion.id}
+  </div>
+)}
     </div>
   );
 }
