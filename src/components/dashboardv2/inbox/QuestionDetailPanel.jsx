@@ -1,10 +1,18 @@
+// src/components/dashboardv2/inbox/QuestionDetailPanel.jsx
 import React, { useState } from 'react';
 import { X, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MoreVertical, MessageSquare, Mail, Video, Mic, CheckCircle } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 
-function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) {
+// CHANGED: Added hideCloseButton prop
+function QuestionDetailPanel({ 
+  question, 
+  onClose, 
+  onAnswer, 
+  isMobile = false,
+  hideCloseButton = false  // NEW: Hide close buttons when in panel mode
+}) {
   const [showActions, setShowActions] = useState(false);
 
   // Helper to get media segments
@@ -144,7 +152,8 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
           <div className="flex items-start justify-between gap-3">
             {/* Left: Title only (mobile has back button) */}
             <div className="flex items-start gap-2 flex-1 min-w-0">
-              {isMobile && (
+              {/* CHANGED: Only show back button on mobile AND if not hiding close button */}
+              {isMobile && !hideCloseButton && (
                 <button
                   onClick={onClose}
                   className="flex-shrink-0 p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -165,7 +174,8 @@ function QuestionDetailPanel({ question, onClose, onAnswer, isMobile = false }) 
                 {formatCurrency(question.price_cents)}
               </div>
               
-              {!isMobile && (
+              {/* CHANGED: Only show desktop close if not hiding */}
+              {!isMobile && !hideCloseButton && (
                 <button
                   onClick={onClose}
                   className="flex-shrink-0 p-1.5 hover:bg-gray-100 rounded-lg transition-colors"

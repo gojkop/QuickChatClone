@@ -40,11 +40,17 @@ function AnswerComposerPanel({
     setShowReviewModal(false);
   };
 
+  // CHANGED: Auto-close success modal after 2 seconds
   // Handle successful answer submission
   const handleAnswerSubmitted = (answerId) => {
     setSubmittedAnswerId(answerId);
     setShowReviewModal(false);
     setShowSuccessModal(true);
+    
+    // Auto-close after 2 seconds
+    setTimeout(() => {
+      handleSuccessClose();
+    }, 2000);
   };
 
   // Handle closing success modal and returning to inbox

@@ -70,13 +70,16 @@ function Panel({
   // Determine if panel should be visible
   const isVisible = width > 0;
 
+  // CHANGED: Disable animation for list panel (it should always be present)
+  const shouldAnimate = type !== 'list';
+
   return (
     <motion.div
       key={id}
-      variants={panelVariants}
-      initial="enter"
-      animate="center"
-      exit="exit"
+      variants={shouldAnimate ? panelVariants : undefined}
+      initial={shouldAnimate ? "enter" : false}
+      animate={shouldAnimate ? "center" : false}
+      exit={shouldAnimate ? "exit" : false}
       className={`
         panel
         relative h-full bg-white

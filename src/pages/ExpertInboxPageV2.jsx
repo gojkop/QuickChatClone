@@ -47,6 +47,7 @@ function ExpertInboxPageV2() {
     closeAllPanels,
     isPanelOpen,
     getPanelData,
+    updatePanelData,
     screenWidth
   } = usePanelStack();
 
@@ -248,9 +249,11 @@ function ExpertInboxPageV2() {
     }
   };
 
-  const handleAnswerSubmitted = () => {
-    refreshQuestions();
+  // CHANGED: Close both answer and detail panels, refresh questions
+  const handleAnswerSubmitted = async () => {
+    await refreshQuestions();
     closePanel('answer');
+    closePanel('detail');
   };
 
   const handleAvailabilityChange = (newStatus) => {
@@ -395,12 +398,14 @@ function ExpertInboxPageV2() {
         );
 
       case 'detail':
+        // CHANGED: Pass hideCloseButton={true} to remove duplicate X button
         return (
           <QuestionDetailPanel
             question={panel.data}
             onClose={() => closePanel('detail')}
             onAnswer={handleAnswerQuestion}
             isMobile={screenWidth < 1024}
+            hideCloseButton={true}
           />
         );
 
