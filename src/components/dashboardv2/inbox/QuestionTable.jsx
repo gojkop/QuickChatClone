@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Video, Mic, FileText, Calendar } from 'lucide-react';
 import PriorityBadge from './PriorityBadge';
 import SLAIndicator from './SLAIndicator';
+import PinButton from './PinButton';
+import QuestionPreview from './QuestionPreview';
 
 function QuestionTable({
   questions = [],
@@ -11,6 +13,11 @@ function QuestionTable({
   onSelectQuestion,
   onQuestionClick,
   onSelectAll,
+  // ADDED: Pin & preview props
+  pinnedIds = [],
+  onTogglePin,
+  isPinned,
+  onCopyLink
 }) {
   const [columnWidths, setColumnWidths] = useState({
     checkbox: 48,
@@ -22,6 +29,11 @@ function QuestionTable({
 
   const [isResizing, setIsResizing] = useState(false);
   const [resizingColumn, setResizingColumn] = useState(null);
+  
+  // ADDED: Hover preview state
+  const [hoveredQuestion, setHoveredQuestion] = useState(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  const [hoverTimer, setHoverTimer] = useState(null);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -136,6 +148,26 @@ function QuestionTable({
   const isAnswered =
     (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
+  // ADDED: Hover preview handlers
+  const handleMouseEnter = (question, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setHoverPosition({ x: rect.right, y: rect.top });
+    
+    const timer = setTimeout(() => {
+      setHoveredQuestion(question);
+    }, 300); // 300ms delay
+    
+    setHoverTimer(timer);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      setHoverTimer(null);
+    }
+    setHoveredQuestion(null);
+  };
+
   if (questions.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-gray-500 p-8">
@@ -150,9 +182,7 @@ function QuestionTable({
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden question-table-container">
-      {/* CHANGED: Added overflow-x-auto and min-w-0 */}
       <div className="flex-1 overflow-y-auto overflow-x-auto min-w-0">
-        {/* CHANGED: Added min-w-[800px] to ensure table doesn't get too narrow */}
         <table
           className="w-full min-w-[800px]"
           style={{
@@ -237,6 +267,8 @@ function QuestionTable({
                       onQuestionClick(question);
                     }
                   }}
+                  onMouseEnter={(e) => handleMouseEnter(question, e)}
+                  onMouseLeave={handleMouseLeave}
                   className={`
                     transition-colors cursor-pointer border-l-4
                     ${
@@ -272,6 +304,13 @@ function QuestionTable({
                             Q-{question.id}
                           </span>
                           <PriorityBadge question={question} />
+                          {/* ADDED: Pin button */}
+                          {onTogglePin && isPinned && (
+                            <PinButton
+                              isPinned={isPinned(question.id)}
+                              onClick={() => onTogglePin(question.id)}
+                            />
+                          )}
                         </div>
                         <p className="text-sm font-medium text-gray-900 line-clamp-2 break-words">
                           {getQuestionTitle(question)}
@@ -327,6 +366,14 @@ function QuestionTable({
       {/* Resize overlay */}
       {isResizing && (
         <div className="fixed inset-0 z-50 cursor-col-resize" />
+      )}
+
+      {/* ADDED: Hover Preview */}
+      {hoveredQuestion && (
+        <QuestionPreview
+          question={hoveredQuestion}
+          position={hoverPosition}
+        />
       )}
     </div>
   );
