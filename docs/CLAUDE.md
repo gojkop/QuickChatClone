@@ -25,6 +25,7 @@ QuickChat is a video-based Q&A platform connecting askers with experts. Users re
   - **Two-Tier Pricing:** `docs/two-tier question model/` - Two-tier pricing system implementation (Quick Consult & Deep Dive)
   - **Features:** `docs/features/` - Feature implementations and guides
   - **API & Database:** `docs/api-database/` - Xano endpoints and database
+  - **Testing:** `docs/testing/` - Security validation, automated tests, and testing best practices
   - **Integrations:** `docs/integrations/` - Third-party integrations
   - **Marketing:** `docs/marketing module/` - UTM tracking and campaigns
   - **AI (MindPilot):** `docs/mindpilot/` - AI features and specifications
@@ -47,6 +48,23 @@ npm run preview            # Preview production build
 npm run vercel:dev         # Run Vercel dev environment locally
 npm run vercel:deploy      # Deploy to production on Vercel
 ```
+
+### Testing
+```bash
+./tests/run-security-tests.sh    # Run security validation tests
+cd tests && node security-validation.cjs  # Run tests directly
+```
+
+**Security Test Suite:** Automated tests covering 12 critical security scenarios including authentication, authorization, payment validation, and input validation. See [`docs/testing/`](./testing/) for complete documentation.
+
+**Test Coverage:**
+- Authentication enforcement (unauthenticated requests rejected)
+- Cross-expert ownership checks (Expert A cannot access Expert B's resources)
+- Payment reuse prevention (payment_intent_id can only be used once)
+- Token protection (playback_token_hash never exposed to experts)
+- Input validation (rating ranges, required fields)
+
+**Configuration:** Create `/tests/.env` with auth tokens and test IDs. See [`docs/testing/README.md`](./testing/README.md) for setup instructions.
 
 ### Testing AI Features
 Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
@@ -160,6 +178,13 @@ Visit `/test-ai-coach` in the browser for standalone AI coaching flow testing.
     /cloudflare               # Cloudflare integrations
       - stream.js             # Video streaming
       - r2.js                 # Object storage
+
+/tests                        # Automated test suites
+  - security-validation.cjs   # Security test suite (12 tests)
+  - run-security-tests.sh     # Shell wrapper for tests
+  - .env                      # Test configuration (auth tokens, test IDs)
+  /logs                       # Test execution logs
+    - security-test-*.log     # Timestamped test outputs
 ```
 
 ### Key Data Models (Xano)
@@ -1343,6 +1368,131 @@ Logs include:
 
 For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`](./api-database/xano-internal-endpoints.md).
 
+## Testing & Quality Assurance
+
+### Security Validation Suite
+
+**Status:** ✅ Production Ready (October 26, 2025)
+
+QuickChat includes a comprehensive automated security test suite covering 12 critical security scenarios across all major API endpoints.
+
+**Test Coverage:**
+- ✅ PATCH /question/{id} - Authentication enforcement (3 tests)
+- ✅ PATCH /question/{id} - Cross-expert ownership validation
+- ✅ POST /answer - Cross-expert answer blocking
+- ✅ POST /question/quick-consult - Payment reuse prevention
+- ✅ POST /question/deep-dive - Payment reuse prevention
+- ✅ POST /review/{token}/feedback - Invalid token rejection
+- ✅ POST /review/{token}/feedback - Rating range validation (1-5)
+- ✅ GET /review/{token} - Token access control
+
+**Running Tests:**
+```bash
+./tests/run-security-tests.sh
+```
+
+**Expected Output:**
+```
+✓ Passed:  12
+✗ Failed:  0
+⊘ Skipped: 0
+Total: 12
+
+ALL SECURITY TESTS PASSED!
+Your endpoints are secure and ready for production.
+```
+
+### Test Configuration
+
+Tests require a `/tests/.env` file with authentication tokens and test data:
+
+```bash
+# Xano API endpoints
+XANO_AUTH_API=https://xlho-4syv-navp.n7e.xano.io/api:XEsV5Zbo
+XANO_PUBLIC_API=https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L
+
+# Expert A credentials (required)
+EXPERT_A_TOKEN=eyJhbGc...  # Get from localStorage.getItem('qc_token')
+EXPERT_A_PROFILE_ID=139
+
+# Expert B credentials (optional - enables cross-expert tests)
+EXPERT_B_TOKEN=eyJhbGc...
+EXPERT_B_PROFILE_ID=138
+
+# Review token for feedback tests
+VALID_REVIEW_TOKEN=71890360-1fc6-4f26-9b5d-7338003b625c
+```
+
+### Xano Error Handling in Tests
+
+**Important:** Xano's `debug.stop` returns HTTP 200 with error in JSON payload, not standard HTTP error codes.
+
+**Xano Error Format:**
+```json
+{
+  "payload": "403 error \"Forbidden: Not your question to update\"",
+  "statement": "Stop & Debug"
+}
+```
+
+**Test Helper:**
+```javascript
+function isXanoError(res, errorCode) {
+  const payload = res.data?.payload || res.data?.message || '';
+  const hasError = payload.includes('error');
+
+  if (errorCode) {
+    return hasError && payload.includes(errorCode);
+  }
+
+  return hasError;
+}
+
+// Usage in tests
+if (res.status === 403 || isXanoError(res, '403')) {
+  logTest('Security check', 'PASS', 'Forbidden as expected');
+}
+```
+
+### Test Documentation
+
+Complete testing documentation available in [`docs/testing/`](./testing/):
+
+- **[README.md](./testing/README.md)** - Main testing documentation index
+- **[SECURITY-VALIDATION-GUIDE.md](./testing/SECURITY-VALIDATION-GUIDE.md)** - Complete security test suite documentation with implementation details
+- **[XANO-MANUAL-TESTING.md](./testing/XANO-MANUAL-TESTING.md)** - Manual testing payloads for Xano Run & Debug
+- **[BEST-PRACTICES.md](./testing/BEST-PRACTICES.md)** - Testing best practices and guidelines
+
+### Key Testing Principles
+
+1. **Security First:** Every endpoint that modifies data must have security tests
+2. **Use Real Data:** Test with actual tokens and IDs from database
+3. **Independent Tests:** Each test runs independently with unique data
+4. **Dynamic Creation:** Create fresh test data to avoid false failures
+5. **Handle Xano Format:** Check both HTTP status codes AND Xano's error payloads
+
+### Manual Testing in Xano
+
+When automated tests fail, use Xano's Run & Debug feature:
+
+1. Open Xano → API Groups → Select Endpoint
+2. Click "Run & Debug"
+3. Use test payloads from [`docs/testing/XANO-MANUAL-TESTING.md`](./testing/XANO-MANUAL-TESTING.md)
+4. Check **Response** tab for status
+5. Check **Logs** tab for console.log output
+6. Add debug lambdas with console.log() to inspect variables
+
+**Example Debug Lambda:**
+```javascript
+api.lambda {
+  code = """
+    console.log("Question expert_profile_id: " + $var.existing_question.expert_profile_id);
+    console.log("Current expert_profile.id: " + $var.expert_profile.id);
+    console.log("Match: " + ($var.existing_question.expert_profile_id == $var.expert_profile.id));
+  """
+}
+```
+
 ## Known Limitations
 
 1. **Two-Tier Pricing:** Settings Modal not deployed (experts configure tiers manually in Xano)
@@ -1438,6 +1588,7 @@ For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`
 ## Next Steps
 
 **Recently Completed:**
+- ✅ Security Test Suite - Automated validation covering 12 critical security scenarios (October 26, 2025)
 - ✅ Media Asset Architecture Migration - Simplified to FK-only relationships (October 24, 2025)
 - ✅ Expert Dashboard Enhancements - Media preview, Download All (ZIP) for questions (October 24, 2025)
 - ✅ Payment Capture System - Manual capture with hold/release for two-tier pricing (January 15, 2025)
