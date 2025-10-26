@@ -46,7 +46,10 @@ function QuestionCard({
   };
 
   const isAnswered = question.status === 'closed' || question.status === 'answered' || question.answered_at;
-  const isDeepDive = question.pricing_tier === 'tier2';
+
+  // Check question_tier field (correct field name from backend)
+  const isDeepDive = question.question_tier === 'deep_dive';
+
   const timeLeft = getTimeLeft();
 
   return (

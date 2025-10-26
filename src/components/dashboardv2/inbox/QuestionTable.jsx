@@ -179,6 +179,11 @@ function QuestionTable({
   const isAnswered =
     (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
+  const isDeepDiveQuestion = (question) => {
+    // Check question_tier field (correct field name from backend)
+    return question.question_tier === 'deep_dive';
+  };
+
   // DISABLED: Hover preview handlers
   /*
   const handleMouseEnter = (question, event) => {
@@ -309,7 +314,7 @@ function QuestionTable({
               const isSelected = selectedQuestions.includes(question.id);
               const isActive = activeQuestionId === question.id;
               const answered = isAnswered(question);
-              const isDeepDive = question.pricing_tier === 'tier2';
+              const isDeepDive = isDeepDiveQuestion(question);
               const timeLeft = getTimeLeft(question);
 
               return (
