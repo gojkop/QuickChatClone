@@ -8,7 +8,7 @@ export default function MarketingOverview({
   trafficSources = [],
   onNavigate 
 }) {
-console.log('DEBUG campaigns:', typeof campaigns, Array.isArray(campaigns), campaigns);
+console.log('DEBUG CAMPAING:', typeof campaigns, Array.isArray(campaigns), campaigns);
 console.log('DEBUG trafficSources:', typeof trafficSources, Array.isArray(trafficSources), trafficSources);
   // ✅ FIX: Calculate from trafficSources instead of campaigns
   const totalVisits = trafficSources.reduce((sum, s) => sum + (s.visits || 0), 0);
