@@ -1,5 +1,6 @@
 // src/components/dashboardv2/inbox/QuestionTable.jsx
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom'; 
 import { Video, Mic, FileText, Calendar } from 'lucide-react';
 import PriorityBadge from './PriorityBadge';
 import SLAIndicator from './SLAIndicator';
@@ -367,26 +368,29 @@ function QuestionTable({
         <div className="fixed inset-0 z-50 cursor-col-resize" />
       )}
 
-     {/* ADDED: Hover Preview - SIMPLIFIED TEST */}
-{hoveredQuestion && (
-  <div
-    style={{
-      position: 'fixed',
-      left: hoverPosition.x + 20,
-      top: hoverPosition.y,
-      zIndex: 9999,
-      backgroundColor: 'red',
-      color: 'white',
-      padding: '20px',
-      border: '3px solid yellow',
-      fontSize: '20px',
-      fontWeight: 'bold'
-    }}
-  >
-        {console.log('🎨 RENDERING RED BOX at', hoverPosition)}
-    TEST PREVIEW: Q-{hoveredQuestion.id}
-  </div>
-)}
+      {/* FIXED: Hover Preview - Using Portal */}
+      {hoveredQuestion && ReactDOM.createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 999999,
+            backgroundColor: 'red',
+            color: 'white',
+            padding: '100px',
+            border: '10px solid yellow',
+            fontSize: '40px',
+            fontWeight: 'bold',
+            boxShadow: '0 0 50px rgba(255,0,0,0.8)',
+            pointerEvents: 'none'
+          }}
+        >
+          🔴 PORTAL TEST: Q-{hoveredQuestion.id} 🔴
+        </div>,
+        document.body // Render directly to body, bypassing all parents
+      )}
     </div>
   );
 }
