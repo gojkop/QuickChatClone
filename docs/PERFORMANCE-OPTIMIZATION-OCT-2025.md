@@ -171,13 +171,16 @@ const { data: analytics, isLoading } = useAnalyticsQuery({
 - Modified: `src/hooks/dashboardv2/useAnalytics.js` (uses server-side analytics)
 
 **Frontend - Pages**:
-- Modified: `src/pages/ExpertDashboardPage.jsx` (old `/expert` route - converted to server-side pagination, 10 items per page)
+- Modified: `src/pages/ExpertDashboardPage.jsx` (old `/expert` route - converted to server-side pagination, filtering, sorting - 10 items per page)
 - Modified: `src/pages/ExpertDashboardPageV2.jsx` (new `/dashboard` route - 10 items per page)
-- Modified: `src/pages/ExpertInboxPage.jsx` (10 items with pagination controls)
+- Modified: `src/pages/ExpertInboxPage.jsx` (10 items with server-side filtering, pagination controls, price range filters, search)
 - Modified: `src/pages/ExpertAnalyticsPage.jsx` (uses server analytics)
 
 **Frontend - Components**:
 - Modified: `src/components/common/Navbar.jsx` (uses count endpoint)
+- Modified: `src/components/dashboardv2/inbox/QuestionFilters.jsx` (removed duplicate count display, added debounced price filters)
+- Modified: `src/components/dashboardv2/inbox/QuestionListView.jsx` (removed client-side pagination)
+- Modified: `src/components/dashboardv2/inbox/InboxLayout.jsx` (added pagination prop)
 - Created: `src/components/examples/QuestionWithRecording.example.jsx` (example pattern)
 
 **Database**:
@@ -199,7 +202,9 @@ const { data: analytics, isLoading } = useAnalyticsQuery({
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
 | Questions loaded | 100+ | 10 | **90% reduction** |
-| Pagination | None | Previous/Next | ✅ Added |
+| Pagination | None | Previous/Next with page numbers | ✅ Added |
+| Search | Client-side | Server-side | ✅ Optimized |
+| Price filtering | Client-side | Server-side | ✅ Optimized |
 
 ### Analytics Page (`/dashboard/analytics`)
 | Metric | Before | After | Improvement |
@@ -226,6 +231,8 @@ const { data: analytics, isLoading } = useAnalyticsQuery({
 7. **Dedicated count endpoint**: Navbar gets count without fetching question data
 8. **Consistent page size**: All pages use 10 items for uniform performance
 9. **Server-side sorting**: Sorts ALL questions at database level, not just current page (enables sorting across 200+ questions)
+10. **Debounced price filters**: 500ms delay prevents excessive API calls while typing
+11. **Server-side search**: Searches across title, question_text, and user_name at database level
 
 ## Testing
 
@@ -443,4 +450,4 @@ If you encounter any issues with this optimization:
 **Date**: October 25, 2025
 **Author**: Claude Code
 **Status**: ✅ Implementation Complete & Deployed
-**Last Updated**: October 25, 2025 - Added server-side sorting support
+**Last Updated**: October 26, 2025 - Final documentation update

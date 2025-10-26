@@ -325,7 +325,7 @@ function ExpertInboxPage() {
           }
           pagination={
             pagination && pagination.total_pages > 1 ? (
-              <div className="flex items-center justify-between px-4 py-3 bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
+              <div className="flex items-center justify-between px-4 py-3">
                 <div className="text-xs text-gray-600">
                   <span className="font-semibold">{((pagination.page - 1) * 10) + 1}-{Math.min(pagination.page * 10, pagination.total)}</span>
                   {' '}of{' '}
