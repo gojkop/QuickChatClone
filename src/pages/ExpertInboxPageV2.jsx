@@ -41,7 +41,7 @@ function ExpertInboxPageV2() {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
 
 
-const metrics = useMetrics(questions);
+  const metrics = useMetrics(questions);
   const {
     filters,
     updateFilter,
@@ -57,8 +57,15 @@ const metrics = useMetrics(questions);
   const { toasts, showToast, hideToast, success, error, info } = useToast();
   const { pinnedIds, togglePin, isPinned, sortWithPinned } = usePinnedQuestions();
   const { undoStack, pushUndo, executeUndo } = useUndoStack();
+  const { 
+    selectedIds,
+    toggleSelect,
+    selectAll,
+    clearSelection,
+    selectedCount
+  } = useBulkSelect(baseFilteredQuestions);
 
-  // Panel stack management (MUST be called before isMobile is used)
+  // Panel stack management
   const {
     panels,
     openPanel,
@@ -74,17 +81,8 @@ const metrics = useMetrics(questions);
   const totalCount = pagination?.total || questions.length;
   const isMobile = screenWidth < 768;
 
-  // FIXED: Sort questions with pinned ones first (no hiding for now)
-const filteredQuestions = sortWithPinned(baseFilteredQuestions);
-
-  // Use sorted and filtered questions for bulk select
-  const { 
-    selectedIds,
-    toggleSelect,
-    selectAll,
-    clearSelection,
-    selectedCount
-  } = useBulkSelect(filteredQuestions);
+  // Sort questions with pinned ones first
+  const filteredQuestions = sortWithPinned(baseFilteredQuestions);
 
   // URL synchronization
   const { syncURL } = useURLSync({
@@ -172,6 +170,114 @@ const filteredQuestions = sortWithPinned(baseFilteredQuestions);
     setUseVirtualization(filteredQuestions.length > 50);
   }, [filteredQuestions.length]);
 
+  // Helper function to enrich questions with media data
+  const enrichQuestionsWithMedia = async (questions) => {
+    if (!questions || questions.length === 0) return questions;
+
+    // Collect all unique media_asset_ids
+    const mediaAssetIds = [...new Set(
+      questions
+        .map(q => q.media_asset_id)
+        .filter(id => id != null && id !== undefined)
+    )];
+
+    if (mediaAssetIds.length === 0) {
+      return questions;
+    }
+
+    console.log(`📊 Fetching ${mediaAssetIds.length} media assets`);
+
+    // Fetch all media assets in parallel
+    const mediaAssetPromises = mediaAssetIds.map(id =>
+      apiClient.get(`/media_asset/${id}`)
+        .then(res => res.data)
+        .catch(err => {
+          console.warn(`Failed to fetch media_asset ${id}:`, err.message);
+          return null;
+        })
+    );
+
+    const mediaAssets = await Promise.all(mediaAssetPromises);
+
+    // Create a Map for O(1) lookup
+    const mediaAssetMap = new Map(
+      mediaAssets
+        .filter(asset => asset !== null)
+        .map(asset => [asset.id, asset])
+    );
+
+    console.log(`✅ Fetched ${mediaAssetMap.size}/${mediaAssetIds.length} media assets`);
+
+    // Enrich questions with recording_segments
+    return questions.map((question) => {
+      // Skip if already has recording_segments
+      if (question.recording_segments && question.recording_segments.length > 0) {
+        return question;
+      }
+
+      // Parse attachments safely
+      let cleanedAttachments = null;
+      if (question.attachments) {
+        try {
+          cleanedAttachments = typeof question.attachments === 'string'
+            ? JSON.parse(question.attachments)
+            : question.attachments;
+        } catch (e) {
+          console.error(`Invalid attachments JSON for question ${question.id}:`, e.message);
+          cleanedAttachments = null;
+        }
+      }
+
+      // Get media asset from map
+      let recordingSegments = [];
+
+      if (question.media_asset_id) {
+        const mediaAsset = mediaAssetMap.get(question.media_asset_id);
+
+        if (mediaAsset) {
+          // Parse metadata if it's a string
+          let metadata = mediaAsset.metadata;
+          if (typeof metadata === 'string') {
+            try {
+              metadata = JSON.parse(metadata);
+            } catch (e) {
+              console.error(`Failed to parse metadata for media_asset ${question.media_asset_id}:`, e);
+              metadata = null;
+            }
+          }
+
+          // Transform media_asset into recording_segments format
+          if (metadata?.type === 'multi-segment' && metadata?.segments) {
+            recordingSegments = metadata.segments.map(seg => ({
+              id: seg.uid,
+              url: seg.playback_url,
+              duration_sec: seg.duration,
+              segment_index: seg.segment_index,
+              metadata: { mode: seg.mode }
+            }));
+          } else {
+            // Single media file (legacy format)
+            recordingSegments = [{
+              id: mediaAsset.id,
+              url: mediaAsset.url,
+              duration_sec: mediaAsset.duration_sec,
+              segment_index: 0,
+              metadata: metadata
+            }];
+          }
+        } else {
+          console.warn(`Media asset ${question.media_asset_id} not found for question ${question.id}`);
+        }
+      }
+
+      return {
+        ...question,
+        attachments: cleanedAttachments,
+        recording_segments: recordingSegments
+      };
+    });
+  };
+
   // Load data
   useEffect(() => {
     const loadData = async () => {
@@ -208,7 +314,12 @@ const filteredQuestions = sortWithPinned(baseFilteredQuestions);
         ]);
 
         setProfile(profileRes.data.expert_profile || {});
-        setQuestions(questionsRes.data?.questions || questionsRes.data || []);
+
+        // Enrich questions with media data
+        const rawQuestions = questionsRes.data?.questions || questionsRes.data || [];
+        const enrichedQuestions = await enrichQuestionsWithMedia(rawQuestions);
+
+        setQuestions(enrichedQuestions);
         setPagination(questionsRes.data?.pagination || null);
       } catch (err) {
         console.error('Failed to load inbox data:', err);
@@ -377,35 +488,28 @@ const filteredQuestions = sortWithPinned(baseFilteredQuestions);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Bulk actions - Hide via Xano API
+  // Bulk actions with undo
   const handleBulkHide = async () => {
     if (selectedIds.length === 0) return;
 
+    const hiddenQuestions = questions.filter(q => selectedIds.includes(q.id));
+
     try {
-      // Store the question IDs that will be hidden
-      const idsToHide = [...selectedIds];
-      
-      // Hide questions via API
+      // Hide questions
       await Promise.all(
-        idsToHide.map(id =>
-          apiClient.post('/question/hidden', {
-            question_id: id,
-            hidden: true
-          })
+        selectedIds.map(id =>
+          apiClient.post(`/expert/questions/${id}/hide`)
         )
       );
 
       // Push undo action
       const undoId = pushUndo({
-        description: `Hidden ${idsToHide.length} question(s)`,
+        description: `Hidden ${selectedIds.length} question(s)`,
         undo: async () => {
-          // Unhide questions via API
+          // Restore hidden questions
           await Promise.all(
-            idsToHide.map(id =>
-              apiClient.post('/question/hidden', {
-                question_id: id,
-                hidden: false
-              })
+            hiddenQuestions.map(q =>
+              apiClient.post(`/expert/questions/${q.id}/unhide`)
             )
           );
           await refreshQuestions();
@@ -416,7 +520,7 @@ const filteredQuestions = sortWithPinned(baseFilteredQuestions);
       await refreshQuestions();
       clearSelection();
       
-      success(`Hidden ${idsToHide.length} question(s)`, {
+      success(`Hidden ${selectedIds.length} question(s)`, {
         action: {
           label: 'Undo',
           onClick: () => executeUndo(undoId)
@@ -424,61 +528,10 @@ const filteredQuestions = sortWithPinned(baseFilteredQuestions);
         duration: 10000
       });
 
-      announceToScreenReader(`Hidden ${idsToHide.length} questions. Press undo to restore.`);
+      announceToScreenReader(`Hidden ${selectedIds.length} questions. Press undo to restore.`);
     } catch (err) {
       console.error('Failed to hide questions:', err);
       error('Failed to hide questions');
-    }
-  };
-
-  const handleBulkUnhide = async () => {
-    if (selectedIds.length === 0) return;
-
-    try {
-      const idsToUnhide = [...selectedIds];
-      
-      // Unhide questions via API
-      await Promise.all(
-        idsToUnhide.map(id =>
-          apiClient.post('/question/hidden', {
-            question_id: id,
-            hidden: false
-          })
-        )
-      );
-
-      // Push undo action (to re-hide)
-      const undoId = pushUndo({
-        description: `Unhidden ${idsToUnhide.length} question(s)`,
-        undo: async () => {
-          await Promise.all(
-            idsToUnhide.map(id =>
-              apiClient.post('/question/hidden', {
-                question_id: id,
-                hidden: true
-              })
-            )
-          );
-          await refreshQuestions();
-          success('Questions hidden again');
-        }
-      });
-
-      await refreshQuestions();
-      clearSelection();
-      
-      success(`Unhidden ${idsToUnhide.length} question(s)`, {
-        action: {
-          label: 'Undo',
-          onClick: () => executeUndo(undoId)
-        },
-        duration: 10000
-      });
-
-      announceToScreenReader(`Unhidden ${idsToUnhide.length} questions. Press undo to hide again.`);
-    } catch (err) {
-      console.error('Failed to unhide questions:', err);
-      error('Failed to unhide questions');
     }
   };
 
@@ -625,14 +678,12 @@ const filteredQuestions = sortWithPinned(baseFilteredQuestions);
             {/* Quick Actions */}
             {selectedCount > 0 && (
               <div className="flex-shrink-0 p-3 bg-white border-b border-gray-200">
-<QuickActions
-  selectedCount={selectedCount}
-  onClearSelection={clearSelection}
-  onBulkHide={handleBulkHide}
-  onBulkUnhide={handleBulkUnhide}
-  onExport={handleExport}
-  selectedQuestions={questions.filter(q => selectedIds.includes(q.id))}
-/>
+                <QuickActions
+                  selectedCount={selectedCount}
+                  onClearSelection={clearSelection}
+                  onBulkHide={handleBulkHide}
+                  onExport={handleExport}
+                />
               </div>
             )}
 
