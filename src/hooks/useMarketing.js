@@ -16,7 +16,7 @@ export function useMarketing() {
   const fetchCampaigns = async () => {
     try {
       const response = await apiClient.get('/marketing/campaigns');
-      setCampaigns(response.data || []);
+      setCampaigns(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Failed to fetch campaigns:', err);
       setError('Failed to load campaigns');
@@ -28,7 +28,7 @@ export function useMarketing() {
   const fetchTrafficSources = async () => {
     try {
       const response = await apiClient.get('/marketing/traffic-sources');
-      setTrafficSources(response.data || []);
+      setTrafficSources(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Failed to fetch traffic sources:', err);
       setError('Failed to load traffic sources');

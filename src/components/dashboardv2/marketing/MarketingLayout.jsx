@@ -4,8 +4,8 @@ import CampaignList from './CampaignList';
 import ShareKitTemplates from './ShareKitTemplates';
 
 export default function MarketingLayout({ 
-  campaigns = [[]], 
-  trafficSources = [[]], 
+  campaigns = [], 
+  trafficSources = [], 
   insights = null, 
   isLoading = false,
   createCampaign,
