@@ -1,7 +1,7 @@
 // src/components/dashboardv2/inbox/QuestionTable.jsx
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { Video, Mic, FileText, Calendar } from 'lucide-react';
+import { Video, Mic, FileText, Calendar, Star, Zap, Clock, User } from 'lucide-react';
 import PriorityBadge from './PriorityBadge';
 import SLAIndicator from './SLAIndicator';
 import PinButton from './PinButton';
@@ -140,17 +140,40 @@ function QuestionTable({
     return `Question #${question.id}`;
   };
 
-  const getRelativeTime = (timestamp) => {
-    if (!timestamp) return '';
-    const now = Date.now() / 1000;
-    const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
-    const diff = now - createdAt;
+  const getTimeLeft = (question) => {
+    if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
+      return null;
+    }
 
-    if (diff < 60) return 'now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-    const days = Math.floor(diff / 86400);
-    return `${days}d`;
+    const now = Date.now() / 1000;
+    const createdAtSeconds = question.created_at > 4102444800
+      ? question.created_at / 1000
+      : question.created_at;
+
+    const elapsed = now - createdAtSeconds;
+    const slaSeconds = question.sla_hours_snapshot * 3600;
+    const remaining = slaSeconds - elapsed;
+
+    if (remaining <= 0) return null;
+
+    const hours = Math.floor(remaining / 3600);
+    const minutes = Math.floor((remaining % 3600) / 60);
+
+    if (hours >= 24) {
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return { text: `${days}d ${remainingHours}h`, hours };
+    }
+    if (hours > 0) {
+      return { text: `${hours}h ${minutes}m`, hours };
+    }
+    return { text: `${minutes}m`, hours: 0 };
+  };
+
+  const getTimeUrgencyColor = (hours) => {
+    if (hours < 6) return 'text-red-600';
+    if (hours < 12) return 'text-orange-600';
+    return 'text-blue-600';
   };
 
   const isAnswered =
@@ -271,12 +294,12 @@ function QuestionTable({
                 Price
               </th>
 
-              {/* Time Column */}
+              {/* Time Left Column */}
               <th
                 className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
                 style={{ width: `${columnWidths.time}%` }}
               >
-                Time
+                Time Left
               </th>
             </tr>
           </thead>
@@ -286,6 +309,8 @@ function QuestionTable({
               const isSelected = selectedQuestions.includes(question.id);
               const isActive = activeQuestionId === question.id;
               const answered = isAnswered(question);
+              const isDeepDive = question.pricing_tier === 'tier2';
+              const timeLeft = getTimeLeft(question);
 
               return (
                 <tr
@@ -307,6 +332,8 @@ function QuestionTable({
       ? 'bg-blue-50 border-l-blue-400'
       : question.hidden
       ? 'bg-gray-100 border-l-gray-400 opacity-50'
+      : isDeepDive && !answered
+      ? 'border-l-purple-400 hover:bg-gray-50'
       : 'border-l-transparent hover:bg-gray-50'
   }
   ${answered ? 'opacity-60' : ''}
@@ -330,11 +357,22 @@ function QuestionTable({
                         {getMediaIcon(question)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          {/* Type Badge */}
+                          {isDeepDive ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded text-xs font-bold flex-shrink-0">
+                              <Star size={10} />
+                              <span>Deep Dive</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-semibold flex-shrink-0">
+                              <Zap size={10} />
+                              <span>Quick</span>
+                            </span>
+                          )}
                           <span className="text-xs text-gray-400 font-mono">
                             Q-{question.id}
                           </span>
-                          <PriorityBadge question={question} />
                           {/* Pin button */}
                           {onTogglePin && isPinned && (
                             <PinButton
@@ -352,13 +390,25 @@ function QuestionTable({
 
                   {/* Asker */}
                   <td className="px-3 py-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {question.user_name || question.name || 'Anonymous'}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {question.user_email || question.email || ''}
-                      </p>
+                    <div className="flex items-center gap-1.5 text-xs min-w-0">
+                      <User size={12} className="text-gray-400 flex-shrink-0" />
+                      {(question.user_name || question.name) && (
+                        <span className="font-medium text-gray-900 truncate">
+                          {question.user_name || question.name}
+                        </span>
+                      )}
+                      {(question.user_email || question.email) && (
+                        <>
+                          <span className="text-gray-400 flex-shrink-0">·</span>
+                          <a
+                            href={`mailto:${question.user_email || question.email}`}
+                            className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {question.user_email || question.email}
+                          </a>
+                        </>
+                      )}
                     </div>
                   </td>
 
@@ -373,19 +423,16 @@ function QuestionTable({
                     </span>
                   </td>
 
-                  {/* Time */}
+                  {/* Time Left */}
                   <td className="px-3 py-3">
-                    <div className="flex flex-col gap-1">
-                      {!answered &&
-                      question.sla_hours_snapshot &&
-                      question.sla_hours_snapshot > 0 ? (
-                        <SLAIndicator question={question} compact={true} />
-                      ) : (
-                        <span className="text-xs text-gray-500 whitespace-nowrap">
-                          {getRelativeTime(question.created_at)}
-                        </span>
-                      )}
-                    </div>
+                    {!answered && timeLeft ? (
+                      <div className={`flex items-center gap-1 text-xs font-semibold ${getTimeUrgencyColor(timeLeft.hours)}`}>
+                        <Clock size={12} />
+                        <span className="whitespace-nowrap">{timeLeft.text}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
                   </td>
                 </tr>
               );

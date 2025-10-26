@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Clock, DollarSign, User, Mail, MessageSquare, Eye, Check, X, Loader, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, DollarSign, User, Mail, MessageSquare, Eye, Check, X, Loader, RefreshCw, Star } from 'lucide-react';
 import apiClient from '@/api';
 
 const formatPrice = (cents, currency = 'USD') => {
@@ -198,61 +198,61 @@ function PendingOffersBanner({ onOfferUpdate, onViewDetails, onAcceptOffer, onDe
         </div>
       </div>
 
-      {/* Offer Cards */}
+      {/* Offer Cards - Table-like style */}
       {!isCollapsed && (
-        <div className="px-4 py-3 space-y-2">
+        <div className="px-4 py-3 space-y-1">
           {offers.map((offer) => (
             <div
               key={offer.question_id}
               onClick={(e) => handleViewDetails(offer, e)}
-              className="relative p-3 sm:p-4 border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl transition-all duration-200 cursor-pointer hover:border-purple-400 hover:shadow-lg hover:-translate-y-0.5"
+              className="relative p-3 border border-l-[3px] border-l-purple-400 bg-white rounded-lg transition-all duration-200 cursor-pointer hover:border-purple-300 hover:shadow-md hover:-translate-y-0.5"
             >
-              {/* Main Content */}
-              <div className="flex items-start justify-between gap-3">
-                {/* Left: Title and Meta */}
+              {/* Main Content - Mimics table row */}
+              <div className="flex items-center justify-between gap-3">
+                {/* Left: Type Badge + Title + Asker */}
                 <div className="flex-1 min-w-0">
-                  {/* Title with Deep Dive badge */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold rounded shadow-sm">
-                      🎯 DEEP DIVE OFFER
+                  {/* First Row: Badge + Title */}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded text-xs font-bold flex-shrink-0">
+                      <Star size={10} />
+                      <span>Deep Dive</span>
                     </span>
-                    <span className={`flex items-center gap-1 text-xs font-bold ${getTimeRemainingColor(offer.offer_expires_at, offer.created_at)}`}>
-                      <Clock size={12} />
-                      {formatTimeRemaining(offer.offer_expires_at)}
-                    </span>
+                    <span className="text-xs text-gray-400 font-mono">Q-{offer.question_id}</span>
+                    <h3 className="text-sm font-semibold text-gray-900 truncate">
+                      {offer.title || 'Untitled Question'}
+                    </h3>
                   </div>
 
-                  {/* Question Title */}
-                  <h3 className="text-sm font-bold text-gray-900 line-clamp-1 mb-2">
-                    {offer.title || 'Untitled Question'}
-                  </h3>
-
-                  {/* Asker Message (if present) */}
-                  {offer.asker_message && (
-                    <div className="bg-purple-100/50 rounded px-2 py-1 mb-2 border border-purple-200">
-                      <p className="text-xs text-purple-800 italic line-clamp-1">
-                        <MessageSquare size={10} className="inline mr-1" />
-                        "{offer.asker_message}"
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Footer Meta */}
-                  <div className="flex items-center gap-3 text-xs text-gray-600">
-                    <span className="flex items-center gap-1">
-                      <User size={12} />
-                      <span className="truncate">{offer.payer_name || 'Anonymous'}</span>
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-gray-500 font-mono">Q-{offer.question_id}</span>
+                  {/* Second Row: Asker Info */}
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <User size={12} className="text-gray-400 flex-shrink-0" />
+                    <span className="font-medium text-gray-900 truncate">{offer.payer_name || 'Anonymous'}</span>
+                    {offer.payer_email && (
+                      <>
+                        <span className="text-gray-400">·</span>
+                        <a
+                          href={`mailto:${offer.payer_email}`}
+                          className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {offer.payer_email}
+                        </a>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {/* Right: Price and Actions */}
-                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                {/* Right: Price + Time + Actions */}
+                <div className="flex items-center gap-3 flex-shrink-0">
                   {/* Price */}
-                  <div className="px-3 py-1.5 rounded-lg font-bold text-base bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-2 border-green-300 shadow-sm">
+                  <div className="px-2.5 py-1 rounded-lg font-bold text-sm bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 shadow-sm">
                     {formatPrice(offer.proposed_price_cents)}
+                  </div>
+
+                  {/* Time Left */}
+                  <div className={`flex items-center gap-1 text-xs font-semibold ${getTimeRemainingColor(offer.offer_expires_at, offer.created_at)}`}>
+                    <Clock size={12} />
+                    <span className="whitespace-nowrap">{formatTimeRemaining(offer.offer_expires_at)}</span>
                   </div>
 
                   {/* Action Buttons */}
@@ -260,8 +260,8 @@ function PendingOffersBanner({ onOfferUpdate, onViewDetails, onAcceptOffer, onDe
                     <button
                       onClick={(e) => handleAccept(offer, e)}
                       disabled={processingOfferId === offer.question_id}
-                      className="px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                      title="Accept this offer"
+                      className="px-2.5 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                      title="Accept offer"
                     >
                       {processingOfferId === offer.question_id ? (
                         <Loader className="w-3 h-3 animate-spin" />
@@ -273,16 +273,16 @@ function PendingOffersBanner({ onOfferUpdate, onViewDetails, onAcceptOffer, onDe
                     <button
                       onClick={(e) => handleDecline(offer, e)}
                       disabled={processingOfferId === offer.question_id}
-                      className="px-3 py-1.5 bg-white border-2 border-gray-300 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Decline this offer"
+                      className="px-2.5 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Decline offer"
                     >
                       <X size={14} />
                     </button>
 
                     <button
                       onClick={(e) => handleViewDetails(offer, e)}
-                      className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-all shadow-sm"
-                      title="View full details"
+                      className="px-2.5 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded hover:bg-indigo-700 transition-all shadow-sm"
+                      title="View details"
                     >
                       <Eye size={14} />
                     </button>
