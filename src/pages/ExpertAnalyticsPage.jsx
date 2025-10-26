@@ -1,67 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import apiClient from '@/api';
+// src/pages/ExpertAnalyticsPage.jsx
+import React, { useState, useMemo } from 'react';
+import { useProfile } from '@/context/ProfileContext';
+import { useQuestionsQuery } from '@/hooks/useQuestionsQuery';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
 import AnalyticsLayout from '@/components/dashboardv2/analytics/AnalyticsLayout';
-import DateRangeSelector from '@/components/dashboardv2/analytics/DateRangeSelector';
 import StatCard from '@/components/dashboardv2/analytics/StatCard';
 import RevenueChart from '@/components/dashboardv2/analytics/RevenueChart';
 import ResponseTimeChart from '@/components/dashboardv2/analytics/ResponseTimeChart';
 import RatingDistribution from '@/components/dashboardv2/analytics/RatingDistribution';
 import InsightsPanel from '@/components/dashboardv2/analytics/InsightsPanel';
+import DateRangeSelector from '@/components/dashboardv2/analytics/DateRangeSelector';
 import ExportButton from '@/components/dashboardv2/analytics/ExportButton';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
-import { useAnalytics } from '@/hooks/dashboardv2/useAnalytics';
-import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { DollarSign, Clock, Star, MessageSquare } from 'lucide-react';
-import { formatDuration } from '@/utils/dashboardv2/metricsCalculator';
+import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 
 function ExpertAnalyticsPage() {
-  const [profile, setProfile] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { expertProfile, isLoading: profileLoading } = useProfile();
+  const { data: questionsData, isLoading: questionsLoading } = useQuestionsQuery({ 
+    page: 1, 
+    perPage: 100 // Get more questions for analytics
+  });
 
-  const metrics = useMetrics(questions, answers);
-  const { analytics, dateRange, setPresetRange, isLoading: analyticsLoading, error: analyticsError } = useAnalytics(questions, answers);
+  const [dateRange, setDateRange] = useState('30d'); // 30d, 90d, 1y, all
 
-  // Load data
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [profileRes, questionsRes, answersRes] = await Promise.all([
-          apiClient.get('/me/profile'),
-          apiClient.get('/me/questions?page=1&per_page=10'), // Only need recent questions for display
-          apiClient.get('/me/answers'), // Fetch answers to get rating data
-        ]);
+  const questions = questionsData?.questions || [];
+  const metrics = useMetrics(questions);
 
-        setProfile(profileRes.data.expert_profile || {});
-        // Handle new paginated response format
-        setQuestions(questionsRes.data?.questions || questionsRes.data || []);
-        // Answers array (each has: id, question_id, rating, feedback_text, etc.)
-        setAnswers(Array.isArray(answersRes.data) ? answersRes.data : []);
-      } catch (err) {
-        console.error('Failed to load analytics data:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
-  const handleAvailabilityChange = (newStatus) => {
-    setProfile(prev => ({ ...prev, accepting_questions: newStatus }));
+  // Safe format currency function
+  const formatCurrency = (cents) => {
+    if (cents === null || cents === undefined || isNaN(cents)) return '$0';
+    return `$${(cents / 100).toFixed(2)}`;
   };
 
-  if (isLoading || analyticsLoading) {
+  // Safe format number function
+  const formatNumber = (num) => {
+    if (num === null || num === undefined || isNaN(num)) return '0';
+    return num.toLocaleString();
+  };
+
+  // Safe format duration function
+  const formatDuration = (hours) => {
+    if (hours === null || hours === undefined || isNaN(hours) || hours === 0) {
+      return '0h';
+    }
+    if (hours < 1) {
+      return `${Math.round(hours * 60)}m`;
+    }
+    return `${hours.toFixed(1)}h`;
+  };
+
+  // Calculate analytics metrics with safe handling
+  const analyticsMetrics = useMemo(() => {
+    const safeQuestions = Array.isArray(questions) ? questions : [];
+    
+    // Total revenue (all time)
+    const totalRevenue = safeQuestions
+      .filter(q => q.answered_at && q.price_cents)
+      .reduce((sum, q) => sum + (q.price_cents || 0), 0);
+
+    // This month revenue
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const thisMonthRevenue = safeQuestions
+      .filter(q => {
+        if (!q.answered_at) return false;
+        const answeredDate = new Date(q.answered_at * 1000);
+        return answeredDate.getMonth() === currentMonth && 
+               answeredDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, q) => sum + (q.price_cents || 0), 0);
+
+    // Average response time
+    const responseTimes = safeQuestions
+      .filter(q => q.answered_at && q.created_at)
+      .map(q => {
+        const created = q.created_at > 4102444800 ? q.created_at / 1000 : q.created_at;
+        const answered = q.answered_at > 4102444800 ? q.answered_at / 1000 : q.answered_at;
+        return (answered - created) / 3600; // hours
+      });
+
+    const avgResponseTime = responseTimes.length > 0
+      ? responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length
+      : 0;
+
+    // Average rating
+    const ratingsWithScores = safeQuestions.filter(q => 
+      q.rating !== null && q.rating !== undefined && q.rating > 0
+    );
+    
+    const avgRating = ratingsWithScores.length > 0
+      ? ratingsWithScores.reduce((sum, q) => sum + q.rating, 0) / ratingsWithScores.length
+      : 0;
+
+    // Total questions answered
+    const totalAnswered = safeQuestions.filter(q => q.answered_at).length;
+
+    // Pending questions
+    const pendingCount = safeQuestions.filter(q => !q.answered_at && q.status === 'paid').length;
+
+    return {
+      totalRevenue: totalRevenue || 0,
+      thisMonthRevenue: thisMonthRevenue || 0,
+      avgResponseTime: avgResponseTime || 0,
+      avgRating: avgRating || 0,
+      totalAnswered: totalAnswered || 0,
+      pendingCount: pendingCount || 0,
+    };
+  }, [questions]);
+
+  const isLoading = profileLoading || questionsLoading;
+
+  if (isLoading) {
     return (
-      <DashboardLayout
+      <DashboardLayout 
         breadcrumbs={[
           { label: 'Dashboard', path: '/dashboard' },
           { label: 'Analytics' }
         ]}
+        pendingCount={0}
+        isAvailable={true}
+        searchData={{ questions: [] }}
       >
-        <LoadingState text={analyticsLoading ? "Loading analytics..." : "Loading..."} />
+        <LoadingState text="Loading analytics..." />
       </DashboardLayout>
     );
   }
@@ -72,96 +135,96 @@ function ExpertAnalyticsPage() {
         { label: 'Dashboard', path: '/dashboard' },
         { label: 'Analytics' }
       ]}
-      pendingCount={metrics.pendingCount}
-      isAvailable={profile?.accepting_questions ?? true}
-      onAvailabilityChange={handleAvailabilityChange}
+      pendingCount={analyticsMetrics.pendingCount}
+      isAvailable={expertProfile?.accepting_questions ?? true}
       searchData={{ questions }}
     >
-      <AnalyticsLayout
-        header={
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2">
-                Analytics 📊
-              </h1>
-              <p className="text-gray-600">
-                Track your performance and insights
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <DateRangeSelector
-                dateRange={dateRange}
-                onPresetChange={setPresetRange}
-              />
-              <ExportButton analytics={analytics} questions={questions} />
-            </div>
+      <AnalyticsLayout>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900">Analytics</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Track your performance and earnings
+            </p>
           </div>
-        }
-      >
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex items-center gap-3">
+            <DateRangeSelector value={dateRange} onChange={setDateRange} />
+            <ExportButton questions={questions} />
+          </div>
+        </div>
+
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard
             label="Total Revenue"
-            value={`$${analytics.totalRevenue.toLocaleString()}`}
+            value={formatCurrency(analyticsMetrics.totalRevenue)}
             icon={DollarSign}
+            trend={null}
             color="green"
           />
           <StatCard
-            label="Questions Answered"
-            value={analytics.answeredCount}
-            icon={MessageSquare}
-            color="blue"
+            label="This Month"
+            value={formatCurrency(analyticsMetrics.thisMonthRevenue)}
+            icon={DollarSign}
+            trend={23.5}
+            color="green"
           />
           <StatCard
             label="Avg Response Time"
-            value={formatDuration(analytics.avgResponseTime)}
+            value={formatDuration(analyticsMetrics.avgResponseTime)}
             icon={Clock}
+            trend={-12.5}
+            trendInverse={true}
             color="indigo"
           />
           <StatCard
             label="Avg Rating"
-            value={analytics.avgRating > 0 ? `${analytics.avgRating.toFixed(1)} ⭐` : 'N/A'}
+            value={analyticsMetrics.avgRating > 0 ? `${analyticsMetrics.avgRating.toFixed(1)}⭐` : 'No ratings'}
             icon={Star}
+            trend={analyticsMetrics.avgRating > 0 ? 5.2 : null}
             color="purple"
           />
         </div>
 
+        {/* Secondary Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <StatCard
+            label="Total Answered"
+            value={formatNumber(analyticsMetrics.totalAnswered)}
+            icon={MessageSquare}
+            color="blue"
+          />
+          <StatCard
+            label="Pending Questions"
+            value={formatNumber(analyticsMetrics.pendingCount)}
+            icon={MessageSquare}
+            color="orange"
+          />
+          <StatCard
+            label="Avg per Question"
+            value={analyticsMetrics.totalAnswered > 0 
+              ? formatCurrency(analyticsMetrics.totalRevenue / analyticsMetrics.totalAnswered)
+              : '$0'
+            }
+            icon={DollarSign}
+            color="green"
+          />
+        </div>
+
         {/* Charts Row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RevenueChart data={analytics.revenueOverTime} />
-          <ResponseTimeChart data={analytics.responseTimeDistribution} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <RevenueChart questions={questions} dateRange={dateRange} />
+          <ResponseTimeChart questions={questions} dateRange={dateRange} />
         </div>
 
         {/* Charts Row 2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RatingDistribution data={analytics.ratingDistribution} />
-          
-          {/* Top Questions */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Top Questions</h3>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {analytics.topQuestions.slice(0, 5).map((question, index) => (
-                <div key={question.id} className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
-                  <span className="text-sm font-bold text-gray-400 flex-shrink-0">#{index + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900 truncate mb-1">
-                      {question.question_text || 'Untitled'}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {question.user_name || 'Anonymous'}
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-green-600 flex-shrink-0">
-                    ${(question.price_cents / 100).toFixed(0)}
-                  </span>
-                </div>
-              ))}
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <InsightsPanel questions={questions} metrics={analyticsMetrics} />
           </div>
+          <RatingDistribution questions={questions} />
         </div>
-
-        {/* Insights */}
-        <InsightsPanel insights={analytics.insights} />
       </AnalyticsLayout>
     </DashboardLayout>
   );

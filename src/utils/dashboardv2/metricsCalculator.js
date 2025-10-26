@@ -1,132 +1,100 @@
-export function calculateMetrics(questions = [], answers = []) {
-  // Early return for empty questions - avoid unnecessary processing
-  if (!questions || questions.length === 0) {
-    return {
-      thisMonthRevenue: 0,
-      revenueChange: 0,
-      avgResponseTime: 0,
-      avgRating: 0,
-      pendingCount: 0,
-      urgentCount: 0,
-    };
-  }
-
-  const now = Date.now() / 1000;
-
-  // Calculate time boundaries once (not in loop)
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-  const monthStart = startOfMonth.getTime() / 1000;
-
-  const prevMonthStart = new Date(startOfMonth);
-  prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
-  const prevMonthStartSec = prevMonthStart.getTime() / 1000;
-
-  // Single-pass accumulation - all calculations in ONE loop
-  let thisMonthRevenueCents = 0;
-  let prevMonthRevenueCents = 0;
-  let responseTimeSum = 0;
-  let responseTimeCount = 0;
-  let pendingCount = 0;
-  let urgentCount = 0;
-
-  // SINGLE LOOP - replaces 11 separate filter/reduce/map operations
-  for (const q of questions) {
-    // Normalize timestamp once per question
-    const createdAt = q.created_at > 4102444800 ? q.created_at / 1000 : q.created_at;
-    const isClosedOrAnswered = q.status === 'closed' || q.answered_at;
-
-    // This month revenue calculation
-    if (createdAt >= monthStart && isClosedOrAnswered) {
-      thisMonthRevenueCents += (q.price_cents || 0);
-    }
-
-    // Previous month revenue calculation
-    if (createdAt >= prevMonthStartSec && createdAt < monthStart && isClosedOrAnswered) {
-      prevMonthRevenueCents += (q.price_cents || 0);
-    }
-
-    // Response time calculation
-    if (q.answered_at && q.created_at) {
-      const answeredAt = q.answered_at > 4102444800 ? q.answered_at / 1000 : q.answered_at;
-      const responseTimeHours = (answeredAt - createdAt) / 3600;
-      responseTimeSum += responseTimeHours;
-      responseTimeCount++;
-    }
-
-    // Pending questions check
-    const isPending = q.status === 'paid' &&
-      !q.answered_at &&
-      q.pricing_status !== 'offer_pending' &&
-      q.pricing_status !== 'offer_declined' &&
-      !q.hidden;
-
-    if (isPending) {
-      pendingCount++;
-
-      // Urgent questions calculation (subset of pending)
-      if (q.sla_hours_snapshot && q.sla_hours_snapshot > 0) {
-        const elapsed = now - createdAt;
-        const slaSeconds = q.sla_hours_snapshot * 3600;
-        const remaining = slaSeconds - elapsed;
-
-        if (remaining < 12 * 3600 && remaining > 0) {
-          urgentCount++;
-        }
-      }
-    }
-  }
-
-  // Calculate ratings from answers array (separate from questions)
-  // Ratings are stored in the answers table, not questions
-  let ratingSum = 0;
-  let ratingCount = 0;
-
-  if (Array.isArray(answers)) {
-    for (const answer of answers) {
-      // Only count answers with valid ratings (1-5)
-      if (answer.rating && answer.rating >= 1 && answer.rating <= 5) {
-        ratingSum += answer.rating;
-        ratingCount++;
-      }
-    }
-  }
-
-  // Calculate final derived values
-  const thisMonthRevenue = thisMonthRevenueCents / 100;
-  const prevMonthRevenue = prevMonthRevenueCents / 100;
-
-  const revenueChange = prevMonthRevenue > 0
-    ? ((thisMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100
-    : 0;
-
-  const avgResponseTime = responseTimeCount > 0
-    ? responseTimeSum / responseTimeCount
-    : 0;
-
-  const avgRating = ratingCount > 0
-    ? ratingSum / ratingCount
-    : 0;
-
-  return {
-    thisMonthRevenue,
-    revenueChange,
-    avgResponseTime,
-    avgRating,
-    pendingCount,
-    urgentCount,
-  };
-}
-
+// src/utils/dashboardv2/metricsCalculator.js
+/**
+ * Format currency safely
+ * Handles cents (integer) and converts to dollars
+ */
 export function formatCurrency(cents) {
-  return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  // Handle null, undefined, NaN
+  if (cents === null || cents === undefined || isNaN(cents)) {
+    return '$0';
+  }
+
+  // Handle negative values
+  const isNegative = cents < 0;
+  const absCents = Math.abs(cents);
+
+  // Convert cents to dollars
+  const dollars = absCents / 100;
+
+  // Format with commas and 2 decimals
+  const formatted = dollars.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  return isNegative ? `-$${formatted}` : `$${formatted}`;
 }
 
+/**
+ * Format duration safely
+ * Handles hours and converts to human-readable format
+ */
 export function formatDuration(hours) {
-  if (hours < 1) return `${Math.round(hours * 60)}m`;
-  if (hours < 24) return `${hours.toFixed(1)}h`;
+  // Handle null, undefined, NaN, zero
+  if (hours === null || hours === undefined || isNaN(hours) || hours === 0) {
+    return '0h';
+  }
+
+  // Less than 1 hour - show minutes
+  if (hours < 1) {
+    const minutes = Math.round(hours * 60);
+    return `${minutes}m`;
+  }
+
+  // Less than 24 hours - show hours
+  if (hours < 24) {
+    return `${hours.toFixed(1)}h`;
+  }
+
+  // 24 hours or more - show days
   const days = Math.floor(hours / 24);
-  const remainingHours = Math.round(hours % 24);
-  return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
+  const remainingHours = hours % 24;
+  
+  if (remainingHours === 0) {
+    return `${days}d`;
+  }
+  
+  return `${days}d ${remainingHours.toFixed(0)}h`;
+}
+
+/**
+ * Format number safely with commas
+ */
+export function formatNumber(num) {
+  if (num === null || num === undefined || isNaN(num)) {
+    return '0';
+  }
+
+  return num.toLocaleString('en-US');
+}
+
+/**
+ * Format percentage safely
+ */
+export function formatPercentage(value, decimals = 1) {
+  if (value === null || value === undefined || isNaN(value)) {
+    return '0%';
+  }
+
+  return `${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Calculate percentage change safely
+ */
+export function calculatePercentageChange(current, previous) {
+  // Handle invalid inputs
+  if (
+    current === null || current === undefined || isNaN(current) ||
+    previous === null || previous === undefined || isNaN(previous)
+  ) {
+    return 0;
+  }
+
+  // Avoid division by zero
+  if (previous === 0) {
+    return current > 0 ? 100 : 0;
+  }
+
+  return ((current - previous) / previous) * 100;
 }

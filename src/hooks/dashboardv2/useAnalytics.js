@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAnalyticsQuery } from '@/hooks/useAnalyticsQuery';
 
-export function useAnalytics(questions = [], answers = []) {
+export function useAnalytics(questions = []) {
   const [dateRange, setDateRange] = useState(() => {
     const end = Date.now();
     const start = end - 30 * 24 * 60 * 60 * 1000; // Last 30 days
