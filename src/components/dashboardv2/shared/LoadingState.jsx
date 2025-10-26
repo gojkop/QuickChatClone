@@ -1,37 +1,30 @@
+// src/components/dashboardv2/shared/LoadingState.jsx
 import React from 'react';
 
 function LoadingState({ text = 'Loading...' }) {
   return (
-    <div className="animate-fadeInUp">
-      {/* Skeleton for metrics grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 card-premium">
-            <div className="flex items-center justify-between mb-3">
-              <div className="h-4 w-20 skeleton rounded"></div>
-              <div className="w-10 h-10 skeleton rounded-lg"></div>
-            </div>
-            <div className="h-8 w-24 skeleton rounded mb-2"></div>
-            <div className="h-4 w-16 skeleton rounded"></div>
-          </div>
-        ))}
-      </div>
-
-      {/* Skeleton for content */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="h-6 w-40 skeleton rounded mb-4"></div>
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 skeleton rounded-lg"></div>
-          ))}
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="text-center">
+        {/* Premium spinner */}
+        <div className="relative w-16 h-16 mx-auto mb-4">
+          <div className="absolute inset-0 rounded-full border-4 border-indigo-200"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-indigo-600 animate-spin"></div>
+          <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-purple-400 animate-spin" style={{ animationDuration: '1.5s', animationDirection: 'reverse' }}></div>
         </div>
-      </div>
-
-      {/* Loading text */}
-      <div className="mt-6 text-center">
-        <div className="inline-flex items-center gap-2 text-sm text-gray-600">
-          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        
+        {/* Loading text with animation */}
+        <p className="text-gray-700 font-semibold text-lg mb-1 animate-pulse">
           {text}
+        </p>
+        <p className="text-gray-500 text-sm">
+          This won't take long...
+        </p>
+
+        {/* Mini progress dots */}
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
       </div>
     </div>

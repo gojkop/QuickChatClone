@@ -10,6 +10,7 @@ import WelcomeHero from '@/components/dashboardv2/overview/WelcomeHero';
 import FeaturedRevenueCard from '@/components/dashboardv2/metrics/FeaturedRevenueCard';
 import CompactMetricCard from '@/components/dashboardv2/metrics/CompactMetricCard';
 import QuickActionsWidget from '@/components/dashboardv2/widgets/QuickActionsWidget';
+import SocialImpactWidget from '@/components/dashboardv2/widgets/SocialImpactWidget';
 import SLACountdownWidget from '@/components/dashboardv2/widgets/SLACountdownWidget';
 import RecentActivity from '@/components/dashboardv2/overview/RecentActivity';
 import PerformanceSnapshot from '@/components/dashboardv2/overview/PerformanceSnapshot';
@@ -47,22 +48,12 @@ function ExpertDashboardPageV2() {
   } = useMarketing();
 
   const marketingFeature = useFeature('marketing_module');
+  const socialImpactFeature = useFeature('social_impact_dashboard');
   const marketingEnabled = marketingFeature.isEnabled;
+  const socialImpactEnabled = socialImpactFeature.isEnabled;
 
   const questions = questionsData?.questions || [];
   const metrics = useMetrics(questions);
-
-  // Log metrics for debugging
-  React.useEffect(() => {
-    console.log('📊 Dashboard Metrics:', {
-      thisMonthRevenue: metrics.thisMonthRevenue,
-      avgResponseTime: metrics.avgResponseTime,
-      avgRating: metrics.avgRating,
-      pendingCount: metrics.pendingCount,
-      answeredCount: metrics.answeredCount,
-      revenueChange: metrics.revenueChange,
-    });
-  }, [metrics]);
 
   const dashboardData = useMemo(() => ({
     pendingCount: metrics.pendingCount || 0,
@@ -137,14 +128,15 @@ function ExpertDashboardPageV2() {
       >
         <WelcomeHero />
 
-        <BentoGrid className="mb-4">
-          {/* Featured Revenue Card - Clickable */}
-          <BentoCard size="large" hoverable onClick={() => navigate('/dashboard/analytics')}>
+        {/* BENTO GRID with stagger animation */}
+        <BentoGrid className="mb-4 stagger-children">
+          {/* Row 1: Featured Revenue (2x2) + 4 Small Metrics (1x1) */}
+          
+          <BentoCard size="large" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-lg">
             <FeaturedRevenueCard metrics={metrics} />
           </BentoCard>
 
-          {/* Small Metric: Response Time - Clickable */}
-          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')}>
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Avg Response"
               value={formatDuration(metrics.avgResponseTime)}
@@ -155,20 +147,18 @@ function ExpertDashboardPageV2() {
             />
           </BentoCard>
 
-          {/* Small Metric: Rating - Clickable */}
-          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')}>
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Rating"
-              value={metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)}⭐` : 'No ratings yet'}
+              value={metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)}⭐` : 'No ratings'}
               icon={Star}
               color="purple"
               trend={metrics.avgRating > 0 ? 5.2 : null}
-              subtitle={metrics.avgRating > 0 ? 'Average rating' : 'Answer questions to get rated'}
+              subtitle={metrics.avgRating > 0 ? 'Average rating' : 'Get rated soon'}
             />
           </BentoCard>
 
-          {/* Small Metric: Pending - Clickable */}
-          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/inbox')}>
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/inbox')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Pending"
               value={metrics.pendingCount}
@@ -178,8 +168,7 @@ function ExpertDashboardPageV2() {
             />
           </BentoCard>
 
-          {/* Small Metric: Answered - Clickable */}
-          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')}>
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Answered"
               value={metrics.answeredCount}
@@ -189,32 +178,43 @@ function ExpertDashboardPageV2() {
             />
           </BentoCard>
 
-          {/* Quick Actions Widget */}
-          <BentoCard size="tall">
+          {/* Row 2: Quick Actions (1x2) + Recent Activity (2x2) + Conditional (1x2) */}
+          
+          <BentoCard size="tall" className="shadow-premium-sm">
             <QuickActionsWidget pendingCount={dashboardData.pendingCount} />
           </BentoCard>
 
-          {/* Recent Activity */}
-          <BentoCard size="large">
+          <BentoCard size="large" className="shadow-premium-sm">
             <RecentActivity questions={questions} />
           </BentoCard>
 
-          {/* SLA Countdown Widget */}
-          <BentoCard size="tall">
-            <SLACountdownWidget 
-              questions={questions} 
-              slaHours={expertProfile?.sla_hours || 24}
-            />
-          </BentoCard>
+          {/* Conditionally show Social Impact OR SLA Countdown */}
+          {socialImpactEnabled ? (
+            <BentoCard size="tall" className="shadow-premium-sm hover:shadow-premium-md hover-scale transition-all">
+              <SocialImpactWidget
+                totalDonated={expertProfile?.total_donated || 0}
+                charityPercentage={expertProfile?.charity_percentage || 0}
+                selectedCharity={expertProfile?.selected_charity}
+                thisMonthRevenue={metrics.thisMonthRevenue}
+              />
+            </BentoCard>
+          ) : (
+            <BentoCard size="tall" className="shadow-premium-sm">
+              <SLACountdownWidget 
+                questions={questions} 
+                slaHours={expertProfile?.sla_hours || 24}
+              />
+            </BentoCard>
+          )}
 
-          {/* Performance Snapshot */}
-          <BentoCard size="wide">
+          {/* Row 3: Performance (2x1) + Marketing (2x1) */}
+          
+          <BentoCard size="wide" className="shadow-premium-sm">
             <PerformanceSnapshot />
           </BentoCard>
 
-          {/* Marketing Preview */}
           {marketingEnabled && (
-            <BentoCard size="wide" hoverable onClick={() => navigate('/dashboard/marketing')}>
+            <BentoCard size="wide" hoverable onClick={() => navigate('/dashboard/marketing')} className="shadow-premium-sm hover:shadow-premium-md">
               <MarketingPreview 
                 isEnabled={marketingEnabled}
                 campaigns={campaigns}

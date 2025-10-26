@@ -149,17 +149,45 @@ function QuestionTable({
   const isAnswered =
     (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
-  // ADDED: Hover preview handlers
-  const handleMouseEnter = (question, event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setHoverPosition({ x: rect.right, y: rect.top });
-    
-    const timer = setTimeout(() => {
-      setHoveredQuestion(question);
-    }, 300); // 300ms delay
-    
-    setHoverTimer(timer);
-  };
+// FIXED: Don't show preview if detail panel is already open
+const handleMouseEnter = (question, event) => {
+  // Don't show preview if a question detail is already open
+  if (activeQuestionId) {
+    return;
+  }
+  
+  console.log('🔍 Hovering over question:', question.id);
+  const rect = event.currentTarget.getBoundingClientRect();
+  
+  // Calculate position with better placement logic
+  const previewWidth = 320; // Width of preview card (w-80 = 320px)
+  const padding = 20;
+  const viewportWidth = window.innerWidth;
+  
+  let xPosition = rect.right + padding; // Default: to the right of row
+  
+  // If preview would go off-screen, position it to the left instead
+  if (xPosition + previewWidth > viewportWidth) {
+    xPosition = rect.left - previewWidth - padding;
+  }
+  
+  // If still off-screen on left, center it
+  if (xPosition < 0) {
+    xPosition = (viewportWidth - previewWidth) / 2;
+  }
+  
+  setHoverPosition({ 
+    x: xPosition, 
+    y: rect.top 
+  });
+  
+  const timer = setTimeout(() => {
+    console.log('✅ Setting hover question:', question.id);
+    setHoveredQuestion(question);
+  }, 400);
+  
+  setHoverTimer(timer);
+};
 
   const handleMouseLeave = () => {
     if (hoverTimer) {
