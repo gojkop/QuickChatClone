@@ -19,6 +19,12 @@ export default function MarketingDashboardPage() {
     error,
     createCampaign,
   } = useMarketing();
+console.log('🔍 MarketingDashboardPage - Data from useMarketing:', {
+  campaigns: { type: typeof campaigns, isArray: Array.isArray(campaigns), value: campaigns },
+  trafficSources: { type: typeof trafficSources, isArray: Array.isArray(trafficSources), value: trafficSources },
+  isLoading,
+  error
+});
 
   const { profile, expertProfile: profileExpert } = useProfile();
   const { data: questions = [] } = useQuestionsQuery();
