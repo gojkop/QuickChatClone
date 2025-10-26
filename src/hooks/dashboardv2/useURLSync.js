@@ -60,10 +60,16 @@ export const useURLSync = ({
   const location = useLocation();
   const isInitialMount = useRef(true);
   const lastSyncedHash = useRef('');
+  const processingHash = useRef(false);
 
   // URL → Panel State (only on mount and when hash changes externally)
   useEffect(() => {
     const currentHash = location.hash;
+    
+    // Skip if we're already processing this hash to avoid loops
+    if (processingHash.current) {
+      return;
+    }
     
     // Skip if this is the same hash we just synced to avoid loops
     if (currentHash === lastSyncedHash.current && !isInitialMount.current) {
@@ -80,7 +86,10 @@ export const useURLSync = ({
         
         // Only open detail if it's not already open with the same question
         if (currentDetailId !== question.id) {
+          processingHash.current = true;
           openPanel('detail', question);
+          // Reset processing flag after a brief delay
+          setTimeout(() => { processingHash.current = false; }, 100);
         }
 
         // Only open answer if needed and not already open
@@ -89,6 +98,10 @@ export const useURLSync = ({
         } else if (!hashState.answer && isPanelOpen('answer')) {
           closePanel('answer');
         }
+      } else {
+        // ADDED: Question not found in current list
+        // This happens when the URL has a question ID that's filtered out
+        console.warn(`Question ${hashState.detail} not found in current filter. Try changing filters.`);
       }
     } else if (!hashState.detail) {
       // No hash, close all panels
@@ -98,7 +111,7 @@ export const useURLSync = ({
     }
 
     isInitialMount.current = false;
-  }, [location.hash, questions]);
+  }, [location.hash, questions, openPanel, closePanel, closeAllPanels, isPanelOpen, getPanelData]);
 
   // Panel State → URL (debounced to avoid loops)
   const syncURL = (detailQuestionId, isAnswering) => {
@@ -106,7 +119,10 @@ export const useURLSync = ({
     
     if (location.hash !== expectedHash) {
       lastSyncedHash.current = expectedHash;
-      navigate(`/dashboard/inbox${expectedHash}`, { replace: true });
+      navigate(`${location.pathname}${expectedHash}`, { replace: true });
+    } else {
+      // Hash already matches, just update the ref
+      lastSyncedHash.current = expectedHash;
     }
   };
 

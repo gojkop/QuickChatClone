@@ -1,9 +1,10 @@
 // src/components/dashboardv2/inbox/QuestionDetailPanel.jsx
 import React, { useState } from 'react';
-import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Link } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
+import { copyQuestionLink } from '@/utils/clipboard';
 
 function QuestionDetailPanel({ 
   question, 
@@ -13,6 +14,8 @@ function QuestionDetailPanel({
   hideCloseButton = false
 }) {
   const [showActions, setShowActions] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
 
   // Helper to get media segments
   const getMediaSegments = () => {
@@ -400,27 +403,56 @@ function QuestionDetailPanel({
       </div>
 
       {/* Footer Actions - Fixed - REMOVED THREE DOTS */}
-      <div className="flex-shrink-0 p-3 lg:p-4 border-t border-gray-200 bg-gray-50">
-        {!isAnswered ? (
-          <button
-            onClick={onAnswer}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
-          >
-            <Play size={18} />
-            <span>Answer This Question</span>
-          </button>
-        ) : (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <CheckCircle size={15} className="text-green-600" />
-              <span>This question has been answered</span>
-            </div>
-            <button className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors">
-              View Public Answer
-            </button>
-          </div>
-        )}
+     {/* Footer Actions - Fixed */}
+<div className="flex-shrink-0 p-3 lg:p-4 border-t border-gray-200 bg-gray-50">
+  {!isAnswered ? (
+    <div className="flex flex-col gap-2">
+      {/* Primary action: Answer */}
+      <button
+        onClick={onAnswer}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
+      >
+        <Play size={18} />
+        <span>Answer This Question</span>
+      </button>
+      
+      {/* ADDED: Copy link for unanswered questions */}
+      <button
+        onClick={() => {
+          copyQuestionLink(question.id).then(() => {
+            setCopySuccess(true);
+            if (onCopyLink) onCopyLink();
+            setTimeout(() => setCopySuccess(false), 2000);
+          });
+        }}
+        className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
+      >
+        <Link size={14} />
+        <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
+      </button>
+    </div>
+  ) : (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+      <div className="flex items-center gap-2 text-sm text-gray-600">
+        <CheckCircle size={15} className="text-green-600" />
+        <span>This question has been answered</span>
       </div>
+      <button
+        onClick={() => {
+          copyQuestionLink(question.id).then(() => {
+            setCopySuccess(true);
+            if (onCopyLink) onCopyLink();
+            setTimeout(() => setCopySuccess(false), 2000);
+          });
+        }}
+        className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2"
+      >
+        <Link size={14} />
+        <span>{copySuccess ? 'Copied!' : 'Copy Link'}</span>
+      </button>
+    </div>
+  )}
+</div>
     </div>
   );
 }

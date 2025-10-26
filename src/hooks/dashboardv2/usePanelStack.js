@@ -4,25 +4,38 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-/**
- * Panel width configurations based on number of panels open
- *
- * 1 panel (list only):
- *   - list: 100%
- *
- * 2 panels (list + detail):
- *   - list: 30%
- *   - detail: 70%
- *
- * 3 panels (list + detail + answer):
- *   - list: 10%
- *   - detail: 20%
- *   - answer: 70%
- */
-const PANEL_CONFIGS = {
+
+// At the top, add localStorage helpers
+const PANEL_WIDTH_KEY = 'quickchat_panel_widths';
+
+const loadSavedWidths = () => {
+  try {
+    const saved = localStorage.getItem(PANEL_WIDTH_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveWidths = (widths) => {
+  try {
+    localStorage.setItem(PANEL_WIDTH_KEY, JSON.stringify(widths));
+  } catch {
+    // Ignore localStorage errors
+  }
+};
+
+// Update PANEL_CONFIGS to use saved widths
+const PANEL_CONFIGS = loadSavedWidths() || {
   1: { list: 100 },
   2: { list: 30, detail: 70 },
   3: { list: 10, detail: 20, answer: 70 }
+};
+
+// Add this new function to update panel widths
+export const updatePanelWidths = (panelCount, newWidths) => {
+  PANEL_CONFIGS[panelCount] = newWidths;
+  saveWidths(PANEL_CONFIGS);
 };
 
 /**

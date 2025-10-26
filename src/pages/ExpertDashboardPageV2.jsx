@@ -1,33 +1,30 @@
+// src/pages/ExpertDashboardPageV2.jsx
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '@/context/ProfileContext';
-import { useQuestionsQuery } from '@/hooks/useQuestionsQuery'; // Your existing hook
+import { useQuestionsQuery } from '@/hooks/useQuestionsQuery';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
+import BentoGrid from '@/components/dashboardv2/layout/BentoGrid';
+import BentoCard from '@/components/dashboardv2/layout/BentoCard';
 import WelcomeHero from '@/components/dashboardv2/overview/WelcomeHero';
-import MetricsGrid from '@/components/dashboardv2/metrics/MetricsGrid';
-import ActionRequired from '@/components/dashboardv2/overview/ActionRequired';
+import FeaturedRevenueCard from '@/components/dashboardv2/metrics/FeaturedRevenueCard';
+import CompactMetricCard from '@/components/dashboardv2/metrics/CompactMetricCard';
+import QuickActionsWidget from '@/components/dashboardv2/widgets/QuickActionsWidget';
+import SLACountdownWidget from '@/components/dashboardv2/widgets/SLACountdownWidget';
 import RecentActivity from '@/components/dashboardv2/overview/RecentActivity';
 import PerformanceSnapshot from '@/components/dashboardv2/overview/PerformanceSnapshot';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
+import MobileBottomNav from '@/components/dashboardv2/navigation/MobileBottomNav';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
-
-/**
- * OPTIMIZED Expert Dashboard V2
- * 
- * Key Performance Optimizations:
- * 1. Uses existing useQuestionsQuery hook (already cached with React Query)
- * 2. Memoized metrics calculation
- * 3. Progressive loading with skeletons
- * 4. Optimized re-renders with useMemo
- */
+import { Clock, Star, MessageSquare } from 'lucide-react';
+import { formatDuration } from '@/utils/dashboardv2/metricsCalculator';
 
 function ExpertDashboardPageV2() {
   const navigate = useNavigate();
   
-  // Get profile from context (already cached/optimized)
   const { 
     profile, 
     expertProfile, 
@@ -36,8 +33,6 @@ function ExpertDashboardPageV2() {
     updateAvailability,
   } = useProfile();
 
-  // Use existing questions hook - it already uses React Query
-  // Now supports pagination - loading first 10 questions only
   const {
     data: questionsData,
     isLoading: questionsLoading,
@@ -45,39 +40,45 @@ function ExpertDashboardPageV2() {
     refetch: refetchQuestions
   } = useQuestionsQuery({ page: 1, perPage: 10 });
 
-  // Marketing data
-const { 
-  campaigns, 
-  trafficSources, 
-  insights 
-} = useMarketing();
+  const { 
+    campaigns, 
+    trafficSources, 
+    insights 
+  } = useMarketing();
 
-const marketingFeature = useFeature('marketing_module');
-const marketingEnabled = marketingFeature.isEnabled;
+  const marketingFeature = useFeature('marketing_module');
+  const marketingEnabled = marketingFeature.isEnabled;
 
   const questions = questionsData?.questions || [];
-  const pagination = questionsData?.pagination;
-
-  // Memoized metrics calculation - only recalculates when questions change
   const metrics = useMetrics(questions);
 
-  // Memoize derived data to prevent unnecessary recalculations
+  // Log metrics for debugging
+  React.useEffect(() => {
+    console.log('📊 Dashboard Metrics:', {
+      thisMonthRevenue: metrics.thisMonthRevenue,
+      avgResponseTime: metrics.avgResponseTime,
+      avgRating: metrics.avgRating,
+      pendingCount: metrics.pendingCount,
+      answeredCount: metrics.answeredCount,
+      revenueChange: metrics.revenueChange,
+    });
+  }, [metrics]);
+
   const dashboardData = useMemo(() => ({
     pendingCount: metrics.pendingCount || 0,
     urgentCount: metrics.urgentCount || 0,
     isAvailable: expertProfile?.accepting_questions ?? true,
-  }), [metrics.pendingCount, metrics.urgentCount, expertProfile?.accepting_questions]);
+    currentRevenue: metrics.thisMonthRevenue || 0,
+    avgRating: metrics.avgRating || 0,
+  }), [metrics, expertProfile?.accepting_questions]);
 
-  // Optimized availability change handler
   const handleAvailabilityChange = React.useCallback((newStatus) => {
     updateAvailability(newStatus);
   }, [updateAvailability]);
 
-  // Combined loading state - show progressive UI
   const isInitialLoad = profileLoading || (questionsLoading && questions.length === 0);
   const hasError = profileError || questionsError;
 
-  // PROGRESSIVE LOADING: Show layout immediately
   if (isInitialLoad) {
     return (
       <DashboardLayout 
@@ -91,7 +92,6 @@ const marketingEnabled = marketingFeature.isEnabled;
     );
   }
 
-  // Error state - but still show layout for navigation
   if (hasError) {
     return (
       <DashboardLayout 
@@ -110,14 +110,14 @@ const marketingEnabled = marketingFeature.isEnabled;
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Could not load dashboard data
           </h3>
-          <p className="text-gray-600 mb-4 max-w-md mx-auto">
+          <p className="text-gray-600 mb-4 max-w-md mx-auto text-sm">
             {questionsError?.message || profileError?.message || 'An error occurred while loading your dashboard'}
           </p>
           <button
             onClick={() => {
               if (questionsError) refetchQuestions();
             }}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
           >
             Try Again
           </button>
@@ -126,85 +126,116 @@ const marketingEnabled = marketingFeature.isEnabled;
     );
   }
 
-  // SUCCESS STATE - All data loaded
   return (
-    <DashboardLayout
-      breadcrumbs={[{ label: 'Dashboard' }]}
-      pendingCount={dashboardData.pendingCount}
-      isAvailable={dashboardData.isAvailable}
-      onAvailabilityChange={handleAvailabilityChange}
-      searchData={{ questions }}
-    >
-      {/* Welcome Hero */}
-      <WelcomeHero />
+    <>
+      <DashboardLayout
+        breadcrumbs={[{ label: 'Dashboard' }]}
+        pendingCount={dashboardData.pendingCount}
+        isAvailable={dashboardData.isAvailable}
+        onAvailabilityChange={handleAvailabilityChange}
+        searchData={{ questions }}
+      >
+        <WelcomeHero />
 
-      {/* Metrics Grid */}
-      {questionsLoading && questions.length > 0 ? (
-        <MetricsGridSkeleton />
-      ) : (
-        <MetricsGrid metrics={metrics} />
-      )}
+        <BentoGrid className="mb-4">
+          {/* Featured Revenue Card - Clickable */}
+          <BentoCard size="large" hoverable onClick={() => navigate('/dashboard/analytics')}>
+            <FeaturedRevenueCard metrics={metrics} />
+          </BentoCard>
 
-      {/* Action Required - Only shows if there are urgent items */}
-      {dashboardData.urgentCount > 0 && (
-        <ActionRequired 
-          urgentCount={dashboardData.urgentCount}
-          pendingOffersCount={0}
-        />
-      )}
+          {/* Small Metric: Response Time - Clickable */}
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')}>
+            <CompactMetricCard
+              label="Avg Response"
+              value={formatDuration(metrics.avgResponseTime)}
+              icon={Clock}
+              color="indigo"
+              trend={-12.5}
+              subtitle={metrics.avgResponseTime > 0 ? `${metrics.answeredCount} answered` : 'No data yet'}
+            />
+          </BentoCard>
 
-      {/* Marketing Preview - Full Width */}
-{marketingEnabled && (
-  <MarketingPreview 
-    isEnabled={marketingEnabled}
-    campaigns={campaigns}
-    trafficSources={trafficSources}
-    insights={insights}
-    onNavigate={() => navigate('/dashboard/marketing')}
-  />
-)}
+          {/* Small Metric: Rating - Clickable */}
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')}>
+            <CompactMetricCard
+              label="Rating"
+              value={metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)}⭐` : 'No ratings yet'}
+              icon={Star}
+              color="purple"
+              trend={metrics.avgRating > 0 ? 5.2 : null}
+              subtitle={metrics.avgRating > 0 ? 'Average rating' : 'Answer questions to get rated'}
+            />
+          </BentoCard>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activity */}
-        {questionsLoading && questions.length === 0 ? (
-          <ActivitySkeleton />
-        ) : (
-          <RecentActivity questions={questions} />
-        )}
+          {/* Small Metric: Pending - Clickable */}
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/inbox')}>
+            <CompactMetricCard
+              label="Pending"
+              value={metrics.pendingCount}
+              icon={MessageSquare}
+              color="orange"
+              subtitle={metrics.pendingCount > 0 ? 'Need your answer' : 'All caught up!'}
+            />
+          </BentoCard>
 
-        {/* Performance Snapshot */}
-        <PerformanceSnapshot />
-      </div>
-    </DashboardLayout>
+          {/* Small Metric: Answered - Clickable */}
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')}>
+            <CompactMetricCard
+              label="Answered"
+              value={metrics.answeredCount}
+              icon={MessageSquare}
+              color="green"
+              subtitle={`${metrics.thisMonthAnsweredCount} this month`}
+            />
+          </BentoCard>
+
+          {/* Quick Actions Widget */}
+          <BentoCard size="tall">
+            <QuickActionsWidget pendingCount={dashboardData.pendingCount} />
+          </BentoCard>
+
+          {/* Recent Activity */}
+          <BentoCard size="large">
+            <RecentActivity questions={questions} />
+          </BentoCard>
+
+          {/* SLA Countdown Widget */}
+          <BentoCard size="tall">
+            <SLACountdownWidget 
+              questions={questions} 
+              slaHours={expertProfile?.sla_hours || 24}
+            />
+          </BentoCard>
+
+          {/* Performance Snapshot */}
+          <BentoCard size="wide">
+            <PerformanceSnapshot />
+          </BentoCard>
+
+          {/* Marketing Preview */}
+          {marketingEnabled && (
+            <BentoCard size="wide" hoverable onClick={() => navigate('/dashboard/marketing')}>
+              <MarketingPreview 
+                isEnabled={marketingEnabled}
+                campaigns={campaigns}
+                trafficSources={trafficSources}
+                insights={insights}
+                onNavigate={() => navigate('/dashboard/marketing')}
+              />
+            </BentoCard>
+          )}
+        </BentoGrid>
+
+        <div className="h-32 lg:h-0" />
+      </DashboardLayout>
+
+      <MobileBottomNav 
+        pendingCount={dashboardData.pendingCount}
+        currentRevenue={dashboardData.currentRevenue}
+        avgRating={dashboardData.avgRating}
+      />
+    </>
   );
 }
-
-// Skeleton Components
-const MetricsGridSkeleton = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    {[1, 2, 3, 4].map((i) => (
-      <div key={i} className="bg-white border border-gray-200 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="h-4 w-20 skeleton rounded"></div>
-          <div className="w-10 h-10 skeleton rounded-lg"></div>
-        </div>
-        <div className="h-8 w-24 skeleton rounded mb-2"></div>
-        <div className="h-4 w-16 skeleton rounded"></div>
-      </div>
-    ))}
-  </div>
-);
-
-const ActivitySkeleton = () => (
-  <div className="bg-white border border-gray-200 rounded-xl p-6">
-    <div className="h-6 w-40 skeleton rounded mb-4"></div>
-    <div className="space-y-3">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="h-20 skeleton rounded-lg"></div>
-      ))}
-    </div>
-  </div>
-);
 
 export default ExpertDashboardPageV2;
