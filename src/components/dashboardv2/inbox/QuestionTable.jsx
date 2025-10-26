@@ -62,34 +62,14 @@ function QuestionTable({
         time: 6
       };
 
-      // Apply minimum width constraint
-      const minConstrainedWidth = Math.max(minWidths[column] || 5, newWidth);
-
-      // Calculate what the total width would be with this new column width
-      const totalWidth = Object.keys(columnWidths).reduce((sum, key) => {
-        if (key === column) {
-          return sum + minConstrainedWidth;
-        }
-        return sum + columnWidths[key];
-      }, 0);
-
-      // Maximum width constraint: ensure total never exceeds 100%
-      // This prevents columns from being pushed off-screen behind the detail panel
-      let finalWidth = minConstrainedWidth;
-      if (totalWidth > 100) {
-        // Reduce the new width to keep total at 100%
-        const excess = totalWidth - 100;
-        finalWidth = minConstrainedWidth - excess;
-        // Still respect minimum width
-        finalWidth = Math.max(minWidths[column] || 5, finalWidth);
-      }
+      const finalWidth = Math.max(minWidths[column] || 5, newWidth);
 
       setColumnWidths(prev => ({
         ...prev,
         [column]: finalWidth
       }));
     }, 16), // ~60fps
-    [resizing, columnWidths]
+    [resizing]
   );
 
   useEffect(() => {
@@ -190,14 +170,14 @@ function QuestionTable({
   const gridTemplateColumns = `${columnWidths.checkbox}% ${columnWidths.question}% ${columnWidths.asker}% ${columnWidths.price}% ${columnWidths.time}%`;
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden" ref={tableRef}>
+    <div className="flex flex-col h-full w-full" ref={tableRef}>
       {/* Debug Banner - RESPONSIVE VERSION */}
       <div className="bg-green-500 text-white text-xs font-bold text-center py-1">
         ✓ RESPONSIVE v4.0 - Table now uses flexible % widths (Email + Throttle + Resize + No zeros)
       </div>
 
       {/* Table Header - Sticky */}
-      <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 flex-shrink-0">
+      <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
         <div 
           className="grid gap-2 px-3 py-2.5 text-[11px] font-semibold text-gray-600 uppercase tracking-wide"
           style={{ gridTemplateColumns }}
@@ -267,8 +247,8 @@ function QuestionTable({
         </div>
       </div>
 
-      {/* Table Body - Scrollable with strict clipping */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden w-full relative">
+      {/* Table Body - Scrollable */}
+      <div className="flex-1 overflow-y-auto w-full">
         {questions.map((question) => {
           const answered = isAnswered(question);
           const isActive = question.id === activeQuestionId;

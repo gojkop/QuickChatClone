@@ -69,18 +69,18 @@ function InboxLayout({
       {/* Left Panel: Filters + Question List */}
       <div
         className={`
-          flex flex-col border-r border-gray-200 bg-gray-50 overflow-hidden
+          flex flex-col border-r border-gray-200 bg-gray-50
           ${(isMobileView || isTablet) && selectedQuestion ? 'hidden' : 'flex'}
+          ${isDesktop ? 'h-full' : 'h-full'}
         `}
         style={{
           width: isDesktop ? `${splitRatio}%` : '100%',
           minWidth: isDesktop ? '320px' : undefined,
           maxWidth: isDesktop ? '70%' : undefined,
-          height: '100%',
         }}
       >
-        {/* Filters - Scrollable with reduced max height */}
-        <div className="flex-shrink-0 overflow-y-auto border-b border-gray-200 bg-white max-h-[30vh] lg:max-h-[35vh]">
+        {/* Filters - Scrollable */}
+        <div className="flex-shrink-0 overflow-y-auto border-b border-gray-200 bg-white max-h-[40vh] lg:max-h-[50vh]">
           {filters}
         </div>
 
@@ -91,14 +91,14 @@ function InboxLayout({
           </div>
         )}
 
-        {/* Question List - Takes remaining space, scrolls internally */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {/* Question List - Scrollable */}
+        <div className="flex-1 overflow-y-auto min-h-0">
           {questionList}
         </div>
 
         {/* Pagination - Fixed at bottom */}
         {pagination && (
-          <div className="flex-shrink-0 bg-white relative z-20">
+          <div className="flex-shrink-0 border-t border-gray-200 bg-white">
             {pagination}
           </div>
         )}
