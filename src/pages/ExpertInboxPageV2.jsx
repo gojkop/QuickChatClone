@@ -38,6 +38,8 @@ function ExpertInboxPageV2() {
   const [isLoading, setIsLoading] = useState(true);
   const [useVirtualization, setUseVirtualization] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
+
 
   const metrics = useMetrics(questions);
   const {
@@ -240,7 +242,7 @@ function ExpertInboxPageV2() {
       // ? - Show shortcuts modal
       if (e.key === '?') {
         e.preventDefault();
-        setShowShortcutsModal(true);
+        setShowKeyboardHelp(true);
         return;
       }
 
@@ -297,8 +299,8 @@ function ExpertInboxPageV2() {
 
       // Esc - Close top panel
       if (e.key === 'Escape') {
-        if (showShortcutsModal) {
-          setShowShortcutsModal(false);
+        if (showKeyboardHelp) {
+          setShowKeyboardHelp(false);
           return;
         }
         if (e.shiftKey) {
