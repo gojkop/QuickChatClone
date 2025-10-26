@@ -563,4 +563,78 @@ XANO_INTERNAL_API_KEY=your_internal_api_key_here
 
 ---
 
-**Final Status:** All systems operational and documented
+### Additional Fixes (October 26, 2025 - Evening Session 2)
+
+**Issue 1: Stripe Payment Intent Creation Broken**
+
+**Error:** `Failed to create payment intent: Error: Expert handle is required for payment intent creation`
+
+**Root Cause:** PaymentPlaceholder.jsx missing required parameters
+
+**Fix:**
+- Added `expertHandle: expert.handle` to createPaymentIntent call
+- Added `tierType: tierType` to createPaymentIntent call
+- Parameters required for security validation in usePayment.js
+
+**Commit:** `5c45388`
+
+---
+
+**Issue 2: Cleanup Not Deleting Test Questions**
+
+**Problem:** Cleanup reported "0 questions deleted" despite 6+ test questions existing
+
+**Root Cause #1:** Wrong field name
+- Used: `stripe_payment_intent_id` (wrong)
+- Correct: `payment_intent_id` (actual field in question table)
+
+**Fix #1:** Changed field name in query
+**Commit:** `34f2265`
+
+**Root Cause #2:** Xano LIKE operator doesn't work reliably
+
+**Fix #2:** Replaced SQL LIKE with JavaScript filtering
+```xanoscript
+// Before (didn't work):
+db.query question {
+  where = $db.question.payment_intent_id like "pi_test_%"
+}
+
+// After (works):
+db.query question {
+  return = {type: "list"}
+} as $all_questions
+
+api.lambda {
+  var testQuestions = [];
+  for (var i = 0; i < $var.all_questions.length; i++) {
+    if ($var.all_questions[i].payment_intent_id.startsWith("pi_test_")) {
+      testQuestions.push($var.all_questions[i]);
+    }
+  }
+  return testQuestions;
+}
+```
+
+**Result:**
+- First cleanup run deleted 17 accumulated test questions
+- Subsequent runs work perfectly
+- Cleanup now fully functional with --cleanup flag
+
+**Commit:** `0b54a9b`
+
+---
+
+**Final Test Results:**
+```bash
+./tests/run-security-tests.sh --cleanup
+✓ Passed:  16
+✗ Failed:  0
+⊘ Skipped: 0
+
+✓ Test data cleaned up successfully
+```
+
+---
+
+**Final Status:** ✅ All systems operational, tested, and working perfectly
