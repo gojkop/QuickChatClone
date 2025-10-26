@@ -18,7 +18,7 @@ function BentoCard({
   };
 
   const interactiveClasses = hoverable || onClick
-    ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300'
+    ? 'cursor-pointer hover:shadow-premium-lg hover:-translate-y-1 transition-all duration-300 active:scale-[0.99]'
     : 'transition-shadow duration-300';
 
   return (
@@ -28,11 +28,20 @@ function BentoCard({
         border border-gray-200 
         rounded-xl 
         p-3
+        backdrop-blur-sm
         ${sizeClasses[size]}
         ${interactiveClasses}
         ${className}
       `}
       onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      } : undefined}
     >
       {children}
     </div>

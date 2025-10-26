@@ -74,7 +74,7 @@ function WelcomeHero() {
 
   return (
     <>
-      <div className="mb-4 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-xl p-4 border border-indigo-100 shadow-sm">
+        <div className="mb-4 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-xl p-4 border border-indigo-100 shadow-premium-sm card-pattern">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           {/* Left: Greeting & Profile Links */}
           <div className="flex-1">

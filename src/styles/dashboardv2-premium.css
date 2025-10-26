@@ -2,6 +2,182 @@
    DASHBOARD V2 - PREMIUM STYLES & ANIMATIONS
    Mobile-first, minimalistic, modern design
    ============================================ */
+   /* === PREMIUM ENHANCEMENTS === */
+
+/* Subtle pattern overlay for cards */
+.card-pattern {
+  background-image: 
+    linear-gradient(30deg, rgba(79, 70, 229, 0.02) 12%, transparent 12.5%, transparent 87%, rgba(79, 70, 229, 0.02) 87.5%, rgba(79, 70, 229, 0.02)),
+    linear-gradient(150deg, rgba(79, 70, 229, 0.02) 12%, transparent 12.5%, transparent 87%, rgba(79, 70, 229, 0.02) 87.5%, rgba(79, 70, 229, 0.02)),
+    linear-gradient(30deg, rgba(79, 70, 229, 0.02) 12%, transparent 12.5%, transparent 87%, rgba(79, 70, 229, 0.02) 87.5%, rgba(79, 70, 229, 0.02)),
+    linear-gradient(150deg, rgba(79, 70, 229, 0.02) 12%, transparent 12.5%, transparent 87%, rgba(79, 70, 229, 0.02) 87.5%, rgba(79, 70, 229, 0.02));
+  background-size: 80px 140px;
+  background-position: 0 0, 0 0, 40px 70px, 40px 70px;
+}
+
+/* Enhanced shadow system */
+.shadow-premium-sm {
+  box-shadow: 
+    0 1px 2px 0 rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+.shadow-premium-md {
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.07),
+    0 2px 4px -1px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+.shadow-premium-lg {
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -2px rgba(0, 0, 0, 0.03),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+/* Smooth glow effect for interactive elements */
+.glow-indigo {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+.glow-rose {
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.15);
+}
+
+/* Premium gradient backgrounds */
+.bg-premium-indigo {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-premium-green {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.bg-premium-rose {
+  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
+}
+
+/* Enhanced focus states */
+.focus-premium {
+  @apply focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white;
+  transition: box-shadow 0.2s ease-out;
+}
+
+/* Smooth number transitions */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-countUp {
+  animation: countUp 0.4s ease-out;
+}
+
+/* Subtle scale on hover */
+.hover-scale {
+  transition: transform 0.2s ease-out;
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Premium badge */
+.badge-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transition: left 0.5s ease-out;
+}
+
+.badge-shine:hover::before {
+  left: 100%;
+}
+
+/* Improved kbd styling */
+kbd {
+  @apply inline-flex items-center justify-center;
+  @apply px-1.5 py-0.5 rounded;
+  @apply text-xs font-mono font-semibold;
+  @apply bg-gray-100 text-gray-700;
+  @apply border border-gray-300;
+  @apply shadow-sm;
+  min-width: 1.5rem;
+}
+
+/* Smooth reveal animation */
+@keyframes revealUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-revealUp {
+  animation: revealUp 0.5s ease-out;
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  animation: revealUp 0.5s ease-out;
+  animation-fill-mode: both;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+
+/* Premium loading skeleton */
+.skeleton-premium {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 0%,
+    #e5e7eb 20%,
+    #f3f4f6 40%,
+    #f3f4f6 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerPremium 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmerPremium {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 
 /* === CUSTOM PROPERTIES === */
 :root {
