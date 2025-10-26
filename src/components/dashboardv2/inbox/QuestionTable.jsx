@@ -368,28 +368,13 @@ function QuestionTable({
         <div className="fixed inset-0 z-50 cursor-col-resize" />
       )}
 
-      {/* FIXED: Hover Preview - Using Portal */}
+       {/* FIXED: Hover Preview - Using Portal with Real Component */}
       {hoveredQuestion && ReactDOM.createPortal(
-        <div
-          style={{
-            position: 'fixed',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 999999,
-            backgroundColor: 'red',
-            color: 'white',
-            padding: '100px',
-            border: '10px solid yellow',
-            fontSize: '40px',
-            fontWeight: 'bold',
-            boxShadow: '0 0 50px rgba(255,0,0,0.8)',
-            pointerEvents: 'none'
-          }}
-        >
-          🔴 PORTAL TEST: Q-{hoveredQuestion.id} 🔴
-        </div>,
-        document.body // Render directly to body, bypassing all parents
+        <QuestionPreview
+          question={hoveredQuestion}
+          position={hoverPosition}
+        />,
+        document.body
       )}
     </div>
   );
