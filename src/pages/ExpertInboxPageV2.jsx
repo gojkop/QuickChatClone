@@ -377,10 +377,59 @@ const metrics = useMetrics(questions);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Bulk actions with undo
-  const handleBulkHide = () => {
-  error('Hide functionality is not available yet');
-};
+  // Bulk actions - Hide via Xano API
+  const handleBulkHide = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      // Store the question IDs that will be hidden
+      const idsToHide = [...selectedIds];
+      
+      // Hide questions via API
+      await Promise.all(
+        idsToHide.map(id =>
+          apiClient.post('/question/hidden', {
+            question_id: id,
+            hidden: true
+          })
+        )
+      );
+
+      // Push undo action
+      const undoId = pushUndo({
+        description: `Hidden ${idsToHide.length} question(s)`,
+        undo: async () => {
+          // Unhide questions via API
+          await Promise.all(
+            idsToHide.map(id =>
+              apiClient.post('/question/hidden', {
+                question_id: id,
+                hidden: false
+              })
+            )
+          );
+          await refreshQuestions();
+          success('Questions restored');
+        }
+      });
+
+      await refreshQuestions();
+      clearSelection();
+      
+      success(`Hidden ${idsToHide.length} question(s)`, {
+        action: {
+          label: 'Undo',
+          onClick: () => executeUndo(undoId)
+        },
+        duration: 10000
+      });
+
+      announceToScreenReader(`Hidden ${idsToHide.length} questions. Press undo to restore.`);
+    } catch (err) {
+      console.error('Failed to hide questions:', err);
+      error('Failed to hide questions');
+    }
+  };
 
   const handleExport = () => {
     const selectedQs = questions.filter(q => selectedIds.includes(q.id));
