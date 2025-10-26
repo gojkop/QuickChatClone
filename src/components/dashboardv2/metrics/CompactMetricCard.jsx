@@ -1,4 +1,4 @@
-/ src/components/dashboardv2/metrics/CompactMetricCard.jsx
+// src/components/dashboardv2/metrics/CompactMetricCard.jsx
 import React from 'react';
 
 function CompactMetricCard({ 
