@@ -316,7 +316,7 @@ function ExpertInboxPageV2() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [filteredQuestions, selectedQuestionIndex, isPanelOpen, getPanelData, togglePin, isPinned, success, closeTopPanel, closeAllPanels, panels, showShortcutsModal]);
+  }, [filteredQuestions, selectedQuestionIndex, isPanelOpen, getPanelData, togglePin, isPinned, success, closeTopPanel, closeAllPanels, panels, showKeyboardHelp]);
 
   // Refresh questions
   const refreshQuestions = async () => {
