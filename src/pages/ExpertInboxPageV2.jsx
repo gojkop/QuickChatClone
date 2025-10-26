@@ -77,7 +77,7 @@ const metrics = useMetrics(questions);
 
   // Sort questions with pinned ones first, then filter hidden
   const sortedQuestions = sortWithPinned(baseFilteredQuestions);
-  const filteredQuestions = filterHidden(sortedQuestions);
+  //const filteredQuestions = filterHidden(sortedQuestions);
 
   // FIXED: Use sorted and filtered questions for bulk select
   const { 
