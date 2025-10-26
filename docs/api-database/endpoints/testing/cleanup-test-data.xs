@@ -13,7 +13,7 @@ query "internal/test-data/cleanup" verb=DELETE {
     }
 
     db.query question {
-      where = $db.question.stripe_payment_intent_id like "pi_test_%"
+      where = $db.question.payment_intent_id like "pi_test_%"
       return = {type: "list"}
     } as $test_questions
 

@@ -156,13 +156,13 @@ XANO_INTERNAL_API_KEY=your_internal_api_key_here
 
 **Function Stack:**
 1. Validate API key
-2. Query all test questions (`stripe_payment_intent_id LIKE 'pi_test_%'`)
+2. Query all test questions (`payment_intent_id LIKE 'pi_test_%'`)
 3. For each test question:
    - Query and delete answers
    - Delete answer media assets
    - Delete question media asset
    - Delete payment record
-4. Bulk delete all test questions
+4. Delete all test questions
 5. Return deletion counts
 
 **Key Security Features:**
@@ -333,7 +333,7 @@ This is normal if:
 The cleanup query uses a specific pattern match:
 
 ```sql
-WHERE stripe_payment_intent_id LIKE 'pi_test_%'
+WHERE payment_intent_id LIKE 'pi_test_%'
 ```
 
 Real Stripe payment intents **never** match this pattern:
