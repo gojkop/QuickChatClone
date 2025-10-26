@@ -4,9 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { useProfile } from '@/context/ProfileContext';
 import { useQuestionsQuery } from '@/hooks/useQuestionsQuery';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
+import BentoGrid from '@/components/dashboardv2/layout/BentoGrid';
+import BentoCard from '@/components/dashboardv2/layout/BentoCard';
 import WelcomeHero from '@/components/dashboardv2/overview/WelcomeHero';
-import MetricsGrid from '@/components/dashboardv2/metrics/MetricsGrid';
-import ActionRequired from '@/components/dashboardv2/overview/ActionRequired';
+import FeaturedRevenueCard from '@/components/dashboardv2/metrics/FeaturedRevenueCard';
+import CompactMetricCard from '@/components/dashboardv2/metrics/CompactMetricCard';
+import QuickActionsWidget from '@/components/dashboardv2/widgets/QuickActionsWidget';
+import SLACountdownWidget from '@/components/dashboardv2/widgets/SLACountdownWidget';
 import RecentActivity from '@/components/dashboardv2/overview/RecentActivity';
 import PerformanceSnapshot from '@/components/dashboardv2/overview/PerformanceSnapshot';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
@@ -15,6 +19,8 @@ import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
+import { Clock, Star, MessageSquare } from 'lucide-react';
+import { formatDuration } from '@/utils/dashboardv2/metricsCalculator';
 
 function ExpertDashboardPageV2() {
   const navigate = useNavigate();
@@ -44,8 +50,6 @@ function ExpertDashboardPageV2() {
   const marketingEnabled = marketingFeature.isEnabled;
 
   const questions = questionsData?.questions || [];
-  const pagination = questionsData?.pagination;
-
   const metrics = useMetrics(questions);
 
   const dashboardData = useMemo(() => ({
@@ -122,37 +126,97 @@ function ExpertDashboardPageV2() {
         {/* Welcome Hero - Compact */}
         <WelcomeHero />
 
-        {/* Metrics Grid - Compact with fixed sparklines */}
-        <MetricsGrid metrics={metrics} />
+        {/* BENTO GRID LAYOUT */}
+        <BentoGrid className="mb-4">
+          {/* Row 1: Featured Revenue (2x2) + 4 Small Metrics (1x1 each) */}
+          
+          {/* Featured Revenue Card - HERO (2x2) */}
+          <BentoCard size="large" hoverable>
+            <FeaturedRevenueCard metrics={metrics} />
+          </BentoCard>
 
-        {/* Action Required - Only shows if urgent */}
-        {dashboardData.urgentCount > 0 && (
-          <div className="mb-4">
-            <ActionRequired 
-              urgentCount={dashboardData.urgentCount}
-              pendingOffersCount={0}
+          {/* Small Metric: Response Time (1x1) */}
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')}>
+            <CompactMetricCard
+              label="Avg Response"
+              value={formatDuration(metrics.avgResponseTime)}
+              icon={Clock}
+              color="indigo"
+              trend={-12.5}
             />
-          </div>
-        )}
+          </BentoCard>
 
-        {/* Two Column Layout - Compact */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-          <RecentActivity questions={questions} />
-          <PerformanceSnapshot />
-        </div>
-
-        {/* Marketing Preview - Compact */}
-        {marketingEnabled && (
-          <div className="mb-4">
-            <MarketingPreview 
-              isEnabled={marketingEnabled}
-              campaigns={campaigns}
-              trafficSources={trafficSources}
-              insights={insights}
-              onNavigate={() => navigate('/dashboard/marketing')}
+          {/* Small Metric: Rating (1x1) */}
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')}>
+            <CompactMetricCard
+              label="Rating"
+              value={`${metrics.avgRating.toFixed(1)}⭐`}
+              icon={Star}
+              color="purple"
+              trend={5.2}
             />
-          </div>
-        )}
+          </BentoCard>
+
+          {/* Small Metric: Pending (1x1) - Row 2 position */}
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/inbox')}>
+            <CompactMetricCard
+              label="Pending"
+              value={metrics.pendingCount}
+              icon={MessageSquare}
+              color="orange"
+            />
+          </BentoCard>
+
+          {/* Small Metric: Answered (1x1) - Row 2 position */}
+          <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')}>
+            <CompactMetricCard
+              label="Answered"
+              value={metrics.answeredCount}
+              icon={MessageSquare}
+              color="green"
+            />
+          </BentoCard>
+
+          {/* Row 2: Quick Actions (1x2) + Recent Activity (2x2) + SLA Widget (1x2) */}
+          
+          {/* Quick Actions Widget (1x2) */}
+          <BentoCard size="tall">
+            <QuickActionsWidget pendingCount={dashboardData.pendingCount} />
+          </BentoCard>
+
+          {/* Recent Activity (2x2) */}
+          <BentoCard size="large">
+            <RecentActivity questions={questions} />
+          </BentoCard>
+
+          {/* SLA Countdown Widget (1x2) */}
+          <BentoCard size="tall">
+            <SLACountdownWidget 
+              questions={questions} 
+              slaHours={expertProfile?.sla_hours || 24}
+            />
+          </BentoCard>
+
+          {/* Row 3: Performance (2x1) + Marketing (2x1) */}
+          
+          {/* Performance Snapshot (2x1) */}
+          <BentoCard size="wide">
+            <PerformanceSnapshot />
+          </BentoCard>
+
+          {/* Marketing Preview (2x1) */}
+          {marketingEnabled && (
+            <BentoCard size="wide" hoverable onClick={() => navigate('/dashboard/marketing')}>
+              <MarketingPreview 
+                isEnabled={marketingEnabled}
+                campaigns={campaigns}
+                trafficSources={trafficSources}
+                insights={insights}
+                onNavigate={() => navigate('/dashboard/marketing')}
+              />
+            </BentoCard>
+          )}
+        </BentoGrid>
 
         {/* Bottom spacing for mobile nav */}
         <div className="h-32 lg:h-0" />

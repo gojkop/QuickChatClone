@@ -10,7 +10,13 @@ function QuestionListView({
   activeQuestionId,
   onSelectQuestion,
   onQuestionClick,
-  onSelectAll
+  onSelectAll,
+  // ADDED: Pin-related props
+  pinnedIds,
+  onTogglePin,
+  isPinned,
+  // ADDED: Preview-related props
+  onCopyLink
 }) {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -68,6 +74,11 @@ function QuestionListView({
           onSelectQuestion={onSelectQuestion}
           onQuestionClick={onQuestionClick}
           onSelectAll={handleSelectAll}
+          // ADDED: Pass pin props down to table
+          pinnedIds={pinnedIds}
+          onTogglePin={onTogglePin}
+          isPinned={isPinned}
+          onCopyLink={onCopyLink}
         />
       )}
     </div>
