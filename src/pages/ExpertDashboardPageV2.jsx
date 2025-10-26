@@ -10,6 +10,9 @@ import RecentActivity from '@/components/dashboardv2/overview/RecentActivity';
 import PerformanceSnapshot from '@/components/dashboardv2/overview/PerformanceSnapshot';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
+import { useFeature } from '@/hooks/useFeature';
+import { useMarketing } from '@/hooks/useMarketing';
+import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
 
 /**
  * OPTIMIZED Expert Dashboard V2
@@ -41,6 +44,16 @@ function ExpertDashboardPageV2() {
     error: questionsError,
     refetch: refetchQuestions
   } = useQuestionsQuery({ page: 1, perPage: 10 });
+
+  // Marketing data
+const { 
+  campaigns, 
+  trafficSources, 
+  insights 
+} = useMarketing();
+
+const marketingFeature = useFeature('marketing_module');
+const marketingEnabled = marketingFeature.isEnabled;
 
   const questions = questionsData?.questions || [];
   const pagination = questionsData?.pagination;
@@ -139,6 +152,17 @@ function ExpertDashboardPageV2() {
           pendingOffersCount={0}
         />
       )}
+
+      {/* Marketing Preview - Full Width */}
+{marketingEnabled && (
+  <MarketingPreview 
+    isEnabled={marketingEnabled}
+    campaigns={campaigns}
+    trafficSources={trafficSources}
+    insights={insights}
+    onNavigate={() => navigate('/dashboard/marketing')}
+  />
+)}
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

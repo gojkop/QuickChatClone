@@ -58,7 +58,7 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
 
         <NavSection title="Business" collapsed={collapsed}>
           <NavItem
-            to="/expert/marketing"
+            to="/dashboard/marketing"
             icon={<PieChart size={20} />}
             label="Marketing"
             badge={{ count: 'New', variant: 'success' }}

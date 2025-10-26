@@ -31,9 +31,11 @@ import CookieConsentBanner from '@/components/common/CookieConsentBanner';
 import AskQuestionPageV2 from '@/pages/AskQuestionPageV2';
 import ExpertDashboardPageV2 from '@/pages/ExpertDashboardPageV2';
 import ExpertInboxPage from '@/pages/ExpertInboxPage';
+import ExpertInboxPageV2 from '@/pages/ExpertInboxPageV2';
 import ExpertAnalyticsPage from '@/pages/ExpertAnalyticsPage';
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
 import AccountSettingsPage from '@/pages/AccountSettingsPage';
+import MarketingDashboardPage from '@/pages/MarketingDashboardPage';
 
 // Import Common Components
 import Navbar from '@/components/common/Navbar';
@@ -132,15 +134,15 @@ const AppLayout = () => {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/dashboard/inbox" 
+          <Route
+            path="/dashboard/inbox"
             element={
               <ProtectedRoute>
                 <ProfileProvider>
-                  <ExpertInboxPage />
+                  <ExpertInboxPageV2 />
                 </ProfileProvider>
               </ProtectedRoute>
-            } 
+            }
           />
           <Route 
             path="/dashboard/analytics" 
@@ -172,7 +174,17 @@ const AppLayout = () => {
               </ProtectedRoute>
             } 
           />
-
+{/* Marketing Dashboard - New v2 */}
+<Route 
+  path="/dashboard/marketing" 
+  element={
+    <ProtectedRoute>
+      <ProfileProvider>
+        <MarketingDashboardPage />
+      </ProfileProvider>
+    </ProtectedRoute>
+  } 
+/>
           {/* Marketing (legacy - no ProfileProvider needed) */}
           <Route 
             path="/expert/marketing" 

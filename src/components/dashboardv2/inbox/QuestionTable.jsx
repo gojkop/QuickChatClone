@@ -1,86 +1,57 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageSquare, User, Clock, CheckCircle, Video, Mic, GripVertical } from 'lucide-react';
-import SLAIndicator from './SLAIndicator';
+// src/components/dashboardv2/inbox/QuestionTable.jsx
+import React, { useState, useEffect } from 'react';
+import { Video, Mic, FileText, Calendar } from 'lucide-react';
 import PriorityBadge from './PriorityBadge';
-import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
+import SLAIndicator from './SLAIndicator';
 
-// Column width configuration (in percentages of container width)
-// These percentages allow the table to be fully responsive
-const DEFAULT_COLUMN_WIDTHS = {
-  checkbox: 5,    // ~40-50px on most screens
-  question: 44,   // Largest column for question text
-  asker: 30,      // Room for name + email
-  price: 12,      // Price display
-  time: 9,        // Relative time
-};
-
-// Throttle utility for better performance
-const throttle = (fn, ms) => {
-  let lastCall = 0;
-  return (...args) => {
-    const now = Date.now();
-    if (now - lastCall >= ms) {
-      lastCall = now;
-      fn(...args);
-    }
-  };
-};
-
-function QuestionTable({ 
-  questions, 
+function QuestionTable({
+  questions = [],
   selectedQuestions = [],
-  activeQuestionId,
+  activeQuestionId = null,
   onSelectQuestion,
   onQuestionClick,
-  onSelectAll
+  onSelectAll,
 }) {
-  const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
-  const [resizing, setResizing] = useState(null);
-  const tableRef = useRef(null);
+  const [columnWidths, setColumnWidths] = useState({
+    checkbox: 48,
+    question: 44,
+    asker: 30,
+    price: 12,
+    time: 9,
+  });
 
-  // Throttled resize handler for better performance (now works with percentages)
-  const handleResize = useCallback(
-    throttle((clientX) => {
-      if (!resizing || !tableRef.current) return;
-
-      const column = resizing.column;
-      const startX = resizing.startX;
-      const startWidth = resizing.startWidth;
-      const tableWidth = tableRef.current.offsetWidth;
-
-      // Calculate pixel difference and convert to percentage
-      const diff = clientX - startX;
-      const percentDiff = (diff / tableWidth) * 100;
-      const newWidth = startWidth + percentDiff;
-
-      // Minimum widths in percentage (roughly equivalent to 60-80px on 800px container)
-      const minWidths = {
-        checkbox: 4,
-        question: 15,
-        asker: 15,
-        price: 8,
-        time: 6
-      };
-
-      const finalWidth = Math.max(minWidths[column] || 5, newWidth);
-
-      setColumnWidths(prev => ({
-        ...prev,
-        [column]: finalWidth
-      }));
-    }, 16), // ~60fps
-    [resizing]
-  );
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizingColumn, setResizingColumn] = useState(null);
 
   useEffect(() => {
-    if (!resizing) return;
+    if (!isResizing) return;
 
     const handleMouseMove = (e) => {
-      handleResize(e.clientX);
+      if (!resizingColumn) return;
+
+      const table = document.querySelector('.question-table-container');
+      if (!table) return;
+
+      const tableRect = table.getBoundingClientRect();
+      const relativeX = e.clientX - tableRect.left;
+      const percentage = (relativeX / tableRect.width) * 100;
+
+      setColumnWidths((prev) => {
+        const newWidths = { ...prev };
+        
+        if (resizingColumn === 'question') {
+          newWidths.question = Math.max(20, Math.min(60, percentage));
+        } else if (resizingColumn === 'asker') {
+          newWidths.asker = Math.max(15, Math.min(40, percentage));
+        }
+
+        return newWidths;
+      });
     };
 
     const handleMouseUp = () => {
-      setResizing(null);
+      setIsResizing(false);
+      setResizingColumn(null);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -90,16 +61,63 @@ function QuestionTable({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [resizing, handleResize]);
+  }, [isResizing, resizingColumn]);
 
-  const startResize = (column, e) => {
+  const startResize = (column) => (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    setResizing({
-      column,
-      startX: e.clientX,
-      startWidth: columnWidths[column]
-    });
+    setIsResizing(true);
+    setResizingColumn(column);
+  };
+
+  const isAllSelected =
+    questions.length > 0 && selectedQuestions.length === questions.length;
+
+  const isSomeSelected =
+    selectedQuestions.length > 0 && selectedQuestions.length < questions.length;
+
+  const getMediaIcon = (question) => {
+    const segments = question.recording_segments || question.media_asset || [];
+    const hasVideo = segments.some(
+      (s) =>
+        s.metadata?.mode === 'video' ||
+        s.metadata?.mode === 'screen' ||
+        s.metadata?.mode === 'screen-camera'
+    );
+    const hasAudio = segments.some((s) => s.metadata?.mode === 'audio');
+
+    if (hasVideo) return <Video size={14} className="text-indigo-600" />;
+    if (hasAudio) return <Mic size={14} className="text-indigo-600" />;
+    return <FileText size={14} className="text-gray-400" />;
+  };
+
+  const getQuestionTitle = (question) => {
+    const titleText = question.title || question.question_text;
+
+    if (titleText?.trim()) {
+      return titleText;
+    }
+
+    const detailsText = question.text || question.question_details;
+    if (detailsText?.trim()) {
+      const firstLine = detailsText.split('\n')[0].trim();
+      return firstLine.length > 100
+        ? firstLine.substring(0, 100) + '...'
+        : firstLine;
+    }
+
+    const segments = question.recording_segments || question.media_asset || [];
+    const hasVideo = segments.some(
+      (s) =>
+        s.metadata?.mode === 'video' ||
+        s.metadata?.mode === 'screen' ||
+        s.metadata?.mode === 'screen-camera'
+    );
+    const hasAudio = segments.some((s) => s.metadata?.mode === 'audio');
+
+    if (hasVideo) return 'Video Question';
+    if (hasAudio) return 'Audio Question';
+
+    return `Question #${question.id}`;
   };
 
   const getRelativeTime = (timestamp) => {
@@ -107,256 +125,208 @@ function QuestionTable({
     const now = Date.now() / 1000;
     const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
     const diff = now - createdAt;
-    
+
     if (diff < 60) return 'now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-    return `${Math.floor(diff / 86400)}d`;
+    const days = Math.floor(diff / 86400);
+    return `${days}d`;
   };
 
-  const isAnswered = (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
+  const isAnswered =
+    (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
-  const getQuestionTitle = (question) => {
-    const titleText = question.title || question.question_text;
-    
-    if (titleText?.trim()) {
-      return titleText;
-    }
-    
-    const detailsText = question.text || question.question_details;
-    if (detailsText?.trim()) {
-      const firstLine = detailsText.split('\n')[0].trim();
-      return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
-    }
-    
-    const hasVideo = question.recording_segments?.some(s => 
-      s.metadata?.mode === 'video' || s.metadata?.mode === 'screen' || s.metadata?.mode === 'screen-camera'
+  if (questions.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-gray-500 p-8">
+        <Calendar size={48} className="mb-4 text-gray-300" />
+        <p className="text-lg font-medium text-gray-700">No questions found</p>
+        <p className="text-sm text-gray-500 mt-1">
+          Try adjusting your filters
+        </p>
+      </div>
     );
-    const hasAudio = question.recording_segments?.some(s => s.metadata?.mode === 'audio');
-    
-    if (hasVideo) return 'Video Question';
-    if (hasAudio) return 'Audio Question';
-    
-    return 'Question';
-  };
-
-  const getMediaIcon = (question) => {
-    if (!question.recording_segments || question.recording_segments.length === 0) {
-      return null;
-    }
-    
-    const hasVideo = question.recording_segments.some(s => 
-      s.metadata?.mode === 'video' || s.metadata?.mode === 'screen' || s.metadata?.mode === 'screen-camera'
-    );
-    const hasAudio = question.recording_segments.some(s => s.metadata?.mode === 'audio');
-    
-    if (hasVideo) return <Video size={13} className="text-indigo-600 flex-shrink-0" />;
-    if (hasAudio) return <Mic size={13} className="text-indigo-600 flex-shrink-0" />;
-    return <MessageSquare size={13} className="text-indigo-600 flex-shrink-0" />;
-  };
-
-  const getAskerName = (question) => {
-    return question.user_name || question.name || 'Anonymous';
-  };
-
-  const getAskerEmail = (question) => {
-    return question.user_email || question.email || '';
-  };
-
-  const allSelected = questions.length > 0 && selectedQuestions.length === questions.length;
-  const someSelected = selectedQuestions.length > 0 && !allSelected;
-
-  // Calculate grid template columns (responsive percentages)
-  const gridTemplateColumns = `${columnWidths.checkbox}% ${columnWidths.question}% ${columnWidths.asker}% ${columnWidths.price}% ${columnWidths.time}%`;
+  }
 
   return (
-    <div className="flex flex-col h-full w-full" ref={tableRef}>
-      {/* Debug Banner - RESPONSIVE VERSION */}
-      <div className="bg-green-500 text-white text-xs font-bold text-center py-1">
-        ✓ RESPONSIVE v4.0 - Table now uses flexible % widths (Email + Throttle + Resize + No zeros)
-      </div>
-
-      {/* Table Header - Sticky */}
-      <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
-        <div 
-          className="grid gap-2 px-3 py-2.5 text-[11px] font-semibold text-gray-600 uppercase tracking-wide"
-          style={{ gridTemplateColumns }}
+    <div className="h-full flex flex-col bg-white overflow-hidden question-table-container">
+      {/* CHANGED: Added overflow-x-auto and min-w-0 */}
+      <div className="flex-1 overflow-y-auto overflow-x-auto min-w-0">
+        {/* CHANGED: Added min-w-[800px] to ensure table doesn't get too narrow */}
+        <table
+          className="w-full min-w-[800px]"
+          style={{
+            borderCollapse: 'separate',
+            borderSpacing: 0,
+          }}
         >
-          {/* Checkbox Column */}
-          <div className="flex items-center justify-center relative">
-            <input 
-              type="checkbox" 
-              checked={allSelected}
-              ref={input => {
-                if (input) {
-                  input.indeterminate = someSelected;
-                }
-              }}
-              onChange={() => onSelectAll && onSelectAll()}
-              className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-            />
-          </div>
-
-          {/* Question Column */}
-          <div className="relative flex items-center pr-2">
-            <span>Question</span>
-            <button
-              onMouseDown={(e) => startResize('question', e)}
-              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize column"
-            >
-              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
-            </button>
-          </div>
-
-          {/* Asker Column */}
-          <div className="relative flex items-center pr-2">
-            <span>Asker</span>
-            <button
-              onMouseDown={(e) => startResize('asker', e)}
-              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize column"
-            >
-              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
-            </button>
-          </div>
-
-          {/* Price Column */}
-          <div className="relative flex items-center justify-end pr-2">
-            <span>Price</span>
-            <button
-              onMouseDown={(e) => startResize('price', e)}
-              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize column"
-            >
-              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
-            </button>
-          </div>
-
-          {/* Time Column */}
-          <div className="relative flex items-center justify-end pr-2">
-            <span>Time</span>
-            <button
-              onMouseDown={(e) => startResize('time', e)}
-              className="absolute right-0 top-0 bottom-0 w-6 cursor-col-resize flex items-center justify-center hover:bg-indigo-100 group transition-colors"
-              title="Drag to resize column"
-            >
-              <GripVertical size={14} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Table Body - Scrollable */}
-      <div className="flex-1 overflow-y-auto w-full">
-        {questions.map((question) => {
-          const answered = isAnswered(question);
-          const isActive = question.id === activeQuestionId;
-          const isSelected = selectedQuestions.includes(question.id);
-          const title = getQuestionTitle(question);
-          const mediaIcon = getMediaIcon(question);
-          const askerName = getAskerName(question);
-          const askerEmail = getAskerEmail(question);
-
-          return (
-            <div
-              key={question.id}
-              onClick={() => onQuestionClick(question)}
-              className={`
-                grid gap-2 px-3 py-2.5
-                border-b border-gray-200 cursor-pointer
-                transition-all duration-150
-                hover:bg-indigo-50/50
-                ${isActive ? 'bg-indigo-50 border-l-4 border-l-indigo-600 pl-[10px]' : ''}
-                ${isSelected && !isActive ? 'bg-blue-50/50' : ''}
-                ${answered ? 'opacity-60' : ''}
-              `}
-              style={{ gridTemplateColumns }}
-            >
-              {/* Checkbox */}
-              <div className="flex items-center justify-center">
+          <thead className="bg-gray-50 sticky top-0 z-10 border-b border-gray-200">
+            <tr>
+              {/* Checkbox Column */}
+              <th className="w-12 px-3 py-3 text-left">
                 <input
                   type="checkbox"
-                  checked={isSelected}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    onSelectQuestion(question.id);
+                  checked={isAllSelected}
+                  ref={(input) => {
+                    if (input) {
+                      input.indeterminate = isSomeSelected;
+                    }
                   }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  onChange={onSelectAll}
+                  className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
-              </div>
+              </th>
 
-              {/* Question Title + Q-ID + Badges */}
-              <div className="flex items-center gap-2 min-w-0 overflow-hidden">
-                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                  {mediaIcon}
-                  <div className="flex items-baseline gap-1.5 min-w-0 flex-1">
-                    <span className={`
-                      text-[13px] leading-tight truncate
-                      ${answered ? 'text-gray-600' : 'text-gray-900 font-medium'}
-                    `}>
-                      {title}
-                    </span>
-                    <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
-                      Q-{question.id}
-                    </span>
-                  </div>
+              {/* Question Column */}
+              <th
+                className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group"
+                style={{ width: `${columnWidths.question}%` }}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Question</span>
                 </div>
-                
-                {/* Inline badges */}
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <PriorityBadge question={question} />
-                  
-                  {answered && (
-                    <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-green-100 text-green-700">
-                      <CheckCircle size={10} />
-                      <span className="text-[10px] font-semibold">Done</span>
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-400 group-hover:bg-indigo-300"
+                  onMouseDown={startResize('question')}
+                />
+              </th>
+
+              {/* Asker Column */}
+              <th
+                className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group"
+                style={{ width: `${columnWidths.asker}%` }}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Asker</span>
+                </div>
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-400 group-hover:bg-indigo-300"
+                  onMouseDown={startResize('asker')}
+                />
+              </th>
+
+              {/* Price Column */}
+              <th
+                className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
+                style={{ width: `${columnWidths.price}%` }}
+              >
+                Price
+              </th>
+
+              {/* Time Column */}
+              <th
+                className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
+                style={{ width: `${columnWidths.time}%` }}
+              >
+                Time
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="bg-white divide-y divide-gray-100">
+            {questions.map((question) => {
+              const isSelected = selectedQuestions.includes(question.id);
+              const isActive = activeQuestionId === question.id;
+              const answered = isAnswered(question);
+
+              return (
+                <tr
+                  key={question.id}
+                  onClick={(e) => {
+                    if (e.target.type !== 'checkbox') {
+                      onQuestionClick(question);
+                    }
+                  }}
+                  className={`
+                    transition-colors cursor-pointer border-l-4
+                    ${
+                      isActive
+                        ? 'bg-indigo-50 border-l-indigo-600'
+                        : isSelected
+                        ? 'bg-blue-50 border-l-blue-400'
+                        : 'border-l-transparent hover:bg-gray-50'
+                    }
+                    ${answered ? 'opacity-60' : ''}
+                  `}
+                >
+                  {/* Checkbox */}
+                  <td className="px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => onSelectQuestion(question.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    />
+                  </td>
+
+                  {/* Question */}
+                  <td className="px-3 py-3">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <div className="flex-shrink-0 mt-0.5">
+                        {getMediaIcon(question)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs text-gray-400 font-mono">
+                            Q-{question.id}
+                          </span>
+                          <PriorityBadge question={question} />
+                        </div>
+                        <p className="text-sm font-medium text-gray-900 line-clamp-2 break-words">
+                          {getQuestionTitle(question)}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  
-                  {!answered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
-                    <SLAIndicator question={question} compact={true} showLabel={false} />
-                  )}
-                </div>
-              </div>
+                  </td>
 
-              {/* Asker - Name + Email on separate lines */}
-              <div className="flex flex-col justify-center text-[11px] min-w-0 overflow-hidden" title={`${askerName}${askerEmail ? `\n${askerEmail}` : ''}`}>
-                <div className="flex items-center gap-1 truncate">
-                  <User size={10} className="flex-shrink-0 text-gray-400" />
-                  <span className="truncate font-medium text-gray-700">
-                    {askerName}
-                  </span>
-                </div>
-                {askerEmail && (
-                  <span className="truncate text-gray-500 ml-[14px] text-[10px]">
-                    {askerEmail}
-                  </span>
-                )}
-              </div>
+                  {/* Asker */}
+                  <td className="px-3 py-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {question.user_name || question.name || 'Anonymous'}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {question.user_email || question.email || ''}
+                      </p>
+                    </div>
+                  </td>
 
-              {/* Price */}
-              <div className={`
-                flex items-center justify-end text-[13px] font-bold overflow-hidden
-                ${answered ? 'text-gray-500' : 'text-green-700'}
-              `}>
-                {formatCurrency(question.price_cents)}
-              </div>
+                  {/* Price */}
+                  <td className="px-3 py-3">
+                    <span
+                      className={`text-sm font-bold whitespace-nowrap ${
+                        answered ? 'text-gray-500' : 'text-green-600'
+                      }`}
+                    >
+                      ${((question.price_cents || 0) / 100).toFixed(0)}
+                    </span>
+                  </td>
 
-              {/* Time */}
-              <div className="flex items-center justify-end gap-1 text-[11px] text-gray-500 overflow-hidden">
-                <Clock size={11} className="text-gray-400 flex-shrink-0" />
-                <span className="truncate">{getRelativeTime(question.created_at)}</span>
-              </div>
-            </div>
-          );
-        })}
+                  {/* Time */}
+                  <td className="px-3 py-3">
+                    <div className="flex flex-col gap-1">
+                      {!answered &&
+                      question.sla_hours_snapshot &&
+                      question.sla_hours_snapshot > 0 ? (
+                        <SLAIndicator question={question} compact={true} />
+                      ) : (
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          {getRelativeTime(question.created_at)}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {/* Resize Overlay */}
-      {resizing && (
-        <div className="fixed inset-0 z-50 cursor-col-resize bg-indigo-500/5" />
+      {/* Resize overlay */}
+      {isResizing && (
+        <div className="fixed inset-0 z-50 cursor-col-resize" />
       )}
     </div>
   );
