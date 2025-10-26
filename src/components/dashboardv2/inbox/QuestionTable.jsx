@@ -179,6 +179,7 @@ function QuestionTable({
       </div>
     );
   }
+console.log('🔄 QuestionTable rendering, hoveredQuestion:', hoveredQuestion?.id || 'none');
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden question-table-container">
