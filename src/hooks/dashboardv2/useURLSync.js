@@ -101,12 +101,14 @@ export const useURLSync = ({
   }, [location.hash, questions]);
 
   // Panel State → URL (debounced to avoid loops)
+  // FIXED: Use current pathname instead of hardcoded '/dashboard/inbox'
   const syncURL = (detailQuestionId, isAnswering) => {
     const expectedHash = generateHash(detailQuestionId, isAnswering);
     
     if (location.hash !== expectedHash) {
       lastSyncedHash.current = expectedHash;
-      navigate(`/dashboard/inbox${expectedHash}`, { replace: true });
+      // CHANGED: Use location.pathname to preserve current route
+      navigate(`${location.pathname}${expectedHash}`, { replace: true });
     }
   };
 

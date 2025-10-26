@@ -249,12 +249,12 @@ function QuestionTable({
                     ${answered ? 'opacity-60' : ''}
                   `}
                 >
-                  {/* Checkbox */}
+                  {/* Checkbox - FIXED: Pass event object */}
                   <td className="px-3 py-3">
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={() => onSelectQuestion(question.id)}
+                      onChange={(e) => onSelectQuestion(question, e)}
                       onClick={(e) => e.stopPropagation()}
                       className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                     />
