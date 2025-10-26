@@ -1,17 +1,16 @@
 // src/components/dashboardv2/inbox/QuestionDetailPanel.jsx
 import React, { useState } from 'react';
-import { X, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MoreVertical, MessageSquare, Mail, Video, Mic, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 
-// CHANGED: Added hideCloseButton prop
 function QuestionDetailPanel({ 
   question, 
   onClose, 
   onAnswer, 
   isMobile = false,
-  hideCloseButton = false  // NEW: Hide close buttons when in panel mode
+  hideCloseButton = false
 }) {
   const [showActions, setShowActions] = useState(false);
 
@@ -38,14 +37,12 @@ function QuestionDetailPanel({
   const mediaSegments = getMediaSegments();
   const attachments = getAttachments();
 
-  // Helper to get Cloudflare Stream video ID
   const getStreamVideoId = (url) => {
     if (!url) return null;
     const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
     return match ? match[1] : null;
   };
 
-  // Helper to get customer code
   const getCustomerCode = (url) => {
     if (!url) return null;
     const match = url.match(/https:\/\/(customer-[a-zA-Z0-9]+)\.cloudflarestream\.com/);
@@ -54,7 +51,6 @@ function QuestionDetailPanel({
 
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
-  // Helper to get question title
   const getQuestionTitle = (question) => {
     const titleText = question.title || question.question_text;
     
@@ -79,12 +75,10 @@ function QuestionDetailPanel({
     return `Question`;
   };
 
-  // Helper to get question details text
   const getQuestionDetails = (question) => {
     return question.text || question.question_details || '';
   };
 
-  // Helper to get asker info
   const getAskerName = (question) => {
     return question.user_name || question.name || 'Anonymous';
   };
@@ -140,51 +134,31 @@ function QuestionDetailPanel({
       h-full flex flex-col bg-white w-full overflow-hidden
       ${isMobile ? 'fixed inset-0 z-50' : ''}
     `}>
-      {/* Debug Banner - RESPONSIVE VERSION */}
-      <div className="bg-green-500 text-white text-xs font-bold text-center py-1">
-        ✓ RESPONSIVE v4.0 - DetailPanel FIXED (Price visible + No zeros + Layout fixed)
-      </div>
-
-      {/* Header - FIXED LAYOUT */}
-      <div className="flex-shrink-0 border-b border-gray-200 bg-white">
-        {/* Top Row: Title + Price + Close */}
+      {/* FIXED: Added pt-16 on mobile to avoid navbar overlap */}
+      <div className={`flex-shrink-0 border-b border-gray-200 bg-white ${isMobile ? 'pt-16' : ''}`}>
         <div className="p-3 lg:p-4">
           <div className="flex items-start justify-between gap-3">
-            {/* Left: Title only (mobile has back button) */}
+            {/* Left: Back Arrow + Title */}
             <div className="flex items-start gap-2 flex-1 min-w-0">
-              {/* CHANGED: Only show back button on mobile AND if not hiding close button */}
-              {isMobile && !hideCloseButton && (
-                <button
-                  onClick={onClose}
-                  className="flex-shrink-0 p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                  aria-label="Close"
-                >
-                  <X size={18} />
-                </button>
-              )}
+              {/* CHANGED: Always show back arrow, removed hideCloseButton condition */}
+              <button
+                onClick={onClose}
+                className="flex-shrink-0 p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Back to list"
+              >
+                <ArrowLeft size={18} />
+              </button>
               
               <h2 className="flex-1 text-base lg:text-lg font-bold text-gray-900 line-clamp-2 break-words">
                 {questionTitle}
               </h2>
             </div>
 
-            {/* Right: Price + Close (ALWAYS VISIBLE) */}
+            {/* Right: Price only (removed X button) */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className={`text-lg lg:text-xl font-black whitespace-nowrap ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
                 {formatCurrency(question.price_cents)}
               </div>
-              
-              {/* CHANGED: Only show desktop close if not hiding */}
-              {!isMobile && !hideCloseButton && (
-                <button
-                  onClick={onClose}
-                  className="flex-shrink-0 p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Close detail"
-                  aria-label="Close"
-                >
-                  <X size={18} />
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -425,45 +399,16 @@ function QuestionDetailPanel({
         </div>
       </div>
 
-      {/* Footer Actions - Fixed */}
+      {/* Footer Actions - Fixed - REMOVED THREE DOTS */}
       <div className="flex-shrink-0 p-3 lg:p-4 border-t border-gray-200 bg-gray-50">
         {!isAnswered ? (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onAnswer}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
-            >
-              <Play size={18} />
-              <span>Answer This Question</span>
-            </button>
-
-            <div className="relative">
-              <button
-                onClick={() => setShowActions(!showActions)}
-                className="px-3 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                aria-label="More actions"
-              >
-                <MoreVertical size={18} />
-              </button>
-
-              {showActions && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={() => setShowActions(false)}
-                  />
-                  <div className="absolute bottom-full right-0 mb-2 w-44 bg-white border border-gray-200 rounded-lg shadow-xl z-20">
-                    <button className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors rounded-t-lg">
-                      Hide Question
-                    </button>
-                    <button className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors text-red-600 rounded-b-lg">
-                      Decline & Refund
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+          <button
+            onClick={onAnswer}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
+          >
+            <Play size={18} />
+            <span>Answer This Question</span>
+          </button>
         ) : (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-sm text-gray-600">

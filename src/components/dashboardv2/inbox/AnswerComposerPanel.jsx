@@ -2,22 +2,11 @@
 // Answer composer panel for cascading layout
 
 import React, { useState } from 'react';
-import { X, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import AnswerRecorder from '@/components/dashboard/AnswerRecorder';
 import AnswerReviewModal from '@/components/dashboard/AnswerReviewModal';
 import AnswerSubmittedModal from '@/components/dashboard/AnswerSubmittedModal';
 
-/**
- * AnswerComposerPanel Component
- * Wraps the answer recording flow in a panel layout
- * Includes recording, review, and success states
- *
- * @param {Object} props
- * @param {Object} props.question - Question being answered
- * @param {Object} props.profile - Expert profile
- * @param {Function} props.onClose - Callback when closing the panel
- * @param {Function} props.onAnswerSubmitted - Callback after successful submission
- */
 function AnswerComposerPanel({
   question,
   profile,
@@ -29,31 +18,25 @@ function AnswerComposerPanel({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [submittedAnswerId, setSubmittedAnswerId] = useState(null);
 
-  // Handle when user clicks "Review Answer"
   const handleReady = (data) => {
     setAnswerData(data);
     setShowReviewModal(true);
   };
 
-  // Handle going back from review to editing
   const handleBackToEdit = () => {
     setShowReviewModal(false);
   };
 
-  // CHANGED: Auto-close success modal after 2 seconds
-  // Handle successful answer submission
   const handleAnswerSubmitted = (answerId) => {
     setSubmittedAnswerId(answerId);
     setShowReviewModal(false);
     setShowSuccessModal(true);
     
-    // Auto-close after 2 seconds
     setTimeout(() => {
       handleSuccessClose();
     }, 2000);
   };
 
-  // Handle closing success modal and returning to inbox
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
     onAnswerSubmitted?.();
@@ -70,33 +53,24 @@ function AnswerComposerPanel({
 
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Header */}
+      {/* Header - CHANGED: Only back arrow, removed X */}
       <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
-              aria-label="Close answer composer"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-gray-900 truncate">
-                Answer Question
-              </h2>
-              <p className="text-xs text-gray-500 truncate">
-                Q-{question.id} · ${(question.price_cents / 100).toFixed(2)}
-              </p>
-            </div>
-          </div>
+        <div className="px-4 py-3 flex items-center gap-3">
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0 ml-2"
-            aria-label="Close"
+            className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
+            aria-label="Back to question"
           >
-            <X size={18} />
+            <ArrowLeft size={18} />
           </button>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-semibold text-gray-900 truncate">
+              Answer Question
+            </h2>
+            <p className="text-xs text-gray-500 truncate">
+              Q-{question.id} · ${(question.price_cents / 100).toFixed(2)}
+            </p>
+          </div>
         </div>
       </div>
 

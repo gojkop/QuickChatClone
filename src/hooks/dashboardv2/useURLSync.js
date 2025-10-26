@@ -1,7 +1,7 @@
 // src/hooks/dashboardv2/useURLSync.js
 // URL synchronization for panel state with deep linking support
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 /**
@@ -47,13 +47,6 @@ const generateHash = (detailQuestionId, isAnswering) => {
 
 /**
  * Hook for syncing URL with panel state
- *
- * @param {Object} params
- * @param {Array} params.questions - List of questions
- * @param {Function} params.openPanel - Open panel function
- * @param {Function} params.closePanel - Close panel function
- * @param {Function} params.isPanelOpen - Check if panel is open
- * @param {Function} params.getPanelData - Get panel data
  */
 export const useURLSync = ({
   questions,
@@ -65,36 +58,54 @@ export const useURLSync = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isInitialMount = useRef(true);
+  const lastSyncedHash = useRef('');
 
-  // URL → Panel State (on mount and hash change)
+  // URL → Panel State (only on mount and when hash changes externally)
   useEffect(() => {
-    const hashState = parseHash(location.hash);
+    const currentHash = location.hash;
+    
+    // Skip if this is the same hash we just synced to avoid loops
+    if (currentHash === lastSyncedHash.current && !isInitialMount.current) {
+      return;
+    }
+
+    const hashState = parseHash(currentHash);
 
     if (hashState.detail && questions.length > 0) {
       const question = questions.find(q => q.id === hashState.detail);
 
       if (question) {
-        // Open detail panel
-        if (!isPanelOpen('detail') || getPanelData('detail')?.id !== question.id) {
+        const currentDetailId = getPanelData('detail')?.id;
+        
+        // Only open detail if it's not already open with the same question
+        if (currentDetailId !== question.id) {
           openPanel('detail', question);
         }
 
-        // Open answer panel if needed
+        // Only open answer if needed and not already open
         if (hashState.answer && !isPanelOpen('answer')) {
           openPanel('answer', question);
+        } else if (!hashState.answer && isPanelOpen('answer')) {
+          closePanel('answer');
         }
       }
     } else if (!hashState.detail) {
       // No hash, close all panels
-      closeAllPanels();
+      if (isPanelOpen('detail') || isPanelOpen('answer')) {
+        closeAllPanels();
+      }
     }
+
+    isInitialMount.current = false;
   }, [location.hash, questions]);
 
-  // Panel State → URL
+  // Panel State → URL (debounced to avoid loops)
   const syncURL = (detailQuestionId, isAnswering) => {
     const expectedHash = generateHash(detailQuestionId, isAnswering);
     
     if (location.hash !== expectedHash) {
+      lastSyncedHash.current = expectedHash;
       navigate(`/dashboard/inbox${expectedHash}`, { replace: true });
     }
   };
