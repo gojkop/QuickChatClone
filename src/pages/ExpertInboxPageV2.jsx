@@ -42,47 +42,46 @@ function ExpertInboxPageV2() {
 
 
   const metrics = useMetrics(questions);
-  const {
-    filters,
-    updateFilter,
-    filteredQuestions: baseFilteredQuestions,
-    selectedQuestions: legacySelected,
-    toggleSelectQuestion: legacyToggle,
-    selectAll: legacySelectAll,
-    clearSelection: legacyClear,
-    filteredCount,
-  } = useInbox(questions);
+const {
+  filters,
+  updateFilter,
+  filteredQuestions: baseFilteredQuestions,
+  selectedQuestions: legacySelected,
+  toggleSelectQuestion: legacyToggle,
+  selectAll: legacySelectAll,
+  clearSelection: legacyClear,
+  filteredCount,
+} = useInbox(questions);
 
-  // New Phase 3 hooks
-  const { toasts, showToast, hideToast, success, error, info } = useToast();
-  const { pinnedIds, togglePin, isPinned, sortWithPinned } = usePinnedQuestions();
-  const { undoStack, pushUndo, executeUndo } = useUndoStack();
-  const { 
-    selectedIds,
-    toggleSelect,
-    selectAll,
-    clearSelection,
-    selectedCount
-  } = useBulkSelect(baseFilteredQuestions);
+// New Phase 3 hooks
+const { toasts, showToast, hideToast, success, error, info } = useToast();
+const { pinnedIds, togglePin, isPinned, sortWithPinned } = usePinnedQuestions();
+const { undoStack, pushUndo, executeUndo } = useUndoStack();
 
-  // Panel stack management
-  const {
-    panels,
-    openPanel,
-    closePanel,
-    closeTopPanel,
-    closeAllPanels,
-    isPanelOpen,
-    getPanelData,
-    updatePanelData,
-    screenWidth
-  } = usePanelStack();
+// MOVED: Sort questions BEFORE initializing useBulkSelect (line moved from 85)
+const filteredQuestions = sortWithPinned(baseFilteredQuestions);
 
-  const totalCount = pagination?.total || questions.length;
-  const isMobile = screenWidth < 768;
+// FIXED: Use filteredQuestions instead of baseFilteredQuestions
+const { 
+  selectedIds,
+  toggleSelect,
+  selectAll,
+  clearSelection,
+  selectedCount
+} = useBulkSelect(filteredQuestions);
 
-  // Sort questions with pinned ones first
-  const filteredQuestions = sortWithPinned(baseFilteredQuestions);
+// Panel stack management (continue with existing code)
+const {
+  panels,
+  openPanel,
+  closePanel,
+  closeTopPanel,
+  closeAllPanels,
+  isPanelOpen,
+  getPanelData,
+  updatePanelData,
+  screenWidth
+} = usePanelStack();
 
   // URL synchronization
   const { syncURL } = useURLSync({
