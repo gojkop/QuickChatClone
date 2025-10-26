@@ -174,18 +174,18 @@ function ExpertInboxPageV2() {
   const enrichQuestionsWithMedia = async (questions) => {
     if (!questions || questions.length === 0) return questions;
 
-    // Collect all unique media_asset_ids
+    // Collect all unique media_asset_ids (filter out 0, null, undefined)
     const mediaAssetIds = [...new Set(
       questions
         .map(q => q.media_asset_id)
-        .filter(id => id != null && id !== undefined)
+        .filter(id => id != null && id !== undefined && id !== 0 && id > 0)
     )];
 
     if (mediaAssetIds.length === 0) {
       return questions;
     }
 
-    console.log(`📊 Fetching ${mediaAssetIds.length} media assets`);
+    console.log(`📊 Fetching ${mediaAssetIds.length} valid media assets`);
 
     // Fetch all media assets in parallel
     const mediaAssetPromises = mediaAssetIds.map(id =>
