@@ -30,13 +30,40 @@ export function usePayment() {
 
   /**
    * Create a payment intent
+   * @param {Object} params
+   * @param {number} params.amount - Amount in cents
+   * @param {string} params.currency - Currency code (default: 'usd')
+   * @param {string} params.description - Payment description
+   * @param {Object} params.metadata - Additional metadata
+   * @param {string} params.captureMethod - 'automatic' or 'manual'
+   * @param {string} params.expertHandle - Expert handle (REQUIRED for security)
+   * @param {string} params.tierType - 'quick_consult' or 'deep_dive' (REQUIRED for security)
    */
-  const createPaymentIntent = useCallback(async ({ amount, currency = 'usd', description, metadata = {}, captureMethod = 'automatic' }) => {
+  const createPaymentIntent = useCallback(async ({
+    amount,
+    currency = 'usd',
+    description,
+    metadata = {},
+    captureMethod = 'automatic',
+    expertHandle,
+    tierType
+  }) => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Validate required fields
+      if (!expertHandle) {
+        throw new Error('Expert handle is required for payment intent creation');
+      }
+
+      if (!tierType || !['quick_consult', 'deep_dive'].includes(tierType)) {
+        throw new Error('Valid tier type is required (quick_consult or deep_dive)');
+      }
+
       console.log(`💳 Creating payment intent: $${(amount / 100).toFixed(2)}`);
+      console.log(`   Expert: ${expertHandle}`);
+      console.log(`   Tier: ${tierType}`);
       console.log(`   Stripe enabled: ${stripeEnabled}`);
       console.log(`   Capture method: ${captureMethod}`);
 
@@ -51,7 +78,9 @@ export function usePayment() {
           currency,
           description,
           metadata,
-          captureMethod
+          captureMethod,
+          expertHandle,
+          tierType
         })
       });
 

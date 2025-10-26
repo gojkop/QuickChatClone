@@ -1,0 +1,8 @@
+# Ignore .env file (contains sensitive tokens)
+.env
+
+# Ignore all log files
+logs/*.log
+
+# Keep the logs directory structure
+!logs/.gitignore

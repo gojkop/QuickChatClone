@@ -2,10 +2,17 @@
 // Accept a Deep Dive offer and capture the payment
 
 import { capturePaymentIntent, findPaymentIntentByQuestionId } from './lib/stripe.js';
+import { rateLimit } from './lib/rate-limit.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Apply rate limiting: 10 accepts per minute per IP
+  const rateLimitResult = await applyRateLimit(req, res);
+  if (!rateLimitResult.allowed) {
+    return; // Response already sent by rate limiter
   }
 
   try {
@@ -106,4 +113,22 @@ export default async function handler(req, res) {
       error: error.message || 'Failed to accept offer'
     });
   }
+}
+
+/**
+ * Apply rate limiting to the request
+ */
+async function applyRateLimit(req, res) {
+  const limiter = rateLimit({
+    limit: 10, // 10 requests
+    windowMs: 60000, // per minute
+    keyPrefix: 'offer-accept'
+  });
+
+  let allowed = true;
+  await limiter(req, res, () => {
+    allowed = true;
+  });
+
+  return { allowed };
 }

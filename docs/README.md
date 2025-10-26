@@ -2,7 +2,7 @@
 
 > Complete technical documentation for the QuickChat (mindPick) platform
 
-**Last Updated:** October 16, 2025
+**Last Updated:** October 26, 2025
 
 --- 
 
@@ -11,6 +11,7 @@
 - [Getting Started](#getting-started)
 - [Architecture](#architecture)
 - [Features](#features)
+- [Testing](#testing)
 - [Development](#development)
 - [API Reference](#api-reference)
 - [Troubleshooting](#troubleshooting)
@@ -52,10 +53,17 @@ QuickChat (mindPick) is a video-based Q&A platform connecting askers with expert
 
 | Document | Description |
 |----------|-------------|
-| [`xano-endpoints.md`](./xano-endpoints.md) | Public API endpoints |
-| [`xano-internal-endpoints.md`](./xano-internal-endpoints.md) | Internal/admin endpoints |
-| [`xano-delete-account-implementation.md`](./xano-delete-account-implementation.md) | Account deletion flow |
-| [`XANO-LAMBDA-TROUBLESHOOTING.md`](./XANO-LAMBDA-TROUBLESHOOTING.md) | Lambda function debugging |
+| [`api-database/README.md`](./api-database/README.md) | Complete API & Database documentation index |
+| [`api-database/endpoints/README.md`](./api-database/endpoints/README.md) | Xano endpoint implementations (organized by feature) |
+| [`api-database/security/README.md`](./api-database/security/README.md) | Security audits, reviews, and fixes |
+| [`api-database/guides/README.md`](./api-database/guides/README.md) | Implementation guides and troubleshooting |
+| [`api-database/migrations/README.md`](./api-database/migrations/README.md) | Database migration documentation |
+
+**Quick Links:**
+- [Xano Endpoints Reference](./api-database/guides/xano-endpoints.md) - Complete API endpoint list
+- [Internal Endpoints](./api-database/guides/xano-internal-endpoints.md) - Internal/cron job endpoints
+- [Lambda Troubleshooting](./api-database/guides/XANO-LAMBDA-TROUBLESHOOTING.md) - Common Xano issues
+- [Security Audit (Oct 2025)](./api-database/security/ENDPOINT-AUDIT-OCT-2025.md) - Current security status
 
 ---
 
@@ -145,6 +153,45 @@ QuickChat (mindPick) is a video-based Q&A platform connecting askers with expert
 
 ---
 
+## 🧪 Testing
+
+### Security Test Suite
+
+| Document | Description |
+|----------|-------------|
+| [`testing/README.md`](./testing/README.md) | Main testing documentation index |
+| [`testing/SECURITY-VALIDATION-GUIDE.md`](./testing/SECURITY-VALIDATION-GUIDE.md) | Complete security test suite documentation |
+| [`testing/XANO-MANUAL-TESTING.md`](./testing/XANO-MANUAL-TESTING.md) | Manual testing payloads for Xano Run & Debug |
+| [`testing/BEST-PRACTICES.md`](./testing/BEST-PRACTICES.md) | Testing best practices and guidelines |
+
+**Status:** ✅ Production Ready (October 26, 2025)
+
+**Test Coverage:**
+- ✅ Authentication enforcement (unauthenticated requests rejected)
+- ✅ Cross-expert ownership checks (Expert A ≠ Expert B resources)
+- ✅ Payment reuse prevention (payment_intent_id unique)
+- ✅ Token protection (playback_token_hash never exposed)
+- ✅ Input validation (rating ranges, required fields)
+
+**Run Tests:**
+```bash
+./tests/run-security-tests.sh
+```
+
+**Expected Output:**
+```
+✓ Passed:  16
+✗ Failed:  0
+⊘ Skipped: 0
+
+ALL SECURITY TESTS PASSED!
+```
+
+**Configuration:**
+Tests require `/tests/.env` with auth tokens and test IDs. See [`testing/README.md`](./testing/README.md) for setup.
+
+---
+
 ## 💻 Development
 
 ### Setup & Commands
@@ -184,7 +231,7 @@ See [`CLAUDE.md - Environment Variables`](./CLAUDE.md#environment-variables) for
 
 ### Public Endpoints
 
-See [`xano-endpoints.md`](./xano-endpoints.md) for complete API reference.
+See [`api-database/guides/xano-endpoints.md`](./api-database/guides/xano-endpoints.md) for complete API reference.
 
 **Key Endpoints:**
 - `GET /review/{token}` - Get answer for review
@@ -194,12 +241,23 @@ See [`xano-endpoints.md`](./xano-endpoints.md) for complete API reference.
 
 ### Internal Endpoints
 
-See [`xano-internal-endpoints.md`](./xano-internal-endpoints.md) for admin/internal APIs.
+See [`api-database/guides/xano-internal-endpoints.md`](./api-database/guides/xano-internal-endpoints.md) for admin/internal APIs.
 
 **Key Endpoints:**
 - `GET /internal/media` - Fetch all media (cleanup)
 - `DELETE /internal/media_asset` - Delete media asset
 - `DELETE /internal/magic-link-token` - Delete token
+
+### Endpoint Organization
+
+All endpoint implementations are organized by feature in [`api-database/endpoints/`](./api-database/endpoints/):
+- **questions/** - Question creation and management
+- **offers/** - Deep Dive offer management
+- **payments/** - Payment operations
+- **reviews/** - Review and feedback
+- **user/** - User account and profile
+- **media/** - Media upload and management
+- **public/** - Public endpoints
 
 ---
 
@@ -209,11 +267,13 @@ See [`xano-internal-endpoints.md`](./xano-internal-endpoints.md) for admin/inter
 
 | Issue | Document |
 |-------|----------|
-| Xano Lambda errors | [`XANO-LAMBDA-TROUBLESHOOTING.md`](./XANO-LAMBDA-TROUBLESHOOTING.md) |
+| Xano Lambda errors | [`api-database/guides/XANO-LAMBDA-TROUBLESHOOTING.md`](./api-database/guides/XANO-LAMBDA-TROUBLESHOOTING.md) |
 | OAuth not working | [`CLAUDE.md - Troubleshooting`](./CLAUDE.md#troubleshooting) |
 | Upload failures | [`upload-system-master.md`](./upload-system-master.md) |
 | Download 404 errors | [`ENABLE-DOWNLOADS-MIGRATION.md`](./ENABLE-DOWNLOADS-MIGRATION.md) |
 | ZIP download issues | [`ZIP-DOWNLOAD-FEATURE.md`](./ZIP-DOWNLOAD-FEATURE.md#troubleshooting) |
+| Security issues | [`api-database/security/README.md`](./api-database/security/README.md) |
+| Endpoint errors | [`api-database/endpoints/README.md`](./api-database/endpoints/README.md) |
 
 ### Debug Checklist
 
@@ -251,11 +311,33 @@ docs/
 │   └── CLEANUP-SYSTEM-UPDATE.md
 │
 ├── API & Database/
-│   ├── xano-endpoints.md
-│   ├── xano-internal-endpoints.md
-│   ├── xano-delete-account-implementation.md
-│   ├── XANO-LAMBDA-TROUBLESHOOTING.md
-│   └── upload-system-master.md
+│   └── api-database/
+│       ├── README.md                          # API documentation index
+│       ├── endpoints/                         # Organized by feature
+│       │   ├── questions/                     # Question endpoints
+│       │   ├── offers/                        # Deep Dive offers
+│       │   ├── payments/                      # Payment operations
+│       │   ├── reviews/                       # Review & feedback
+│       │   ├── user/                          # User management
+│       │   ├── media/                         # Media upload
+│       │   └── public/                        # Public endpoints
+│       ├── security/                          # Security docs
+│       │   ├── ENDPOINT-AUDIT-OCT-2025.md
+│       │   └── SECURITY-REVIEW-HIGH-PRIORITY-ENDPOINTS.md
+│       ├── guides/                            # Implementation guides
+│       │   ├── xano-endpoints.md
+│       │   ├── xano-internal-endpoints.md
+│       │   └── XANO-LAMBDA-TROUBLESHOOTING.md
+│       ├── migrations/                        # Database migrations
+│       │   └── MEDIA-ASSET-MIGRATION-OCT-2025.md
+│       └── archive/                           # Historical docs
+│
+├── Testing/
+│   └── testing/
+│       ├── README.md
+│       ├── SECURITY-VALIDATION-GUIDE.md
+│       ├── XANO-MANUAL-TESTING.md
+│       └── BEST-PRACTICES.md
 │
 ├── Marketing/
 │   └── marketing module/
@@ -296,6 +378,7 @@ docs/
 
 | Feature | Status | Documentation |
 |---------|--------|---------------|
+| Security Test Suite | ✅ Production | [`testing/`](./testing/) |
 | ZIP Downloads | ✅ Production | [`ZIP-DOWNLOAD-FEATURE.md`](./ZIP-DOWNLOAD-FEATURE.md) |
 | QR Code Sharing | ✅ Production | [`QR-CODE-IMPLEMENTATION-GUIDE.md`](./QR-CODE-IMPLEMENTATION-GUIDE.md) |
 | Magic Link Auth | ✅ Production | [`magic-link-authentication-guide.md`](./magic-link-authentication-guide.md) |
@@ -307,6 +390,8 @@ docs/
 
 ### Recent Updates
 
+- **Oct 26, 2025:** API & Database documentation reorganized (structured by feature)
+- **Oct 26, 2025:** Security test suite expanded (16 automated tests)
 - **Oct 16, 2025:** ZIP download feature + CORS fix
 - **Oct 16, 2025:** QR code profile sharing
 - **Oct 14, 2025:** Marketing module complete
@@ -351,5 +436,5 @@ When adding new features:
 ---
 
 **Platform:** QuickChat (mindPick)
-**Documentation Version:** 2.0
-**Last Updated:** October 16, 2025
+**Documentation Version:** 2.1
+**Last Updated:** October 26, 2025
