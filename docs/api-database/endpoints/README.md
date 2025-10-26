@@ -10,10 +10,10 @@ Complete reference for all QuickChat Xano API endpoint implementations organized
 Question creation and management endpoints.
 
 **Endpoints:**
-- `quick-consult.md` - POST /question/quick-consult (Tier 1)
-- `deep-dive.md` - POST /question/deep-dive (Tier 2)
-- `id.md` - GET /question/{id}, PATCH /question/{id}
-- `answer.md` - POST /answer
+- `quick-consult.xs` - POST /question/quick-consult (Tier 1)
+- `deep-dive.xs` - POST /question/deep-dive (Tier 2)
+- `id.xs` - GET /question/{id}, PATCH /question/{id}
+- `answer.xs` - POST /answer
 
 **Features:**
 - Two-tier pricing (Quick Consult vs Deep Dive)
@@ -25,8 +25,8 @@ Question creation and management endpoints.
 Deep Dive offer management (Tier 2 pricing).
 
 **Endpoints:**
-- `accept.md` - POST /offers/{id}/accept
-- `decline.md` - POST /offers/{id}/decline
+- `accept.xs` - POST /offers/{id}/accept
+- `decline.xs` - POST /offers/{id}/decline
 
 **Features:**
 - Expert review of custom pricing
@@ -38,8 +38,8 @@ Deep Dive offer management (Tier 2 pricing).
 Payment capture and refund operations.
 
 **Endpoints:**
-- `capture.md` - POST /payment/capture
-- `refund.md` - POST /question/{id}/refund
+- `capture.xs` - POST /payment/capture
+- `refund.xs` - POST /question/{id}/refund
 
 **Features:**
 - Stripe payment intent capture
@@ -51,7 +51,7 @@ Payment capture and refund operations.
 Review and feedback system.
 
 **Endpoints:**
-- `review_feedback.md` - POST /review/{token}/feedback
+- `review_feedback.xs` - POST /review/{token}/feedback
 
 **Features:**
 - Unauthenticated access via review token
@@ -62,10 +62,10 @@ Review and feedback system.
 User account and profile management.
 
 **Endpoints:**
-- `account.md` - PUT /me/account
-- `profile.md` - GET /expert/profile/{handle}
-- `deleteacc.md` - DELETE /me/delete-account
-- `availability.md` - POST /expert/profile/availability
+- `account.xs` - PUT /me/account
+- `profile.xs` - GET /expert/profile/{handle}
+- `deleteacc.xs` - DELETE /me/delete-account
+- `availability.xs` - POST /expert/profile/availability
 
 **Features:**
 - Profile updates
@@ -77,8 +77,8 @@ User account and profile management.
 Media upload and asset management.
 
 **Endpoints:**
-- `upload.md` - POST /upload/profile-picture
-- `media.md` - Media asset queries
+- `upload.xs` - POST /upload/profile-picture
+- `media.xs` - Media asset queries
 
 **Features:**
 - Cloudflare R2 integration
@@ -89,8 +89,8 @@ Media upload and asset management.
 Public (unauthenticated) endpoints.
 
 **Endpoints:**
-- `pricing-tiers.md` - GET /expert/pricing-tiers
-- `hidden.md` - POST /expert/profile/hidden
+- `pricing-tiers.xs` - GET /expert/pricing-tiers
+- `hidden.xs` - POST /expert/profile/hidden
 
 **Features:**
 - Public profile data access
@@ -101,8 +101,8 @@ Public (unauthenticated) endpoints.
 Deprecated endpoints (moved to separate Xano group).
 
 **Endpoints:**
-- `feedback_g.md` - GET /feedback (obsolete)
-- `feedback_p.md` - POST /feedback (obsolete)
+- `feedback_g.xs` - GET /feedback (obsolete)
+- `feedback_p.xs` - POST /feedback (obsolete)
 
 **Note:** These endpoints have been moved out of the main API group and are no longer in use.
 

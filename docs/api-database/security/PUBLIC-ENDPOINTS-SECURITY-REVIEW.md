@@ -94,7 +94,7 @@
 - ✅ Secure - designed for public access
 - ✅ No changes needed
 
-**Endpoint File:** ❌ Missing - Should create `/docs/api-database/endpoints/public/profile.md`
+**Endpoint File:** ❌ Missing - Should create `/docs/api-database/endpoints/public/profile.xs`
 
 ---
 
@@ -130,7 +130,7 @@
 
 **Test Coverage:** ✅ Tested (security-validation.cjs)
 
-**Endpoint File:** ❌ Missing - Should create `/docs/api-database/endpoints/reviews/review_get.md`
+**Endpoint File:** ❌ Missing - Should create `/docs/api-database/endpoints/reviews/review_get.xs`
 
 ---
 
@@ -185,7 +185,7 @@ if ($answer.feedback_at != null) {
 
 **Test Coverage:** ✅ Tested (security-validation.cjs)
 
-**Endpoint File:** ✅ Exists - `/docs/api-database/endpoints/reviews/review_feedback.md`
+**Endpoint File:** ✅ Exists - `/docs/api-database/endpoints/reviews/review_feedback.xs`
 
 ---
 
@@ -223,7 +223,7 @@ if ($answer.feedback_at != null) {
 
 **Impact:** Low - visit inflation doesn't affect payments or security
 
-**Endpoint File:** ❌ Missing - Should create `/docs/api-database/endpoints/public/track-visit.md`
+**Endpoint File:** ❌ Missing - Should create `/docs/api-database/endpoints/public/track-visit.xs`
 
 ---
 
@@ -289,9 +289,9 @@ if ($answer.feedback_at != null) {
 - Several public endpoints lack .md files
 - Recommendation: Create documentation for completeness
 - Files needed:
-  - `/docs/api-database/endpoints/public/profile.md`
-  - `/docs/api-database/endpoints/public/track-visit.md`
-  - `/docs/api-database/endpoints/reviews/review_get.md`
+  - `/docs/api-database/endpoints/public/profile.xs`
+  - `/docs/api-database/endpoints/public/track-visit.xs`
+  - `/docs/api-database/endpoints/reviews/review_get.xs`
 
 ---
 

@@ -30,8 +30,8 @@ Comprehensive security review of newly added high priority endpoint implementati
 ## Critical Issue #1: Lambda Error Handling Pattern ❌
 
 ### Affected Endpoints:
-- `POST /offers/{id}/accept` (accept.md)
-- `POST /offers/{id}/decline` (decline.md)
+- `POST /offers/{id}/accept` (accept.xs)
+- `POST /offers/{id}/decline` (decline.xs)
 
 ### Problem:
 
@@ -81,8 +81,8 @@ conditional {
 ## Critical Issue #2: Wrong Conditional Return Pattern ❌
 
 ### Affected Endpoints:
-- `POST /payment/capture` (capture.md)
-- `POST /question/{id}/refund` (refund.md)
+- `POST /payment/capture` (capture.xs)
+- `POST /question/{id}/refund` (refund.xs)
 
 ### Problem:
 
@@ -134,7 +134,7 @@ conditional {
 ## Critical Issue #3: Variable Reference Bug ❌
 
 ### Affected Endpoint:
-- `DELETE /me/delete-account` (deleteacc.md)
+- `DELETE /me/delete-account` (deleteacc.xs)
 
 ### Problem:
 
@@ -194,7 +194,7 @@ foreach ($user_questions) {
 ## Critical Issue #4: Query Logic Error ❌
 
 ### Affected Endpoint:
-- `DELETE /me/delete-account` (deleteacc.md)
+- `DELETE /me/delete-account` (deleteacc.xs)
 
 ### Problem:
 
