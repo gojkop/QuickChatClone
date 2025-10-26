@@ -149,7 +149,7 @@ function QuestionTable({
   const isAnswered =
     (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
-/ FIXED: Don't show preview if detail panel is already open
+// FIXED: Don't show preview if detail panel is already open
 const handleMouseEnter = (question, event) => {
   // Don't show preview if a question detail is already open
   if (activeQuestionId) {
