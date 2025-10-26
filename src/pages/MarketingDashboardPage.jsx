@@ -29,8 +29,14 @@ console.log('🔍 MarketingDashboardPage - Data from useMarketing:', {
   const { profile, expertProfile: profileExpert } = useProfile();
   const { data: questions = [] } = useQuestionsQuery();
 
+  // DEBUG: Check questions data
+console.log('=== QUESTIONS DEBUG ===');
+console.log('Type:', typeof questions);
+console.log('Is Array?', Array.isArray(questions));
+console.log('Value:', questions);
+
   // Calculate pending count for top bar
-  const pendingCount = questions.filter(q => q.status === 'pending').length;
+  const pendingCount = Array.isArray(questions) ? questions.filter(q => q.status === 'pending').length : 0;
   const isAvailable = profileExpert?.accepting_questions ?? true;
 
   // Error state
