@@ -178,23 +178,23 @@ conditional {
 
 Before adding tests, 5 critical endpoint security issues were fixed:
 
-### 1. accept.md - POST /offers/{id}/accept
+### 1. accept.xs - POST /offers/{id}/accept
 - ❌ **Issue:** Used `throw new Error()` in lambda (doesn't work)
 - ✅ **Fixed:** Replaced with `conditional` + `debug.stop`
 
-### 2. decline.md - POST /offers/{id}/decline
+### 2. decline.xs - POST /offers/{id}/decline
 - ❌ **Issue:** Used `throw new Error()` in lambda (doesn't work)
 - ✅ **Fixed:** Replaced with `conditional` + `debug.stop`
 
-### 3. capture.md - POST /payment/capture
+### 3. capture.xs - POST /payment/capture
 - ❌ **Issue:** Used `return` in conditional (doesn't stop execution)
 - ✅ **Fixed:** Replaced with `debug.stop`
 
-### 4. refund.md - POST /question/{id}/refund
+### 4. refund.xs - POST /question/{id}/refund
 - ❌ **Issue:** Used `return` in conditional (doesn't stop execution)
 - ✅ **Fixed:** Replaced with `debug.stop`
 
-### 5. deleteacc.md - DELETE /me/delete-account
+### 5. deleteacc.xs - DELETE /me/delete-account
 - ❌ **Issue 1:** Wrong variable reference (`$answers` instead of `$questions`)
 - ❌ **Issue 2:** Wrong FK reference (`$user_id` instead of `$expert_profile.id`)
 - ✅ **Fixed:** Corrected both variable references

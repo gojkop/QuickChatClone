@@ -34,9 +34,9 @@ Complete security audit reports, reviews, and implementation guides for QuickCha
 - Best practices for Xano security patterns
 
 **Critical Issues Fixed:**
-1. **accept.md & decline.md** - Lambda error handling (throw doesn't work)
-2. **capture.md & refund.md** - Return statement pattern (doesn't stop execution)
-3. **deleteacc.md** - Variable reference bugs (2 issues)
+1. **accept.xs & decline.xs** - Lambda error handling (throw doesn't work)
+2. **capture.xs & refund.xs** - Return statement pattern (doesn't stop execution)
+3. **deleteacc.xs** - Variable reference bugs (2 issues)
 
 **Patterns Applied:**
 - ✅ Use `conditional` with `debug.stop` for validation

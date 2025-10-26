@@ -80,6 +80,8 @@ function PaymentPlaceholder({
         currency: expert.currency || 'usd',
         description,
         captureMethod, // Hold for Deep Dive
+        expertHandle: expert.handle, // REQUIRED for security validation
+        tierType: tierType, // REQUIRED for security validation
         metadata: {
           expert_handle: expert.handle || '',
           tier_type: tierType,

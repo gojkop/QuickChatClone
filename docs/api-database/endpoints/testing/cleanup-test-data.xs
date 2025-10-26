@@ -17,6 +17,63 @@ query "internal/test-data/cleanup" verb=DELETE {
       return = {type: "list"}
     } as $test_questions
 
+    foreach ($test_questions) {
+      each as $tq {
+
+        db.query answer {
+          where = $db.answer.question_id == $tq.id
+          return = {type: "list"}
+        } as $tq_answers
+
+        foreach ($tq_answers) {
+          each as $tq_answer {
+
+            conditional {
+              if ($tq_answer.media_asset_id != null) {
+                db.del media_asset {
+                  field_name = "id"
+                  field_value = $tq_answer.media_asset_id
+                }
+              }
+            }
+
+            db.del answer {
+              field_name = "id"
+              field_value = $tq_answer.id
+            }
+          }
+        }
+
+        conditional {
+          if ($tq.media_asset_id != null) {
+            db.del media_asset {
+              field_name = "id"
+              field_value = $tq.media_asset_id
+            }
+          }
+        }
+
+        db.query payment_table_structure {
+          where = $db.payment_table_structure.question_id == $tq.id
+          return = {type: "single"}
+        } as $tq_payment
+
+        conditional {
+          if ($tq_payment != null) {
+            db.del payment_table_structure {
+              field_name = "id"
+              field_value = $tq_payment.id
+            }
+          }
+        }
+
+        db.del question {
+          field_name = "id"
+          field_value = $tq.id
+        }
+      }
+    }
+
     api.lambda {
       code = """
         var count = 0;
@@ -26,71 +83,14 @@ query "internal/test-data/cleanup" verb=DELETE {
         return count;
       """
       timeout = 10
-    } as $question_count
-
-    foreach ($test_questions) {
-      each as $test_question {
-
-        db.query answer {
-          where = $db.answer.question_id == $test_question.id
-          return = {type: "list"}
-        } as $question_answers
-
-        foreach ($question_answers) {
-          each as $question_answer {
-
-            conditional {
-              if ($question_answer.media_asset_id != null) {
-                db.del media_asset {
-                  field_name = "id"
-                  field_value = $question_answer.media_asset_id
-                }
-              }
-            }
-
-            db.del answer {
-              field_name = "id"
-              field_value = $question_answer.id
-            }
-          }
-        }
-
-        conditional {
-          if ($test_question.media_asset_id != null) {
-            db.del media_asset {
-              field_name = "id"
-              field_value = $test_question.media_asset_id
-            }
-          }
-        }
-
-        db.query payment_table_structure {
-          where = $db.payment_table_structure.question_id == $test_question.id
-          return = {type: "single"}
-        } as $payment_record
-
-        conditional {
-          if ($payment_record != null) {
-            db.del payment_table_structure {
-              field_name = "id"
-              field_value = $payment_record.id
-            }
-          }
-        }
-
-        db.del question {
-          field_name = "id"
-          field_value = $test_question.id
-        }
-      }
-    }
+    } as $deleted_count
   }
 
   response = {
     "success": true,
     "deleted": {
-      "questions": $question_count
+      "questions": $deleted_count
     },
-    "message": "Test data cleanup completed"
+    "message": "Test data cleanup completed successfully"
   }
 }

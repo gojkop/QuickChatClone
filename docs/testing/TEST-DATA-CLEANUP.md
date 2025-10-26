@@ -74,11 +74,9 @@ node cleanup-test-data.cjs
 
 ✅ Test data cleanup completed successfully!
 
-📊 Deleted:
-   • Questions: 12
-   • Answers: 4
-   • Media Assets: 16
-   • Payment Records: 12
+📊 Summary:
+   • Test questions deleted: 12
+   • Associated answers, media, and payments also removed
 ```
 
 ### Option 3: Direct API Call
@@ -136,14 +134,13 @@ XANO_INTERNAL_API_KEY=your_internal_api_key_here
 {
   "success": true,
   "deleted": {
-    "questions": 12,
-    "answers": 4,
-    "media_assets": 16,
-    "payments": 12
+    "questions": 12
   },
   "message": "Test data cleanup completed successfully"
 }
 ```
+
+**Note:** The endpoint performs cascade deletion of associated answers, media assets, and payment records for each test question, but only reports the count of questions deleted for simplicity.
 
 **Response (Unauthorized):**
 ```json
@@ -155,7 +152,7 @@ XANO_INTERNAL_API_KEY=your_internal_api_key_here
 
 ### Implementation
 
-**File:** `/docs/api-database/endpoints/testing/cleanup-test-data.md`
+**File:** `/docs/api-database/endpoints/testing/cleanup-test-data.xs`
 
 **Function Stack:**
 1. Validate API key
@@ -394,7 +391,7 @@ node tests/cleanup-test-data.cjs
 | `/tests/cleanup-test-data.cjs` | Standalone cleanup script |
 | `/tests/security-validation.cjs` | Test suite with optional cleanup |
 | `/tests/run-security-tests.sh` | Shell wrapper (passes --cleanup flag) |
-| `/docs/api-database/endpoints/testing/cleanup-test-data.md` | Xano endpoint implementation |
+| `/docs/api-database/endpoints/testing/cleanup-test-data.xs` | Xano endpoint implementation |
 | `/docs/testing/TEST-DATA-CLEANUP.md` | This documentation |
 
 ---

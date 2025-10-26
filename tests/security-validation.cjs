@@ -69,6 +69,7 @@ const COLORS = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   cyan: '\x1b[36m',
+  dim: '\x1b[2m',
 };
 
 // Load environment variables first
@@ -82,6 +83,7 @@ const CONFIG = {
   // Xano API URLs
   XANO_AUTH_API: process.env.XANO_AUTH_API || 'https://your-workspace.xano.io/api:3B14WLbJ',
   XANO_PUBLIC_API: process.env.XANO_PUBLIC_API || 'https://your-workspace.xano.io/api:BQW1GS7L',
+  XANO_INTERNAL_API_KEY: process.env.XANO_INTERNAL_API_KEY || '',
 
   // Test Data (replace with real values)
   EXPERT_A_TOKEN: process.env.EXPERT_A_TOKEN || 'your_expert_a_token_here',
@@ -137,11 +139,9 @@ function printSummary() {
   if (results.failed > 0) {
     console.log(`\n${COLORS.red}SECURITY ISSUES DETECTED!${COLORS.reset}`);
     console.log('Review failed tests above and fix before deploying.\n');
-    process.exit(1);
   } else {
     console.log(`\n${COLORS.green}ALL SECURITY TESTS PASSED!${COLORS.reset}`);
     console.log('Your endpoints are secure and ready for production.\n');
-    process.exit(0);
   }
 }
 
@@ -787,6 +787,9 @@ async function main() {
     console.log(`\n${COLORS.dim}💡 Tip: Add --cleanup flag to automatically remove test data${COLORS.reset}`);
     console.log(`${COLORS.dim}   Example: ./run-security-tests.sh --cleanup${COLORS.reset}`);
   }
+
+  // Exit with appropriate code
+  process.exit(results.failed > 0 ? 1 : 0);
 }
 
 /**

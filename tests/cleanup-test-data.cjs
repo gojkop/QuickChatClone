@@ -67,11 +67,9 @@ async function cleanupTestData() {
 
     if (response.ok && data.success) {
       console.log('✅ Test data cleanup completed successfully!\n');
-      console.log('📊 Deleted:');
-      console.log(`   • Questions: ${data.deleted.questions}`);
-      console.log(`   • Answers: ${data.deleted.answers}`);
-      console.log(`   • Media Assets: ${data.deleted.media_assets}`);
-      console.log(`   • Payment Records: ${data.deleted.payments}`);
+      console.log('📊 Summary:');
+      console.log(`   • Test questions deleted: ${data.deleted.questions}`);
+      console.log(`   • Associated answers, media, and payments also removed`);
       console.log('');
       return true;
     } else {

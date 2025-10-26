@@ -1616,6 +1616,7 @@ api.lambda {
 
 ## Critical Notes
 
+- **XanoScript File Format:** All Xano endpoint implementations use `.xs` extension (not `.md`) - see [`docs/api-database/endpoints/README-XANOSCRIPT.md`](./api-database/endpoints/README-XANOSCRIPT.md)
 - **Media Asset Architecture:** Use FK-only (NO owner_id/owner_type) - see [`docs/api-database/MEDIA-ASSET-MIGRATION-OCT-2025.md`](./api-database/MEDIA-ASSET-MIGRATION-OCT-2025.md)
 - Always stringify JSON fields before sending to Xano: `JSON.stringify(metadata)`
 - Multi-segment videos: Store segments in parent media_asset `metadata` field as JSON
