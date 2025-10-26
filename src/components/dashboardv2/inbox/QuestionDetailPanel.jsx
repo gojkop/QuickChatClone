@@ -4,6 +4,7 @@ import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, C
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
+import { copyQuestionLink } from '@/utils/clipboard';
 
 function QuestionDetailPanel({ 
   question, 
@@ -415,8 +416,18 @@ function QuestionDetailPanel({
               <CheckCircle size={15} className="text-green-600" />
               <span>This question has been answered</span>
             </div>
-            <button className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors">
-              View Public Answer
+            <button
+              onClick={() => {
+                copyQuestionLink(question.id).then(() => {
+                  setCopySuccess(true);
+                  if (onCopyLink) onCopyLink();
+                  setTimeout(() => setCopySuccess(false), 2000);
+                });
+              }}
+              className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <LinkIcon size={14} />
+              <span>{copySuccess ? 'Copied!' : 'Copy Link'}</span>
             </button>
           </div>
         )}

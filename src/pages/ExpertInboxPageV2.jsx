@@ -229,6 +229,93 @@ function ExpertInboxPageV2() {
     setCurrentPage(1);
   }, [filters.status, filters.sortBy, filters.priceMin, filters.priceMax, filters.searchQuery]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if typing in input/textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      // ? - Show shortcuts modal
+      if (e.key === '?') {
+        e.preventDefault();
+        setShowShortcutsModal(true);
+        return;
+      }
+
+      // j/k navigation only when detail panel is NOT open
+      if (!isPanelOpen('detail')) {
+        if (e.key === 'j') {
+          e.preventDefault();
+          setSelectedQuestionIndex(prev => Math.min(prev + 1, filteredQuestions.length - 1));
+          return;
+        }
+        if (e.key === 'k') {
+          e.preventDefault();
+          setSelectedQuestionIndex(prev => Math.max(prev - 1, 0));
+          return;
+        }
+        if (e.key === 'Enter' && filteredQuestions[selectedQuestionIndex]) {
+          e.preventDefault();
+          handleQuestionClick(filteredQuestions[selectedQuestionIndex]);
+          return;
+        }
+      }
+
+      // a - Answer question (only when detail panel is open)
+      if (e.key === 'a' && isPanelOpen('detail')) {
+        e.preventDefault();
+        handleAnswerQuestion();
+        return;
+      }
+
+      // p - Pin/unpin current question
+      if (e.key === 'p') {
+        e.preventDefault();
+        const currentQuestion = isPanelOpen('detail')
+          ? getPanelData('detail')
+          : filteredQuestions[selectedQuestionIndex];
+        if (currentQuestion) {
+          togglePin(currentQuestion.id);
+          success(isPinned(currentQuestion.id) ? 'Question unpinned' : 'Question pinned');
+        }
+        return;
+      }
+
+      // c - Copy question link
+      if (e.key === 'c' && isPanelOpen('detail')) {
+        e.preventDefault();
+        const detailPanel = getPanelData('detail');
+        if (detailPanel) {
+          copyQuestionLink(detailPanel.id).then(() => {
+            success('Question link copied to clipboard');
+          });
+        }
+        return;
+      }
+
+      // Esc - Close top panel
+      if (e.key === 'Escape') {
+        if (showShortcutsModal) {
+          setShowShortcutsModal(false);
+          return;
+        }
+        if (e.shiftKey) {
+          e.preventDefault();
+          closeAllPanels();
+        } else if (panels.length > 1) {
+          e.preventDefault();
+          closeTopPanel();
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filteredQuestions, selectedQuestionIndex, isPanelOpen, getPanelData, togglePin, isPinned, success, closeTopPanel, closeAllPanels, panels, showShortcutsModal]);
+
   // Refresh questions
   const refreshQuestions = async () => {
     try {
@@ -293,6 +380,7 @@ function ExpertInboxPageV2() {
     const hiddenQuestions = questions.filter(q => selectedIds.includes(q.id));
 
     try {
+      // Hide questions
       await Promise.all(
         selectedIds.map(id =>
           apiClient.post(`/expert/questions/${id}/hide`)
