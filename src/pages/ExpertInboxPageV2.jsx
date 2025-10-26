@@ -56,7 +56,6 @@ const metrics = useMetrics(questions);
   // New Phase 3 hooks
   const { toasts, showToast, hideToast, success, error, info } = useToast();
   const { pinnedIds, togglePin, isPinned, sortWithPinned } = usePinnedQuestions();
- // const { hiddenIds, hideMultiple, unhideMultiple, isHidden, filterHidden } = useHiddenQuestions();
   const { undoStack, pushUndo, executeUndo } = useUndoStack();
 
   // Panel stack management (MUST be called before isMobile is used)
@@ -75,11 +74,10 @@ const metrics = useMetrics(questions);
   const totalCount = pagination?.total || questions.length;
   const isMobile = screenWidth < 768;
 
-  // Sort questions with pinned ones first, then filter hidden
-  const sortedQuestions = sortWithPinned(baseFilteredQuestions);
-  //const filteredQuestions = filterHidden(sortedQuestions);
+  // FIXED: Sort questions with pinned ones first (no hiding for now)
+  const filteredQuestions = sortWithPinned(baseFilteredQuestions);
 
-  // FIXED: Use sorted and filtered questions for bulk select
+  // Use sorted and filtered questions for bulk select
   const { 
     selectedIds,
     toggleSelect,
@@ -380,51 +378,9 @@ const metrics = useMetrics(questions);
   };
 
   // Bulk actions with undo
-  const handleBulkHide = async () => {
-    if (selectedIds.length === 0) return;
-
-    const hiddenQuestions = questions.filter(q => selectedIds.includes(q.id));
-
-    try {
-      // Hide questions
-      await Promise.all(
-        selectedIds.map(id =>
-          apiClient.post(`/expert/questions/${id}/hide`)
-        )
-      );
-
-      // Push undo action
-      const undoId = pushUndo({
-        description: `Hidden ${selectedIds.length} question(s)`,
-        undo: async () => {
-          // Restore hidden questions
-          await Promise.all(
-            hiddenQuestions.map(q =>
-              apiClient.post(`/expert/questions/${q.id}/unhide`)
-            )
-          );
-          await refreshQuestions();
-          success('Questions restored');
-        }
-      });
-
-      await refreshQuestions();
-      clearSelection();
-      
-      success(`Hidden ${selectedIds.length} question(s)`, {
-        action: {
-          label: 'Undo',
-          onClick: () => executeUndo(undoId)
-        },
-        duration: 10000
-      });
-
-      announceToScreenReader(`Hidden ${selectedIds.length} questions. Press undo to restore.`);
-    } catch (err) {
-      console.error('Failed to hide questions:', err);
-      error('Failed to hide questions');
-    }
-  };
+  const handleBulkHide = () => {
+  error('Hide functionality is not available yet');
+};
 
   const handleExport = () => {
     const selectedQs = questions.filter(q => selectedIds.includes(q.id));
