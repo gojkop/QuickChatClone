@@ -253,7 +253,9 @@ function ExpertInboxPageV2() {
               url: seg.playback_url,
               duration_sec: seg.duration,
               segment_index: seg.segment_index,
-              metadata: { mode: seg.mode }
+              metadata: { mode: seg.mode },
+              provider: 'cloudflare_stream',
+              asset_id: seg.uid
             }));
           } else {
             // Single media file (legacy format)
@@ -262,7 +264,9 @@ function ExpertInboxPageV2() {
               url: mediaAsset.url,
               duration_sec: mediaAsset.duration_sec,
               segment_index: 0,
-              metadata: metadata
+              metadata: metadata,
+              provider: mediaAsset.provider,
+              asset_id: mediaAsset.asset_id
             }];
           }
         } else {

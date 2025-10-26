@@ -51,15 +51,53 @@ function QuestionDetailPanel({
   const fetchMediaAssets = async () => {
     setLoadingMedia(true);
     try {
-      const response = await apiClient.get('/media_asset', {
-        params: {
-          owner_type: 'question',
-          owner_id: question.id
+      // Fetch media_asset by ID (FK-only architecture)
+      const response = await apiClient.get(`/media_asset/${question.media_asset_id}`);
+      const mediaAsset = response.data;
+
+      if (!mediaAsset) {
+        setMediaAssets([]);
+        return;
+      }
+
+      // Parse metadata if it's a string
+      let metadata = mediaAsset.metadata;
+      if (typeof metadata === 'string') {
+        try {
+          metadata = JSON.parse(metadata);
+        } catch (e) {
+          console.error('Failed to parse media_asset metadata:', e);
+          metadata = null;
         }
-      });
-      
-      const assets = response.data || [];
-      setMediaAssets(Array.isArray(assets) ? assets : []);
+      }
+
+      // Transform media_asset into recording_segments format
+      let recordingSegments = [];
+      if (metadata?.type === 'multi-segment' && metadata?.segments) {
+        // Multi-segment media
+        recordingSegments = metadata.segments.map(seg => ({
+          id: seg.uid,
+          url: seg.playback_url,
+          duration_sec: seg.duration,
+          segment_index: seg.segment_index,
+          metadata: { mode: seg.mode },
+          provider: 'cloudflare_stream',
+          asset_id: seg.uid
+        }));
+      } else {
+        // Single media file (legacy format)
+        recordingSegments = [{
+          id: mediaAsset.id,
+          url: mediaAsset.url,
+          duration_sec: mediaAsset.duration_sec,
+          segment_index: 0,
+          metadata: metadata,
+          provider: mediaAsset.provider,
+          asset_id: mediaAsset.asset_id
+        }];
+      }
+
+      setMediaAssets(recordingSegments);
     } catch (error) {
       console.error('Failed to fetch media assets:', error);
       setMediaAssets([]);
