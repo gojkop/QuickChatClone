@@ -179,8 +179,6 @@ function QuestionTable({
       </div>
     );
   }
-console.log('🔄 QuestionTable rendering, hoveredQuestion:', hoveredQuestion?.id || 'none');
-
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden question-table-container">
       <div className="flex-1 overflow-y-auto overflow-x-auto min-w-0">
@@ -385,6 +383,7 @@ console.log('🔄 QuestionTable rendering, hoveredQuestion:', hoveredQuestion?.i
       fontWeight: 'bold'
     }}
   >
+        {console.log('🎨 RENDERING RED BOX at', hoverPosition)}
     TEST PREVIEW: Q-{hoveredQuestion.id}
   </div>
 )}
