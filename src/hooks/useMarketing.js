@@ -48,18 +48,22 @@ export function useMarketing() {
     }
   };
 
-  // Fetch expert profile data (for Share Kit templates)
-  const fetchExpertProfile = async () => {
+ // Fetch expert profile data (for Share Kit templates)
+const fetchExpertProfile = async () => {
+  try {
+    // Fetch expert profile
+    const response = await apiClient.get('/me/profile');
+    setExpertProfile(response.data.expert_profile);
+    setUser(response.data);
+    
+    // Calculate stats from questions - with defensive checks
     try {
-      // Assuming you have an endpoint to get current expert's profile
-      const response = await apiClient.get('/me/profile');
-      setExpertProfile(response.data.expert_profile);
-      setUser(response.data); // Assuming user is nested
-      
-      // Calculate stats from questions
       const questionsResponse = await apiClient.get('/me/questions');
-      // Handle new paginated response format
-      const questions = questionsResponse.data?.questions || questionsResponse.data || [];
+      
+      // Ensure we have an array before filtering
+      const questions = Array.isArray(questionsResponse.data) 
+        ? questionsResponse.data 
+        : [];
       
       const answeredQuestions = questions.filter(q => 
         q.status === 'answered' || q.status === 'closed'
@@ -74,11 +78,25 @@ export function useMarketing() {
         total_questions: answeredQuestions.length,
         avg_rating: avgRating,
       });
-    } catch (err) {
-      console.error('Failed to fetch expert profile:', err);
-      // Non-critical error, Share Kit will show loading state
+    } catch (questionsErr) {
+      console.error('Failed to fetch questions for stats:', questionsErr);
+      // Set safe defaults for stats
+      setStats({
+        total_questions: 0,
+        avg_rating: '5.0',
+      });
     }
-  };
+  } catch (err) {
+    console.error('Failed to fetch expert profile:', err);
+    // Set safe defaults
+    setExpertProfile(null);
+    setUser(null);
+    setStats({
+      total_questions: 0,
+      avg_rating: '5.0',
+    });
+  }
+};
 
   // Create new campaign
   const createCampaign = async (campaignData) => {
