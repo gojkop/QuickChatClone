@@ -1,6 +1,6 @@
 // src/components/dashboardv2/inbox/QuestionDetailPanel.jsx
 import React, { useState } from 'react';
-import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Link } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
@@ -14,6 +14,8 @@ function QuestionDetailPanel({
   hideCloseButton = false
 }) {
   const [showActions, setShowActions] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
 
   // Helper to get media segments
   const getMediaSegments = () => {
@@ -426,7 +428,7 @@ function QuestionDetailPanel({
               }}
               className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2"
             >
-              <LinkIcon size={14} />
+              <Link size={14} />
               <span>{copySuccess ? 'Copied!' : 'Copy Link'}</span>
             </button>
           </div>
