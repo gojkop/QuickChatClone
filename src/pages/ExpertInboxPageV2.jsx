@@ -75,7 +75,7 @@ const metrics = useMetrics(questions);
   const isMobile = screenWidth < 768;
 
   // FIXED: Sort questions with pinned ones first (no hiding for now)
-  const filteredQuestions = sortWithPinned(baseFilteredQuestions);
+const filteredQuestions = sortWithPinned(baseFilteredQuestions);
 
   // Use sorted and filtered questions for bulk select
   const { 
@@ -431,6 +431,57 @@ const metrics = useMetrics(questions);
     }
   };
 
+  const handleBulkUnhide = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      const idsToUnhide = [...selectedIds];
+      
+      // Unhide questions via API
+      await Promise.all(
+        idsToUnhide.map(id =>
+          apiClient.post('/question/hidden', {
+            question_id: id,
+            hidden: false
+          })
+        )
+      );
+
+      // Push undo action (to re-hide)
+      const undoId = pushUndo({
+        description: `Unhidden ${idsToUnhide.length} question(s)`,
+        undo: async () => {
+          await Promise.all(
+            idsToUnhide.map(id =>
+              apiClient.post('/question/hidden', {
+                question_id: id,
+                hidden: true
+              })
+            )
+          );
+          await refreshQuestions();
+          success('Questions hidden again');
+        }
+      });
+
+      await refreshQuestions();
+      clearSelection();
+      
+      success(`Unhidden ${idsToUnhide.length} question(s)`, {
+        action: {
+          label: 'Undo',
+          onClick: () => executeUndo(undoId)
+        },
+        duration: 10000
+      });
+
+      announceToScreenReader(`Unhidden ${idsToUnhide.length} questions. Press undo to hide again.`);
+    } catch (err) {
+      console.error('Failed to unhide questions:', err);
+      error('Failed to unhide questions');
+    }
+  };
+
   const handleExport = () => {
     const selectedQs = questions.filter(q => selectedIds.includes(q.id));
 
@@ -574,12 +625,14 @@ const metrics = useMetrics(questions);
             {/* Quick Actions */}
             {selectedCount > 0 && (
               <div className="flex-shrink-0 p-3 bg-white border-b border-gray-200">
-                <QuickActions
-                  selectedCount={selectedCount}
-                  onClearSelection={clearSelection}
-                  onBulkHide={handleBulkHide}
-                  onExport={handleExport}
-                />
+<QuickActions
+  selectedCount={selectedCount}
+  onClearSelection={clearSelection}
+  onBulkHide={handleBulkHide}
+  onBulkUnhide={handleBulkUnhide}
+  onExport={handleExport}
+  selectedQuestions={questions.filter(q => selectedIds.includes(q.id))}
+/>
               </div>
             )}
 

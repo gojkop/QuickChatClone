@@ -299,16 +299,18 @@ function QuestionTable({
                   // onMouseEnter={(e) => handleMouseEnter(question, e)}
                   // onMouseLeave={handleMouseLeave}
                   className={`
-                    transition-colors cursor-pointer border-l-4
-                    ${
-                      isActive
-                        ? 'bg-indigo-50 border-l-indigo-600'
-                        : isSelected
-                        ? 'bg-blue-50 border-l-blue-400'
-                        : 'border-l-transparent hover:bg-gray-50'
-                    }
-                    ${answered ? 'opacity-60' : ''}
-                  `}
+  transition-colors cursor-pointer border-l-4
+  ${
+    isActive
+      ? 'bg-indigo-50 border-l-indigo-600'
+      : isSelected
+      ? 'bg-blue-50 border-l-blue-400'
+      : question.hidden
+      ? 'bg-gray-100 border-l-gray-400 opacity-50'
+      : 'border-l-transparent hover:bg-gray-50'
+  }
+  ${answered ? 'opacity-60' : ''}
+`}
                 >
                   {/* Checkbox */}
                   <td className="px-3 py-3">
