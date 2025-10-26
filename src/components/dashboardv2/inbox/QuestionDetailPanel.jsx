@@ -7,15 +7,17 @@ import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 import { copyQuestionLink } from '@/utils/clipboard';
 import apiClient from '@/api';
 
-function QuestionDetailPanel({ 
-  question, 
-  onClose, 
+function QuestionDetailPanel({
+  question,
+  onClose,
   onAnswer,
   onCopyLink,
   onTogglePin,
   isPinned,
   isMobile = false,
-  hideCloseButton = false
+  hideCloseButton = false,
+  onAcceptOffer,
+  onDeclineOffer
 }) {
   const [showActions, setShowActions] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -226,6 +228,7 @@ function QuestionDetailPanel({
   };
 
   const isAnswered = question.status === 'closed' || question.status === 'answered' || question.answered_at;
+  const isPendingOffer = question.is_pending_offer || question.status === 'pending_offer';
   
   const questionTitle = getQuestionTitle(question);
   const questionDetails = getQuestionDetails(question);
@@ -518,7 +521,59 @@ function QuestionDetailPanel({
 
       {/* Footer Actions */}
       <div className="flex-shrink-0 p-3 lg:p-4 border-t border-gray-200 bg-gray-50">
-        {!isAnswered ? (
+        {isPendingOffer ? (
+          <div className="flex flex-col gap-2">
+            {/* Pending Offer Info */}
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-2">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-purple-700 font-bold text-sm">🎯 Deep Dive Offer</span>
+              </div>
+              <p className="text-xs text-purple-600">
+                Accept this offer to start answering. The SLA timer will begin immediately.
+              </p>
+              {question.asker_message && (
+                <div className="mt-2 pt-2 border-t border-purple-200">
+                  <p className="text-xs font-semibold text-purple-700 mb-1">Message from asker:</p>
+                  <p className="text-xs text-gray-700 italic">"{question.asker_message}"</p>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => onAcceptOffer && onAcceptOffer(question)}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-bold hover:from-green-700 hover:to-emerald-700 transition-all shadow-md"
+              >
+                <CheckCircle size={18} />
+                <span>Accept Offer</span>
+              </button>
+
+              <button
+                onClick={() => onDeclineOffer && onDeclineOffer(question)}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all"
+              >
+                <X size={18} />
+                <span>Decline Offer</span>
+              </button>
+            </div>
+
+            {/* Copy Link */}
+            <button
+              onClick={() => {
+                copyQuestionLink(question.id).then(() => {
+                  setCopySuccess(true);
+                  if (onCopyLink) onCopyLink();
+                  setTimeout(() => setCopySuccess(false), 2000);
+                });
+              }}
+              className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Link size={14} />
+              <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
+            </button>
+          </div>
+        ) : !isAnswered ? (
           <div className="flex flex-col gap-2">
             {/* Primary action: Answer */}
             <button
@@ -528,7 +583,7 @@ function QuestionDetailPanel({
               <Play size={18} />
               <span>Answer This Question</span>
             </button>
-            
+
             {/* Secondary action: Copy link */}
             <button
               onClick={() => {

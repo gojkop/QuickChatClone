@@ -46,7 +46,7 @@ const getTimeRemainingColor = (expiresAt, createdAt) => {
   return 'text-orange-600';
 };
 
-function PendingOffersBanner({ onOfferUpdate, onViewDetails }) {
+function PendingOffersBanner({ onOfferUpdate, onViewDetails, onAcceptOffer, onDeclineOffer }) {
   const [offers, setOffers] = useState([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [error, setError] = useState('');
@@ -86,94 +86,51 @@ function PendingOffersBanner({ onOfferUpdate, onViewDetails }) {
     }
   }, [offers.length, isInitialLoad]);
 
-  const handleAccept = async (offerId) => {
-    if (!window.confirm('Accept this Deep Dive offer? The SLA timer will start immediately.')) {
-      return;
-    }
+  const handleAccept = async (offer, e) => {
+    if (e) e.stopPropagation();
 
-    try {
-      setProcessingOfferId(offerId);
-
-      const token = localStorage.getItem('qc_token');
-
-      const response = await fetch('/api/offers-accept', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ id: offerId })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to accept offer');
-      }
-
-      const result = await response.json();
-      console.log('✅ Offer accepted, payment captured:', result);
-
-      setOffers(prev => prev.filter(offer => offer.question_id !== offerId));
-
-      if (onOfferUpdate) {
-        onOfferUpdate();
-      }
-
-      alert('✓ Offer accepted! Payment captured and question moved to your queue.');
-
-    } catch (err) {
-      console.error('Failed to accept offer:', err);
-      alert('Failed to accept offer: ' + err.message);
-    } finally {
-      setProcessingOfferId(null);
+    if (onAcceptOffer) {
+      // Use parent callback if provided
+      await onAcceptOffer(offer);
+      fetchPendingOffers();
     }
   };
 
-  const handleDecline = async (offerId) => {
-    const reason = window.prompt('Why are you declining this offer? (Optional)');
+  const handleDecline = async (offer, e) => {
+    if (e) e.stopPropagation();
 
-    if (reason === null) {
-      return;
+    if (onDeclineOffer) {
+      // Use parent callback if provided
+      await onDeclineOffer(offer);
+      fetchPendingOffers();
     }
+  };
 
-    try {
-      setProcessingOfferId(offerId);
+  const handleViewDetails = (offer, e) => {
+    if (e) e.stopPropagation();
 
-      const token = localStorage.getItem('qc_token');
-
-      const response = await fetch('/api/offers-decline', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          id: offerId,
-          decline_reason: reason || 'Expert declined'
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to decline offer');
-      }
-
-      const result = await response.json();
-      console.log('🔍 Decline response:', result);
-
-      setOffers(prev => prev.filter(offer => offer.question_id !== offerId));
-
-      if (onOfferUpdate) {
-        onOfferUpdate();
-      }
-
-      alert('✓ Offer declined. Payment authorization has been canceled.');
-
-    } catch (err) {
-      console.error('Failed to decline offer:', err);
-      alert('Failed to decline offer: ' + err.message);
-    } finally {
-      setProcessingOfferId(null);
+    if (onViewDetails) {
+      // Convert offer to question format
+      const questionData = {
+        id: offer.question_id,
+        question_text: offer.title,
+        title: offer.title,
+        text: offer.text,
+        price_cents: offer.proposed_price_cents,
+        user_name: offer.payer_name,
+        payer_name: offer.payer_name,
+        user_email: offer.payer_email,
+        payer_email: offer.payer_email,
+        created_at: offer.created_at,
+        status: 'pending_offer',
+        sla_hours_snapshot: offer.sla_hours || 48,
+        offer_expires_at: offer.offer_expires_at,
+        asker_message: offer.asker_message,
+        is_pending_offer: true,
+        media_asset_id: offer.media_asset_id || 0,
+        attachments: offer.attachments || []
+      };
+      onViewDetails(questionData);
     }
   };
 
@@ -243,124 +200,93 @@ function PendingOffersBanner({ onOfferUpdate, onViewDetails }) {
 
       {/* Offer Cards */}
       {!isCollapsed && (
-        <div className="px-4 py-3 space-y-3">
+        <div className="px-4 py-3 space-y-2">
           {offers.map((offer) => (
             <div
               key={offer.question_id}
-              className="bg-white rounded-lg border-2 border-purple-200 hover:border-purple-300 hover:shadow-md transition-all overflow-hidden"
+              onClick={(e) => handleViewDetails(offer, e)}
+              className="relative p-3 sm:p-4 border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl transition-all duration-200 cursor-pointer hover:border-purple-400 hover:shadow-lg hover:-translate-y-0.5"
             >
-              {/* Card Header - Clickable */}
-              <div
-                onClick={() => onViewDetails && onViewDetails(offer.question_id)}
-                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-              >
-                {/* Top Row: Price, Badge, Time */}
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg shadow-sm">
-                      <DollarSign size={14} />
-                      <span className="text-sm font-bold">
-                        {formatPrice(offer.proposed_price_cents)}
-                      </span>
-                    </div>
-                    <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded">
-                      Deep Dive
+              {/* Main Content */}
+              <div className="flex items-start justify-between gap-3">
+                {/* Left: Title and Meta */}
+                <div className="flex-1 min-w-0">
+                  {/* Title with Deep Dive badge */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold rounded shadow-sm">
+                      🎯 DEEP DIVE OFFER
                     </span>
-                    <span className="text-xs text-gray-500">
-                      Q-{offer.question_id}
+                    <span className={`flex items-center gap-1 text-xs font-bold ${getTimeRemainingColor(offer.offer_expires_at, offer.created_at)}`}>
+                      <Clock size={12} />
+                      {formatTimeRemaining(offer.offer_expires_at)}
                     </span>
                   </div>
 
-                  <div className={`flex items-center gap-1 text-xs font-semibold ${getTimeRemainingColor(offer.offer_expires_at, offer.created_at)}`}>
-                    <Clock size={14} />
-                    <span>{formatTimeRemaining(offer.offer_expires_at)}</span>
-                  </div>
-                </div>
+                  {/* Question Title */}
+                  <h3 className="text-sm font-bold text-gray-900 line-clamp-1 mb-2">
+                    {offer.title || 'Untitled Question'}
+                  </h3>
 
-                {/* Question Title */}
-                <h4 className="font-bold text-base text-gray-900 mb-2 line-clamp-2">
-                  {offer.title}
-                </h4>
-
-                {/* Asker Info */}
-                <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
-                  <div className="flex items-center gap-1">
-                    <User size={12} />
-                    <span>{offer.payer_name || 'Anonymous'}</span>
-                  </div>
-                  {offer.payer_email && (
-                    <div className="flex items-center gap-1">
-                      <Mail size={12} />
-                      <span>{offer.payer_email}</span>
+                  {/* Asker Message (if present) */}
+                  {offer.asker_message && (
+                    <div className="bg-purple-100/50 rounded px-2 py-1 mb-2 border border-purple-200">
+                      <p className="text-xs text-purple-800 italic line-clamp-1">
+                        <MessageSquare size={10} className="inline mr-1" />
+                        "{offer.asker_message}"
+                      </p>
                     </div>
                   )}
+
+                  {/* Footer Meta */}
+                  <div className="flex items-center gap-3 text-xs text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <User size={12} />
+                      <span className="truncate">{offer.payer_name || 'Anonymous'}</span>
+                    </span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-gray-500 font-mono">Q-{offer.question_id}</span>
+                  </div>
                 </div>
 
-                {/* Asker Message */}
-                {offer.asker_message && (
-                  <div className="bg-purple-50/50 rounded-lg p-3 mb-3 border border-purple-100">
-                    <div className="flex items-center gap-1 mb-1">
-                      <MessageSquare size={12} className="text-purple-600" />
-                      <p className="text-xs font-semibold text-purple-700">Message from asker:</p>
-                    </div>
-                    <p className="text-sm text-gray-700 italic line-clamp-3">"{offer.asker_message}"</p>
+                {/* Right: Price and Actions */}
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  {/* Price */}
+                  <div className="px-3 py-1.5 rounded-lg font-bold text-base bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-2 border-green-300 shadow-sm">
+                    {formatPrice(offer.proposed_price_cents)}
                   </div>
-                )}
 
-                {/* Question Preview */}
-                {offer.text && (
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <p className="text-xs font-semibold text-gray-500 mb-1">Question:</p>
-                    <p className="text-sm text-gray-700 line-clamp-2">{offer.text}</p>
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={(e) => handleAccept(offer, e)}
+                      disabled={processingOfferId === offer.question_id}
+                      className="px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                      title="Accept this offer"
+                    >
+                      {processingOfferId === offer.question_id ? (
+                        <Loader className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Check size={14} />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={(e) => handleDecline(offer, e)}
+                      disabled={processingOfferId === offer.question_id}
+                      className="px-3 py-1.5 bg-white border-2 border-gray-300 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Decline this offer"
+                    >
+                      <X size={14} />
+                    </button>
+
+                    <button
+                      onClick={(e) => handleViewDetails(offer, e)}
+                      className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-all shadow-sm"
+                      title="View full details"
+                    >
+                      <Eye size={14} />
+                    </button>
                   </div>
-                )}
-
-                {/* Click hint */}
-                <p className="text-xs text-center text-purple-600 mt-3 font-medium">
-                  Click to view full question details
-                </p>
-              </div>
-
-              {/* Action Buttons - Not Clickable Area */}
-              <div
-                className="px-4 pb-4 pt-2 border-t border-purple-100 bg-gradient-to-r from-purple-50/30 to-indigo-50/30"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  <button
-                    onClick={() => handleAccept(offer.question_id)}
-                    disabled={processingOfferId === offer.question_id}
-                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    {processingOfferId === offer.question_id ? (
-                      <>
-                        <Loader className="w-4 h-4 animate-spin" />
-                        <span>Processing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check size={18} />
-                        <span>Accept Offer</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => handleDecline(offer.question_id)}
-                    disabled={processingOfferId === offer.question_id}
-                    className="flex-1 bg-white border-2 border-gray-300 text-gray-700 font-semibold py-2.5 px-4 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    <X size={18} />
-                    <span>Decline</span>
-                  </button>
-
-                  <button
-                    onClick={() => onViewDetails && onViewDetails(offer.question_id)}
-                    className="sm:w-auto bg-indigo-50 border-2 border-indigo-200 text-indigo-700 font-semibold py-2.5 px-4 rounded-lg hover:bg-indigo-100 hover:border-indigo-300 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Eye size={18} />
-                    <span>View Details</span>
-                  </button>
                 </div>
               </div>
             </div>

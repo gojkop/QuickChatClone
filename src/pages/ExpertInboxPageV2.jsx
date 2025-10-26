@@ -483,6 +483,93 @@ function ExpertInboxPageV2() {
     setOfferRefreshTrigger(prev => prev + 1);
   };
 
+  const handleAcceptOffer = async (offer) => {
+    if (!window.confirm('Accept this Deep Dive offer? The SLA timer will start immediately.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('qc_token');
+
+      const response = await fetch('/api/offers-accept', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: offer.question_id })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to accept offer');
+      }
+
+      const result = await response.json();
+      console.log('✅ Offer accepted, payment captured:', result);
+
+      // Close detail panel if it's showing this offer
+      const detailPanel = getPanelData('detail');
+      if (detailPanel && detailPanel.id === offer.question_id) {
+        closePanel('detail');
+      }
+
+      handleOfferUpdate();
+      announceToScreenReader('Offer accepted successfully');
+
+    } catch (err) {
+      console.error('Failed to accept offer:', err);
+      announceToScreenReader('Failed to accept offer');
+      alert('Failed to accept offer: ' + err.message);
+    }
+  };
+
+  const handleDeclineOffer = async (offer) => {
+    const reason = window.prompt('Why are you declining this offer? (Optional)');
+
+    if (reason === null) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('qc_token');
+
+      const response = await fetch('/api/offers-decline', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: offer.question_id,
+          decline_reason: reason || 'Expert declined'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to decline offer');
+      }
+
+      const result = await response.json();
+      console.log('✓ Offer declined:', result);
+
+      // Close detail panel if it's showing this offer
+      const detailPanel = getPanelData('detail');
+      if (detailPanel && detailPanel.id === offer.question_id) {
+        closePanel('detail');
+      }
+
+      handleOfferUpdate();
+      announceToScreenReader('Offer declined successfully');
+
+    } catch (err) {
+      console.error('Failed to decline offer:', err);
+      announceToScreenReader('Failed to decline offer');
+      alert('Failed to decline offer: ' + err.message);
+    }
+  };
+
   // Pagination handlers
   const handleNextPage = () => {
     if (pagination?.has_next) {
@@ -748,6 +835,8 @@ function ExpertInboxPageV2() {
             <PendingOffersBanner
               onOfferUpdate={handleOfferUpdate}
               onViewDetails={handleQuestionOpen}
+              onAcceptOffer={handleAcceptOffer}
+              onDeclineOffer={handleDeclineOffer}
             />
 
             {/* Quick Actions */}
@@ -840,6 +929,8 @@ function ExpertInboxPageV2() {
             isPinned={isPinned(panel.data.id)}
             isMobile={screenWidth < 1024}
             hideCloseButton={true}
+            onAcceptOffer={handleAcceptOffer}
+            onDeclineOffer={handleDeclineOffer}
           />
         );
 
