@@ -1,5 +1,5 @@
 // src/pages/ExpertInboxPageV2.jsx
-// Updated inbox page with cascading panel layout (Linear-style)
+// Phase 2: Enhanced with keyboard shortcuts, URL deep linking, and performance optimizations
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -9,12 +9,16 @@ import PanelContainer from '@/components/dashboardv2/inbox/PanelContainer';
 import QuestionFilters from '@/components/dashboardv2/inbox/QuestionFilters';
 import QuickActions from '@/components/dashboardv2/inbox/QuickActions';
 import QuestionListView from '@/components/dashboardv2/inbox/QuestionListView';
+import VirtualQuestionTable from '@/components/dashboardv2/inbox/VirtualQuestionTable';
 import QuestionDetailPanel from '@/components/dashboardv2/inbox/QuestionDetailPanel';
 import AnswerComposerPanel from '@/components/dashboardv2/inbox/AnswerComposerPanel';
+import BottomSheet from '@/components/dashboardv2/inbox/BottomSheet';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
 import { useInbox } from '@/hooks/dashboardv2/useInbox';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { usePanelStack } from '@/hooks/dashboardv2/usePanelStack';
+import { useURLSync } from '@/hooks/dashboardv2/useURLSync';
+import { useKeyboardShortcuts } from '@/hooks/dashboardv2/useKeyboardShortcuts';
 
 function ExpertInboxPageV2() {
   const navigate = useNavigate();
@@ -25,6 +29,7 @@ function ExpertInboxPageV2() {
   const [pagination, setPagination] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [useVirtualization, setUseVirtualization] = useState(false);
 
   const metrics = useMetrics(questions);
   const {
@@ -52,6 +57,38 @@ function ExpertInboxPageV2() {
   } = usePanelStack();
 
   const totalCount = pagination?.total || questions.length;
+  const isMobile = screenWidth < 768;
+
+  // URL synchronization
+  const { syncURL } = useURLSync({
+    questions,
+    openPanel,
+    closePanel,
+    closeAllPanels,
+    isPanelOpen,
+    getPanelData
+  });
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    questions: filteredQuestions,
+    activeQuestionId: getPanelData('detail')?.id,
+    onQuestionClick: (question) => openPanel('detail', question),
+    onAnswer: () => {
+      const detailPanel = getPanelData('detail');
+      if (detailPanel) {
+        openPanel('answer', detailPanel);
+      }
+    },
+    closeTopPanel,
+    closeAllPanels,
+    enabled: !isMobile // Disable on mobile
+  });
+
+  // Enable virtualization for large lists
+  useEffect(() => {
+    setUseVirtualization(filteredQuestions.length > 50);
+  }, [filteredQuestions.length]);
 
   // Load data with server-side filtering
   useEffect(() => {
@@ -101,40 +138,13 @@ function ExpertInboxPageV2() {
     loadData();
   }, [currentPage, filters.status, filters.sortBy, filters.priceMin, filters.priceMax, filters.searchQuery]);
 
-  // Handle URL hash for question selection
-  useEffect(() => {
-    const hash = location.hash;
-
-    if (hash.startsWith('#question-')) {
-      const questionId = parseInt(hash.replace('#question-', ''), 10);
-
-      if (!isNaN(questionId) && questions.length > 0) {
-        const question = questions.find(q => q.id === questionId);
-
-        if (question) {
-          // Open detail panel with question data
-          openPanel('detail', question);
-        }
-      }
-    } else if (hash === '') {
-      // Close all panels when navigating back to list
-      closeAllPanels();
-    }
-  }, [location.hash, questions]);
-
   // Sync URL when panels change
   useEffect(() => {
     const detailPanel = getPanelData('detail');
+    const isAnswering = isPanelOpen('answer');
 
-    if (detailPanel && detailPanel.id) {
-      const expectedHash = `#question-${detailPanel.id}`;
-      if (location.hash !== expectedHash) {
-        navigate(`/dashboard/inbox${expectedHash}`, { replace: true });
-      }
-    } else if (!isPanelOpen('detail') && location.hash.startsWith('#question-')) {
-      navigate('/dashboard/inbox', { replace: true });
-    }
-  }, [panels, navigate, location.hash, getPanelData, isPanelOpen]);
+    syncURL(detailPanel?.id, isAnswering);
+  }, [panels, syncURL, getPanelData, isPanelOpen]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -249,7 +259,6 @@ function ExpertInboxPageV2() {
     }
   };
 
-  // CHANGED: Close both answer and detail panels, refresh questions
   const handleAnswerSubmitted = async () => {
     await refreshQuestions();
     closePanel('answer');
@@ -266,6 +275,22 @@ function ExpertInboxPageV2() {
     } else {
       selectAll();
     }
+  };
+
+  // Render question list (virtualized or standard)
+  const renderQuestionList = () => {
+    const ListComponent = useVirtualization ? VirtualQuestionTable : QuestionListView;
+
+    return (
+      <ListComponent
+        questions={filteredQuestions}
+        selectedQuestions={selectedQuestions}
+        activeQuestionId={getPanelData('detail')?.id}
+        onSelectQuestion={toggleSelectQuestion}
+        onQuestionClick={handleQuestionClick}
+        onSelectAll={handleSelectAll}
+      />
+    );
   };
 
   // Render panel content based on type
@@ -298,14 +323,7 @@ function ExpertInboxPageV2() {
 
             {/* Question List */}
             <div className="flex-1 min-h-0 overflow-hidden">
-              <QuestionListView
-                questions={filteredQuestions}
-                selectedQuestions={selectedQuestions}
-                activeQuestionId={getPanelData('detail')?.id}
-                onSelectQuestion={toggleSelectQuestion}
-                onQuestionClick={handleQuestionClick}
-                onSelectAll={handleSelectAll}
-              />
+              {renderQuestionList()}
             </div>
 
             {/* Pagination */}
@@ -394,11 +412,23 @@ function ExpertInboxPageV2() {
                 </div>
               </div>
             )}
+
+            {/* Keyboard Shortcuts Helper */}
+            <div className="hidden lg:block absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md border border-gray-200">
+              <p className="text-xs text-gray-600">
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">j</kbd>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono ml-1">k</kbd>
+                {' '}navigate · 
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono ml-1">a</kbd>
+                {' '}answer · 
+                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono ml-1">Esc</kbd>
+                {' '}close
+              </p>
+            </div>
           </div>
         );
 
       case 'detail':
-        // CHANGED: Pass hideCloseButton={true} to remove duplicate X button
         return (
           <QuestionDetailPanel
             question={panel.data}
@@ -433,6 +463,46 @@ function ExpertInboxPageV2() {
         ]}
       >
         <LoadingState />
+      </DashboardLayout>
+    );
+  }
+
+  // Mobile: Use bottom sheet for answer composer
+  if (isMobile && isPanelOpen('answer')) {
+    return (
+      <DashboardLayout
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/dashboard' },
+          { label: 'Inbox' }
+        ]}
+        pendingCount={metrics.pendingCount}
+        isAvailable={profile?.accepting_questions ?? true}
+        onAvailabilityChange={handleAvailabilityChange}
+        searchData={{ questions }}
+      >
+        <div className="w-full h-[calc(100vh-4rem)]">
+          <PanelContainer
+            panels={panels.filter(p => p.type !== 'answer')}
+            onClosePanel={closePanel}
+            onCloseTopPanel={closeTopPanel}
+            renderPanel={renderPanel}
+          />
+
+          <BottomSheet
+            isOpen={isPanelOpen('answer')}
+            onClose={() => closePanel('answer')}
+            title="Answer Question"
+            snapPoints={[0.3, 0.6, 0.95]}
+            defaultSnap={2}
+          >
+            <AnswerComposerPanel
+              question={getPanelData('answer')}
+              profile={profile}
+              onClose={() => closePanel('answer')}
+              onAnswerSubmitted={handleAnswerSubmitted}
+            />
+          </BottomSheet>
+        </div>
       </DashboardLayout>
     );
   }
