@@ -95,7 +95,8 @@ function MobileQuestionCard({
             onSelect(question.id);
           }}
           onClick={(e) => e.stopPropagation()}
-          className="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
+          className="mt-0.5 w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0 cursor-pointer"
+          style={{ touchAction: 'auto' }}
         />
         
         <div className="flex-1 min-w-0 pr-6">
