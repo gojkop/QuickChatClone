@@ -143,7 +143,33 @@ function QuestionDetailPanel({
     try {
       console.log(`📝 Fetching answer data for question ${question.id}`);
 
-      const response = await apiClient.get(`/answer?question_id=${question.id}`);
+      // Check if answer data is already in the question object
+      if (question.answer_media_asset_id || question.answer_attachments) {
+        console.log(`✅ Answer data already in question object`);
+        console.log(`  - answer_media_asset_id: ${question.answer_media_asset_id}`);
+        console.log(`  - answer_attachments:`, question.answer_attachments);
+
+        // Process answer media if present
+        if (question.answer_media_asset_id) {
+          fetchAnswerMediaAsset(question.answer_media_asset_id);
+        }
+
+        // Set answer data from question object
+        setAnswerData({
+          text_response: question.answer_text,
+          attachments: question.answer_attachments,
+          media_asset_id: question.answer_media_asset_id
+        });
+
+        setLoadingAnswer(false);
+        return;
+      }
+
+      const url = `/answer?question_id=${question.id}`;
+      console.log(`🔍 Calling GET ${url}`);
+      console.log(`🔍 Full URL: ${apiClient.defaults.baseURL}${url}`);
+
+      const response = await apiClient.get(url);
       const data = response.data;
 
       if (data && data.answer) {
@@ -206,10 +232,77 @@ function QuestionDetailPanel({
       }
     } catch (error) {
       console.error('Failed to fetch answer data:', error);
+      console.error('Error details:', error.response?.status, error.response?.data);
+
+      // If 404, the GET /answer endpoint doesn't exist in Xano
+      if (error.response?.status === 404) {
+        console.warn(`⚠️ GET /answer endpoint not found - answer data may need to come from question object`);
+      }
+
       setAnswerData(null);
       setAnswerMediaAssets([]);
     } finally {
       setLoadingAnswer(false);
+    }
+  };
+
+  const fetchAnswerMediaAsset = async (mediaAssetId) => {
+    try {
+      console.log(`🎬 Fetching answer media_asset ${mediaAssetId}`);
+
+      const response = await apiClient.get(`/media_asset/${mediaAssetId}`);
+      const mediaAsset = response.data;
+
+      if (!mediaAsset) {
+        console.warn(`⚠️ Media_asset ${mediaAssetId} returned empty data`);
+        setAnswerMediaAssets([]);
+        return;
+      }
+
+      console.log(`✅ Successfully fetched answer media_asset ${mediaAssetId}:`, mediaAsset);
+
+      // Parse metadata if it's a string
+      let metadata = mediaAsset.metadata;
+      if (typeof metadata === 'string') {
+        try {
+          metadata = JSON.parse(metadata);
+        } catch (e) {
+          console.error('Failed to parse answer media_asset metadata:', e);
+          metadata = null;
+        }
+      }
+
+      // Transform media_asset into recording_segments format
+      let recordingSegments = [];
+      if (metadata?.type === 'multi-segment' && metadata?.segments) {
+        // Multi-segment media
+        recordingSegments = metadata.segments.map(seg => ({
+          id: seg.uid,
+          url: seg.playback_url,
+          duration_sec: seg.duration,
+          segment_index: seg.segment_index,
+          metadata: { mode: seg.mode },
+          provider: 'cloudflare_stream',
+          asset_id: seg.uid
+        }));
+      } else {
+        // Single media file (legacy format)
+        recordingSegments = [{
+          id: mediaAsset.id,
+          url: mediaAsset.url,
+          duration_sec: mediaAsset.duration_sec,
+          segment_index: 0,
+          metadata: metadata,
+          provider: mediaAsset.provider,
+          asset_id: mediaAsset.asset_id
+        }];
+      }
+
+      console.log(`✅ Transformed answer media into ${recordingSegments.length} segments`);
+      setAnswerMediaAssets(recordingSegments);
+    } catch (error) {
+      console.error('Failed to fetch answer media asset:', error);
+      setAnswerMediaAssets([]);
     }
   };
 

@@ -107,6 +107,7 @@ query answer verb=POST {
         
           return safe_question;
         """
+        timeout = 10
     } as $safe_question
   }
 
