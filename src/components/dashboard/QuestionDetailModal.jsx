@@ -217,16 +217,11 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
       fullData: data
     });
 
-    // CRITICAL: Use React.startTransition to ensure state updates happen atomically
+    // Set answer data and show review screen
     console.log('💾 [ANSWER FLOW] Setting answerData to:', data);
-
-    // Batch all state updates together to prevent intermediate renders
-    React.startTransition(() => {
-      setAnswerData(data);
-      setShowReview(true);
-      setCurrentStep(3);
-    });
-
+    setAnswerData(data);
+    setShowReview(true);
+    setCurrentStep(3);
     console.log('✅ [ANSWER FLOW] State updated - showReview=true, currentStep=3');
   };
 
