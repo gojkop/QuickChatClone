@@ -8,13 +8,13 @@ Complete reference for all QuickChat Xano API endpoint implementations (.xs file
 
 **Status:** ✅ **100% Complete** (October 27, 2025)
 
-**Total Files:** 48 .xs endpoint implementations
+**Total Files:** 49 .xs endpoint implementations
 - **Questions & Answers:** 9 endpoints
 - **Offers & Payments:** 6 endpoints
 - **Reviews:** 3 endpoints
 - **User & Auth:** 7 endpoints
 - **Marketing:** 5 endpoints
-- **Media:** 2 endpoints
+- **Media:** 3 endpoints
 - **Public:** 5 endpoints
 - **Internal/Cron:** 8 endpoints
 - **Testing:** 3 endpoints
@@ -97,13 +97,15 @@ User account and profile management.
 Media upload and asset management.
 
 **Endpoints:**
+- `media.xs` - POST /media_asset (create media asset record)
+- `media-asset-get.xs` - GET /media_asset/{id} (fetch media asset by ID)
 - `upload.xs` - POST /upload/profile-picture
-- `media.xs` - Media asset queries
 
 **Features:**
-- Cloudflare R2 integration
+- Cloudflare Stream and R2 integration
 - Profile picture uploads
-- Media asset tracking
+- Media asset record management
+- Video/audio metadata storage
 
 ### [`public/`](./public/)
 Public (unauthenticated) endpoints.
