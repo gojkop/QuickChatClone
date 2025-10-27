@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError, isSubmitting }) {
+function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError, isSubmitting, onPaymentStart }) {
   const stripe = useStripe();
   const elements = useElements();
   const [paymentError, setPaymentError] = useState(null);
@@ -19,6 +19,9 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
 
     setIsProcessing(true);
     setPaymentError(null);
+
+    // Notify parent immediately that payment processing has started
+    onPaymentStart?.();
 
     try {
       console.log('🔍 [STRIPE FORM] Confirming payment with client secret:', clientSecret.substring(0, 20) + '...');

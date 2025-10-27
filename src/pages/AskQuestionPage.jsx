@@ -134,9 +134,15 @@ function AskQuestionPage() {
     setShowPaymentModal(true);
   };
 
+  const handlePaymentStart = () => {
+    // Set submitting state immediately when payment processing begins
+    console.log("💳 Payment processing started, showing loader...");
+    setIsSubmitting(true);
+  };
+
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
-      setIsSubmitting(true);
+      // isSubmitting is already true from handlePaymentStart
       console.log("💳 Payment successful, submitting question with payment ID:", paymentIntentId);
 
       // ✅ STEP 1: Create media_asset record if recordings exist
@@ -575,6 +581,7 @@ function AskQuestionPage() {
                   }}
                   reviewData={askerInfo}
                   onSubmit={handlePaymentSuccess}
+                  onPaymentStart={handlePaymentStart}
                   isSubmitting={isSubmitting}
                 />
               </div>

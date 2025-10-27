@@ -744,10 +744,40 @@ function ExpertInboxPageV2() {
     success('Answer submitted successfully!');
     announceToScreenReader('Answer submitted successfully');
 
+    console.log('🔄 Waiting for answer to be available in database...');
+
+    // Wait for answer to be fetchable from database (max 5 attempts, 1 second apart)
+    let answerAvailable = false;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        console.log(`📝 Attempt ${attempt}/5: Checking if answer exists for question ${answeredQuestionId}`);
+
+        const response = await apiClient.get(`/answer?question_id=${answeredQuestionId}`);
+
+        if (response.data?.answer) {
+          console.log('✅ Answer found in database:', response.data.answer);
+          answerAvailable = true;
+          break;
+        } else {
+          console.log('⏳ Answer not yet available, waiting 1 second...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (err) {
+        console.log(`⚠️ Error checking answer (attempt ${attempt}/5):`, err.message);
+        if (attempt < 5) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    if (!answerAvailable) {
+      console.warn('⚠️ Answer not available after 5 attempts, proceeding anyway...');
+    }
+
     // Switch to answered tab
     updateFilter('status', 'answered');
 
-    // Wait a bit for UI to settle, then refresh
+    // Wait a bit for UI to settle
     await new Promise(resolve => setTimeout(resolve, 300));
 
     // Refresh questions to get the updated data
@@ -763,7 +793,7 @@ function ExpertInboxPageV2() {
       } else {
         console.warn('⚠️ Could not find answered question in list:', answeredQuestionId);
       }
-    }, 800);
+    }, 500);
   };
 
   const handleAvailabilityChange = (newStatus) => {

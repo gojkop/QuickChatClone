@@ -12,7 +12,8 @@ function PaymentPlaceholder({
   composeData,
   reviewData,
   onSubmit,
-  isSubmitting = false
+  isSubmitting = false,
+  onPaymentStart
 }) {
   const { createPaymentIntent, config } = usePayment();
   const [stripePromise, setStripePromise] = useState(null);
@@ -250,6 +251,7 @@ function PaymentPlaceholder({
             onSuccess={handlePaymentSuccess}
             onError={handlePaymentError}
             isSubmitting={isSubmitting}
+            onPaymentStart={onPaymentStart}
           />
         </Elements>
       )}

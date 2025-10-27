@@ -54,6 +54,8 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           expert_profile_id: expertProfile.id,
           payer_email: payerEmail,
+          payer_first_name: payerFirstName || null,
+          payer_last_name: payerLastName || null,
           title,
           text: text || null,
           attachments: attachments.length > 0 ? JSON.stringify(attachments) : null,

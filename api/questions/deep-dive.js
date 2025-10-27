@@ -62,6 +62,8 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           expert_profile_id: expertProfile.id,
           payer_email: payerEmail,
+          payer_first_name: payerFirstName || null,
+          payer_last_name: payerLastName || null,
           proposed_price_cents,
           asker_message: asker_message || null,
           title,
