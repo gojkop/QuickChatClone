@@ -1331,4 +1331,5 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   );
 }
 
+// Force rebuild timestamp: 2025-10-27-v2
 export default QuestionDetailModal;
