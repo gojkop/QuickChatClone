@@ -84,12 +84,14 @@ User account and profile management.
 **Endpoints:**
 - `account.xs` - PUT /me/account
 - `profile.xs` - GET /expert/profile/{handle}
+- `check-handle.xs` - GET /expert/profile/check-handle/{handle}
 - `deleteacc.xs` - DELETE /me/delete-account
 - `availability.xs` - POST /expert/profile/availability
 
 **Features:**
 - Profile updates
 - Public profile data
+- Handle availability checking
 - GDPR-compliant account deletion
 - Availability toggle for experts
 
@@ -151,6 +153,7 @@ Deprecated endpoints (moved to separate Xano group).
 | **User** ||||
 | /me/account | PUT | ✅ Required | ✅ Production |
 | /expert/profile/{handle} | GET | ❌ Public | ✅ Production |
+| /expert/profile/check-handle/{handle} | GET | ❌ Public | ✅ Production |
 | /me/delete-account | DELETE | ✅ Required | ✅ Production |
 | /expert/profile/availability | POST | ✅ Required | ✅ Production |
 | **Media** ||||
