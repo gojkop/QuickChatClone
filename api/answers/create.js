@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     if (!answerResponse.ok) {
       const errorText = await answerResponse.text();
       console.error('Xano answer creation failed:', errorText);
-      
+
       let errorMessage = errorText;
       try {
         const errorJson = JSON.parse(errorText);
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       } catch (e) {
         // Not JSON, use text as is
       }
-      
+
       return res.status(answerResponse.status).json({
         success: false,
         error: errorMessage,
@@ -70,6 +70,16 @@ export default async function handler(req, res) {
     }
 
     const answer = await answerResponse.json();
+
+    // Check if Xano returned an error in the payload (200 status with error)
+    if (answer.payload && typeof answer.payload === 'string' && answer.payload.includes('error')) {
+      console.error('Xano returned error in payload:', answer.payload);
+      return res.status(400).json({
+        success: false,
+        error: answer.payload,
+      });
+    }
+
     const answerId = answer.id;
     console.log('✅ Answer created:', answerId);
 

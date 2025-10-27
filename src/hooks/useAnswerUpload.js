@@ -391,6 +391,11 @@ export function useAnswerUpload() {
 
       const responseData = await response.json();
 
+      // Check if backend returned success: false (shouldn't happen if status is ok, but just in case)
+      if (responseData.success === false) {
+        throw new Error(responseData.error || 'Failed to submit answer');
+      }
+
       console.log('✅ Answer submitted successfully');
 
       setUploadState({

@@ -26,11 +26,13 @@ function AnswerComposerPanel({
     setSubmitError(null);
 
     try {
-      const userId = profile?.user?.id || profile?.id;
+      // Get user_id from expert_profile (not expert_profile.id)
+      const userId = profile?.user_id;
       console.log('🔑 User ID for submission:', userId);
+      console.log('🔍 Full profile object:', profile);
 
       if (!userId) {
-        throw new Error('User ID not found. Please try logging in again.');
+        throw new Error('User ID not found in profile. Please try logging in again.');
       }
 
       console.log('🚀 Calling submitAnswer...');
