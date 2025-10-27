@@ -1062,63 +1062,6 @@ function ExpertInboxPageV2() {
     );
   }
 
-  // Mobile: Use bottom sheet for answer composer
-  if (isMobile && isPanelOpen('answer')) {
-    return (
-      <DashboardLayout
-        breadcrumbs={[
-          { label: 'Dashboard', path: '/dashboard' },
-          { label: 'Inbox' }
-        ]}
-        pendingCount={metrics.pendingCount}
-        isAvailable={profile?.accepting_questions ?? true}
-        onAvailabilityChange={handleAvailabilityChange}
-        searchData={{ questions }}
-      >
-        <div className="w-full h-[calc(100vh-4rem)]">
-          <PanelContainer
-            panels={panels.filter(p => p.type !== 'answer')}
-            onClosePanel={closePanel}
-            onCloseTopPanel={closeTopPanel}
-            renderPanel={renderPanel}
-          />
-
-          <BottomSheet
-            isOpen={isPanelOpen('answer')}
-            onClose={() => closePanel('answer')}
-            title="Answer Question"
-            snapPoints={[0.3, 0.6, 0.95]}
-            defaultSnap={2}
-          >
-            <AnswerComposerPanel
-              question={getPanelData('answer')}
-              profile={profile}
-              onClose={() => closePanel('answer')}
-              onAnswerSubmitted={handleAnswerSubmitted}
-            />
-          </BottomSheet>
-        </div>
-
-        {/* Toast notifications */}
-        <ToastContainer toasts={toasts} onClose={hideToast} />
-
-        {/* Keyboard shortcuts modal */}
-        <KeyboardShortcutsModal
-          isOpen={showKeyboardHelp}
-          onClose={() => setShowKeyboardHelp(false)}
-        />
-
-        {/* Advanced Filters Panel */}
-        <AdvancedFiltersPanel
-          isOpen={isFilterPanelOpen}
-          onClose={() => setIsFilterPanelOpen(false)}
-          filters={filters}
-          onFilterChange={updateFilter}
-        />
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout
       breadcrumbs={[

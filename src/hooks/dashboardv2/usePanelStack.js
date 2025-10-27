@@ -49,6 +49,11 @@ const RESPONSIVE_CONFIGS = {
   // For screens < 1280px, show only the active panel when answering
   1280: {
     3: { list: 0, detail: 0, answer: 100 }
+  },
+  // For mobile (< 768px), show only active panel for all scenarios
+  768: {
+    2: { list: 0, detail: 100 },
+    3: { list: 0, detail: 0, answer: 100 }
   }
 };
 
@@ -59,8 +64,10 @@ const calculatePanelWidths = (panels, screenWidth) => {
   const count = panels.length;
   let config = PANEL_CONFIGS[count] || PANEL_CONFIGS[1];
 
-  // Apply responsive overrides
-  if (screenWidth < 1280 && RESPONSIVE_CONFIGS[1280][count]) {
+  // Apply responsive overrides (check from smallest to largest)
+  if (screenWidth < 768 && RESPONSIVE_CONFIGS[768][count]) {
+    config = RESPONSIVE_CONFIGS[768][count];
+  } else if (screenWidth < 1280 && RESPONSIVE_CONFIGS[1280][count]) {
     config = RESPONSIVE_CONFIGS[1280][count];
   } else if (screenWidth < 1440 && RESPONSIVE_CONFIGS[1440][count]) {
     config = RESPONSIVE_CONFIGS[1440][count];
