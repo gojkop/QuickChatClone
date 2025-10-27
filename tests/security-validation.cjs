@@ -94,6 +94,7 @@ const CONFIG = {
   USED_PAYMENT_INTENT: process.env.USED_PAYMENT_INTENT || 'pi_test_already_used',
   VALID_REVIEW_TOKEN: process.env.VALID_REVIEW_TOKEN || 'valid_playback_token_hash',
   EXPERT_A_PROFILE_ID: parseInt(process.env.EXPERT_A_PROFILE_ID) || 1,
+  EXPERT_A_USER_ID: parseInt(process.env.EXPERT_A_USER_ID) || 1,
 };
 
 // ============================================
@@ -692,6 +693,173 @@ async function testQuestionRefundOwnership() {
   console.log(`${COLORS.blue}└─${COLORS.reset}`);
 }
 
+/**
+ * Test GET /answer - Authentication & Access
+ */
+async function testGetAnswerSecurity() {
+  console.log(`\n${COLORS.blue}┌─ Test Suite: GET /answer - Security${COLORS.reset}`);
+
+  // Step 0: Get expert's user_id from their profile
+  const profileRes = await request(`${CONFIG.XANO_AUTH_API}/me/profile`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${CONFIG.EXPERT_A_TOKEN}`,
+    },
+  });
+
+  if (!profileRes.ok || !profileRes.data?.user?.id) {
+    logTest('GET /answer requires authentication', 'SKIP', 'Could not get expert user_id');
+    console.log(`${COLORS.blue}└─${COLORS.reset}`);
+    return;
+  }
+
+  const expertUserId = profileRes.data.user.id;
+
+  // Step 1: Create a test question
+  const createQuestionRes = await request(`${CONFIG.XANO_PUBLIC_API}/question/quick-consult`, {
+    method: 'POST',
+    body: JSON.stringify({
+      expert_profile_id: CONFIG.EXPERT_A_PROFILE_ID,
+      payer_email: 'test@example.com',
+      title: 'Test Question for GET Answer',
+      text: 'Testing GET /answer endpoint security',
+      stripe_payment_intent_id: `pi_test_get_answer_${Date.now()}`,
+      sla_hours_snapshot: 24,
+    }),
+  });
+
+  if (!createQuestionRes.ok || !createQuestionRes.data?.question_id) {
+    logTest('GET /answer requires authentication', 'SKIP', 'Could not create test question');
+    console.log(`${COLORS.blue}└─${COLORS.reset}`);
+    return;
+  }
+
+  const testQuestionId = createQuestionRes.data.question_id;
+
+  // Step 2: Create an answer for this question
+  const createAnswerRes = await request(`${CONFIG.XANO_AUTH_API}/answer`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${CONFIG.EXPERT_A_TOKEN}`,
+    },
+    body: JSON.stringify({
+      question_id: testQuestionId,
+      user_id: expertUserId,
+      text_response: 'Test answer for GET /answer security test',
+    }),
+  });
+
+  if (!createAnswerRes.ok || !createAnswerRes.data?.id) {
+    console.log(`${COLORS.yellow}  Debug: Answer creation failed${COLORS.reset}`);
+    console.log(`  Status: ${createAnswerRes.status}`);
+    console.log(`  Response: ${JSON.stringify(createAnswerRes.data, null, 2)}`);
+    logTest('GET /answer requires authentication', 'SKIP', 'Could not create test answer');
+    console.log(`${COLORS.blue}└─${COLORS.reset}`);
+    return;
+  }
+
+  // Test 1: Requires authentication
+  const res1 = await request(`${CONFIG.XANO_AUTH_API}/answer?question_id=${testQuestionId}`, {
+    method: 'GET',
+  });
+
+  if (res1.status === 401 || res1.status === 403) {
+    logTest('GET /answer requires authentication', 'PASS', 'Unauthenticated request rejected');
+  } else if (res1.ok) {
+    logTest('GET /answer requires authentication', 'FAIL', '⚠️  NO AUTH REQUIRED - SECURITY ISSUE!');
+  } else {
+    logTest('GET /answer requires authentication', 'SKIP', `Unexpected status: ${res1.status}`);
+  }
+
+  // Test 2: Authenticated user can retrieve answer
+  const res2 = await request(`${CONFIG.XANO_AUTH_API}/answer?question_id=${testQuestionId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${CONFIG.EXPERT_A_TOKEN}`,
+    },
+  });
+
+  if (res2.ok && res2.data?.answer) {
+    logTest('GET /answer returns answer data', 'PASS', 'Answer retrieved successfully');
+  } else {
+    logTest('GET /answer returns answer data', 'FAIL', `Expected answer data, got ${res2.status}`);
+  }
+
+  // Test 3: Returns media asset if present
+  if (res2.ok && res2.data?.answer) {
+    if (res2.data.answer.media_asset_id !== undefined) {
+      logTest('GET /answer includes media asset info', 'PASS', 'Response structure correct');
+    } else {
+      logTest('GET /answer includes media asset info', 'SKIP', 'No media asset in test answer');
+    }
+  }
+
+  console.log(`${COLORS.blue}└─${COLORS.reset}`);
+}
+
+/**
+ * Test GET /internal/digest/pending-questions - API Key Protection
+ */
+async function testDigestEndpointSecurity() {
+  console.log(`\n${COLORS.blue}┌─ Test Suite: GET /internal/digest/pending-questions - Security${COLORS.reset}`);
+
+  // Test 1: Requires API key
+  const res1 = await request(`${CONFIG.XANO_PUBLIC_API}/internal/digest/pending-questions`, {
+    method: 'GET',
+  });
+
+  const payload1 = JSON.stringify(res1.data || '');
+  // Xano returns 400 when required parameter is missing, which is also secure
+  if (res1.status === 400 || res1.status === 401 || res1.status === 403 || payload1.includes('Unauthorized')) {
+    logTest('Digest endpoint requires API key', 'PASS', 'Request without API key rejected');
+  } else if (res1.ok) {
+    logTest('Digest endpoint requires API key', 'FAIL', '⚠️  NO API KEY REQUIRED - SECURITY ISSUE!');
+  } else {
+    logTest('Digest endpoint requires API key', 'SKIP', `Unexpected status: ${res1.status}`);
+  }
+
+  // Test 2: Invalid API key rejected
+  const res2 = await request(`${CONFIG.XANO_PUBLIC_API}/internal/digest/pending-questions?x_api_key=invalid_key_12345`, {
+    method: 'GET',
+  });
+
+  const payload2 = JSON.stringify(res2.data || '');
+  if (res2.status === 401 || res2.status === 403 || payload2.includes('Unauthorized')) {
+    logTest('Digest endpoint rejects invalid API key', 'PASS', 'Invalid key rejected');
+  } else if (res2.ok) {
+    logTest('Digest endpoint rejects invalid API key', 'FAIL', '⚠️  INVALID KEY ACCEPTED - SECURITY ISSUE!');
+  } else {
+    logTest('Digest endpoint rejects invalid API key', 'SKIP', `Unexpected status: ${res2.status}`);
+  }
+
+  // Test 3: Valid API key grants access (if configured)
+  if (CONFIG.XANO_INTERNAL_API_KEY && CONFIG.XANO_INTERNAL_API_KEY.length > 10) {
+    const res3 = await request(`${CONFIG.XANO_PUBLIC_API}/internal/digest/pending-questions?x_api_key=${CONFIG.XANO_INTERNAL_API_KEY}`, {
+      method: 'GET',
+    });
+
+    if (res3.ok) {
+      logTest('Digest endpoint accepts valid API key', 'PASS', 'Valid key granted access');
+    } else if (isXanoError(res3, 'Unauthorized') || res3.status === 401) {
+      logTest('Digest endpoint accepts valid API key', 'FAIL', 'Valid key was rejected');
+    } else {
+      logTest('Digest endpoint accepts valid API key', 'SKIP', `Status: ${res3.status}`);
+    }
+
+    // Test 4: Returns array of results
+    if (res3.ok && Array.isArray(res3.data)) {
+      logTest('Digest endpoint returns array', 'PASS', `Returned ${res3.data.length} pending questions`);
+    } else if (res3.ok) {
+      logTest('Digest endpoint returns array', 'FAIL', 'Response is not an array');
+    }
+  } else {
+    logTest('Digest endpoint accepts valid API key', 'SKIP', 'XANO_INTERNAL_API_KEY not configured');
+    logTest('Digest endpoint returns array', 'SKIP', 'XANO_INTERNAL_API_KEY not configured');
+  }
+
+  console.log(`${COLORS.blue}└─${COLORS.reset}`);
+}
+
 // ============================================
 // MAIN EXECUTION
 // ============================================
@@ -762,6 +930,8 @@ async function main() {
     await testOfferDeclineOwnership();
     await testPaymentCaptureOwnership();
     await testQuestionRefundOwnership();
+    await testGetAnswerSecurity();
+    await testDigestEndpointSecurity();
   } catch (error) {
     console.error(`\n${COLORS.red}Test execution error:${COLORS.reset}`, error.message);
     process.exit(1);
@@ -770,9 +940,9 @@ async function main() {
   // Print summary
   printSummary();
 
-  // Optional: Clean up test data
-  const shouldCleanup = process.argv.includes('--cleanup');
-  if (shouldCleanup) {
+  // Automatic cleanup (unless --no-cleanup flag is present)
+  const skipCleanup = process.argv.includes('--no-cleanup') || process.argv.includes('--skip-cleanup');
+  if (!skipCleanup) {
     console.log(`\n${COLORS.blue}┌─ Cleaning up test data...${COLORS.reset}`);
     try {
       await cleanupTestData();
@@ -784,8 +954,9 @@ async function main() {
       console.log(`${COLORS.blue}└─${COLORS.reset}`);
     }
   } else {
-    console.log(`\n${COLORS.dim}💡 Tip: Add --cleanup flag to automatically remove test data${COLORS.reset}`);
-    console.log(`${COLORS.dim}   Example: ./run-security-tests.sh --cleanup${COLORS.reset}`);
+    console.log(`\n${COLORS.yellow}⚠ Skipping cleanup (--no-cleanup flag detected)${COLORS.reset}`);
+    console.log(`${COLORS.dim}💡 Test data will remain in database${COLORS.reset}`);
+    console.log(`${COLORS.dim}   To cleanup later, run: ./run-security-tests.sh${COLORS.reset}`);
   }
 
   // Exit with appropriate code

@@ -31,9 +31,9 @@ QuickChat uses automated testing to ensure security, reliability, and correctnes
 
 ### Security Validation Suite
 
-**Status:** ✅ Production Ready (October 26, 2025)
+**Status:** ✅ Production Ready (October 27, 2025)
 
-Automated security tests covering 16 critical security scenarios across all major API endpoints.
+Automated security tests covering 23 critical security scenarios across all major API endpoints.
 
 **Test Coverage:**
 - ✅ PATCH /question/{id} - Authentication enforcement (3 tests)
@@ -48,6 +48,8 @@ Automated security tests covering 16 critical security scenarios across all majo
 - ✅ POST /offers/{id}/decline - Cross-expert ownership
 - ✅ POST /payment/capture - Cross-expert ownership
 - ✅ POST /question/{id}/refund - Cross-expert ownership
+- ✅ GET /answer - Authentication & data retrieval (3 tests) **NEW**
+- ✅ GET /internal/digest/pending-questions - API key protection (4 tests) **NEW**
 
 **Location:** `/tests/security-validation.cjs`
 
@@ -61,15 +63,22 @@ Automated security tests covering 16 critical security scenarios across all majo
 
 ### Security Tests
 
-**Quick Run:**
+**Quick Run (with automatic cleanup):**
 ```bash
 ./tests/run-security-tests.sh
+```
+
+**Skip cleanup (keep test data in DB):**
+```bash
+./tests/run-security-tests.sh --no-cleanup
 ```
 
 **Manual Run:**
 ```bash
 cd tests
 node security-validation.cjs
+# Or skip cleanup:
+node security-validation.cjs --no-cleanup
 ```
 
 **Expected Output:**
@@ -86,14 +95,20 @@ XANO SECURITY VALIDATION TEST SUITE
 Date: 2025-10-26T14:21:42.420Z
 ============================================================
 
-✓ Passed:  16
+✓ Passed:  23
 ✗ Failed:  0
 ⊘ Skipped: 0
-Total: 16
+Total: 23
 
 ALL SECURITY TESTS PASSED!
 Your endpoints are secure and ready for production.
+
+┌─ Cleaning up test data...
+✓ Test data cleaned up successfully
+└─
 ```
+
+**Note:** Test data is automatically cleaned up after each run. Use `--no-cleanup` to skip cleanup.
 
 ### Test Logs
 
