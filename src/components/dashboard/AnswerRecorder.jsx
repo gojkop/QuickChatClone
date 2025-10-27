@@ -11,6 +11,7 @@ import SLACountdown from './SLACountdown';
 const MAX_RECORDING_SECONDS = 900; // 15 minutes for answers
 
 function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '', existingData = null }) {
+  console.log('🚀 [DEPLOYMENT TEST] AnswerRecorder loaded - Build timestamp:', Date.now());
   console.log('🎬 [ANSWER RECORDER] Component mounted/updated with props:', {
     initialText: initialText,
     initialTextType: typeof initialText,
