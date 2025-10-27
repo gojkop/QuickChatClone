@@ -1,17 +1,24 @@
 // src/components/dashboardv2/overview/RecentActivity.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Clock, Eye, MessageCircle, Star, Zap, User } from 'lucide-react';
+import { MessageSquare, Clock, Eye, MessageCircle, Star, Zap, User, Share2, TrendingUp } from 'lucide-react';
+import { useProfile } from '@/context/ProfileContext';
+import { calculateProfileStrength } from '@/utils/profileStrength';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 
 function RecentActivity({ questions = [] }) {
   const navigate = useNavigate();
+  const { expertProfile } = useProfile();
   const [hoveredQuestion, setHoveredQuestion] = useState(null);
 
   const recentQuestions = questions
     .filter(q => q.status === 'paid' && !q.answered_at)
     .sort((a, b) => b.created_at - a.created_at)
     .slice(0, 5);
+
+  // Calculate profile completion
+  const profileStrength = calculateProfileStrength(expertProfile);
+  const isProfileComplete = profileStrength >= 80;
 
   const getTimeLeft = (question) => {
     if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
@@ -66,15 +73,34 @@ function RecentActivity({ questions = [] }) {
           <p className="font-semibold text-gray-700 mb-2 text-sm">
             Your inbox is ready
           </p>
-          <p className="text-xs text-gray-600 mb-4 max-w-[200px]">
-            Complete your profile to start receiving questions
-          </p>
-          <button
-            onClick={() => navigate('/dashboard/profile')}
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
-          >
-            Complete Profile →
-          </button>
+
+          {/* Conditional CTA based on profile completion */}
+          {!isProfileComplete ? (
+            <>
+              <p className="text-xs text-gray-600 mb-4 max-w-[200px]">
+                Complete your profile to start receiving questions
+              </p>
+              <button
+                onClick={() => navigate('/dashboard/profile')}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+              >
+                Complete Profile →
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-gray-600 mb-4 max-w-[200px]">
+                Share your link to get your first question
+              </p>
+              <button
+                onClick={() => navigate('/dashboard/marketing')}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors flex items-center gap-1"
+              >
+                <Share2 className="w-3 h-3" />
+                Share Your Profile →
+              </button>
+            </>
+          )}
         </div>
       </div>
     );

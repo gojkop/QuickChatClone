@@ -15,6 +15,7 @@ import BottomSheet from '@/components/dashboardv2/inbox/BottomSheet';
 import KeyboardShortcutsModal from '@/components/dashboardv2/inbox/KeyboardShortcutsModal';
 import EmptyState from '@/components/common/EmptyState';
 import InboxEmptyState from '@/components/dashboardv2/inbox/InboxEmptyState';
+import InboxEmptyStateExperienced from '@/components/dashboardv2/inbox/InboxEmptyStateExperienced';
 import { SkeletonTable } from '@/components/common/Skeleton';
 import { ToastContainer } from '@/components/common/Toast';
 import { useInbox } from '@/hooks/dashboardv2/useInbox';
@@ -787,17 +788,35 @@ function ExpertInboxPageV2() {
   // Render question list (virtualized or standard)
   const renderQuestionList = () => {
     if (filteredQuestions.length === 0) {
-      // True empty state - no questions at all
+      // Analyze the empty state scenario
       const hasNoQuestions = questions.length === 0;
       const isSearching = filters.searchQuery;
       const isFiltering = filters.status !== 'all';
 
-      // Use rich InboxEmptyState only when truly empty (no filters/search active)
+      // Count answered questions to determine expert experience
+      const answeredCount = questions.filter(q => q.answered_at || q.status === 'closed' || q.status === 'answered').length;
+      const isNewExpert = answeredCount === 0;
+
+      // Scenario 1: No questions at all + no search/filter = True empty state
       if (hasNoQuestions && !isSearching && !isFiltering) {
-        return <InboxEmptyState />;
+        // Show appropriate empty state based on experience
+        if (isNewExpert) {
+          // New expert: Show onboarding-focused empty state
+          return <InboxEmptyState />;
+        } else {
+          // Experienced expert: Should never happen (they have answered questions)
+          // But if all questions were deleted, show this
+          return <InboxEmptyStateExperienced answeredCount={answeredCount} />;
+        }
       }
 
-      // Use simple EmptyState for filtered/search results
+      // Scenario 2: No PENDING questions (but has other questions) + no search/filter
+      if (!hasNoQuestions && !isSearching && !isFiltering) {
+        // This means all caught up - show experienced state
+        return <InboxEmptyStateExperienced answeredCount={answeredCount} />;
+      }
+
+      // Scenario 3: Filtered/searched results are empty
       return (
         <EmptyState
           icon={isSearching ? 'search' : 'filter'}
