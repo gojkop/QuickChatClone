@@ -265,25 +265,87 @@ Get questions for authenticated user (expert's question queue).
 **Authentication:** Required
 **Query Parameters:**
 - `status` (optional) - Filter by status: 'paid', 'answered', 'draft'
+- `page` (optional) - Page number (default: 1)
+- `per_page` (optional) - Items per page (default: 10)
+- `filter_type` (optional) - Tab filter: 'pending', 'answered', 'all'
+- `sort_by` (optional) - Sort order: 'time_left', 'price_high', 'price_low', 'date_new', 'date_old'
 
 **Response:**
 ```json
-[
-  {
-    "id": 118,
-    "expert_profile_id": 107,
-    "payer_email": "asker@example.com",
-    "price_cents": 500,
-    "currency": "USD",
-    "status": "paid",
-    "title": "How to...",
-    "text": "Question details...",
-    "created_at": 1760349011047,
-    "attachments": "[...]",
-    "media_asset_id": 97
+{
+  "questions": [
+    {
+      "id": 118,
+      "expert_profile_id": 107,
+      "payer_email": "asker@example.com",
+      "price_cents": 500,
+      "currency": "USD",
+      "status": "paid",
+      "title": "How to...",
+      "text": "Question details...",
+      "created_at": 1760349011047,
+      "attachments": "[...]",
+      "media_asset_id": 97
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 10,
+    "total": 52,
+    "total_pages": 6,
+    "has_next": true,
+    "has_prev": false
   }
-]
+}
 ```
+
+### `GET /me/dashboard-analytics`
+Get pre-calculated dashboard metrics for authenticated expert.
+
+**Status:** 🔴 Not Yet Deployed (see deployment guide)
+**API Group:** Authentication API
+**Authentication:** Required
+**Purpose:** Calculate metrics from ALL questions for accurate dashboard display
+
+**Response:**
+```json
+{
+  "thisMonthRevenue": 1250.50,
+  "avgResponseTime": 4.2,
+  "avgRating": 4.8,
+  "urgentCount": 2,
+  "pendingCount": 5,
+  "answeredCount": 47,
+  "thisMonthAnsweredCount": 12,
+  "avgRevenuePerQuestion": 104.21,
+  "slaComplianceRate": 95.7,
+  "revenueChange": 0,
+  "totalQuestions": 52
+}
+```
+
+**Metrics Explained:**
+- `thisMonthRevenue` - Total revenue earned this calendar month (dollars)
+- `avgResponseTime` - Average hours taken to answer questions (all time)
+- `avgRating` - Average customer rating on 1-5 scale
+- `urgentCount` - Pending questions with < 2 hours until SLA breach
+- `pendingCount` - Unanswered paid questions (not declined)
+- `answeredCount` - Total questions answered (all time)
+- `thisMonthAnsweredCount` - Questions answered this month
+- `avgRevenuePerQuestion` - Average earnings per question this month
+- `slaComplianceRate` - Percentage of questions answered within SLA
+- `revenueChange` - Percentage change from last month (TODO: not implemented)
+- `totalQuestions` - Total questions received (all time)
+
+**Deployment:**
+- XanoScript: `/docs/api-database/endpoints/me/GET-dashboard-analytics.xs`
+- Deployment Guide: `/docs/api-database/endpoints/me/DEPLOY-dashboard-analytics.md`
+- Implementation Guide: `/docs/api-database/DASHBOARD-ANALYTICS-IMPLEMENTATION.md`
+
+**Frontend Integration:**
+- Hook: `/src/hooks/useDashboardAnalytics.js`
+- Automatic fallback if not deployed (fetches 100 questions)
+- No frontend changes needed after deployment
 
 ---
 
