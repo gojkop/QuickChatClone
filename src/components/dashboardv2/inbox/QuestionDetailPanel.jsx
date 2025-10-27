@@ -708,7 +708,7 @@ function QuestionDetailPanel({
           )}
 
           {/* Answer (if answered) */}
-          {isAnswered && question.answer_text && question.answer_text.trim() && (
+          {isAnswered && answerData?.text_response && answerData.text_response.trim() && (
             <div className="pt-4 border-t border-gray-200">
               <div className="flex items-center gap-2 mb-2">
                 <MessageSquare size={15} className="text-green-600" />
@@ -716,7 +716,7 @@ function QuestionDetailPanel({
               </div>
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-gray-700 whitespace-pre-wrap text-sm break-words">
-                  {question.answer_text}
+                  {answerData.text_response}
                 </p>
                 {question.answered_at && (
                   <p className="text-xs text-gray-500 mt-2">

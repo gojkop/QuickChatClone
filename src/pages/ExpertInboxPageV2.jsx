@@ -736,13 +736,7 @@ function ExpertInboxPageV2() {
   };
 
   const handleAnswerSubmitted = async (answeredQuestionId) => {
-    // Switch to answered tab
-    updateFilter('status', 'answered');
-
-    // Refresh questions to get the updated data
-    await refreshQuestions();
-
-    // Close panels
+    // Close panels first for smooth transition
     closePanel('answer');
     closePanel('detail');
 
@@ -750,14 +744,26 @@ function ExpertInboxPageV2() {
     success('Answer submitted successfully!');
     announceToScreenReader('Answer submitted successfully');
 
-    // Wait for state to update, then re-open the answered question
+    // Switch to answered tab
+    updateFilter('status', 'answered');
+
+    // Wait a bit for UI to settle, then refresh
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Refresh questions to get the updated data
+    await refreshQuestions();
+
+    // Wait for questions to be in state, then re-open
     setTimeout(() => {
       // Find the answered question in the refreshed list
       const answeredQuestion = questions.find(q => q.id === answeredQuestionId);
       if (answeredQuestion) {
+        console.log('📍 Re-opening answered question:', answeredQuestionId);
         openPanel('detail', answeredQuestion);
+      } else {
+        console.warn('⚠️ Could not find answered question in list:', answeredQuestionId);
       }
-    }, 500);
+    }, 800);
   };
 
   const handleAvailabilityChange = (newStatus) => {
