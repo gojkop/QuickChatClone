@@ -19,25 +19,21 @@ export function useAttachmentUpload() {
     }]);
 
     try {
-      // Convert to base64
-      const base64 = await fileToBase64(file);
-
       console.log('Uploading file:', {
         name: file.name,
         type: file.type,
         size: file.size
       });
 
+      // Use FormData instead of base64 to bypass Vercel's 4.5MB body limit
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', file.name);
+      formData.append('type', file.type || 'application/octet-stream');
+
       const response = await fetch('/api/media/upload-attachment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          file: {
-            name: file.name,
-            type: file.type || 'application/octet-stream',  // ⭐ ENSURE type is always present
-            data: base64.split(',')[1], // Remove data URL prefix
-          },
-        }),
+        body: formData, // Send FormData directly, no Content-Type header needed
       });
 
       if (!response.ok) {

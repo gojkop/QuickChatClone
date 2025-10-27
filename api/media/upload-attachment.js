@@ -3,6 +3,15 @@
 // Upload single attachment to Cloudflare R2
 // ============================================
 import { uploadToR2 } from '../lib/cloudflare/r2.js';
+import formidable from 'formidable';
+import fs from 'fs';
+
+// Disable default body parser to handle multipart form data
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export default async function handler(req, res) {
   // CORS headers
@@ -20,36 +29,38 @@ export default async function handler(req, res) {
 
   try {
     console.log('Upload attachment request received');
-    
-    const { file } = req.body;
 
-    // Validation - check each property separately
-    if (!file) {
-      console.error('Missing file object');
-      return res.status(400).json({ error: 'file object is required' });
-    }
-
-    if (!file.name) {
-      console.error('Missing file.name');
-      return res.status(400).json({ error: 'file.name is required' });
-    }
-
-    if (!file.data) {
-      console.error('Missing file.data');
-      return res.status(400).json({ error: 'file.data is required' });
-    }
-
-    // Use fallback for missing type
-    const fileType = file.type || 'application/octet-stream';
-
-    console.log('Processing file:', {
-      name: file.name,
-      type: fileType,
-      dataLength: file.data.length
+    // Parse multipart form data
+    const form = formidable({
+      maxFileSize: 50 * 1024 * 1024, // 50MB limit
     });
 
-    // Convert base64 to buffer
-    const buffer = Buffer.from(file.data, 'base64');
+    const [fields, files] = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        else resolve([fields, files]);
+      });
+    });
+
+    const uploadedFile = files.file?.[0] || files.file;
+
+    if (!uploadedFile) {
+      console.error('No file uploaded');
+      return res.status(400).json({ error: 'file is required' });
+    }
+
+    const fileName = fields.name?.[0] || fields.name || uploadedFile.originalFilename;
+    const fileType = fields.type?.[0] || fields.type || uploadedFile.mimetype || 'application/octet-stream';
+
+    console.log('Processing file:', {
+      name: fileName,
+      type: fileType,
+      size: uploadedFile.size,
+      path: uploadedFile.filepath
+    });
+
+    // Read file from temporary location
+    const buffer = fs.readFileSync(uploadedFile.filepath);
     
     console.log('Buffer created:', {
       size: buffer.length,
@@ -73,13 +84,13 @@ export default async function handler(req, res) {
 
     // Create unique key for R2
     const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const sanitizedName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
     const key = `question-attachments/${timestamp}-${sanitizedName}`;
 
-    console.log('Uploading to R2:', { 
-      key, 
+    console.log('Uploading to R2:', {
+      key,
       size: buffer.length,
-      contentType: fileType 
+      contentType: fileType
     });
 
     // Upload to R2
@@ -87,10 +98,17 @@ export default async function handler(req, res) {
 
     console.log('Upload successful:', url);
 
+    // Clean up temporary file
+    try {
+      fs.unlinkSync(uploadedFile.filepath);
+    } catch (cleanupError) {
+      console.error('Failed to delete temp file:', cleanupError);
+    }
+
     return res.status(200).json({
       success: true,
       data: {
-        name: file.name,
+        name: fileName,
         url,
         type: fileType,
         size: buffer.length,
