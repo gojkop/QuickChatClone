@@ -1,6 +1,7 @@
 // src/pages/AskQuestionPage.jsx - IMPROVED VERSION
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Loader2, CheckCircle } from 'lucide-react';
 import QuestionComposer from '@/components/question/QuestionComposer';
 import AskReviewModal from '@/components/question/AskReviewModal';
 import PaymentPlaceholder from '@/components/question-flow-v2/payment/PaymentPlaceholder';
@@ -576,6 +577,34 @@ function AskQuestionPage() {
                   onSubmit={handlePaymentSuccess}
                   isSubmitting={isSubmitting}
                 />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Discrete Loading Overlay - Question Submission */}
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm mx-4">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <Loader2 size={48} className="text-indigo-600 animate-spin" />
+                <CheckCircle
+                  size={24}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600 opacity-30"
+                />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Submitting Question
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Processing your question and uploading media...
+                </p>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                <div className="bg-indigo-600 h-full rounded-full animate-pulse" style={{ width: '60%' }}></div>
               </div>
             </div>
           </div>

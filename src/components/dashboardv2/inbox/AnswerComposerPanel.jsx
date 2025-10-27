@@ -17,24 +17,41 @@ function AnswerComposerPanel({
   const answerUpload = useAnswerUpload();
 
   const handleReady = async (data) => {
+    console.log('🎬 handleReady called with data:', data);
+    console.log('📊 Question ID:', question.id);
+    console.log('👤 Profile:', profile);
+
     // Start submission immediately in background
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
       const userId = profile?.user?.id || profile?.id;
+      console.log('🔑 User ID for submission:', userId);
+
+      if (!userId) {
+        throw new Error('User ID not found. Please try logging in again.');
+      }
+
+      console.log('🚀 Calling submitAnswer...');
       const result = await answerUpload.submitAnswer(data, question.id, userId);
 
       console.log('✅ Answer submitted successfully:', result);
 
       // Brief success state, then trigger callback
       setTimeout(() => {
+        console.log('📍 Triggering onAnswerSubmitted callback');
         onAnswerSubmitted?.(question.id);
         onClose();
       }, 800);
 
     } catch (error) {
       console.error('❌ Failed to submit answer:', error);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       setSubmitError(error.message || 'Failed to submit answer');
       setIsSubmitting(false);
     }
