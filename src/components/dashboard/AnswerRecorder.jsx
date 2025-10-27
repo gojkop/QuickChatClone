@@ -197,7 +197,20 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '',
     if (totalFiles > 3) {
       const currentCount = existingAttachments.length + attachmentUpload.uploads.length;
       alert(`Maximum 3 files allowed (you already have ${currentCount} file${currentCount !== 1 ? 's' : ''}).`);
+      e.target.value = '';
       return;
+    }
+
+    // Account for base64 encoding overhead (~33% larger when encoded)
+    // Vercel has a 4.5MB payload limit, so we limit files to 3MB
+    const maxFileSize = 3 * 1024 * 1024; // 3MB
+
+    for (const file of newFiles) {
+      if (file.size > maxFileSize) {
+        alert(`File "${file.name}" is too large (max 3MB). Larger files may fail to upload due to server limits.`);
+        e.target.value = '';
+        return;
+      }
     }
 
     for (const file of newFiles) {
@@ -207,6 +220,8 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '',
         console.error('File upload failed:', error);
       }
     }
+
+    e.target.value = '';
   };
 
   const startNewSegment = async (mode) => {
@@ -1125,7 +1140,7 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '',
         <div>
           <label className="flex items-center text-sm font-semibold text-gray-900 mb-2">
             <span>Attach Supporting Files</span>
-            <span className="text-gray-500 font-normal ml-2">(Optional, max 3)</span>
+            <span className="text-gray-500 font-normal ml-2">(Optional, max 3, 3MB each)</span>
             <HelpButton>
               Attach supporting documents, PDFs, code examples, diagrams, or reference materials that help answer the question thoroughly.
             </HelpButton>

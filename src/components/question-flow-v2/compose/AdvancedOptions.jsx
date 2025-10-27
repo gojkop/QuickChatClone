@@ -30,9 +30,13 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
       return;
     }
 
+    // Account for base64 encoding overhead (~33% larger when encoded)
+    // Vercel has a 4.5MB payload limit, so we limit files to 3MB
+    const maxFileSize = 3 * 1024 * 1024; // 3MB
+
     for (const file of newFiles) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`File "${file.name}" is too large (max 5MB)`);
+      if (file.size > maxFileSize) {
+        alert(`File "${file.name}" is too large (max 3MB). Larger files may fail to upload due to server limits.`);
         e.target.value = '';
         return;
       }
@@ -193,7 +197,7 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               Attach Files
-              <span className="text-gray-500 font-normal ml-2">(Max 3, 5MB each)</span>
+              <span className="text-gray-500 font-normal ml-2">(Max 3, 3MB each)</span>
             </label>
             <input
               type="file"

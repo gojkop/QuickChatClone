@@ -2,7 +2,7 @@
 // Answer composer panel for cascading layout
 
 import React, { useState } from 'react';
-import { ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle, Video, Mic, FileText } from 'lucide-react';
 import AnswerRecorder from '@/components/dashboard/AnswerRecorder';
 import { useAnswerUpload } from '@/hooks/useAnswerUpload';
 
@@ -67,6 +67,105 @@ function AnswerComposerPanel({
     }
   };
 
+  // Helper to render recording segment preview
+  const renderSegmentPreview = (segment, index) => {
+    const mode = segment.mode || 'video';
+    const duration = segment.duration || 0;
+    const url = segment.playbackUrl || segment.url;
+
+    const modeLabel = mode === 'screen' ? 'Screen Recording' :
+                     mode === 'audio' ? 'Audio Recording' :
+                     mode === 'video' ? 'Video Recording' : 'Recording';
+
+    const icon = mode === 'audio' ? <Mic size={16} className="text-indigo-600" /> : <Video size={16} className="text-indigo-600" />;
+
+    return (
+      <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="px-3 py-2 bg-gray-50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {icon}
+            <span className="text-sm font-semibold text-gray-900">{modeLabel}</span>
+          </div>
+          <span className="text-xs text-gray-600">{Math.floor(duration)}s</span>
+        </div>
+        {url && mode === 'audio' ? (
+          <div className="p-3 bg-gray-900">
+            <audio controls className="w-full" preload="metadata">
+              <source src={url} type="audio/webm" />
+              Your browser does not support audio playback.
+            </audio>
+          </div>
+        ) : url ? (
+          <div className="bg-black">
+            <video
+              controls
+              className="w-full"
+              preload="metadata"
+              style={{ maxHeight: '300px' }}
+            >
+              <source src={url} type="video/webm" />
+              Your browser does not support video playback.
+            </video>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  // Helper to render attachment preview
+  const renderAttachmentPreview = (attachment, index) => {
+    const type = attachment.type || '';
+    const url = attachment.url || '';
+    const name = attachment.name || attachment.filename || `Attachment ${index + 1}`;
+
+    return (
+      <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="px-3 py-2 bg-gray-50 flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <FileText size={16} className="text-indigo-600 flex-shrink-0" />
+            <span className="text-sm font-semibold text-gray-900 truncate">{name}</span>
+          </div>
+        </div>
+        {type.startsWith('video/') && url ? (
+          <div className="bg-black">
+            <video
+              controls
+              className="w-full"
+              preload="metadata"
+              style={{ maxHeight: '300px' }}
+            >
+              <source src={url} type={type} />
+              Your browser does not support video playback.
+            </video>
+          </div>
+        ) : type.startsWith('audio/') && url ? (
+          <div className="p-3 bg-gray-900">
+            <audio controls className="w-full" preload="metadata">
+              <source src={url} type={type} />
+              Your browser does not support audio playback.
+            </audio>
+          </div>
+        ) : type.startsWith('image/') && url ? (
+          <img
+            src={url}
+            alt={name}
+            className="w-full h-48 object-cover"
+          />
+        ) : type === 'application/pdf' || name.toLowerCase().endsWith('.pdf') ? (
+          <div className="p-4 bg-red-50 flex items-center gap-3">
+            <FileText size={32} className="text-red-500" />
+            <span className="text-sm font-semibold text-red-700">PDF Document</span>
+          </div>
+        ) : (
+          <div className="p-4 bg-gray-50 flex items-center gap-3">
+            <FileText size={32} className="text-gray-400" />
+            <span className="text-sm text-gray-600">File attachment</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (!question || !profile) {
     return (
       <div className="h-full flex items-center justify-center p-8 text-gray-500">
@@ -127,20 +226,23 @@ function AnswerComposerPanel({
 
                 {answerData?.recordingSegments && answerData.recordingSegments.length > 0 && (
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">
-                      Recording: {answerData.recordingSegments.length} segment(s)
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">
+                      Recording: {answerData.recordingSegments.length} segment(s) • Total: {Math.round(answerData.recordingDuration || 0)}s
                     </h4>
-                    <div className="text-sm text-gray-600">
-                      Total duration: {Math.round(answerData.recordingDuration || 0)}s
+                    <div className="space-y-3">
+                      {answerData.recordingSegments.map((segment, index) => renderSegmentPreview(segment, index))}
                     </div>
                   </div>
                 )}
 
                 {answerData?.attachments && answerData.attachments.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">
                       Attachments: {answerData.attachments.length} file(s)
                     </h4>
+                    <div className="space-y-3">
+                      {answerData.attachments.map((attachment, index) => renderAttachmentPreview(attachment, index))}
+                    </div>
                   </div>
                 )}
               </div>
