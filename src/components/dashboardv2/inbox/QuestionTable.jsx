@@ -244,7 +244,15 @@ function QuestionTable({
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden question-table-container">
-      <div className="flex-1 overflow-y-auto overflow-x-auto min-w-0 pb-24 md:pb-0">
+      <div
+        className="flex-1 overflow-y-auto overflow-x-auto min-w-0 pb-24 md:pb-0"
+        style={{
+          overscrollBehaviorX: 'none',
+          overscrollBehaviorY: 'contain',
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
         <table
           className="w-full min-w-[800px]"
           style={{

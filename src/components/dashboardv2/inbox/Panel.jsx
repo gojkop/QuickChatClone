@@ -93,7 +93,10 @@ function Panel({
         width: `${width}%`,
         zIndex: zIndex,
         // Apply subtle backdrop on compressed panels
-        filter: !isActive && width < 40 ? 'brightness(0.98)' : 'none'
+        filter: !isActive && width < 40 ? 'brightness(0.98)' : 'none',
+        // Prevent swipe-back gestures
+        overscrollBehaviorX: 'none',
+        touchAction: 'pan-y'
       }}
     >
       {/* Panel Header (optional) */}

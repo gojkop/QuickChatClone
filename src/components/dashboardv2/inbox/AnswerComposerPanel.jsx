@@ -188,8 +188,14 @@ function AnswerComposerPanel({
 
       {/* Content - Scrollable */}
       <div
-        className="flex-1 overflow-y-auto overscroll-contain"
-        style={isMobile ? { paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' } : {}}
+        className="flex-1 overflow-y-auto"
+        style={{
+          paddingBottom: isMobile ? 'calc(6rem + env(safe-area-inset-bottom))' : '0',
+          overscrollBehaviorX: 'none',
+          overscrollBehaviorY: 'contain',
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch'
+        }}
       >
         <div className={`${isMobile ? 'p-3' : 'p-4 lg:p-6'} max-w-4xl mx-auto`}>
           {!showReview ? (

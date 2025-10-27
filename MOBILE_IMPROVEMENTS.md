@@ -5,7 +5,27 @@ This document tracks all mobile improvements made to the `/dashboard/inbox` rout
 
 ## Key Files Modified
 
-### 1. **ExpertInboxPageV2.jsx**
+### 1. **index.html**
+Location: `index.html`
+
+**Changes:**
+- Line 6: Enhanced viewport meta tag with `viewport-fit=cover` for iOS notch support
+- Lines 11-20: Global CSS to prevent pull-to-refresh and overscroll on html/body
+  ```css
+  html, body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  body {
+    touch-action: pan-y;
+  }
+  ```
+
+**Purpose:** Global swipe prevention at the document level for iOS and Android
+
+---
+
+### 2. **ExpertInboxPageV2.jsx**
 Location: `src/pages/ExpertInboxPageV2.jsx`
 
 **Changes:**
@@ -25,7 +45,7 @@ Location: `src/pages/ExpertInboxPageV2.jsx`
 
 ---
 
-### 2. **QuestionDetailPanel.jsx**
+### 3. **QuestionDetailPanel.jsx**
 Location: `src/components/dashboardv2/inbox/QuestionDetailPanel.jsx`
 
 **Mobile-specific changes (when `isMobile=true`):**
@@ -38,9 +58,13 @@ Location: `src/components/dashboardv2/inbox/QuestionDetailPanel.jsx`
   - Row 3: Q-ID + Badges
 - **Lines 495-537:** Desktop horizontal layout hidden when `isMobile=true`
 
-#### Content (Lines 615-618)
+#### Content (Lines 615-623)
 - **iOS safe area support:** `paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))'`
-- Ensures content clears iOS bottom navbar on all devices
+- **Swipe prevention:** Applied directly to scrollable div
+  - `overscrollBehaviorX: 'none'`
+  - `overscrollBehaviorY: 'contain'`
+  - `touchAction: 'pan-y'`
+  - `WebkitOverflowScrolling: 'touch'`
 
 #### Actions (Lines 901-1002)
 - **Mobile inline buttons** (Line 901): Shows when `isMobile=true`
@@ -53,7 +77,7 @@ Location: `src/components/dashboardv2/inbox/QuestionDetailPanel.jsx`
 
 ---
 
-### 3. **AnswerComposerPanel.jsx**
+### 4. **AnswerComposerPanel.jsx**
 Location: `src/components/dashboardv2/inbox/AnswerComposerPanel.jsx`
 
 **Mobile-specific changes (when `isMobile=true`):**
@@ -67,9 +91,14 @@ Location: `src/components/dashboardv2/inbox/AnswerComposerPanel.jsx`
 - **Line 172:** Back arrow button with `relative z-50` and iOS tap highlight disabled
 - **Line 176:** Back arrow **larger and bolder** for iOS visibility: `ArrowLeft size={24}` with `stroke-[2.5]`
 
-#### Content (Lines 190-194)
-- **Line 190-192:** iOS safe area support: `paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))'`
-- **Line 194:** Content padding: `p-3` on mobile vs `p-4 lg:p-6` on desktop
+#### Content (Lines 190-198)
+- **iOS safe area support:** `paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))'`
+- **Swipe prevention:** Applied directly to scrollable div
+  - `overscrollBehaviorX: 'none'`
+  - `overscrollBehaviorY: 'contain'`
+  - `touchAction: 'pan-y'`
+  - `WebkitOverflowScrolling: 'touch'`
+- **Line 200:** Content padding: `p-3` on mobile vs `p-4 lg:p-6` on desktop
 
 #### Buttons (Lines 239-253)
 - **Line 239:** Gap: `gap-2` on mobile vs `gap-3` on desktop
@@ -79,19 +108,36 @@ Location: `src/components/dashboardv2/inbox/AnswerComposerPanel.jsx`
 
 ---
 
-### 4. **Panel.jsx**
+### 5. **Panel.jsx**
 Location: `src/components/dashboardv2/inbox/Panel.jsx`
 
 **Changes:**
 - **Removed all drag/swipe handlers** (formerly lines 76-98)
+- **Lines 92-100:** Added swipe prevention directly to panel container
+  - `overscrollBehaviorX: 'none'`
+  - `touchAction: 'pan-y'`
 - Simplified to pure animation component
 - No touch interaction code
 
-**Current State:** ✅ Clean, no gesture handling
+**Current State:** ✅ Clean, no gesture handling, swipe prevention applied
 
 ---
 
-### 5. **PendingOffersBanner.jsx**
+### 6. **QuestionTable.jsx**
+Location: `src/components/dashboardv2/inbox/QuestionTable.jsx`
+
+**Changes:**
+- **Lines 247-254:** Added swipe prevention to scrollable table container
+  - `overscrollBehaviorX: 'none'`
+  - `overscrollBehaviorY: 'contain'`
+  - `touchAction: 'pan-y'`
+  - `WebkitOverflowScrolling: 'touch'`
+
+**Current State:** ✅ Swipe prevention applied to question table
+
+---
+
+### 7. **PendingOffersBanner.jsx**
 Location: `src/components/dashboardv2/inbox/PendingOffersBanner.jsx`
 
 **Changes (Lines 210-289):**
@@ -174,10 +220,17 @@ On a device with screenWidth < 1024px:
 ## Files Summary
 
 Modified for mobile improvements:
-1. `src/pages/ExpertInboxPageV2.jsx` - Pass isMobile, disable swipe
-2. `src/components/dashboardv2/inbox/QuestionDetailPanel.jsx` - Mobile header & inline buttons
-3. `src/components/dashboardv2/inbox/AnswerComposerPanel.jsx` - Mobile header & compact buttons
-4. `src/components/dashboardv2/inbox/Panel.jsx` - Removed swipe handlers
-5. `src/components/dashboardv2/inbox/PendingOffersBanner.jsx` - Stacked card layout
+1. `index.html` - Global swipe prevention and viewport settings
+2. `src/pages/ExpertInboxPageV2.jsx` - Pass isMobile, disable swipe
+3. `src/components/dashboardv2/inbox/QuestionTable.jsx` - Swipe prevention on table
+4. `src/components/dashboardv2/inbox/QuestionDetailPanel.jsx` - Mobile header, inline buttons, swipe prevention
+5. `src/components/dashboardv2/inbox/AnswerComposerPanel.jsx` - Mobile header, compact buttons, swipe prevention
+6. `src/components/dashboardv2/inbox/Panel.jsx` - Removed swipe handlers, added swipe prevention
+7. `src/components/dashboardv2/inbox/PendingOffersBanner.jsx` - Stacked card layout
 
 All changes use `isMobile` prop (threshold: screenWidth < 1024px) for consistency.
+
+**Swipe Prevention Strategy:**
+- Global level: `index.html` sets overscroll-behavior on html/body
+- Container level: Applied to ExpertInboxPageV2 wrapper and Panel components
+- Scrollable level: Applied directly to all overflow-y-auto divs (most effective)
