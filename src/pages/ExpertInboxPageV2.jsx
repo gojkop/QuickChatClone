@@ -747,7 +747,7 @@ function ExpertInboxPageV2() {
     console.log('🔄 Waiting for answer to be available in database...');
 
     // Wait for answer to be fetchable from database (max 5 attempts, 1 second apart)
-    let answerAvailable = false;
+    let answerData = null;
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
         console.log(`📝 Attempt ${attempt}/5: Checking if answer exists for question ${answeredQuestionId}`);
@@ -756,7 +756,7 @@ function ExpertInboxPageV2() {
 
         if (response.data?.answer) {
           console.log('✅ Answer found in database:', response.data.answer);
-          answerAvailable = true;
+          answerData = response.data;
           break;
         } else {
           console.log('⏳ Answer not yet available, waiting 1 second...');
@@ -770,7 +770,7 @@ function ExpertInboxPageV2() {
       }
     }
 
-    if (!answerAvailable) {
+    if (!answerData) {
       console.warn('⚠️ Answer not available after 5 attempts, proceeding anyway...');
     }
 
@@ -786,9 +786,23 @@ function ExpertInboxPageV2() {
     // Wait for questions to be in state, then re-open
     setTimeout(() => {
       // Find the answered question in the refreshed list
-      const answeredQuestion = questions.find(q => q.id === answeredQuestionId);
+      let answeredQuestion = questions.find(q => q.id === answeredQuestionId);
+
       if (answeredQuestion) {
-        console.log('📍 Re-opening answered question:', answeredQuestionId);
+        // Enrich the question with answer data we fetched earlier
+        if (answerData) {
+          console.log('✨ Enriching question with answer data');
+          answeredQuestion = {
+            ...answeredQuestion,
+            answered_at: answerData.answer.created_at,
+            answer_text: answerData.answer.text_response,
+            answer_media_asset_id: answerData.answer.media_asset_id,
+            answer_attachments: answerData.answer.attachments,
+            status: 'answered'  // Ensure status is set
+          };
+        }
+
+        console.log('📍 Re-opening answered question with data:', answeredQuestion);
         openPanel('detail', answeredQuestion);
       } else {
         console.warn('⚠️ Could not find answered question in list:', answeredQuestionId);

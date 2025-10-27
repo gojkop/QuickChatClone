@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError, isSubmitting, onPaymentStart }) {
+function StripePaymentForm({ clientSecret, amount, currency, payerEmail, onSuccess, onError, isSubmitting, onPaymentStart }) {
   const stripe = useStripe();
   const elements = useElements();
   const [paymentError, setPaymentError] = useState(null);
@@ -17,11 +17,13 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
       return;
     }
 
+    // Set processing state and notify parent IMMEDIATELY
     setIsProcessing(true);
     setPaymentError(null);
-
-    // Notify parent immediately that payment processing has started
     onPaymentStart?.();
+
+    // Small delay to ensure loader renders before Stripe validation blocks UI
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     try {
       console.log('🔍 [STRIPE FORM] Confirming payment with client secret:', clientSecret.substring(0, 20) + '...');
@@ -74,6 +76,11 @@ function StripePaymentForm({ clientSecret, amount, currency, onSuccess, onError,
         <PaymentElement
           options={{
             layout: 'tabs',
+            defaultValues: payerEmail ? {
+              billingDetails: {
+                email: payerEmail,  // Pre-fill email to enable Link
+              }
+            } : undefined
           }}
         />
       </div>

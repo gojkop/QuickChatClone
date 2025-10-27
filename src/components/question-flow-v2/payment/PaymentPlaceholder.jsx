@@ -248,6 +248,7 @@ function PaymentPlaceholder({
               ? parseFloat(composeData.tierSpecific.proposedPrice) * 100
               : tierConfig?.price_cents || expert.price_cents || 0}
             currency={expert.currency || 'usd'}
+            payerEmail={reviewData?.email}
             onSuccess={handlePaymentSuccess}
             onError={handlePaymentError}
             isSubmitting={isSubmitting}
