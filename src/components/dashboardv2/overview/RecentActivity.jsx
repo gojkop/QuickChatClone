@@ -5,7 +5,7 @@ import { MessageSquare, Clock, Eye, MessageCircle, Star, Zap, User, Share2, Tren
 import { useProfile } from '@/context/ProfileContext';
 import { calculateProfileStrength } from '@/utils/profileStrength';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
-import { useToast } from '@/context/ToastContext';
+import { useToast } from '@/components/common/Toast';
 
 function RecentActivity({ questions = [] }) {
   const navigate = useNavigate();
