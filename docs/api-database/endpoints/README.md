@@ -82,16 +82,16 @@ Review and feedback system.
 User account and profile management.
 
 **Endpoints:**
-- `account.xs` - PUT /me/account
-- `profile.xs` - GET /expert/profile/{handle}
-- `check-handle.xs` - GET /expert/profile/check-handle/{handle}
-- `deleteacc.xs` - DELETE /me/delete-account
-- `availability.xs` - POST /expert/profile/availability
+- `account.xs` - PUT /me/account (Authentication API)
+- `profile.xs` - GET /expert/profile/{handle} (Public API)
+- `check-handle.xs` - GET /expert/profile/check-handle/{handle} (Public API)
+- `deleteacc.xs` - DELETE /me/delete-account (Authentication API)
+- `availability.xs` - POST /expert/profile/availability (Authentication API)
 
 **Features:**
 - Profile updates
 - Public profile data
-- Handle availability checking
+- Handle availability checking (unauthenticated, Public API)
 - GDPR-compliant account deletion
 - Availability toggle for experts
 

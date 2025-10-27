@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader, CheckCircle, AlertCircle, DollarSign, Clock } from 'lucide-react';
+import axios from 'axios';
 import apiClient from '@/api';
+import { XANO_PUBLIC_API_URL } from '@/config/xano';
 
 function EssentialSetupForm({ onComplete, onSkip, userName }) {
   const [handle, setHandle] = useState('');
@@ -49,7 +51,10 @@ function EssentialSetupForm({ onComplete, onSkip, userName }) {
     // Debounce for 500ms
     handleCheckTimeout.current = setTimeout(async () => {
       try {
-        const response = await apiClient.get(`/expert/profile/check-handle/${handle}`);
+        // Use Public API for check-handle endpoint (no auth required)
+        const response = await axios.get(
+          `${XANO_PUBLIC_API_URL}/expert/profile/check-handle/${handle}`
+        );
         if (response.data.available) {
           setHandleValidation({
             checking: false,

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import apiClient from '@/api';
 import { useProfile } from '@/context/ProfileContext';
+import { XANO_PUBLIC_API_URL } from '@/config/xano';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
 import AvatarUpload from '@/components/dashboard/AvatarUpload';
 import CharityDonationSelector from '@/components/dashboard/CharityDonationSelector';
@@ -91,7 +93,10 @@ function ProfileSettingsPage() {
     setHandleValidation({ checking: true, available: null, message: 'Checking availability...' });
 
     try {
-      const response = await apiClient.get(`/expert/profile/check-handle/${handle}`);
+      // Use Public API for check-handle endpoint (no auth required)
+      const response = await axios.get(
+        `${XANO_PUBLIC_API_URL}/expert/profile/check-handle/${handle}`
+      );
       if (response.data.available) {
         setHandleValidation({ checking: false, available: true, message: 'Handle is available!' });
       } else {
