@@ -214,35 +214,29 @@ function RecentActivity({ questions = [] }) {
           const questionType = getQuestionType(question);
           const timeLeft = getTimeLeft(question);
 
-          // Visual config based on question type
+          // Visual config based on question type - minimal colors
           const typeConfig = {
             pending_offer: {
               borderColor: 'border-l-orange-400 hover:border-orange-300',
-              bgGradient: 'bg-gradient-to-br from-orange-100 to-amber-100',
-              textColor: 'text-orange-700',
-              badgeBg: 'bg-gradient-to-r from-orange-100 to-amber-100',
-              badgeText: 'text-orange-700',
+              badgeText: 'text-orange-600',
               badgeBorder: 'border-orange-200',
+              badgeBg: 'bg-orange-50',
               icon: Star,
-              label: 'Pending Offer'
+              label: 'Pending'
             },
             accepted_deep_dive: {
               borderColor: 'border-l-purple-400 hover:border-purple-300',
-              bgGradient: 'bg-gradient-to-br from-purple-100 to-indigo-100',
-              textColor: 'text-purple-700',
-              badgeBg: 'bg-gradient-to-r from-purple-100 to-indigo-100',
-              badgeText: 'text-purple-700',
+              badgeText: 'text-purple-600',
               badgeBorder: 'border-purple-200',
+              badgeBg: 'bg-purple-50',
               icon: Star,
               label: 'Deep Dive'
             },
             quick: {
-              borderColor: 'border-l-transparent hover:border-indigo-300',
-              bgGradient: 'bg-gradient-to-br from-blue-100 to-cyan-100',
-              textColor: 'text-blue-700',
-              badgeBg: 'bg-blue-50',
-              badgeText: 'text-blue-700',
-              badgeBorder: 'border-blue-200',
+              borderColor: 'border-l-gray-300 hover:border-gray-400',
+              badgeText: 'text-gray-600',
+              badgeBorder: 'border-gray-200',
+              badgeBg: 'bg-gray-50',
               icon: Zap,
               label: 'Quick'
             }
@@ -255,72 +249,47 @@ function RecentActivity({ questions = [] }) {
             <div
               key={question.id}
               className={`
-                group relative p-2 border border-l-[3px] rounded-lg hover:shadow-md transition-all cursor-pointer
+                group relative p-2 border border-l-[3px] rounded-lg hover:shadow-sm transition-all cursor-pointer
                 ${config.borderColor}
-                border-gray-200
+                border-gray-200 hover:bg-gray-50
               `}
               onMouseEnter={() => setHoveredQuestion(question.id)}
               onMouseLeave={() => setHoveredQuestion(null)}
-              onClick={() => {
-                // For pending offers, navigate to inbox (they need to be accepted first)
-                if (questionType === 'pending_offer') {
-                  navigate('/dashboard/inbox');
-                } else {
-                  navigate(`/dashboard/inbox#question-${question.id}`);
-                }
-              }}
+              onClick={() => navigate(`/dashboard/inbox#question-${question.id}`)}
             >
-              <div className="flex items-start gap-2">
-                {/* Type Icon */}
-                <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center shadow-sm ${config.bgGradient} ${config.textColor}`}>
-                  <IconComponent size={14} fill={questionType === 'pending_offer' ? 'currentColor' : 'none'} />
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                {/* Left: Type Badge + Title + Name */}
+                <div className="flex-1 min-w-0 flex items-start gap-2">
+                  {/* Type Badge */}
+                  <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 ${config.badgeBg} ${config.badgeText} border ${config.badgeBorder} rounded text-[10px] font-semibold flex-shrink-0`}>
+                    <IconComponent size={8} fill={questionType === 'pending_offer' ? 'currentColor' : 'none'} />
+                    <span>{config.label}</span>
+                  </span>
 
-                {/* Content - COMPACT */}
-                <div className="flex-1 min-w-0">
-                  {/* Type Badge + Question Title */}
-                  <div className="flex items-start gap-1.5 mb-0.5">
-                    <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 ${config.badgeBg} ${config.badgeText} border ${config.badgeBorder} rounded text-[10px] font-bold flex-shrink-0`}>
-                      <IconComponent size={8} fill={questionType === 'pending_offer' ? 'currentColor' : 'none'} />
-                      <span>{config.label}</span>
-                    </span>
-                    <p className="text-xs text-gray-700 line-clamp-1 flex-1 min-w-0">
+                  {/* Title + Name */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-900 line-clamp-1 mb-0.5">
                       {question.title || question.question_text || question.text || 'Untitled Question'}
                     </p>
-                  </div>
-
-                  {/* Name + Email */}
-                  <div className="flex items-center gap-1 text-[11px] text-gray-600 mb-1">
-                    <User size={10} className="text-gray-400 flex-shrink-0" />
                     {question.user_name && (
-                      <span className="font-medium truncate">{question.user_name}</span>
-                    )}
-                    {question.user_email && (
-                      <>
-                        <span className="text-gray-400">·</span>
-                        <a
-                          href={`mailto:${question.user_email}`}
-                          className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {question.user_email}
-                        </a>
-                      </>
+                      <p className="text-[11px] text-gray-500 truncate">
+                        {question.user_name}
+                      </p>
                     )}
                   </div>
+                </div>
 
-                  {/* Price + Time Left */}
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-green-50 text-green-700 font-bold border border-green-200">
-                      {formatCurrency(question.price_cents)}
+                {/* Right: Price + Time */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs font-bold text-gray-900">
+                    {formatCurrency(question.price_cents)}
+                  </span>
+                  {timeLeft && (
+                    <span className={`flex items-center gap-0.5 text-[11px] font-semibold ${getTimeUrgencyColor(timeLeft.hours)}`}>
+                      <Clock size={10} />
+                      {timeLeft.text}
                     </span>
-                    {timeLeft && (
-                      <span className={`flex items-center gap-0.5 font-semibold ${getTimeUrgencyColor(timeLeft.hours)}`}>
-                        <Clock size={10} />
-                        {timeLeft.text}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -330,11 +299,7 @@ function RecentActivity({ questions = [] }) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (questionType === 'pending_offer') {
-                        navigate('/dashboard/inbox');
-                      } else {
-                        navigate(`/dashboard/inbox#question-${question.id}`);
-                      }
+                      navigate(`/dashboard/inbox#question-${question.id}`);
                     }}
                     className="p-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-lg transition-colors"
                     title="View details"
