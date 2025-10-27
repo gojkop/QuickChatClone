@@ -7,13 +7,11 @@ query "upload/profile-picture" verb=POST {
 
   stack {
     conditional {
-      if ($input.image_url == `null` || $input.image_url == `""` || $input.image_url == is_empty($input.image_url)
-      
-      ) {
+      if ($input.image_url == null) {
         db.edit expert_profile {
           field_name = "user_id"
           field_value = $auth.id
-          data = {avatar_url: `""`}
+          data = {avatar_url: ""}
         } as $updated_profile
       }
       else {

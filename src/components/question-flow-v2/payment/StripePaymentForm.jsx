@@ -47,20 +47,23 @@ function StripePaymentForm({ clientSecret, amount, currency, payerEmail, onSucce
       if (error) {
         console.error('❌ Payment failed:', error.message);
         setPaymentError(error.message);
+        setIsProcessing(false);  // Reset only on error
         onError?.(error);
       } else if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture')) {
         console.log('✅ Payment confirmed:', paymentIntent.id, 'Status:', paymentIntent.status);
+        // Keep isProcessing=true until page navigation completes
+        // Don't call setIsProcessing(false) here - let the unmount handle it
         onSuccess?.(paymentIntent);
       } else if (paymentIntent) {
         console.warn('⚠️ Payment status:', paymentIntent.status);
         setPaymentError(`Payment status: ${paymentIntent.status}`);
+        setIsProcessing(false);  // Reset on unexpected status
       }
     } catch (err) {
       console.error('❌ Payment error:', err);
       setPaymentError(err.message || 'An unexpected error occurred');
+      setIsProcessing(false);  // Reset only on error
       onError?.(err);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
