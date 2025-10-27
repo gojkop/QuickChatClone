@@ -735,12 +735,29 @@ function ExpertInboxPageV2() {
     }
   };
 
-  const handleAnswerSubmitted = async () => {
+  const handleAnswerSubmitted = async (answeredQuestionId) => {
+    // Switch to answered tab
+    updateFilter('status', 'answered');
+
+    // Refresh questions to get the updated data
     await refreshQuestions();
+
+    // Close panels
     closePanel('answer');
     closePanel('detail');
+
+    // Show success message
     success('Answer submitted successfully!');
     announceToScreenReader('Answer submitted successfully');
+
+    // Wait for state to update, then re-open the answered question
+    setTimeout(() => {
+      // Find the answered question in the refreshed list
+      const answeredQuestion = questions.find(q => q.id === answeredQuestionId);
+      if (answeredQuestion) {
+        openPanel('detail', answeredQuestion);
+      }
+    }, 500);
   };
 
   const handleAvailabilityChange = (newStatus) => {

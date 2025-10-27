@@ -2,10 +2,9 @@
 // Answer composer panel for cascading layout
 
 import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import AnswerRecorder from '@/components/dashboard/AnswerRecorder';
-import AnswerReviewModal from '@/components/dashboard/AnswerReviewModal';
-import AnswerSubmittedModal from '@/components/dashboard/AnswerSubmittedModal';
+import { useAnswerUpload } from '@/hooks/useAnswerUpload';
 
 function AnswerComposerPanel({
   question,
@@ -13,34 +12,32 @@ function AnswerComposerPanel({
   onClose,
   onAnswerSubmitted
 }) {
-  const [answerData, setAnswerData] = useState(null);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [submittedAnswerId, setSubmittedAnswerId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const answerUpload = useAnswerUpload();
 
-  const handleReady = (data) => {
-    setAnswerData(data);
-    setShowReviewModal(true);
-  };
+  const handleReady = async (data) => {
+    // Start submission immediately in background
+    setIsSubmitting(true);
+    setSubmitError(null);
 
-  const handleBackToEdit = () => {
-    setShowReviewModal(false);
-  };
+    try {
+      const userId = profile?.user?.id || profile?.id;
+      const result = await answerUpload.submitAnswer(data, question.id, userId);
 
-  const handleAnswerSubmitted = (answerId) => {
-    setSubmittedAnswerId(answerId);
-    setShowReviewModal(false);
-    setShowSuccessModal(true);
-    
-    setTimeout(() => {
-      handleSuccessClose();
-    }, 2000);
-  };
+      console.log('✅ Answer submitted successfully:', result);
 
-  const handleSuccessClose = () => {
-    setShowSuccessModal(false);
-    onAnswerSubmitted?.();
-    onClose();
+      // Brief success state, then trigger callback
+      setTimeout(() => {
+        onAnswerSubmitted?.(question.id);
+        onClose();
+      }, 800);
+
+    } catch (error) {
+      console.error('❌ Failed to submit answer:', error);
+      setSubmitError(error.message || 'Failed to submit answer');
+      setIsSubmitting(false);
+    }
   };
 
   if (!question || !profile) {
@@ -52,13 +49,14 @@ function AnswerComposerPanel({
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Header - CHANGED: Only back arrow, removed X */}
+    <div className="h-full flex flex-col bg-white relative">
+      {/* Header */}
       <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50">
         <div className="px-4 py-3 flex items-center gap-3">
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
+            disabled={isSubmitting}
+            className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Back to question"
           >
             <ArrowLeft size={18} />
@@ -82,30 +80,62 @@ function AnswerComposerPanel({
             onReady={handleReady}
             onCancel={onClose}
             expert={profile}
+            disabled={isSubmitting}
           />
         </div>
       </div>
 
-      {/* Review Modal */}
-      {showReviewModal && answerData && (
-        <AnswerReviewModal
-          isOpen={showReviewModal}
-          onClose={handleBackToEdit}
-          question={question}
-          answerData={answerData}
-          userId={profile?.user?.id || profile?.id}
-          onAnswerSubmitted={handleAnswerSubmitted}
-        />
+      {/* Discrete Loading Overlay */}
+      {isSubmitting && (
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm mx-4">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <Loader2 size={48} className="text-indigo-600 animate-spin" />
+                <CheckCircle
+                  size={24}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600 opacity-30"
+                />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Submitting Answer
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Processing your answer and uploading media...
+                </p>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                <div className="bg-indigo-600 h-full rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Success Modal */}
-      {showSuccessModal && submittedAnswerId && (
-        <AnswerSubmittedModal
-          isOpen={showSuccessModal}
-          onClose={handleSuccessClose}
-          answerId={submittedAnswerId}
-          questionId={question.id}
-        />
+      {/* Error Message */}
+      {submitError && !isSubmitting && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-md mx-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-bold">!</span>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-red-900 mb-1">
+                  Submission Failed
+                </h4>
+                <p className="text-sm text-red-700">{submitError}</p>
+                <button
+                  onClick={() => setSubmitError(null)}
+                  className="mt-2 text-sm font-medium text-red-600 hover:text-red-700"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
