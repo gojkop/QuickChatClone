@@ -64,8 +64,11 @@ function EssentialSetupForm({ onComplete, onSkip, userName }) {
           });
         }
       } catch (err) {
-        console.error('Handle check error:', err);
-        // If endpoint doesn't exist yet, assume available
+        // Silently handle 404 - endpoint doesn't exist yet, assume available
+        if (err.response?.status !== 404) {
+          console.error('Handle check error:', err);
+        }
+        // If endpoint doesn't exist or any error, assume available
         setHandleValidation({
           checking: false,
           available: true,
