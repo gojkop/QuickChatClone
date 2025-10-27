@@ -198,97 +198,110 @@ function PendingOffersBanner({ onOfferUpdate, onViewDetails, onAcceptOffer, onDe
         </div>
       </div>
 
-      {/* Offer Cards - Table-like style */}
+      {/* Offer Cards - Compact Table-like Layout */}
       {!isCollapsed && (
-        <div className="px-4 py-3 space-y-1">
-          {offers.map((offer) => (
-            <div
-              key={offer.question_id}
-              onClick={(e) => handleViewDetails(offer, e)}
-              className="relative p-3 border border-l-[3px] border-l-purple-400 bg-white rounded-lg transition-all duration-200 cursor-pointer hover:border-purple-300 hover:shadow-md hover:-translate-y-0.5"
-            >
-              {/* Main Content - Responsive Layout */}
-              <div className="space-y-2">
-                {/* Row 1: Badge + Q-ID + Title */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded text-xs font-bold flex-shrink-0">
-                    <Star size={10} />
-                    <span>Deep Dive</span>
-                  </span>
-                  <span className="text-xs text-gray-400 font-mono">Q-{offer.question_id}</span>
-                  <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
-                    {offer.title || 'Untitled Question'}
-                  </h3>
-                </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+            <tbody className="bg-white divide-y divide-purple-100">
+              {offers.map((offer) => (
+                <tr
+                  key={offer.question_id}
+                  onClick={(e) => handleViewDetails(offer, e)}
+                  className="cursor-pointer hover:bg-purple-50/50 transition-colors group"
+                >
+                  {/* Deep Dive Badge - Fixed width like checkbox column */}
+                  <td className="w-12 px-3 py-3">
+                    <div className="flex items-center justify-center w-6 h-6 rounded bg-gradient-to-br from-purple-600 to-indigo-600 shadow-sm" title="Deep Dive Offer">
+                      <Star size={12} className="text-white" fill="white" />
+                    </div>
+                  </td>
 
-                {/* Row 2: Asker Info */}
-                <div className="flex items-center gap-1.5 text-xs flex-wrap">
-                  <div className="flex items-center gap-1">
-                    <User size={12} className="text-gray-400 flex-shrink-0" />
-                    <span className="font-medium text-gray-900">{offer.payer_name || 'Anonymous'}</span>
-                  </div>
-                  {offer.payer_email && (
-                    <a
-                      href={`mailto:${offer.payer_email}`}
-                      className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {offer.payer_email}
-                    </a>
-                  )}
-                </div>
+                  {/* Question Column - Matches table width */}
+                  <td className="px-3 py-3" style={{ width: '40%' }}>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 font-mono">Q-{offer.question_id}</span>
+                        <h3 className="text-sm font-semibold text-gray-900 truncate flex-1">
+                          {offer.title || 'Untitled Question'}
+                        </h3>
+                      </div>
+                    </div>
+                  </td>
 
-                {/* Row 3: Price + Time + Actions */}
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    {/* Price */}
-                    <div className="px-2.5 py-1 rounded-lg font-bold text-sm bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 shadow-sm">
+                  {/* Asker Column - Matches table width */}
+                  <td className="px-3 py-3" style={{ width: '25%' }}>
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <User size={12} className="text-gray-400 flex-shrink-0" />
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                          {offer.payer_name || 'Anonymous'}
+                        </span>
+                      </div>
+                      {offer.payer_email && (
+                        <a
+                          href={`mailto:${offer.payer_email}`}
+                          className="text-xs text-indigo-600 hover:text-indigo-700 hover:underline truncate ml-5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {offer.payer_email}
+                        </a>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Price Column - Matches table width */}
+                  <td className="px-3 py-3" style={{ width: '12%' }}>
+                    <div className="inline-flex px-2.5 py-1 rounded-lg font-bold text-sm bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200">
                       {formatPrice(offer.proposed_price_cents)}
                     </div>
+                  </td>
 
-                    {/* Time Left */}
+                  {/* Time Left Column - Matches table width */}
+                  <td className="px-3 py-3" style={{ width: '11%' }}>
                     <div className={`flex items-center gap-1 text-xs font-semibold ${getTimeRemainingColor(offer.offer_expires_at, offer.created_at)}`}>
                       <Clock size={12} />
                       <span className="whitespace-nowrap">{formatTimeRemaining(offer.offer_expires_at)}</span>
                     </div>
-                  </div>
+                  </td>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={(e) => handleAccept(offer, e)}
-                      disabled={processingOfferId === offer.question_id}
-                      className="px-2.5 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                      title="Accept offer"
-                    >
-                      {processingOfferId === offer.question_id ? (
-                        <Loader className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Check size={14} />
-                      )}
-                    </button>
+                  {/* Actions Column - Compact buttons */}
+                  <td className="px-3 py-3" style={{ width: '12%' }}>
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <button
+                        onClick={(e) => handleAccept(offer, e)}
+                        disabled={processingOfferId === offer.question_id}
+                        className="p-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        title="Accept offer"
+                      >
+                        {processingOfferId === offer.question_id ? (
+                          <Loader className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Check size={16} />
+                        )}
+                      </button>
 
-                    <button
-                      onClick={(e) => handleDecline(offer, e)}
-                      disabled={processingOfferId === offer.question_id}
-                      className="px-2.5 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Decline offer"
-                    >
-                      <X size={14} />
-                    </button>
+                      <button
+                        onClick={(e) => handleDecline(offer, e)}
+                        disabled={processingOfferId === offer.question_id}
+                        className="p-1.5 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Decline offer"
+                      >
+                        <X size={16} />
+                      </button>
 
-                    <button
-                      onClick={(e) => handleViewDetails(offer, e)}
-                      className="px-2.5 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded hover:bg-indigo-700 transition-all shadow-sm"
-                      title="View details"
-                    >
-                      <Eye size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+                      <button
+                        onClick={(e) => handleViewDetails(offer, e)}
+                        className="p-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-all shadow-sm"
+                        title="View details"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
