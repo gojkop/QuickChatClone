@@ -460,6 +460,73 @@ function AnswerReviewPage() {
 
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
+  // Helper to render attachment preview based on MIME type
+  const renderAttachmentPreview = (file) => {
+    const type = file.type || '';
+    const url = file.url || '';
+    const name = file.name || 'Attachment';
+
+    // Video files
+    if (type.startsWith('video/')) {
+      return (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-300 bg-black">
+          <video
+            controls
+            className="w-full"
+            preload="metadata"
+            style={{ maxHeight: '300px' }}
+          >
+            <source src={url} type={type} />
+            Your browser does not support video playback.
+          </video>
+        </div>
+      );
+    }
+
+    // Audio files
+    if (type.startsWith('audio/')) {
+      return (
+        <div className="mt-2 p-3 bg-gray-900 rounded-lg">
+          <audio controls className="w-full" preload="metadata">
+            <source src={url} type={type} />
+            Your browser does not support audio playback.
+          </audio>
+        </div>
+      );
+    }
+
+    // Image files
+    if (type.startsWith('image/')) {
+      return (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-300">
+          <img
+            src={url}
+            alt={name}
+            className="w-full h-auto object-contain"
+            style={{ maxHeight: '400px' }}
+          />
+        </div>
+      );
+    }
+
+    // PDF files - embedded viewer
+    if (type === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
+      return (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-300 bg-gray-100">
+          <iframe
+            src={url}
+            className="w-full"
+            style={{ height: '500px' }}
+            title={name}
+          />
+        </div>
+      );
+    }
+
+    // Other files - no inline preview
+    return null;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -736,24 +803,26 @@ function AnswerReviewPage() {
 
               {/* Attachments */}
               {data.answer?.attachments && data.answer.attachments.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Attachments</p>
                   {data.answer.attachments.map((file, index) => (
-                    <a
-                      key={index}
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
-                    >
-                      <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                      <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
-                      <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
+                    <div key={index} className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 text-sm hover:bg-gray-100 transition-all group"
+                      >
+                        <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
+                        <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                      {renderAttachmentPreview(file)}
+                    </div>
                   ))}
                 </div>
               )}
@@ -976,21 +1045,23 @@ function AnswerReviewPage() {
 
                   {/* File Attachments */}
                   {data.attachments && data.attachments.length > 0 && data.attachments.map((file, index) => (
-                    <a
-                      key={index}
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all group"
-                    >
-                      <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                      <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
-                      <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
+                    <div key={index} className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 text-sm hover:bg-gray-100 transition-all group"
+                      >
+                        <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        <span className="flex-1 text-gray-700 text-xs sm:text-sm truncate font-medium">{file.name}</span>
+                        <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                      {renderAttachmentPreview(file)}
+                    </div>
                   ))}
                 </div>
               )}

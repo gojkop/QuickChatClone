@@ -439,20 +439,21 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '',
         id: Date.now(),
         ...currentSegment
       };
-      
+
       setSegments(prev => [...prev, segmentData]);
-      
+
       try {
         await segmentUpload.uploadSegment(
           currentSegment.blob,
           currentSegment.mode,
           segments.length,
-          currentSegment.duration
+          currentSegment.duration,
+          currentSegment.blobUrl // Pass blobUrl so it can be preserved
         );
       } catch (error) {
         console.error('Segment upload failed:', error);
       }
-      
+
       setCurrentSegment(null);
       setRecordingState('idle');
     }

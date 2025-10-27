@@ -6,7 +6,7 @@ import { useState, useCallback } from 'react';
 export function useRecordingSegmentUpload() {
   const [segments, setSegments] = useState([]);
 
-  const uploadSegment = useCallback(async (blob, mode, segmentIndex, duration) => {
+  const uploadSegment = useCallback(async (blob, mode, segmentIndex, duration, blobUrl = null) => {
     const segmentId = `${Date.now()}-${segmentIndex}`;
 
     console.log('🚀 Starting upload:', {
@@ -16,6 +16,7 @@ export function useRecordingSegmentUpload() {
       duration,
       blobSize: blob.size,
       blobType: blob.type,
+      hasBlobUrl: !!blobUrl,
     });
 
     // Validate blob
@@ -66,6 +67,7 @@ export function useRecordingSegmentUpload() {
         const result = {
           uid: audioResult.data.uid,
           playbackUrl: audioResult.data.playbackUrl,
+          blobUrl, // Preserve blobUrl for immediate playback
           duration,
           mode: 'audio',
           size: blob.size,
@@ -131,12 +133,13 @@ export function useRecordingSegmentUpload() {
 
       // Step 3: Build result
       const accountId = import.meta.env.VITE_CLOUDFLARE_ACCOUNT_ID;
-      
+
       const result = {
         uid,
-        playbackUrl: accountId 
+        playbackUrl: accountId
           ? `https://customer-${accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`
           : null,
+        blobUrl, // Preserve blobUrl for immediate playback while Stream processes
         duration,
         mode,
         size: blob.size,
