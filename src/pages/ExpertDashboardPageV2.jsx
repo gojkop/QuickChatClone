@@ -17,12 +17,14 @@ import PerformanceSnapshot from '@/components/dashboardv2/overview/PerformanceSn
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
 import MobileBottomNav from '@/components/dashboardv2/navigation/MobileBottomNav';
 import OnboardingFlow from '@/components/dashboardv2/onboarding/OnboardingFlow';
+import ProfileCompletionCard from '@/components/dashboardv2/onboarding/ProfileCompletionCard';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
 import { Clock, Star, MessageSquare } from 'lucide-react';
 import { formatDuration } from '@/utils/dashboardv2/metricsCalculator';
+import { shouldShowOnboardingCard } from '@/utils/profileStrength';
 
 function ExpertDashboardPageV2() {
   const navigate = useNavigate();
@@ -39,6 +41,7 @@ function ExpertDashboardPageV2() {
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [showProfileCard, setShowProfileCard] = useState(false);
 
   const {
     data: questionsData,
@@ -73,16 +76,22 @@ function ExpertDashboardPageV2() {
     updateAvailability(newStatus);
   }, [updateAvailability]);
 
-  // Check if expert needs onboarding
+  // Check if expert needs onboarding or profile completion card
   useEffect(() => {
     if (!profileLoading && expertProfile && !onboardingChecked) {
       const hasHandle = !!expertProfile.handle;
       const hasPrice = !!expertProfile.tier1_price_cents;
       const hasSLA = !!expertProfile.tier1_sla_hours;
 
-      // Show onboarding if any essential field is missing
+      // Show onboarding modal if any essential field is missing
       if (!hasHandle || !hasPrice || !hasSLA) {
         setShowOnboarding(true);
+        setShowProfileCard(false);
+      } else {
+        // Show profile completion card if profile is incomplete
+        const shouldShow = shouldShowOnboardingCard(expertProfile);
+        setShowProfileCard(shouldShow);
+        setShowOnboarding(false);
       }
 
       setOnboardingChecked(true);
@@ -95,6 +104,27 @@ function ExpertDashboardPageV2() {
     if (refetchProfile) {
       await refetchProfile();
     }
+    // Show profile completion card after onboarding
+    setShowProfileCard(true);
+  };
+
+  const handleProfileCardDismiss = (permanent) => {
+    setShowProfileCard(false);
+
+    if (permanent) {
+      // TODO: Call API to permanently dismiss profile card
+      // await apiClient.post('/expert/profile/dismiss-onboarding', { permanent: true });
+      console.log('Profile card permanently dismissed');
+    } else {
+      // Temporary dismiss - will show again on next visit
+      console.log('Profile card temporarily dismissed');
+    }
+  };
+
+  const handleCompleteSetup = () => {
+    // Re-open onboarding modal
+    setShowOnboarding(true);
+    setShowProfileCard(false);
   };
 
   const isInitialLoad = profileLoading || (questionsLoading && questions.length === 0);
@@ -157,6 +187,17 @@ function ExpertDashboardPageV2() {
         searchData={{ questions }}
       >
         <WelcomeHero />
+
+        {/* Profile Completion Card - shows when profile is incomplete */}
+        {showProfileCard && expertProfile && (
+          <div className="mb-6">
+            <ProfileCompletionCard
+              expertProfile={expertProfile}
+              onDismiss={handleProfileCardDismiss}
+              onCompleteSetup={handleCompleteSetup}
+            />
+          </div>
+        )}
 
         {/* BENTO GRID with stagger animation */}
         <BentoGrid className="mb-4 stagger-children">
