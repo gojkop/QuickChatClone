@@ -55,12 +55,26 @@ function RecentActivity({ questions = [] }) {
 
   if (recentQuestions.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
-        <h2 className="text-sm font-bold text-gray-900 mb-3">Recent Questions</h2>
-        <div className="text-center py-6 text-gray-500">
-          <MessageSquare size={40} className="mx-auto mb-2 text-gray-300" strokeWidth={1.5} />
-          <p className="font-semibold text-gray-700 mb-0.5 text-sm">No pending questions</p>
-          <p className="text-xs">You're all caught up! 🎉</p>
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-bold text-gray-900">Recent Questions</h2>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-6 px-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl flex items-center justify-center mb-3">
+            <MessageSquare className="w-6 h-6 text-indigo-400" strokeWidth={1.5} />
+          </div>
+          <p className="font-semibold text-gray-700 mb-2 text-sm">
+            Your inbox is ready
+          </p>
+          <p className="text-xs text-gray-600 mb-4 max-w-[200px]">
+            Complete your profile to start receiving questions
+          </p>
+          <button
+            onClick={() => navigate('/dashboard/profile')}
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+          >
+            Complete Profile →
+          </button>
         </div>
       </div>
     );

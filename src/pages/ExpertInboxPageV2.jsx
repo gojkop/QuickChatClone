@@ -14,6 +14,7 @@ import AnswerComposerPanel from '@/components/dashboardv2/inbox/AnswerComposerPa
 import BottomSheet from '@/components/dashboardv2/inbox/BottomSheet';
 import KeyboardShortcutsModal from '@/components/dashboardv2/inbox/KeyboardShortcutsModal';
 import EmptyState from '@/components/common/EmptyState';
+import InboxEmptyState from '@/components/dashboardv2/inbox/InboxEmptyState';
 import { SkeletonTable } from '@/components/common/Skeleton';
 import { ToastContainer } from '@/components/common/Toast';
 import { useInbox } from '@/hooks/dashboardv2/useInbox';
@@ -786,11 +787,22 @@ function ExpertInboxPageV2() {
   // Render question list (virtualized or standard)
   const renderQuestionList = () => {
     if (filteredQuestions.length === 0) {
+      // True empty state - no questions at all
+      const hasNoQuestions = questions.length === 0;
+      const isSearching = filters.searchQuery;
+      const isFiltering = filters.status !== 'all';
+
+      // Use rich InboxEmptyState only when truly empty (no filters/search active)
+      if (hasNoQuestions && !isSearching && !isFiltering) {
+        return <InboxEmptyState />;
+      }
+
+      // Use simple EmptyState for filtered/search results
       return (
         <EmptyState
-          icon={filters.searchQuery ? 'search' : filters.status !== 'all' ? 'filter' : 'inbox'}
-          title={filters.searchQuery ? 'No matching questions' : filters.status !== 'all' ? 'No questions in this filter' : 'No questions yet'}
-          description={filters.searchQuery ? 'Try adjusting your search terms' : filters.status !== 'all' ? 'Try changing your filters' : 'Questions will appear here when customers ask them'}
+          icon={isSearching ? 'search' : 'filter'}
+          title={isSearching ? 'No matching questions' : 'No questions in this filter'}
+          description={isSearching ? 'Try adjusting your search terms' : 'Try changing your filters'}
         />
       );
     }
