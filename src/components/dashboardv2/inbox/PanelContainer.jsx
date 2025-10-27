@@ -55,7 +55,7 @@ function PanelContainer({
               width={panel.width}
               zIndex={zIndex}
               isActive={isActive}
-              onClose={() => onClosePanel(panel.type)}
+              onClose={isActive ? () => onClosePanel(panel.type) : onCloseTopPanel}
               showCloseButton={panel.type !== 'list'}
             >
               {renderPanel(panel)}

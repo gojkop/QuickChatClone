@@ -138,13 +138,15 @@ function Panel({
         </button>
       )}
       */}
-      {/* Subtle darkening overlay for inactive panels */}
+      {/* Subtle darkening overlay for inactive panels - clickable on desktop to bring panel forward */}
       {!isActive && width > 0 && width < 100 && (
         <div
-          className="absolute inset-0 bg-black pointer-events-none transition-opacity duration-300"
+          onClick={onClose}
+          className="absolute inset-0 bg-black transition-all duration-300 cursor-pointer hidden lg:block hover:bg-gray-900/5"
           style={{
             opacity: Math.max(0, (100 - width) / 1000) // Very subtle darkening
           }}
+          title="Click to return to this view"
         />
       )}
     </motion.div>
