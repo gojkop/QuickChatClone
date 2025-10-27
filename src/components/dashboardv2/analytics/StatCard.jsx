@@ -28,27 +28,27 @@ function StatCard({
   const isPositive = hasTrend ? (trendInverse ? trend < 0 : trend > 0) : null;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <span className="text-sm font-medium text-gray-600">{label}</span>
+    <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-2 sm:mb-3">
+        <span className="text-xs sm:text-sm font-medium text-gray-600">{label}</span>
         {Icon && (
-          <div className={`p-2 rounded-lg shadow-sm ${colorClasses[color]}`}>
-            <Icon size={18} strokeWidth={2.5} />
+          <div className={`p-1.5 sm:p-2 rounded-lg shadow-sm ${colorClasses[color]}`}>
+            <Icon size={16} className="sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
           </div>
         )}
       </div>
 
-      <div className="text-2xl font-black text-gray-900 mb-2">
+      <div className="text-xl sm:text-2xl font-black text-gray-900 mb-1 sm:mb-2">
         {displayValue}
       </div>
 
       {hasTrend && (
-        <div className={`inline-flex items-center gap-1 text-sm font-semibold ${
+        <div className={`inline-flex items-center gap-1 text-xs sm:text-sm font-semibold ${
           isPositive ? 'text-green-600' : 'text-red-600'
         }`}>
           {isPositive ? '↑' : '↓'}
           <span>{Math.abs(trend).toFixed(1)}{trendSuffix}</span>
-          <span className="text-xs text-gray-500 font-normal ml-1">vs last period</span>
+          <span className="text-[10px] sm:text-xs text-gray-500 font-normal ml-0.5 sm:ml-1 hidden sm:inline">vs last period</span>
         </div>
       )}
     </div>
