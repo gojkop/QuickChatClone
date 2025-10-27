@@ -165,14 +165,15 @@ function AnswerComposerPanel({
   return (
     <div className="h-full flex flex-col bg-white relative">
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50">
+      <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50 relative z-50">
         <div className={`${isMobile ? "px-3 py-2" : "px-4 py-3"} flex items-center gap-3`}>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
+            className="p-2 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0 relative z-50"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
             aria-label="Back to question"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={24} className="text-gray-900 stroke-[2.5]" />
           </button>
           <div className="flex-1 min-w-0">
             <h2 className="text-sm font-semibold text-gray-900 truncate">
@@ -186,7 +187,10 @@ function AnswerComposerPanel({
       </div>
 
       {/* Content - Scrollable */}
-      <div className={`flex-1 overflow-y-auto overscroll-contain ${isMobile ? 'pb-4' : 'pb-0'}`}>
+      <div
+        className="flex-1 overflow-y-auto overscroll-contain"
+        style={isMobile ? { paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' } : {}}
+      >
         <div className={`${isMobile ? 'p-3' : 'p-4 lg:p-6'} max-w-4xl mx-auto`}>
           {!showReview ? (
             <AnswerRecorder

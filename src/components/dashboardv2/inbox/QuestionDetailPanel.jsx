@@ -612,7 +612,10 @@ function QuestionDetailPanel({
       </div>
 
       {/* Content - Scrollable */}
-      <div className={`flex-1 overflow-y-auto overscroll-contain ${isMobile ? 'pb-24' : 'pb-0'}`}>
+      <div
+        className="flex-1 overflow-y-auto overscroll-contain"
+        style={isMobile ? { paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' } : {}}
+      >
         <div className="p-3 lg:p-4 space-y-4">
           
           {/* Question Metadata */}

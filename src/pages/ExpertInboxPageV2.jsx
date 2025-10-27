@@ -1074,7 +1074,15 @@ function ExpertInboxPageV2() {
       onAvailabilityChange={handleAvailabilityChange}
       searchData={{ questions }}
     >
-      <div className="w-full h-[calc(100vh-4rem)]" style={{ overscrollBehavior: 'none', touchAction: 'pan-y' }}>
+      <div
+        className="w-full h-[calc(100vh-4rem)]"
+        style={{
+          overscrollBehavior: 'none',
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch',
+          overflowX: 'hidden'
+        }}
+      >
         <PanelContainer
           panels={panels}
           onClosePanel={closePanel}

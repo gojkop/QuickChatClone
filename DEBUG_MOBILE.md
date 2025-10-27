@@ -124,6 +124,25 @@ className={`${isMobile ? "px-3 py-2" : "px-4 py-3"} flex items-center gap-3`}
 import { ArrowLeft, Loader2, CheckCircle, Video, Mic, FileText } from 'lucide-react';
 ```
 
+### Issue 6: iOS Safari z-index stacking
+**Check:** AnswerComposerPanel.jsx lines 168-176
+```javascript
+<div className="flex-shrink-0 border-b border-gray-200 bg-gray-50 relative z-50">
+  <button className="p-2 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0 relative z-50">
+    <ArrowLeft size={24} className="text-gray-900 stroke-[2.5]" />
+  </button>
+</div>
+```
+
+### Issue 7: iOS safe area not working
+**Check:** Both QuestionDetailPanel.jsx and AnswerComposerPanel.jsx
+```javascript
+<div
+  className="flex-1 overflow-y-auto overscroll-contain"
+  style={isMobile ? { paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' } : {}}
+>
+```
+
 ## Quick Diagnostic Script
 
 Run this in browser console when on answer screen:
@@ -144,6 +163,13 @@ const backButton = document.querySelector('[aria-label="Back to question"]');
 console.log("Back button exists:", !!backButton);
 console.log("Back button visible:", backButton ? window.getComputedStyle(backButton).display !== 'none' : false);
 console.log("Back button position:", backButton?.getBoundingClientRect());
+console.log("Back button z-index:", backButton ? window.getComputedStyle(backButton).zIndex : 'not found');
+console.log("Back button computed styles:", backButton ? {
+  position: window.getComputedStyle(backButton).position,
+  zIndex: window.getComputedStyle(backButton).zIndex,
+  opacity: window.getComputedStyle(backButton).opacity,
+  visibility: window.getComputedStyle(backButton).visibility
+} : 'not found');
 
 // Check header
 const header = document.querySelector('.flex-shrink-0.border-b');
@@ -161,7 +187,20 @@ Touch action: pan-y
 Back button exists: true
 Back button visible: true
 Back button position: DOMRect { x: ..., y: ..., width: ..., height: ... }
+Back button z-index: 50
+Back button computed styles: { position: 'relative', zIndex: '50', opacity: '1', visibility: 'visible' }
 Header padding: 8px 12px (px-3 py-2)
+```
+
+### Check iOS Safe Area
+Run this to verify safe area is working:
+```javascript
+console.log("=== iOS SAFE AREA CHECK ===");
+const scrollContainer = document.querySelector('.overflow-y-auto');
+const computed = window.getComputedStyle(scrollContainer);
+console.log("Padding bottom:", computed.paddingBottom);
+console.log("Safe area inset bottom:", getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)'));
+console.log("=== END CHECK ===");
 ```
 
 ## If Nothing Works
