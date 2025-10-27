@@ -2,6 +2,8 @@ query "question/quick-consult" verb=POST {
   input {
     int expert_profile_id
     text payer_email filters=trim
+    text payer_first_name? filters=trim
+    text payer_last_name? filters=trim
     text title filters=trim
     text text? filters=trim
     int media_asset_id?
@@ -105,8 +107,8 @@ query "question/quick-consult" verb=POST {
         text                : $input.text
         media_asset_id      : $input.media_asset_id
         hidden              : false
-        payer_first_name    : ""
-        payer_last_name     : ""
+        payer_first_name    : $input.payer_first_name
+        payer_last_name     : $input.payer_last_name
         question_tier       : "quick_consult"
         pricing_status      : "paid"
         proposed_price_cents: 0

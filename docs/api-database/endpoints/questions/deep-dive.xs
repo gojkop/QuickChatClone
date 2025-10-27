@@ -2,6 +2,8 @@ query "question/deep-dive" verb=POST {
   input {
     int expert_profile_id
     text payer_email filters=trim
+    text payer_first_name? filters=trim
+    text payer_last_name? filters=trim
     int proposed_price_cents
     text asker_message? filters=trim
     text title filters=trim
