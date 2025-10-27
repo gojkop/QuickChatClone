@@ -1,15 +1,18 @@
 // src/components/dashboardv2/overview/RecentActivity.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Clock, Eye, MessageCircle, Star, Zap, User, Share2, TrendingUp } from 'lucide-react';
+import { MessageSquare, Clock, Eye, MessageCircle, Star, Zap, User, Share2, TrendingUp, Copy, Mail, Linkedin } from 'lucide-react';
 import { useProfile } from '@/context/ProfileContext';
 import { calculateProfileStrength } from '@/utils/profileStrength';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
+import { useToast } from '@/context/ToastContext';
 
 function RecentActivity({ questions = [] }) {
   const navigate = useNavigate();
   const { expertProfile } = useProfile();
+  const { showToast } = useToast();
   const [hoveredQuestion, setHoveredQuestion] = useState(null);
+  const [showShareOptions, setShowShareOptions] = useState(false);
 
   const recentQuestions = questions
     .filter(q => q.status === 'paid' && !q.answered_at)
@@ -60,6 +63,26 @@ function RecentActivity({ questions = [] }) {
     return question.question_tier === 'deep_dive';
   };
 
+  const handleCopyLink = () => {
+    const profileUrl = `https://mindpick.me/u/${expertProfile.handle}`;
+    navigator.clipboard.writeText(profileUrl);
+    showToast('Profile link copied to clipboard!');
+  };
+
+  const handleEmailSignature = () => {
+    const profileUrl = `https://mindpick.me/u/${expertProfile.handle}`;
+    const signatureText = `\n\n---\nBook time with me: ${profileUrl}`;
+    navigator.clipboard.writeText(signatureText);
+    showToast('Email signature copied! Paste into your email settings.');
+  };
+
+  const handleLinkedInShare = () => {
+    const profileUrl = `https://mindpick.me/u/${expertProfile.handle}`;
+    const text = `I'm now available for quick consultations on mindPick. Book time with me here:`;
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(profileUrl)}&summary=${encodeURIComponent(text)}`;
+    window.open(linkedInUrl, '_blank');
+  };
+
   if (recentQuestions.length === 0) {
     return (
       <div className="h-full flex flex-col">
@@ -89,16 +112,67 @@ function RecentActivity({ questions = [] }) {
             </>
           ) : (
             <>
-              <p className="text-xs text-gray-600 mb-4 max-w-[200px]">
+              <p className="text-xs text-gray-600 mb-3 max-w-[200px]">
                 Share your link to get your first question
               </p>
-              <button
-                onClick={() => navigate('/dashboard/marketing')}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors flex items-center gap-1"
-              >
-                <Share2 className="w-3 h-3" />
-                Share Your Profile →
-              </button>
+
+              {!showShareOptions ? (
+                <button
+                  onClick={() => setShowShareOptions(true)}
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors flex items-center gap-1 mx-auto"
+                >
+                  <Share2 className="w-3 h-3" />
+                  Show Share Options
+                </button>
+              ) : (
+                <div className="space-y-2 w-full max-w-[220px] mx-auto">
+                  <button
+                    onClick={handleCopyLink}
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all text-left group"
+                  >
+                    <div className="w-7 h-7 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Copy className="w-3.5 h-3.5 text-indigo-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-900">Copy Link</p>
+                      <p className="text-[10px] text-gray-600">Share anywhere</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={handleLinkedInShare}
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all text-left group"
+                  >
+                    <div className="w-7 h-7 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Linkedin className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-900">Post on LinkedIn</p>
+                      <p className="text-[10px] text-gray-600">Professional network</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={handleEmailSignature}
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all text-left group"
+                  >
+                    <div className="w-7 h-7 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Mail className="w-3.5 h-3.5 text-green-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-900">Email Signature</p>
+                      <p className="text-[10px] text-gray-600">Add to your emails</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setShowShareOptions(false)}
+                    className="w-full text-[10px] text-gray-500 hover:text-gray-700 transition-colors py-1"
+                  >
+                    Hide options
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
