@@ -39,6 +39,17 @@ function PanelContainer({
   // Get the active (topmost) panel
   const activePanel = panels[panels.length - 1];
 
+  // Create click handler for inactive panels
+  // Closes all panels above the clicked panel
+  const handleInactivePanelClick = (clickedPanelType) => {
+    // For list panel, close all panels above it
+    if (clickedPanelType === 'list') {
+      onClosePanel('detail'); // This also closes answer panel per usePanelStack logic
+    } else if (clickedPanelType === 'detail') {
+      onClosePanel('answer'); // Only close answer panel
+    }
+  };
+
   return (
     <div className={`panel-container relative flex w-full h-full overflow-hidden ${className}`}>
       {/* Panels */}
@@ -55,7 +66,7 @@ function PanelContainer({
               width={panel.width}
               zIndex={zIndex}
               isActive={isActive}
-              onClose={isActive ? () => onClosePanel(panel.type) : onCloseTopPanel}
+              onClose={isActive ? () => onClosePanel(panel.type) : () => handleInactivePanelClick(panel.type)}
               showCloseButton={panel.type !== 'list'}
             >
               {renderPanel(panel)}

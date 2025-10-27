@@ -142,7 +142,7 @@ function Panel({
       {!isActive && width > 0 && width < 100 && (
         <div
           onClick={onClose}
-          className="absolute inset-0 bg-black transition-all duration-300 cursor-pointer hidden lg:block hover:bg-gray-900/5"
+          className="absolute inset-0 bg-black transition-opacity duration-200 cursor-pointer hidden lg:block hover:opacity-0"
           style={{
             opacity: Math.max(0, (100 - width) / 1000) // Very subtle darkening
           }}
