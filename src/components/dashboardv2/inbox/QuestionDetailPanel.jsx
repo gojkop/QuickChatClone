@@ -23,6 +23,8 @@ function QuestionDetailPanel({
   const [copySuccess, setCopySuccess] = useState(false);
   const [mediaAssets, setMediaAssets] = useState([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [answerData, setAnswerData] = useState(null);
+  const [loadingAnswer, setLoadingAnswer] = useState(false);
 
   // Fetch media assets when question changes
   useEffect(() => {
@@ -55,6 +57,22 @@ function QuestionDetailPanel({
       setMediaAssets([]);
     }
   }, [question?.id, question?.media_asset_id]);
+
+  // Fetch answer data when question is answered
+  useEffect(() => {
+    if (!question || !question.id) {
+      setAnswerData(null);
+      return;
+    }
+
+    const isAnswered = question.status === 'closed' || question.status === 'answered' || question.answered_at;
+
+    if (isAnswered) {
+      fetchAnswerData();
+    } else {
+      setAnswerData(null);
+    }
+  }, [question?.id, question?.status, question?.answered_at]);
 
   const fetchMediaAssets = async () => {
     setLoadingMedia(true);
@@ -119,6 +137,29 @@ function QuestionDetailPanel({
     }
   };
 
+  const fetchAnswerData = async () => {
+    setLoadingAnswer(true);
+    try {
+      console.log(`📝 Fetching answer data for question ${question.id}`);
+
+      const response = await apiClient.get(`/answer?question_id=${question.id}`);
+      const data = response.data;
+
+      if (data && data.answer) {
+        console.log(`✅ Successfully fetched answer for question ${question.id}:`, data.answer);
+        setAnswerData(data.answer);
+      } else {
+        console.warn(`⚠️ No answer data found for question ${question.id}`);
+        setAnswerData(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch answer data:', error);
+      setAnswerData(null);
+    } finally {
+      setLoadingAnswer(false);
+    }
+  };
+
   // Helper to get media segments
   const getMediaSegments = () => {
     return mediaAssets;
@@ -139,8 +180,24 @@ function QuestionDetailPanel({
     return [];
   };
 
+  // Helper to safely get answer attachments array
+  const getAnswerAttachments = () => {
+    if (!answerData?.attachments) return [];
+    if (Array.isArray(answerData.attachments)) return answerData.attachments;
+    if (typeof answerData.attachments === 'string') {
+      try {
+        const parsed = JSON.parse(answerData.attachments);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   const mediaSegments = getMediaSegments();
   const attachments = getAttachments();
+  const answerAttachments = getAnswerAttachments();
 
   const getStreamVideoId = (url) => {
     if (!url) return null;
@@ -445,13 +502,13 @@ function QuestionDetailPanel({
             </div>
           )}
 
-          {/* File Attachments */}
+          {/* Question File Attachments */}
           {attachments.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <ImageIcon size={15} className="text-indigo-600" />
                 <h3 className="text-sm font-semibold text-gray-900">
-                  File Attachments ({attachments.length})
+                  Question Attachments ({attachments.length})
                 </h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -510,6 +567,55 @@ function QuestionDetailPanel({
                     Answered {getRelativeTime(question.answered_at)}
                   </p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Answer File Attachments */}
+          {isAnswered && answerAttachments.length > 0 && (
+            <div className="pt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <ImageIcon size={15} className="text-green-600" />
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Answer Attachments ({answerAttachments.length})
+                </h3>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {answerAttachments.map((attachment, index) => (
+                  <div
+                    key={index}
+                    className="relative group border border-green-200 rounded-lg overflow-hidden hover:border-green-400 transition-colors"
+                  >
+                    {attachment.type?.startsWith('image/') ? (
+                      <img
+                        src={attachment.url}
+                        alt={attachment.name || `Answer Attachment ${index + 1}`}
+                        className="w-full h-24 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-24 bg-green-50 flex items-center justify-center">
+                        <FileText size={28} className="text-green-400" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <a
+                        href={attachment.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-white rounded-lg"
+                        download
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Download size={18} className="text-gray-900" />
+                      </a>
+                    </div>
+                    {attachment.name && (
+                      <div className="px-2 py-1 text-xs text-gray-600 truncate bg-white border-t border-green-200">
+                        {attachment.name}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
