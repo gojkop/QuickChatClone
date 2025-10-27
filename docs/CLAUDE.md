@@ -51,11 +51,12 @@ npm run vercel:deploy      # Deploy to production on Vercel
 
 ### Testing
 ```bash
-./tests/run-security-tests.sh    # Run security validation tests
-cd tests && node security-validation.cjs  # Run tests directly
+./tests/run-security-tests.sh              # Run security tests (automatic cleanup)
+./tests/run-security-tests.sh --no-cleanup # Skip cleanup (keep test data)
+cd tests && node security-validation.cjs   # Run tests directly
 ```
 
-**Security Test Suite:** Automated tests covering 12 critical security scenarios including authentication, authorization, payment validation, and input validation. See [`docs/testing/`](./testing/) for complete documentation.
+**Security Test Suite:** Automated tests covering 23 critical security scenarios including authentication, authorization, payment validation, input validation, and rate limiting. All tests pass with automatic cleanup enabled. See [`docs/testing/`](./testing/) for complete documentation.
 
 **Test Coverage:**
 - Authentication enforcement (unauthenticated requests rejected)
@@ -63,6 +64,10 @@ cd tests && node security-validation.cjs  # Run tests directly
 - Payment reuse prevention (payment_intent_id can only be used once)
 - Token protection (playback_token_hash never exposed to experts)
 - Input validation (rating ranges, required fields)
+- Rate limiting (track-visit: 100 requests/hour per IP)
+- API key protection for internal endpoints
+
+**Test Status:** 23/23 passing, 0 skipped, 0 failed ✅
 
 **Configuration:** Create `/tests/.env` with auth tokens and test IDs. See [`docs/testing/README.md`](./testing/README.md) for setup instructions.
 
@@ -1086,6 +1091,63 @@ for (var i = 0; i < $var.conversions.length; i++) {
 
 **See:** [`docs/api-database/XANO-LAMBDA-TROUBLESHOOTING.md`](./api-database/XANO-LAMBDA-TROUBLESHOOTING.md) for detailed troubleshooting guide
 
+### XanoScript Syntax Patterns
+
+**Critical patterns for writing valid XanoScript (.xs files):**
+
+**Delete Operations:**
+```xanoscript
+// ❌ WRONG - db.bulk.delete doesn't exist
+db.bulk.delete answer {
+  where = $db.answer.user_id == $user_id
+}
+
+// ✅ CORRECT - Query → foreach → db.del
+db.query answer {
+  where = $db.answer.user_id == $user_id
+  return = {type: "list"}
+} as $records
+
+foreach ($records) {
+  each as $record {
+    db.del answer {
+      field_name = "id"
+      field_value = $record.id
+    }
+  }
+}
+```
+
+**Sort Syntax:**
+```xanoscript
+// ❌ WRONG - Invalid sort syntax
+sort = {field: "created_at", direction: "desc"}
+
+// ✅ CORRECT - Use table_name.field_name
+sort = {question.created_at: "desc"}
+```
+
+**Limiting Results:**
+```xanoscript
+// ❌ WRONG - limit not allowed in return object
+db.query question {
+  return = {type: "list", limit: 10}
+}
+
+// ✅ CORRECT - Query all, then slice in Lambda
+db.query question {
+  return = {type: "list"}
+} as $all_questions
+
+api.lambda {
+  code = """
+    var limited = $var.all_questions.slice(0, 10);
+  """
+}
+```
+
+**Endpoint Documentation:** All 48 Xano endpoints are documented as .xs files in [`docs/api-database/endpoints/`](./api-database/endpoints/)
+
 ### API Client Usage
 
 Always use the configured axios client from `src/api/index.js`:
@@ -1372,34 +1434,45 @@ For detailed implementation, see [`docs/api-database/xano-internal-endpoints.md`
 
 ### Security Validation Suite
 
-**Status:** ✅ Production Ready (October 26, 2025)
+**Status:** ✅ Production Ready (October 27, 2025)
 
-QuickChat includes a comprehensive automated security test suite covering 12 critical security scenarios across all major API endpoints.
+QuickChat includes a comprehensive automated security test suite covering 23 critical security scenarios across all major API endpoints. Test data is automatically cleaned up after each run.
 
 **Test Coverage:**
 - ✅ PATCH /question/{id} - Authentication enforcement (3 tests)
 - ✅ PATCH /question/{id} - Cross-expert ownership validation
 - ✅ POST /answer - Cross-expert answer blocking
-- ✅ POST /question/quick-consult - Payment reuse prevention
+- ✅ POST /question/quick-consult - Payment reuse prevention (3 tests)
 - ✅ POST /question/deep-dive - Payment reuse prevention
 - ✅ POST /review/{token}/feedback - Invalid token rejection
 - ✅ POST /review/{token}/feedback - Rating range validation (1-5)
 - ✅ GET /review/{token} - Token access control
+- ✅ POST /offers/{id}/accept - Cross-expert ownership
+- ✅ POST /offers/{id}/decline - Cross-expert ownership
+- ✅ POST /payment/capture - Cross-expert ownership
+- ✅ POST /question/{id}/refund - Cross-expert ownership
+- ✅ GET /answer - Authentication & data retrieval (3 tests)
+- ✅ GET /internal/digest/pending-questions - API key protection (4 tests)
 
 **Running Tests:**
 ```bash
-./tests/run-security-tests.sh
+./tests/run-security-tests.sh              # With automatic cleanup
+./tests/run-security-tests.sh --no-cleanup # Skip cleanup (debug)
 ```
 
 **Expected Output:**
 ```
-✓ Passed:  12
+✓ Passed:  23
 ✗ Failed:  0
 ⊘ Skipped: 0
-Total: 12
+Total: 23
 
 ALL SECURITY TESTS PASSED!
 Your endpoints are secure and ready for production.
+
+┌─ Cleaning up test data...
+✓ Test data cleaned up successfully
+└─
 ```
 
 ### Test Configuration
@@ -1588,7 +1661,10 @@ api.lambda {
 ## Next Steps
 
 **Recently Completed:**
-- ✅ Security Test Suite - Automated validation covering 12 critical security scenarios (October 26, 2025)
+- ✅ Endpoint Documentation - 100% complete (48 .xs files, all validated) (October 27, 2025)
+- ✅ Security Test Suite - 23 automated tests, automatic cleanup, all passing (October 27, 2025)
+- ✅ Rate Limiting - Track-visit endpoint (100 req/hour per IP) (October 27, 2025)
+- ✅ XanoScript Validation - Fixed syntax errors (db.bulk.delete, sort, limit) (October 27, 2025)
 - ✅ Media Asset Architecture Migration - Simplified to FK-only relationships (October 24, 2025)
 - ✅ Expert Dashboard Enhancements - Media preview, Download All (ZIP) for questions (October 24, 2025)
 - ✅ Payment Capture System - Manual capture with hold/release for two-tier pricing (January 15, 2025)
@@ -1616,10 +1692,19 @@ api.lambda {
 
 ## Critical Notes
 
+### Xano Endpoints
 - **XanoScript File Format:** All Xano endpoint implementations use `.xs` extension (not `.md`) - see [`docs/api-database/endpoints/README-XANOSCRIPT.md`](./api-database/endpoints/README-XANOSCRIPT.md)
+- **Total Endpoints:** 48 .xs files documented in `docs/api-database/endpoints/`
+- **XanoScript Syntax:** No `db.bulk.delete`, use `sort = {table.field: "asc"}`, no `limit` in return objects (see patterns above)
+- **Security:** All endpoints reviewed, 23 automated tests cover critical scenarios
+
+### Database Architecture
 - **Media Asset Architecture:** Use FK-only (NO owner_id/owner_type) - see [`docs/api-database/MEDIA-ASSET-MIGRATION-OCT-2025.md`](./api-database/MEDIA-ASSET-MIGRATION-OCT-2025.md)
 - Always stringify JSON fields before sending to Xano: `JSON.stringify(metadata)`
 - Multi-segment videos: Store segments in parent media_asset `metadata` field as JSON
-- Auth tokens: Never commit tokens or API keys to git
 - Cloudflare UIDs: Store in Xano as `asset_id`, not as primary key
+
+### Security
+- Auth tokens: Never commit tokens or API keys to git
 - OAuth state: Use sessionStorage for `qc_auth_in_progress` flag to prevent auto-logout
+- Rate limiting: Track-visit endpoint limited to 100 requests/hour per IP

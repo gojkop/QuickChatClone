@@ -362,7 +362,12 @@ function QuestionTable({
                         {getMediaIcon(question)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        {/* Title First */}
+                        <p className="text-sm font-medium text-gray-900 line-clamp-2 break-words mb-1">
+                          {getQuestionTitle(question)}
+                        </p>
+                        {/* Badge and ID Below */}
+                        <div className="flex items-center gap-2 flex-wrap">
                           {/* Type Badge */}
                           {isDeepDive ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded text-xs font-bold flex-shrink-0">
@@ -386,9 +391,6 @@ function QuestionTable({
                             />
                           )}
                         </div>
-                        <p className="text-sm font-medium text-gray-900 line-clamp-2 break-words">
-                          {getQuestionTitle(question)}
-                        </p>
                       </div>
                     </div>
                   </td>

@@ -16,6 +16,20 @@
 
 ## Coverage by Category
 
+### 📝 Review & Feedback Flow
+
+**How Askers Provide Ratings:**
+1. Asker receives email with review link: `/r/{playback_token_hash}`
+2. Frontend loads answer page via `GET /review/{token}` (no auth required)
+3. Asker selects rating (1-5 stars) and writes optional feedback
+4. Frontend submits via `POST /review/{token}/feedback`
+5. Backend validates: token exists, rating 1-5, feedback not duplicate
+6. Answer table updated with `rating`, `feedback_text`, `feedback_at`
+
+**Security:** Token-based access, one-time submission, rating validation
+
+---
+
 ### ✅ Fully Reviewed & Tested (Authentication API)
 
 | Endpoint | Documented | Security Reviewed | Automated Tests | Status |
