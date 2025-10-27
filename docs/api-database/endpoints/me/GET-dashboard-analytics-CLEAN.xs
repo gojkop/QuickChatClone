@@ -110,6 +110,7 @@ query "me/dashboard-analytics" verb=GET {
           thisMonthAnsweredCount: thisMonthAnsweredCount,
           avgRevenuePerQuestion: avgRevenuePerQuestion,
           slaComplianceRate: slaComplianceRate,
+          revenueChange: 0,
           totalQuestions: questions.length
         };
       """
@@ -117,17 +118,5 @@ query "me/dashboard-analytics" verb=GET {
     } as $metrics
   }
 
-  response = {
-    "thisMonthRevenue": $metrics.thisMonthRevenue,
-    "avgResponseTime": $metrics.avgResponseTime,
-    "avgRating": $metrics.avgRating,
-    "urgentCount": $metrics.urgentCount,
-    "pendingCount": $metrics.pendingCount,
-    "answeredCount": $metrics.answeredCount,
-    "thisMonthAnsweredCount": $metrics.thisMonthAnsweredCount,
-    "avgRevenuePerQuestion": $metrics.avgRevenuePerQuestion,
-    "slaComplianceRate": $metrics.slaComplianceRate,
-    "revenueChange": 0,
-    "totalQuestions": $metrics.totalQuestions
-  }
+  response = $metrics
 }
