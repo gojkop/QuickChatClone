@@ -188,7 +188,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
 
   const handleRecorderReady = (data) => {
     console.log('🎬 [ANSWER FLOW] handleReady called - showing inline review');
-    console.log('📦 [ANSWER FLOW] New answer data received:', {
+    console.log('📦 [ANSWER FLOW] Answer data received from recorder:', {
       hasText: !!data?.text,
       textLength: data?.text?.length || 0,
       recordingSegmentsCount: data?.recordingSegments?.length || 0,
@@ -196,44 +196,8 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
       recordingDuration: data?.recordingDuration || 0
     });
 
-    // If we have existing answerData (user edited and came back), merge it
-    if (answerData) {
-      console.log('📦 [ANSWER FLOW] Existing answerData found, merging data');
-      console.log('📦 [ANSWER FLOW] Existing data:', {
-        hasText: !!answerData?.text,
-        textLength: answerData?.text?.length || 0,
-        recordingSegmentsCount: answerData?.recordingSegments?.length || 0,
-        attachmentsCount: answerData?.attachments?.length || 0
-      });
-
-      // Merge: keep existing recordings/attachments, update text
-      const mergedData = {
-        text: data.text || answerData.text, // Use new text, fallback to old
-        recordingSegments: [
-          ...(answerData.recordingSegments || []),
-          ...(data.recordingSegments || [])
-        ], // Combine segments
-        attachments: [
-          ...(answerData.attachments || []),
-          ...(data.attachments || [])
-        ], // Combine attachments
-        recordingMode: data.recordingMode || answerData.recordingMode,
-        recordingDuration: (answerData.recordingDuration || 0) + (data.recordingDuration || 0)
-      };
-
-      console.log('📦 [ANSWER FLOW] Merged data:', {
-        hasText: !!mergedData.text,
-        textLength: mergedData.text?.length || 0,
-        recordingSegmentsCount: mergedData.recordingSegments?.length || 0,
-        attachmentsCount: mergedData.attachments?.length || 0
-      });
-
-      setAnswerData(mergedData);
-    } else {
-      console.log('📦 [ANSWER FLOW] No existing data, using new data as-is');
-      setAnswerData(data);
-    }
-
+    // The recorder already combines existing + new data, so just use it directly
+    setAnswerData(data);
     setShowReview(true);
     setCurrentStep(3);
     console.log('✅ [ANSWER FLOW] State updated - showReview=true, currentStep=3');
@@ -1173,6 +1137,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                       onReady={handleRecorderReady}
                       onCancel={handleRecorderCancel}
                       initialText={answerData?.text || ''}
+                      existingData={answerData}
                     />
                   ) : (
                     <div className="space-y-4">

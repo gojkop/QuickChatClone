@@ -10,13 +10,21 @@ import SLACountdown from './SLACountdown';
 
 const MAX_RECORDING_SECONDS = 900; // 15 minutes for answers
 
-function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '' }) {
+function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '', existingData = null }) {
   const [text, setText] = useState(initialText);
 
-  console.log('🎬 [ANSWER RECORDER] Component initialized with initialText:', {
+  console.log('🎬 [ANSWER RECORDER] Component initialized:', {
     hasInitialText: !!initialText,
-    initialTextLength: initialText?.length || 0
+    initialTextLength: initialText?.length || 0,
+    hasExistingData: !!existingData,
+    existingRecordingsCount: existingData?.recordingSegments?.length || 0,
+    existingAttachmentsCount: existingData?.attachments?.length || 0
   });
+
+  // For already-uploaded segments, we just track them for display
+  const [existingSegments, setExistingSegments] = useState(existingData?.recordingSegments || []);
+  const [existingAttachments, setExistingAttachments] = useState(existingData?.attachments || []);
+
   const [segments, setSegments] = useState([]);
   const [currentSegment, setCurrentSegment] = useState(null);
   const [recordingState, setRecordingState] = useState('idle');
@@ -36,10 +44,30 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '' 
     }
   }, [initialText]);
 
-  const totalDuration = segments.reduce((sum, seg) => {
+  // Update existing data when prop changes
+  useEffect(() => {
+    if (existingData) {
+      console.log('📦 [ANSWER RECORDER] Restoring existing data:', {
+        recordings: existingData.recordingSegments?.length || 0,
+        attachments: existingData.attachments?.length || 0
+      });
+      setExistingSegments(existingData.recordingSegments || []);
+      setExistingAttachments(existingData.attachments || []);
+    }
+  }, [existingData]);
+
+  // Calculate total duration from both existing and new segments
+  const newSegmentsDuration = segments.reduce((sum, seg) => {
     const dur = (seg.duration >= 0) ? seg.duration : 0;
     return sum + dur;
   }, 0);
+
+  const existingSegmentsDuration = existingSegments.reduce((sum, seg) => {
+    const dur = (seg.duration >= 0) ? seg.duration : 0;
+    return sum + dur;
+  }, 0);
+
+  const totalDuration = newSegmentsDuration + existingSegmentsDuration;
 
   const videoRef = useRef(null);
   const reviewVideoRef = useRef(null);
@@ -121,8 +149,11 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '' 
 
   const handleFileChange = async (e) => {
     const newFiles = Array.from(e.target.files);
-    if (newFiles.length + attachmentUpload.uploads.length > 3) {
-      alert('Maximum 3 files allowed.');
+    const totalFiles = existingAttachments.length + attachmentUpload.uploads.length + newFiles.length;
+
+    if (totalFiles > 3) {
+      const currentCount = existingAttachments.length + attachmentUpload.uploads.length;
+      alert(`Maximum 3 files allowed (you already have ${currentCount} file${currentCount !== 1 ? 's' : ''}).`);
       return;
     }
 
@@ -410,15 +441,35 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '' 
   };
 
   const handleProceedToReview = async () => {
+    // Get newly uploaded segments and attachments
+    const newSegments = segmentUpload.getSuccessfulSegments() || [];
+    const newAttachments = attachmentUpload.uploads
+      .filter(u => u && u.result)
+      .map(u => u.result);
+
+    console.log('📦 [ANSWER RECORDER] Preparing data for review:', {
+      existingSegmentsCount: existingSegments.length,
+      newSegmentsCount: newSegments.length,
+      existingAttachmentsCount: existingAttachments.length,
+      newAttachmentsCount: newAttachments.length
+    });
+
+    // Combine existing and new data
     const data = {
       text: text || '',
-      recordingSegments: segmentUpload.getSuccessfulSegments() || [],
-      attachments: attachmentUpload.uploads
-        .filter(u => u && u.result)
-        .map(u => u.result),
-      recordingMode: segments.length > 0 ? 'multi-segment' : null,
+      recordingSegments: [...existingSegments, ...newSegments],
+      attachments: [...existingAttachments, ...newAttachments],
+      recordingMode: (existingSegments.length > 0 || segments.length > 0) ? 'multi-segment' : null,
       recordingDuration: totalDuration || 0,
     };
+
+    console.log('✅ [ANSWER RECORDER] Final data for review:', {
+      hasText: !!data.text,
+      textLength: data.text.length,
+      totalSegments: data.recordingSegments.length,
+      totalAttachments: data.attachments.length,
+      totalDuration: data.recordingDuration
+    });
 
     onReady(data);
   };
@@ -483,6 +534,47 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '' 
         </div>
 
         <div className="bg-white rounded-lg p-2 sm:p-3 space-y-2 max-w-full">
+          {/* Show existing segments from previous edit session */}
+          {existingSegments.length > 0 && (
+            <>
+              <div className="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-200">
+                ✅ Previously Recorded ({existingSegments.length})
+              </div>
+              {existingSegments.map((segment, index) => (
+                <div key={`existing-${index}`} className="flex items-center gap-2 p-2 sm:p-3 bg-green-50 rounded border border-green-200 max-w-full overflow-hidden">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs sm:text-sm font-bold">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs sm:text-sm font-semibold text-gray-900 flex items-center gap-1 truncate">
+                        {getSegmentIcon(segment.mode)}
+                        <span className="truncate">{getSegmentLabel(segment.mode)}</span>
+                        <span className="text-gray-500 whitespace-nowrap">· {formatTime(segment.duration)}</span>
+                      </div>
+                      <div className="text-xs mt-0.5 text-green-700 font-semibold">
+                        ✅ Already uploaded
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      console.log('🗑️ [ANSWER RECORDER] Removing existing segment:', index);
+                      setExistingSegments(prev => prev.filter((_, i) => i !== index));
+                    }}
+                    className="p-2 sm:p-2.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition touch-manipulation min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                    title="Remove this segment"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Show new segments being recorded/uploaded */}
           {segments.map((segment, index) => {
             const uploadStatus = segmentUpload.segments[index];
             const isUploading = uploadStatus?.uploading;
@@ -995,8 +1087,36 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '' 
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition file:touch-manipulation file:min-h-[44px]"
             multiple
             onChange={handleFileChange}
-            disabled={attachmentUpload.uploads.length >= 3}
+            disabled={(existingAttachments.length + attachmentUpload.uploads.length) >= 3}
           />
+
+          {/* Show existing attachments from previous edit session */}
+          {existingAttachments.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              <div className="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-200 mb-2">
+                ✅ Previously Attached ({existingAttachments.length})
+              </div>
+              {existingAttachments.map((file, index) => (
+                <li key={`existing-file-${index}`} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200 max-w-full overflow-hidden">
+                  <span className="text-sm text-gray-700 truncate flex-1 mr-3">{file.filename || file.name}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs text-green-600 font-semibold">✅ Uploaded</span>
+                    <button
+                      onClick={() => {
+                        console.log('🗑️ [ANSWER RECORDER] Removing existing attachment:', index);
+                        setExistingAttachments(prev => prev.filter((_, i) => i !== index));
+                      }}
+                      className="ml-2 text-red-500 hover:text-red-700 font-semibold text-sm touch-manipulation min-h-[32px] px-2"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Show new attachments being uploaded */}
           {attachmentUpload.uploads.length > 0 && (
             <ul className="mt-3 space-y-2">
               {attachmentUpload.uploads.map((upload) => (
@@ -1038,10 +1158,13 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '' 
 
         <AnswerQualityIndicator
           answerData={{
-            recordingSegments: segments,
+            recordingSegments: [...existingSegments, ...segments],
             recordingDuration: totalDuration,
             text,
-            attachments: attachmentUpload.uploads.filter(u => u.result).map(u => u.result)
+            attachments: [
+              ...existingAttachments,
+              ...attachmentUpload.uploads.filter(u => u.result).map(u => u.result)
+            ]
           }}
           question={question}
         />
@@ -1065,7 +1188,7 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '' 
           </div>
         </div>
 
-        {(segmentUpload.segments.length > 0 || attachmentUpload.uploads.length > 0) && (
+        {(existingSegments.length > 0 || existingAttachments.length > 0 || segmentUpload.segments.length > 0 || attachmentUpload.uploads.length > 0) && (
           <div className="text-center text-sm text-gray-600 mb-20 sm:mb-2">
             {segmentUpload.hasUploading || attachmentUpload.uploads.some(u => u.uploading) ? (
               <span className="flex items-center justify-center gap-2">
