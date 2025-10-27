@@ -28,29 +28,51 @@ function StatCard({
   const isPositive = hasTrend ? (trendInverse ? trend < 0 : trend > 0) : null;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-2 sm:mb-3">
-        <span className="text-xs sm:text-sm font-medium text-gray-600">{label}</span>
+    <div className="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-2.5 sm:p-4 shadow-sm hover:shadow-md transition-shadow">
+      {/* Mobile: Compact vertical layout */}
+      <div className="flex sm:hidden flex-col items-center text-center gap-1">
         {Icon && (
-          <div className={`p-1.5 sm:p-2 rounded-lg shadow-sm ${colorClasses[color]}`}>
-            <Icon size={16} className="sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
+          <div className={`p-1.5 rounded-lg shadow-sm ${colorClasses[color]}`}>
+            <Icon size={14} strokeWidth={2.5} />
+          </div>
+        )}
+        <span className="text-[10px] font-medium text-gray-600 leading-tight">{label}</span>
+        <div className="text-base font-black text-gray-900">{displayValue}</div>
+        {hasTrend && (
+          <div className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${
+            isPositive ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {isPositive ? '↑' : '↓'}
+            <span>{Math.abs(trend).toFixed(1)}{trendSuffix}</span>
           </div>
         )}
       </div>
 
-      <div className="text-xl sm:text-2xl font-black text-gray-900 mb-1 sm:mb-2">
-        {displayValue}
-      </div>
-
-      {hasTrend && (
-        <div className={`inline-flex items-center gap-1 text-xs sm:text-sm font-semibold ${
-          isPositive ? 'text-green-600' : 'text-red-600'
-        }`}>
-          {isPositive ? '↑' : '↓'}
-          <span>{Math.abs(trend).toFixed(1)}{trendSuffix}</span>
-          <span className="text-[10px] sm:text-xs text-gray-500 font-normal ml-0.5 sm:ml-1 hidden sm:inline">vs last period</span>
+      {/* Desktop: Original horizontal layout */}
+      <div className="hidden sm:block">
+        <div className="flex items-start justify-between mb-3">
+          <span className="text-sm font-medium text-gray-600">{label}</span>
+          {Icon && (
+            <div className={`p-2 rounded-lg shadow-sm ${colorClasses[color]}`}>
+              <Icon size={18} strokeWidth={2.5} />
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="text-2xl font-black text-gray-900 mb-2">
+          {displayValue}
+        </div>
+
+        {hasTrend && (
+          <div className={`inline-flex items-center gap-1 text-sm font-semibold ${
+            isPositive ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {isPositive ? '↑' : '↓'}
+            <span>{Math.abs(trend).toFixed(1)}{trendSuffix}</span>
+            <span className="text-xs text-gray-500 font-normal ml-1">vs last period</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
