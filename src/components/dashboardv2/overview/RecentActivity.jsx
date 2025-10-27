@@ -16,10 +16,10 @@ function RecentActivity({ questions = [] }) {
 
   const recentQuestions = questions
     .filter(q => {
-      // Include paid questions that aren't answered
-      if (q.status === 'paid' && !q.answered_at) return true;
-      // Include pending offers that aren't answered
-      if ((q.status === 'pending_offer' || q.is_pending_offer) && !q.answered_at) return true;
+      // Include paid questions that aren't answered and not declined
+      if (q.status === 'paid' && !q.answered_at && q.pricing_status !== 'offer_declined') {
+        return true;
+      }
       return false;
     })
     .sort((a, b) => b.created_at - a.created_at)
@@ -66,7 +66,8 @@ function RecentActivity({ questions = [] }) {
   };
 
   const isPendingOffer = (question) => {
-    return question.is_pending_offer || question.status === 'pending_offer';
+    // Check pricing_status field (accurate indicator from API)
+    return question.pricing_status === 'offer_pending';
   };
 
   const isDeepDive = (question) => {
@@ -74,8 +75,11 @@ function RecentActivity({ questions = [] }) {
   };
 
   const getQuestionType = (question) => {
+    // Priority: Check pricing_status first (most accurate)
     if (isPendingOffer(question)) return 'pending_offer';
-    if (isDeepDive(question)) return 'accepted_deep_dive';
+    // Then check if it's an accepted deep dive
+    if (isDeepDive(question) && question.pricing_status === 'offer_accepted') return 'accepted_deep_dive';
+    // Default to quick question
     return 'quick';
   };
 
