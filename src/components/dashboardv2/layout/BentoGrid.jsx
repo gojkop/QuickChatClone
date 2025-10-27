@@ -9,7 +9,8 @@ function BentoGrid({ children, className = '' }) {
       lg:grid-cols-4
       gap-2
       sm:gap-2.5
-      auto-rows-fr
+      auto-rows-[80px]
+      sm:auto-rows-fr
       ${className}
     `}>
       {children}

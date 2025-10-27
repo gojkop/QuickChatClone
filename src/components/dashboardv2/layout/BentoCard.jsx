@@ -27,7 +27,7 @@ function BentoCard({
         bg-white
         border border-gray-200
         rounded-lg sm:rounded-xl
-        p-1.5 sm:p-3
+        p-1 sm:p-3
         backdrop-blur-sm
         ${sizeClasses[size]}
         ${interactiveClasses}

@@ -19,7 +19,7 @@ function MobileBottomNav({ pendingCount = 0, currentRevenue = 0, avgRating = 0 }
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg safe-area-bottom">
       {/* Navigation */}
-      <nav className="flex items-center justify-around px-2 py-3">
+      <nav className="flex items-center justify-around px-1 py-1.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -28,18 +28,18 @@ function MobileBottomNav({ pendingCount = 0, currentRevenue = 0, avgRating = 0 }
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`relative flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all touch-target ${
-                active 
-                  ? 'text-indigo-600 bg-indigo-50' 
+              className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all touch-target ${
+                active
+                  ? 'text-indigo-600 bg-indigo-50'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-              <span className={`text-xs font-semibold ${active ? 'text-indigo-600' : 'text-gray-600'}`}>
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+              <span className={`text-[10px] font-semibold ${active ? 'text-indigo-600' : 'text-gray-600'}`}>
                 {item.label}
               </span>
               {item.badge > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
+                <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold text-white bg-red-500 rounded-full animate-pulse">
                   {item.badge}
                 </span>
               )}
