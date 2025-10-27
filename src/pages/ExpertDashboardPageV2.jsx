@@ -22,7 +22,7 @@ import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
-import { Clock, Star, MessageSquare } from 'lucide-react';
+import { Clock, Star, MessageSquare, AlertCircle, TrendingUp } from 'lucide-react';
 import { formatDuration } from '@/utils/dashboardv2/metricsCalculator';
 import { shouldShowOnboardingCard } from '@/utils/profileStrength';
 
@@ -213,42 +213,46 @@ function ExpertDashboardPageV2() {
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Avg Response"
-              value={formatDuration(metrics.avgResponseTime)}
+              value={metrics.avgResponseTime > 0 ? formatDuration(metrics.avgResponseTime) : '—'}
               icon={Clock}
               color="indigo"
-              trend={-12.5}
-              subtitle={metrics.avgResponseTime > 0 ? `${metrics.answeredCount} answered` : 'No data yet'}
+              trend={metrics.avgResponseTime > 0 ? -12.5 : null}
+              subtitle={metrics.avgResponseTime > 0 ? `${metrics.answeredCount} answered` : 'Track how fast you answer'}
+              isZeroState={metrics.avgResponseTime === 0}
             />
           </BentoCard>
 
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Rating"
-              value={metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)}⭐` : 'No ratings'}
+              value={metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)}⭐` : '—'}
               icon={Star}
               color="purple"
               trend={metrics.avgRating > 0 ? 5.2 : null}
-              subtitle={metrics.avgRating > 0 ? 'Average rating' : 'Get rated soon'}
+              subtitle={metrics.avgRating > 0 ? 'Average rating' : 'Rating appears after reviews'}
+              isZeroState={metrics.avgRating === 0}
             />
           </BentoCard>
 
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/inbox')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
-              label="Pending"
-              value={metrics.pendingCount}
-              icon={MessageSquare}
-              color="orange"
-              subtitle={metrics.pendingCount > 0 ? 'Need your answer' : 'All caught up!'}
+              label="Urgent"
+              value={metrics.urgentCount}
+              icon={AlertCircle}
+              color={metrics.urgentCount === 0 ? 'green' : metrics.urgentCount <= 2 ? 'orange' : 'orange'}
+              subtitle={metrics.urgentCount === 0 ? 'All caught up! 🎉' : metrics.urgentCount === 1 ? 'Needs attention now' : 'Need attention now'}
+              isZeroState={metrics.urgentCount === 0 && metrics.pendingCount === 0}
             />
           </BentoCard>
 
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
-              label="Answered"
-              value={metrics.answeredCount}
-              icon={MessageSquare}
+              label="Avg per Question"
+              value={metrics.avgRevenuePerQuestion > 0 ? `$${metrics.avgRevenuePerQuestion.toFixed(0)}` : '—'}
+              icon={TrendingUp}
               color="green"
-              subtitle={`${metrics.thisMonthAnsweredCount} this month`}
+              subtitle={metrics.avgRevenuePerQuestion > 0 ? 'This month average' : 'Tracks pricing effectiveness'}
+              isZeroState={metrics.avgRevenuePerQuestion === 0}
             />
           </BentoCard>
 
