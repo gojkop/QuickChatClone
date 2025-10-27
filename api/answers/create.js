@@ -86,10 +86,14 @@ export default async function handler(req, res) {
     // NOTE: answered_at is now set automatically by Xano POST /answer endpoint
     // No need to make a separate PATCH request
 
-    // 1.5. Capture payment (if payment intent exists for this question)
-    // Run in parallel with email preparation
-    const paymentCapturePromise = (async () => {
+    // 2. Extract question data from answer response (embedded by Xano)
+    const questionData = answer.question || answer._question;
+
+    // 3. Run payment capture and email notification in background (fire-and-forget)
+    // Don't block the response - these can happen asynchronously
+    (async () => {
       try {
+        // Capture payment in background
         const paymentIntent = await findPaymentIntentByQuestionId(question_id);
 
         if (paymentIntent && !paymentIntent.id.startsWith('pi_mock_')) {
@@ -121,26 +125,15 @@ export default async function handler(req, res) {
             console.warn(`⚠️ Payment in unexpected status: ${paymentIntent.status} for question ${question_id}`);
           }
         }
-      } catch (paymentError) {
-        console.error(`❌ Payment capture failed for question ${question_id}:`, paymentError.message);
-        // Continue anyway - the answer is already created
-      }
-    })();
 
-    // 2. Extract question data from answer response (embedded by Xano)
-    const questionData = answer.question || answer._question;
+        // Send email notification
+        if (questionData) {
+          const reviewToken = questionData.playback_token_hash;
+          const askerEmail = getAskerEmail(questionData);
+          const askerName = getAskerName(questionData);
+          const questionTitle = questionData.title;
 
-    // 3. Send email notification in background (don't await)
-    if (questionData) {
-      const reviewToken = questionData.playback_token_hash;
-      const askerEmail = getAskerEmail(questionData);
-      const askerName = getAskerName(questionData);
-      const questionTitle = questionData.title;
-
-      if (askerEmail && reviewToken) {
-        // Fire and forget - send email in background
-        (async () => {
-          try {
+          if (askerEmail && reviewToken) {
             const expertData = await fetchUserData(user_id);
             const expertName = expertData?.name || 'Your Expert';
 
@@ -154,15 +147,12 @@ export default async function handler(req, res) {
               answerId: answerId,
             });
             console.log('✅ Answer notification sent successfully');
-          } catch (emailErr) {
-            console.error('❌ Failed to send answer notification:', emailErr.message);
           }
-        })();
+        }
+      } catch (bgError) {
+        console.error('❌ Background task error:', bgError.message);
       }
-    }
-
-    // Wait only for payment capture before responding
-    await paymentCapturePromise;
+    })();
 
     if (!questionData) {
       console.warn('⚠️ Could not retrieve question details from answer response');
