@@ -42,12 +42,28 @@ query "me/dashboard-analytics" verb=GET {
       return = {type: "list"}
     } as $all_questions
 
+    db.query answer {
+      where = $db.answer.user_id == $expert_profile.user_id
+      return = {type: "list"}
+    } as $all_answers
+
     api.lambda {
       code = """
         var questions = $var.all_questions || [];
+        var answers = $var.all_answers || [];
         var nowSeconds = $var.timestamps.nowSeconds;
         var monthStartSeconds = $var.timestamps.monthStartSeconds;
         var monthEndSeconds = $var.timestamps.monthEndSeconds;
+
+        // Create a map of question_id -> rating from answers
+        var ratingMap = {};
+        for (var i = 0; i < answers.length; i++) {
+          var ans = $var.all_answers[i];
+          if (ans.question_id && ans.rating && ans.rating > 0) {
+            ratingMap[ans.question_id] = ans.rating;
+          }
+        }
+
         var thisMonthRevenueCents = 0;
         var totalResponseTimeHours = 0;
         var responseTimeCount = 0;
@@ -79,8 +95,10 @@ query "me/dashboard-analytics" verb=GET {
                 slaComplianceCount++;
               }
             }
-            if (q.rating && q.rating > 0) {
-              totalRating += q.rating;
+            // Get rating from answer (via ratingMap)
+            var questionRating = ratingMap[q.id];
+            if (questionRating && questionRating > 0) {
+              totalRating += questionRating;
               ratingCount++;
             }
           }
