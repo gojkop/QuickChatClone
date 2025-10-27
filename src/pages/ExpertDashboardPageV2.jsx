@@ -1,5 +1,5 @@
 // src/pages/ExpertDashboardPageV2.jsx
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '@/context/ProfileContext';
 import { useQuestionsQuery } from '@/hooks/useQuestionsQuery';
@@ -16,6 +16,7 @@ import RecentActivity from '@/components/dashboardv2/overview/RecentActivity';
 import PerformanceSnapshot from '@/components/dashboardv2/overview/PerformanceSnapshot';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
 import MobileBottomNav from '@/components/dashboardv2/navigation/MobileBottomNav';
+import OnboardingFlow from '@/components/dashboardv2/onboarding/OnboardingFlow';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
@@ -25,14 +26,19 @@ import { formatDuration } from '@/utils/dashboardv2/metricsCalculator';
 
 function ExpertDashboardPageV2() {
   const navigate = useNavigate();
-  
-  const { 
-    profile, 
-    expertProfile, 
-    isLoading: profileLoading, 
+
+  const {
+    profile,
+    expertProfile,
+    isLoading: profileLoading,
     error: profileError,
     updateAvailability,
+    refetch: refetchProfile,
   } = useProfile();
+
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
 
   const {
     data: questionsData,
@@ -66,6 +72,30 @@ function ExpertDashboardPageV2() {
   const handleAvailabilityChange = React.useCallback((newStatus) => {
     updateAvailability(newStatus);
   }, [updateAvailability]);
+
+  // Check if expert needs onboarding
+  useEffect(() => {
+    if (!profileLoading && expertProfile && !onboardingChecked) {
+      const hasHandle = !!expertProfile.handle;
+      const hasPrice = !!expertProfile.tier1_price_cents;
+      const hasSLA = !!expertProfile.tier1_sla_hours;
+
+      // Show onboarding if any essential field is missing
+      if (!hasHandle || !hasPrice || !hasSLA) {
+        setShowOnboarding(true);
+      }
+
+      setOnboardingChecked(true);
+    }
+  }, [profileLoading, expertProfile, onboardingChecked]);
+
+  const handleOnboardingComplete = async () => {
+    setShowOnboarding(false);
+    // Refetch profile to get updated data
+    if (refetchProfile) {
+      await refetchProfile();
+    }
+  };
 
   const isInitialLoad = profileLoading || (questionsLoading && questions.length === 0);
   const hasError = profileError || questionsError;
@@ -229,11 +259,19 @@ function ExpertDashboardPageV2() {
         <div className="h-32 lg:h-0" />
       </DashboardLayout>
 
-      <MobileBottomNav 
+      <MobileBottomNav
         pendingCount={dashboardData.pendingCount}
         currentRevenue={dashboardData.currentRevenue}
         avgRating={dashboardData.avgRating}
       />
+
+      {/* Onboarding Flow - shows when expert profile is incomplete */}
+      {showOnboarding && (
+        <OnboardingFlow
+          userName={profile?.name || profile?.email?.split('@')[0]}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
     </>
   );
 }
