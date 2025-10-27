@@ -218,13 +218,13 @@ function MediaPlayerModal({
           exit={{ y: '100%' }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
-          className="flex md:hidden flex-col bg-black w-full h-full"
+          className="flex md:hidden flex-col bg-black w-full h-full fixed inset-0 z-50"
         >
-          {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 bg-gray-900 text-white">
+          {/* Header - Fixed */}
+          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-gray-900 text-white z-10">
             <button
               onClick={onClose}
-              className="flex-shrink-0 p-2 text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+              className="flex-shrink-0 p-2 text-white bg-gray-800 active:bg-gray-700 rounded-lg transition-colors"
               style={{ touchAction: 'auto' }}
               aria-label="Close and go back"
             >
@@ -240,35 +240,40 @@ function MediaPlayerModal({
             </div>
           </div>
 
-          {/* Player */}
-          <div className="flex-1 flex items-center justify-center bg-black">
+          {/* Player Container - Flexible */}
+          <div className="flex-1 flex items-center justify-center bg-black overflow-hidden">
             {useCloudflarePlayer ? (
-              <iframe
-                src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none'
-                }}
-                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                allowFullScreen={true}
-              />
+              <div className="w-full h-full">
+                <iframe
+                  src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    border: 'none'
+                  }}
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                  allowFullScreen={true}
+                />
+              </div>
             ) : isVideo ? (
               <video
                 src={segment.url}
                 controls
                 autoPlay
                 playsInline
-                className="w-full h-full"
-                style={{ maxHeight: '100%', objectFit: 'contain' }}
+                controlsList="nodownload"
+                className="w-full max-h-full"
+                style={{ objectFit: 'contain' }}
               />
             ) : (
-              <div className="w-full px-4">
+              <div className="w-full max-w-md px-6 py-8">
                 <audio
                   src={segment.url}
                   controls
                   autoPlay
+                  controlsList="nodownload"
                   className="w-full"
+                  style={{ minHeight: '54px' }}
                 />
               </div>
             )}
@@ -276,23 +281,23 @@ function MediaPlayerModal({
 
           {/* Footer - Navigation */}
           {segments.length > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 bg-gray-900 text-white">
+            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-gray-900 text-white z-10">
               <button
                 onClick={() => onNavigate(-1)}
                 disabled={!hasPrevious}
                 className={`
-                  flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                  flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors
                   ${hasPrevious
                     ? 'text-white bg-gray-800 active:bg-gray-700'
                     : 'text-gray-600 cursor-not-allowed'}
                 `}
                 style={{ touchAction: 'auto' }}
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={18} />
                 <span>Prev</span>
               </button>
 
-              <span className="text-xs text-gray-400">
+              <span className="text-sm text-gray-400 font-medium">
                 {currentIndex + 1} / {segments.length}
               </span>
 
@@ -300,7 +305,7 @@ function MediaPlayerModal({
                 onClick={() => onNavigate(1)}
                 disabled={!hasNext}
                 className={`
-                  flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                  flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors
                   ${hasNext
                     ? 'text-white bg-gray-800 active:bg-gray-700'
                     : 'text-gray-600 cursor-not-allowed'}
@@ -308,7 +313,7 @@ function MediaPlayerModal({
                 style={{ touchAction: 'auto' }}
               >
                 <span>Next</span>
-                <ChevronRight size={16} />
+                <ChevronRight size={18} />
               </button>
             </div>
           )}
