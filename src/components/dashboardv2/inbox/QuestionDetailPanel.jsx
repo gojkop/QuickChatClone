@@ -345,6 +345,18 @@ function QuestionDetailPanel({
   const attachments = getAttachments();
   const answerAttachments = getAnswerAttachments();
 
+  // DEBUG: Log attachment data for question #503
+  if (question?.id === 503) {
+    console.log('🔍 DEBUG Question #503 attachments:', {
+      rawAttachments: question.attachments,
+      attachmentsType: typeof question.attachments,
+      parsedAttachments: attachments,
+      attachmentsLength: attachments.length,
+      allQuestionKeys: Object.keys(question || {}),
+      questionData: question
+    });
+  }
+
   const getStreamVideoId = (url) => {
     if (!url) return null;
     const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
@@ -650,8 +662,11 @@ function QuestionDetailPanel({
               </div>
             </div>
           )}
+          {/* DEBUG MARKER: End of Media Recordings */}
+          {question?.id === 503 && <div style={{display:'none'}}>END_MEDIA</div>}
 
           {/* Question File Attachments */}
+          {question?.id === 503 && <div style={{display:'none'}}>BEFORE_ATTACHMENTS attachments.length={attachments.length}</div>}
           {attachments.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -699,8 +714,11 @@ function QuestionDetailPanel({
               </div>
             </div>
           )}
+          {/* DEBUG MARKER: After Question Attachments */}
+          {question?.id === 503 && <div style={{display:'none'}}>AFTER_Q_ATTACHMENTS</div>}
 
           {/* Answer (if answered) */}
+          {question?.id === 503 && <div style={{display:'none'}}>BEFORE_ANSWER_TEXT isAnswered={String(isAnswered)}</div>}
           {isAnswered && question.answer_text && question.answer_text.trim() && (
             <div className="pt-4 border-t border-gray-200">
               <div className="flex items-center gap-2 mb-2">
@@ -719,8 +737,11 @@ function QuestionDetailPanel({
               </div>
             </div>
           )}
+          {/* DEBUG MARKER: After Answer Text */}
+          {question?.id === 503 && <div style={{display:'none'}}>AFTER_ANSWER_TEXT</div>}
 
           {/* Answer Media Segments */}
+          {question?.id === 503 && <div style={{display:'none'}}>BEFORE_ANSWER_MEDIA answerMediaAssets.length={answerMediaAssets?.length || 0}</div>}
           {isAnswered && answerMediaAssets && answerMediaAssets.length > 0 && (
             <div className="pt-4">
               <div className="flex items-center gap-2 mb-2">
@@ -799,8 +820,11 @@ function QuestionDetailPanel({
               </div>
             </div>
           )}
+          {/* DEBUG MARKER: After Answer Media */}
+          {question?.id === 503 && <div style={{display:'none'}}>AFTER_ANSWER_MEDIA</div>}
 
           {/* Answer File Attachments */}
+          {question?.id === 503 && <div style={{display:'none'}}>BEFORE_ANSWER_ATTACHMENTS answerAttachments.length={answerAttachments?.length || 0}</div>}
           {isAnswered && answerAttachments.length > 0 && (
             <div className="pt-4">
               <div className="flex items-center gap-2 mb-2">
@@ -848,6 +872,8 @@ function QuestionDetailPanel({
               </div>
             </div>
           )}
+          {/* DEBUG MARKER: After Answer Attachments, Before Bottom Padding */}
+          {question?.id === 503 && <div style={{display:'none'}}>AFTER_ANSWER_ATTACHMENTS_BEFORE_PADDING</div>}
 
           {/* Bottom padding for mobile */}
           <div className="h-20 lg:h-4"></div>
