@@ -25,6 +25,7 @@ function QuestionDetailPanel({
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [answerData, setAnswerData] = useState(null);
   const [loadingAnswer, setLoadingAnswer] = useState(false);
+  const [answerMediaAssets, setAnswerMediaAssets] = useState([]);
 
   // Fetch media assets when question changes
   useEffect(() => {
@@ -148,13 +149,65 @@ function QuestionDetailPanel({
       if (data && data.answer) {
         console.log(`✅ Successfully fetched answer for question ${question.id}:`, data.answer);
         setAnswerData(data.answer);
+
+        // Process answer media_asset if present
+        if (data.media_asset) {
+          console.log(`🎬 Processing answer media_asset:`, data.media_asset);
+
+          const mediaAsset = data.media_asset;
+
+          // Parse metadata if it's a string
+          let metadata = mediaAsset.metadata;
+          if (typeof metadata === 'string') {
+            try {
+              metadata = JSON.parse(metadata);
+            } catch (e) {
+              console.error('Failed to parse answer media_asset metadata:', e);
+              metadata = null;
+            }
+          }
+
+          // Transform media_asset into recording_segments format
+          let recordingSegments = [];
+          if (metadata?.type === 'multi-segment' && metadata?.segments) {
+            // Multi-segment media
+            recordingSegments = metadata.segments.map(seg => ({
+              id: seg.uid,
+              url: seg.playback_url,
+              duration_sec: seg.duration,
+              segment_index: seg.segment_index,
+              metadata: { mode: seg.mode },
+              provider: 'cloudflare_stream',
+              asset_id: seg.uid
+            }));
+          } else {
+            // Single media file (legacy format)
+            recordingSegments = [{
+              id: mediaAsset.id,
+              url: mediaAsset.url,
+              duration_sec: mediaAsset.duration_sec,
+              segment_index: 0,
+              metadata: metadata,
+              provider: mediaAsset.provider,
+              asset_id: mediaAsset.asset_id
+            }];
+          }
+
+          console.log(`✅ Transformed answer media into ${recordingSegments.length} segments`);
+          setAnswerMediaAssets(recordingSegments);
+        } else {
+          console.log(`❌ No media_asset in answer response`);
+          setAnswerMediaAssets([]);
+        }
       } else {
         console.warn(`⚠️ No answer data found for question ${question.id}`);
         setAnswerData(null);
+        setAnswerMediaAssets([]);
       }
     } catch (error) {
       console.error('Failed to fetch answer data:', error);
       setAnswerData(null);
+      setAnswerMediaAssets([]);
     } finally {
       setLoadingAnswer(false);
     }
@@ -567,6 +620,86 @@ function QuestionDetailPanel({
                     Answered {getRelativeTime(question.answered_at)}
                   </p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Answer Media Segments */}
+          {isAnswered && answerMediaAssets && answerMediaAssets.length > 0 && (
+            <div className="pt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Video size={15} className="text-green-600" />
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Answer Media Recordings ({answerMediaAssets.length})
+                </h3>
+              </div>
+              <div className="space-y-3">
+                {answerMediaAssets
+                  .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
+                  .map((segment, index) => {
+                    const metadata = typeof segment.metadata === 'string'
+                      ? JSON.parse(segment.metadata)
+                      : segment.metadata || {};
+
+                    const isVideo = metadata.mode === 'video' ||
+                                    metadata.mode === 'screen' ||
+                                    metadata.mode === 'screen-camera' ||
+                                    segment.provider === 'cloudflare_stream' ||
+                                    segment.url?.includes('cloudflarestream.com');
+                    const isAudio = metadata.mode === 'audio' || !isVideo;
+
+                    const videoId = isVideo ? (segment.asset_id || getStreamVideoId(segment.url)) : null;
+                    const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+                    const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+
+                    const modeLabel = metadata.mode === 'screen' ? 'Screen Recording' :
+                                     metadata.mode === 'screen-camera' ? 'Screen + Camera' :
+                                     isVideo ? 'Video' : 'Audio';
+
+                    const duration = segment.duration_sec || segment.duration || 0;
+
+                    return (
+                      <div key={segment.id || index} className="bg-gray-900 rounded-lg overflow-hidden border-2 border-green-500">
+                        <div className="px-3 py-2 bg-green-800 flex items-center justify-between">
+                          <span className="text-xs font-semibold text-white">
+                            {answerMediaAssets.length > 1 ? `Part ${index + 1} - ${modeLabel}` : modeLabel}
+                          </span>
+                          {duration > 0 && (
+                            <span className="text-xs text-green-200">
+                              {isVideo ? '🎥' : '🎤'} {Math.floor(duration)}s
+                            </span>
+                          )}
+                        </div>
+
+                        {isVideo && videoId && customerCode ? (
+                          <div className="w-full aspect-video bg-black">
+                            <iframe
+                              src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
+                              style={{ border: 'none', width: '100%', height: '100%' }}
+                              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                              allowFullScreen={true}
+                              title={`Answer video segment ${index + 1}`}
+                            />
+                          </div>
+                        ) : isAudio && segment.url ? (
+                          <div className="p-3 flex flex-col items-center justify-center bg-green-900">
+                            <div className="flex items-center gap-2 mb-2 text-green-200">
+                              <Mic size={15} />
+                              <span className="text-sm font-medium">{modeLabel}</span>
+                            </div>
+                            <audio controls className="w-full max-w-md" preload="metadata">
+                              <source src={segment.url} type="audio/webm" />
+                              Your browser does not support audio playback.
+                            </audio>
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center text-gray-400 text-sm">
+                            Media preview unavailable
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}
