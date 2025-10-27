@@ -119,6 +119,8 @@ query "question/deep-dive" verb=POST {
         expert_profile_id   : $input.expert_profile_id
         created_at          : "now"
         payer_email         : $input.payer_email
+        payer_first_name    : $input.payer_first_name
+        payer_last_name     : $input.payer_last_name
         price_cents         : $input.proposed_price_cents
         currency            : "USD"
         status              : $status_value
