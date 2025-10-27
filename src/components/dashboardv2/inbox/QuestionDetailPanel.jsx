@@ -341,6 +341,79 @@ function QuestionDetailPanel({
     return [];
   };
 
+  // Helper to render attachment preview based on MIME type
+  const renderAttachmentPreview = (attachment, index, isAnswer = false) => {
+    const type = attachment.type || '';
+    const url = attachment.url || '';
+    const name = attachment.name || `Attachment ${index + 1}`;
+
+    // Video files
+    if (type.startsWith('video/')) {
+      return (
+        <video
+          controls
+          className="w-full h-full object-cover"
+          preload="metadata"
+          style={{ maxHeight: '200px' }}
+        >
+          <source src={url} type={type} />
+          Your browser does not support video playback.
+        </video>
+      );
+    }
+
+    // Audio files
+    if (type.startsWith('audio/')) {
+      return (
+        <div className="w-full h-24 bg-gray-900 flex flex-col items-center justify-center p-2">
+          <Mic size={20} className="text-gray-400 mb-2" />
+          <audio controls className="w-full" preload="metadata" style={{ height: '32px' }}>
+            <source src={url} type={type} />
+            Your browser does not support audio playback.
+          </audio>
+        </div>
+      );
+    }
+
+    // PDF files
+    if (type === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
+      return (
+        <div className="w-full h-24 bg-red-50 flex items-center justify-center">
+          <div className="text-center">
+            <FileText size={28} className="text-red-500 mx-auto mb-1" />
+            <span className="text-xs text-red-700 font-semibold">PDF</span>
+          </div>
+        </div>
+      );
+    }
+
+    // Image files
+    if (type.startsWith('image/')) {
+      return (
+        <img
+          src={url}
+          alt={name}
+          className="w-full h-24 object-cover"
+        />
+      );
+    }
+
+    // Generic file
+    const fileIcon = isAnswer ? (
+      <FileText size={28} className="text-green-400" />
+    ) : (
+      <FileText size={28} className="text-gray-400" />
+    );
+
+    const bgColor = isAnswer ? 'bg-green-50' : 'bg-gray-100';
+
+    return (
+      <div className={`w-full h-24 ${bgColor} flex items-center justify-center`}>
+        {fileIcon}
+      </div>
+    );
+  };
+
   const mediaSegments = getMediaSegments();
   const attachments = getAttachments();
   const answerAttachments = getAnswerAttachments();
@@ -729,17 +802,7 @@ function QuestionDetailPanel({
                     key={index}
                     className="relative group border border-gray-200 rounded-lg overflow-hidden hover:border-indigo-300 transition-colors"
                   >
-                    {attachment.type?.startsWith('image/') ? (
-                      <img
-                        src={attachment.url}
-                        alt={attachment.name || `Attachment ${index + 1}`}
-                        className="w-full h-24 object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-gray-100 flex items-center justify-center">
-                        <FileText size={28} className="text-gray-400" />
-                      </div>
-                    )}
+                    {renderAttachmentPreview(attachment, index, false)}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <a
                         href={attachment.url}
@@ -893,17 +956,7 @@ function QuestionDetailPanel({
                     key={index}
                     className="relative group border border-green-200 rounded-lg overflow-hidden hover:border-green-400 transition-colors"
                   >
-                    {attachment.type?.startsWith('image/') ? (
-                      <img
-                        src={attachment.url}
-                        alt={attachment.name || `Answer Attachment ${index + 1}`}
-                        className="w-full h-24 object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-green-50 flex items-center justify-center">
-                        <FileText size={28} className="text-green-400" />
-                      </div>
-                    )}
+                    {renderAttachmentPreview(attachment, index, true)}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <a
                         href={attachment.url}
