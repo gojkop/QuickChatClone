@@ -19,8 +19,8 @@ function AnswerComposerPanel({
   const answerUpload = useAnswerUpload();
 
   const handleReady = (data) => {
-    console.log('🎬 handleReady called - showing inline review');
-    console.log('📦 Answer data:', data);
+    console.log('🎬 [ANSWER FLOW] handleReady called - showing inline review');
+    console.log('📦 [ANSWER FLOW] Answer data received:', data);
 
     // Store answer data and show review screen
     setAnswerData(data);
@@ -28,7 +28,13 @@ function AnswerComposerPanel({
   };
 
   const handleEdit = () => {
+    console.log('✏️ [ANSWER FLOW] Edit button clicked - returning to recorder');
+    console.log('📦 [ANSWER FLOW] Current answerData:', answerData);
+
+    // DON'T reset answerData - keep it so recorder can restore it
     setShowReview(false);
+
+    console.log('✅ [ANSWER FLOW] Switched back to recorder - showReview=false');
   };
 
   const handleSubmitConfirmed = async () => {
@@ -100,6 +106,8 @@ function AnswerComposerPanel({
               onReady={handleReady}
               onCancel={onClose}
               expert={profile}
+              initialText={answerData?.text || ''}
+              existingData={answerData}
             />
           ) : (
             <div className="space-y-4">
