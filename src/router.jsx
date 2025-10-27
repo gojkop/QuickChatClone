@@ -5,6 +5,7 @@ import SignInPage from "./pages/SignInPage";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import MagicLinkCallbackPage from "./pages/MagicLinkCallbackPage";
 import ExpertDashboardPage from "./pages/ExpertDashboardPage";
+import ExpertDashboardPageV2 from "./pages/ExpertDashboardPageV2";
 import { authService } from "./api";
 
 function RequireAuth({ children }) {
@@ -18,14 +19,23 @@ export default function AppRouter() {
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
         <Route path="/auth/magic-link" element={<MagicLinkCallbackPage />} />
+
+        {/* New dashboard (default landing page after sign-in) */}
         <Route
-          path="/expert"
+          path="/dashboard"
           element={
             <RequireAuth>
-              <ExpertDashboardPage />
+              <ExpertDashboardPageV2 />
             </RequireAuth>
           }
         />
+
+        {/* Legacy route - redirect to new dashboard for backward compatibility */}
+        <Route
+          path="/expert"
+          element={<Navigate to="/dashboard" replace />}
+        />
+
         <Route path="*" element={<Navigate to="/signin" replace />} />
       </Routes>
     </BrowserRouter>

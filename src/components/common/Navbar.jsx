@@ -242,7 +242,7 @@ function Navbar() {
                 ) : userProfile ? (
                   <div className="relative">
                     <button
-                      onClick={() => navigate('/expert')}
+                      onClick={() => navigate('/dashboard')}
                       onMouseEnter={() => setShowTooltip(true)}
                       onMouseLeave={() => setShowTooltip(false)}
                       className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-canvas transition duration-base ease-[var(--ease-standard)] group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"

@@ -103,9 +103,9 @@ export default function OAuthCallbackPage() {
         return;
       }
 
-      console.log('✅ OAuth flow complete, redirecting to /expert');
+      console.log('✅ OAuth flow complete, redirecting to /dashboard');
       sessionStorage.removeItem("qc_auth_in_progress");
-      navigate("/expert", { replace: true });
+      navigate("/dashboard", { replace: true });
     })();
   }, [navigate, login]);
 

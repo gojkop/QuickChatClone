@@ -15,7 +15,7 @@ export default function SignInPage() {
 
   React.useEffect(() => {
     if (authService.isAuthenticated()) {
-      navigate("/expert", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 

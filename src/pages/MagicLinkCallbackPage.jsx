@@ -71,7 +71,7 @@ export default function MagicLinkCallbackPage() {
 
         // Redirect after brief success message
         setTimeout(() => {
-          navigate('/expert', { replace: true });
+          navigate('/dashboard', { replace: true });
         }, 2000);
 
       } catch (e) {

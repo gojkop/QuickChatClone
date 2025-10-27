@@ -5,13 +5,13 @@
  */
 export function getGoogleCalendarUrl(question, options = {}) {
   const { scheduledDate, duration = 30 } = options;
-  const questionUrl = `${window.location.origin}/expert#question-${question.id}`;
+  const questionUrl = `${window.location.origin}/dashboard#question-${question.id}`;
 
   const startTime = scheduledDate || getDefaultStartTime();
   const endTime = new Date(startTime);
   endTime.setMinutes(endTime.getMinutes() + duration);
-  
-  const answerUrl = `${window.location.origin}/expert#question-${question.id}`;
+
+  const answerUrl = `${window.location.origin}/dashboard#question-${question.id}`;
   
   const params = new URLSearchParams({
     action: 'TEMPLATE',
@@ -29,13 +29,13 @@ export function getGoogleCalendarUrl(question, options = {}) {
  */
 export function getOutlookCalendarUrl(question, options = {}) {
   const { scheduledDate, duration = 30 } = options;
-  const questionUrl = `${window.location.origin}/expert#question-${question.id}`;
+  const questionUrl = `${window.location.origin}/dashboard#question-${question.id}`;
 
   const startTime = scheduledDate || getDefaultStartTime();
   const endTime = new Date(startTime);
   endTime.setMinutes(endTime.getMinutes() + duration);
-  
-  const answerUrl = `${window.location.origin}/expert#question-${question.id}`;
+
+  const answerUrl = `${window.location.origin}/dashboard#question-${question.id}`;
   
   const params = new URLSearchParams({
     path: '/calendar/action/compose',
@@ -55,13 +55,13 @@ export function getOutlookCalendarUrl(question, options = {}) {
  */
 export function getOffice365CalendarUrl(question, options = {}) {
   const { scheduledDate, duration = 30 } = options;
-  const questionUrl = `${window.location.origin}/expert#question-${question.id}`;
+  const questionUrl = `${window.location.origin}/dashboard#question-${question.id}`;
 
   const startTime = scheduledDate || getDefaultStartTime();
   const endTime = new Date(startTime);
   endTime.setMinutes(endTime.getMinutes() + duration);
-  
-  const answerUrl = `${window.location.origin}/expert#question-${question.id}`;
+
+  const answerUrl = `${window.location.origin}/dashboard#question-${question.id}`;
   
   const params = new URLSearchParams({
     path: '/calendar/action/compose',
@@ -81,13 +81,13 @@ export function getOffice365CalendarUrl(question, options = {}) {
  */
 export function getAppleCalendarUrl(question, options = {}) {
   const { scheduledDate, duration = 30 } = options;
-  const questionUrl = `${window.location.origin}/expert#question-${question.id}`;
+  const questionUrl = `${window.location.origin}/dashboard#question-${question.id}`;
 
   const startTime = scheduledDate || getDefaultStartTime();
   const endTime = new Date(startTime);
   endTime.setMinutes(endTime.getMinutes() + duration);
-  
-  const answerUrl = `${window.location.origin}/expert#question-${question.id}`;
+
+  const answerUrl = `${window.location.origin}/dashboard#question-${question.id}`;
   
   const formatICSDate = (date) => {
     const pad = (n) => n.toString().padStart(2, '0');
