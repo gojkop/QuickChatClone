@@ -360,13 +360,13 @@ function QuestionDetailPanel({
   const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
 
   const getQuestionTitle = (question) => {
-    const titleText = question.title || question.question_text;
+    const titleText = question.title || question.text || question.question_text;
     
     if (titleText?.trim()) {
       return titleText;
     }
     
-    const detailsText = question.question_text || question.question_details;
+    const detailsText = question.text || question.question_text || question.question_details;
     if (detailsText?.trim()) {
       const firstLine = detailsText.split('\n')[0].trim();
       return firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
@@ -384,15 +384,22 @@ function QuestionDetailPanel({
   };
 
   const getQuestionDetails = (question) => {
-    return question.question_text || question.question_details || '';
+    return question.text || question.question_text || question.question_details || '';
   };
 
   const getAskerName = (question) => {
+    // Try payer fields first (most common for questions)
+    if (question.payer_first_name || question.payer_last_name) {
+      const firstName = question.payer_first_name || '';
+      const lastName = question.payer_last_name || '';
+      return `${firstName} ${lastName}`.trim();
+    }
+    // Fallback to other name fields
     return question.user_name || question.name || question.payer_name || 'Anonymous';
   };
 
   const getAskerEmail = (question) => {
-    return question.user_email || question.email || question.payer_email || '';
+    return question.payer_email || question.user_email || question.email || '';
   };
 
   if (!question) {

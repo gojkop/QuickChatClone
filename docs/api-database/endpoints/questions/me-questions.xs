@@ -127,12 +127,18 @@ query "me/questions" verb=GET {
                 var query = searchQuery.toLowerCase().trim();
                 filtered = filtered.filter(function(q) {
                   var title = (q.title || '').toLowerCase();
+                  var text = (q.text || '').toLowerCase();
                   var questionText = (q.question_text || '').toLowerCase();
                   var userName = (q.user_name || '').toLowerCase();
-            
+                  var payerName = ((q.payer_first_name || '') + ' ' + (q.payer_last_name || '')).toLowerCase();
+                  var payerEmail = (q.payer_email || '').toLowerCase();
+
                   return title.indexOf(query) !== -1 ||
+                         text.indexOf(query) !== -1 ||
                          questionText.indexOf(query) !== -1 ||
-                         userName.indexOf(query) !== -1;
+                         userName.indexOf(query) !== -1 ||
+                         payerName.indexOf(query) !== -1 ||
+                         payerEmail.indexOf(query) !== -1;
                 });
               }
             
@@ -197,6 +203,7 @@ query "me/questions" verb=GET {
                   id: q.id,
                   expert_profile_id: q.expert_profile_id,
                   user_id: q.user_id,
+                  text: q.text,
                   question_text: q.question_text,
                   question_details: q.question_details,
                   title: q.title,
@@ -213,6 +220,9 @@ query "me/questions" verb=GET {
                   hidden: q.hidden,
                   user_name: q.user_name,
                   user_email: q.user_email,
+                  payer_first_name: q.payer_first_name,
+                  payer_last_name: q.payer_last_name,
+                  payer_email: q.payer_email,
                   attachments: q.attachments,
                   asker_message: q.asker_message,
                   playback_token_hash: q.playback_token_hash,
