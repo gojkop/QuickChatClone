@@ -560,7 +560,13 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '',
   };
 
   const ExistingSegmentsDisplay = () => {
-    if (segments.length === 0) return null;
+    console.log('🎥 [EXISTING SEGMENTS DISPLAY] Rendering check:', {
+      newSegments: segments.length,
+      existingSegments: existingSegments.length,
+      willRender: segments.length > 0 || existingSegments.length > 0
+    });
+
+    if (segments.length === 0 && existingSegments.length === 0) return null;
 
     return (
       <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 sm:p-5 mb-4">
