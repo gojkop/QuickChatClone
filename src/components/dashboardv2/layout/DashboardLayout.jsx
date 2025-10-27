@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDashboardLayout } from '@/hooks/dashboardv2/useDashboardLayout';
 import { useSearch } from '@/hooks/dashboardv2/useSearch';
@@ -41,6 +41,11 @@ function DashboardLayout({
     '/dashboard/analytics',
     '/dashboard/profile'
   ].includes(location.pathname);
+
+  // Close mobile menu on route change to prevent flash
+  useEffect(() => {
+    closeMobileMenu();
+  }, [location.pathname]);
 
   const {
     searchQuery,

@@ -18,26 +18,8 @@ function MobileBottomNav({ pendingCount = 0, currentRevenue = 0, avgRating = 0 }
 
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg safe-area-bottom">
-      {/* Stats Bar (above nav) */}
-      <div className="flex items-center justify-around px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
-        <div className="text-center">
-          <p className="text-xs text-gray-600 font-medium">Pending</p>
-          <p className="text-sm font-bold text-gray-900">{pendingCount}</p>
-        </div>
-        <div className="w-px h-8 bg-gray-300"></div>
-        <div className="text-center">
-          <p className="text-xs text-gray-600 font-medium">Today</p>
-          <p className="text-sm font-bold text-green-600">${currentRevenue}</p>
-        </div>
-        <div className="w-px h-8 bg-gray-300"></div>
-        <div className="text-center">
-          <p className="text-xs text-gray-600 font-medium">Rating</p>
-          <p className="text-sm font-bold text-purple-600">{avgRating.toFixed(1)}⭐</p>
-        </div>
-      </div>
-
       {/* Navigation */}
-      <nav className="flex items-center justify-around px-2 py-2">
+      <nav className="flex items-center justify-around px-2 py-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
