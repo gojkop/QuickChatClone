@@ -51,13 +51,18 @@ function ExpertDashboardPageV2() {
     error: analyticsError,
   } = useDashboardAnalytics();
 
-  // Fetch recent questions for display in widgets (Recent Activity, etc.)
+  // Determine if we need to fetch more questions for fallback calculation
+  // If analytics endpoint doesn't exist (404), fetch 100 questions for client-side calculation
+  const shouldUseFallback = analyticsData === null;
+  const questionsPerPage = shouldUseFallback ? 100 : 10;
+
+  // Fetch questions: 10 for widgets, or 100 for fallback calculation
   const {
     data: questionsData,
     isLoading: questionsLoading,
     error: questionsError,
     refetch: refetchQuestions
-  } = useQuestionsQuery({ page: 1, perPage: 10 });
+  } = useQuestionsQuery({ page: 1, perPage: questionsPerPage });
 
   const {
     campaigns,
@@ -72,8 +77,9 @@ function ExpertDashboardPageV2() {
 
   const questions = questionsData?.questions || [];
 
-  // Use pre-calculated metrics from server (accurate, based on ALL questions)
-  const metrics = useMetrics([], analyticsData);
+  // Use pre-calculated metrics if available, otherwise calculate client-side
+  // When analytics endpoint is implemented, this will automatically switch to server-side
+  const metrics = useMetrics(shouldUseFallback ? questions : [], analyticsData);
 
   const dashboardData = useMemo(() => ({
     pendingCount: metrics.pendingCount || 0,
@@ -142,7 +148,8 @@ function ExpertDashboardPageV2() {
   };
 
   const isInitialLoad = profileLoading || analyticsLoading || (questionsLoading && questions.length === 0);
-  const hasError = profileError || analyticsError || questionsError;
+  // Don't treat analytics 404 as error (endpoint not implemented yet)
+  const hasError = profileError || questionsError;
 
   if (isInitialLoad) {
     return (
