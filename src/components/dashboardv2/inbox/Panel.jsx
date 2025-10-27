@@ -1,8 +1,8 @@
 // src/components/dashboardv2/inbox/Panel.jsx
 // Individual panel component with slide-in animations
 
-import React, { useState } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 /**
@@ -73,30 +73,6 @@ function Panel({
   // CHANGED: Disable animation for list panel (it should always be present)
   const shouldAnimate = type !== 'list';
 
-  // Swipe gesture for mobile
-  const x = useMotionValue(0);
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Enable swipe only on mobile and for active non-list panels
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const enableSwipe = isMobile && isActive && type !== 'list';
-
-  const handleDragEnd = (event, info) => {
-    if (!enableSwipe) return;
-
-    const threshold = 120; // Swipe distance threshold (increased for slower trigger)
-    const velocity = info.velocity.x;
-
-    // Swipe right to close (higher velocity threshold for smoother feel)
-    if (info.offset.x > threshold || velocity > 800) {
-      onClose?.();
-    } else {
-      // Snap back
-      x.set(0);
-    }
-    setIsDragging(false);
-  };
-
   return (
     <motion.div
       key={id}
@@ -104,18 +80,6 @@ function Panel({
       initial={shouldAnimate ? "enter" : false}
       animate={shouldAnimate ? "center" : false}
       exit={shouldAnimate ? "exit" : false}
-      drag={enableSwipe ? "x" : false}
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.2}
-      onDragStart={() => setIsDragging(true)}
-      onDragEnd={handleDragEnd}
-      style={{
-        x: enableSwipe ? x : undefined,
-        width: `${width}%`,
-        zIndex: zIndex,
-        // Apply subtle backdrop on compressed panels
-        filter: !isActive && width < 40 ? 'brightness(0.98)' : 'none'
-      }}
       className={`
         panel
         relative h-full bg-white
@@ -125,6 +89,12 @@ function Panel({
         ${!isVisible ? 'hidden' : ''}
         ${className}
       `}
+      style={{
+        width: `${width}%`,
+        zIndex: zIndex,
+        // Apply subtle backdrop on compressed panels
+        filter: !isActive && width < 40 ? 'brightness(0.98)' : 'none'
+      }}
     >
       {/* Panel Header (optional) */}
       {title && (

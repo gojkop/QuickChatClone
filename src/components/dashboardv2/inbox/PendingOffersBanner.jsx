@@ -207,52 +207,50 @@ function PendingOffersBanner({ onOfferUpdate, onViewDetails, onAcceptOffer, onDe
               onClick={(e) => handleViewDetails(offer, e)}
               className="relative p-3 border border-l-[3px] border-l-purple-400 bg-white rounded-lg transition-all duration-200 cursor-pointer hover:border-purple-300 hover:shadow-md hover:-translate-y-0.5"
             >
-              {/* Main Content - Mimics table row */}
-              <div className="flex items-center justify-between gap-3">
-                {/* Left: Type Badge + Title + Asker */}
-                <div className="flex-1 min-w-0">
-                  {/* First Row: Badge + Title */}
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded text-xs font-bold flex-shrink-0">
-                      <Star size={10} />
-                      <span>Deep Dive</span>
-                    </span>
-                    <span className="text-xs text-gray-400 font-mono">Q-{offer.question_id}</span>
-                    <h3 className="text-sm font-semibold text-gray-900 truncate">
-                      {offer.title || 'Untitled Question'}
-                    </h3>
-                  </div>
-
-                  {/* Second Row: Asker Info */}
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <User size={12} className="text-gray-400 flex-shrink-0" />
-                    <span className="font-medium text-gray-900 truncate">{offer.payer_name || 'Anonymous'}</span>
-                    {offer.payer_email && (
-                      <>
-                        <span className="text-gray-400">·</span>
-                        <a
-                          href={`mailto:${offer.payer_email}`}
-                          className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {offer.payer_email}
-                        </a>
-                      </>
-                    )}
-                  </div>
+              {/* Main Content - Responsive Layout */}
+              <div className="space-y-2">
+                {/* Row 1: Badge + Q-ID + Title */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded text-xs font-bold flex-shrink-0">
+                    <Star size={10} />
+                    <span>Deep Dive</span>
+                  </span>
+                  <span className="text-xs text-gray-400 font-mono">Q-{offer.question_id}</span>
+                  <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
+                    {offer.title || 'Untitled Question'}
+                  </h3>
                 </div>
 
-                {/* Right: Price + Time + Actions */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  {/* Price */}
-                  <div className="px-2.5 py-1 rounded-lg font-bold text-sm bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 shadow-sm">
-                    {formatPrice(offer.proposed_price_cents)}
+                {/* Row 2: Asker Info */}
+                <div className="flex items-center gap-1.5 text-xs flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <User size={12} className="text-gray-400 flex-shrink-0" />
+                    <span className="font-medium text-gray-900">{offer.payer_name || 'Anonymous'}</span>
                   </div>
+                  {offer.payer_email && (
+                    <a
+                      href={`mailto:${offer.payer_email}`}
+                      className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {offer.payer_email}
+                    </a>
+                  )}
+                </div>
 
-                  {/* Time Left */}
-                  <div className={`flex items-center gap-1 text-xs font-semibold ${getTimeRemainingColor(offer.offer_expires_at, offer.created_at)}`}>
-                    <Clock size={12} />
-                    <span className="whitespace-nowrap">{formatTimeRemaining(offer.offer_expires_at)}</span>
+                {/* Row 3: Price + Time + Actions */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    {/* Price */}
+                    <div className="px-2.5 py-1 rounded-lg font-bold text-sm bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 shadow-sm">
+                      {formatPrice(offer.proposed_price_cents)}
+                    </div>
+
+                    {/* Time Left */}
+                    <div className={`flex items-center gap-1 text-xs font-semibold ${getTimeRemainingColor(offer.offer_expires_at, offer.created_at)}`}>
+                      <Clock size={12} />
+                      <span className="whitespace-nowrap">{formatTimeRemaining(offer.offer_expires_at)}</span>
+                    </div>
                   </div>
 
                   {/* Action Buttons */}
