@@ -94,8 +94,8 @@ function AccountSettingsPage() {
     if (showDeleteConfirm) {
       setIsDeleting(true);
       try {
-        // Call backend endpoint to delete account
-        await apiClient.delete('/users/delete-account');
+        // Call Xano endpoint to delete account
+        await apiClient.delete('/me/delete-account');
 
         // Clear authentication and redirect to home
         localStorage.removeItem('qc_token');
