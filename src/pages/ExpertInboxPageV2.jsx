@@ -917,6 +917,14 @@ function ExpertInboxPageV2() {
       case 'list':
         return (
           <div className="h-full flex flex-col overflow-hidden bg-gray-50">
+            {/* Pending Offers Banner - Above toolbar */}
+            <PendingOffersBanner
+              onOfferUpdate={handleOfferUpdate}
+              onViewDetails={handleQuestionOpen}
+              onAcceptOffer={handleAcceptOffer}
+              onDeclineOffer={handleDeclineOffer}
+            />
+
             {/* Unified Toolbar */}
             <div className="flex-shrink-0">
               <UnifiedToolbar
@@ -928,14 +936,6 @@ function ExpertInboxPageV2() {
                 onOpenAdvancedFilters={() => setIsFilterPanelOpen(true)}
               />
             </div>
-
-            {/* Pending Offers Banner */}
-            <PendingOffersBanner
-              onOfferUpdate={handleOfferUpdate}
-              onViewDetails={handleQuestionOpen}
-              onAcceptOffer={handleAcceptOffer}
-              onDeclineOffer={handleDeclineOffer}
-            />
 
             {/* Quick Actions */}
             {selectedCount > 0 && (

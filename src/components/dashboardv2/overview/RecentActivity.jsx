@@ -293,9 +293,9 @@ function RecentActivity({ questions = [] }) {
                 </div>
               </div>
 
-              {/* Quick Actions - COMPACT */}
+              {/* Quick Actions - COMPACT - Hidden on mobile */}
               {hoveredQuestion === question.id && (
-                <div className="absolute top-1.5 right-1.5 flex items-center gap-1 animate-fadeInScale">
+                <div className="absolute top-1 right-1 hidden md:flex items-center gap-1 animate-fadeInScale">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

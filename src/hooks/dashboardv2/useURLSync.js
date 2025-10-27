@@ -175,7 +175,8 @@ export const useURLSync = ({
           try {
             // Fetch questions with a large limit to increase chances of finding it
             // We can't filter by ID directly, so we fetch with a broad filter
-            const response = await apiClient.get(`/me/questions?filter_type=all&per_page=500&sort_by=created_at`);
+            // Include pending offers by fetching without status filter
+            const response = await apiClient.get(`/me/questions?per_page=500&sort_by=created_at`);
             const allQuestions = response.data?.questions || response.data || [];
             const targetQuestion = allQuestions.find(q => q.id === hashState.detail);
 
