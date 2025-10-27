@@ -1,11 +1,11 @@
 // src/components/dashboardv2/inbox/QuestionTable.jsx
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom'; 
-import { Video, Mic, FileText, Calendar } from 'lucide-react';
+import ReactDOM from 'react-dom';
+import { Video, Mic, FileText, Calendar, Star, Zap, Clock, User } from 'lucide-react';
 import PriorityBadge from './PriorityBadge';
 import SLAIndicator from './SLAIndicator';
 import PinButton from './PinButton';
-import QuestionPreview from './QuestionPreview';
+// import QuestionPreview from './QuestionPreview'; // DISABLED
 
 function QuestionTable({
   questions = [],
@@ -14,7 +14,7 @@ function QuestionTable({
   onSelectQuestion,
   onQuestionClick,
   onSelectAll,
-  // ADDED: Pin & preview props
+  // Pin props
   pinnedIds = [],
   onTogglePin,
   isPinned,
@@ -28,14 +28,17 @@ function QuestionTable({
     time: 9,
   });
 
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizingColumn, setResizingColumn] = useState(null);
+  // DISABLED: Column resizing
+  // const [isResizing, setIsResizing] = useState(false);
+  // const [resizingColumn, setResizingColumn] = useState(null);
   
-  // ADDED: Hover preview state
-  const [hoveredQuestion, setHoveredQuestion] = useState(null);
-  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
-  const [hoverTimer, setHoverTimer] = useState(null);
+  // DISABLED: Hover preview state
+  // const [hoveredQuestion, setHoveredQuestion] = useState(null);
+  // const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  // const [hoverTimer, setHoverTimer] = useState(null);
 
+  // DISABLED: Column resize effect
+  /*
   useEffect(() => {
     if (!isResizing) return;
 
@@ -75,12 +78,16 @@ function QuestionTable({
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isResizing, resizingColumn]);
+  */
 
+  // DISABLED: Column resize handler
+  /*
   const startResize = (column) => (e) => {
     e.preventDefault();
     setIsResizing(true);
     setResizingColumn(column);
   };
+  */
 
   const isAllSelected =
     questions.length > 0 && selectedQuestions.length === questions.length;
@@ -133,61 +140,86 @@ function QuestionTable({
     return `Question #${question.id}`;
   };
 
-  const getRelativeTime = (timestamp) => {
-    if (!timestamp) return '';
-    const now = Date.now() / 1000;
-    const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
-    const diff = now - createdAt;
+  const getTimeLeft = (question) => {
+    if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
+      return null;
+    }
 
-    if (diff < 60) return 'now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-    const days = Math.floor(diff / 86400);
-    return `${days}d`;
+    const now = Date.now() / 1000;
+    const createdAtSeconds = question.created_at > 4102444800
+      ? question.created_at / 1000
+      : question.created_at;
+
+    const elapsed = now - createdAtSeconds;
+    const slaSeconds = question.sla_hours_snapshot * 3600;
+    const remaining = slaSeconds - elapsed;
+
+    if (remaining <= 0) return null;
+
+    const hours = Math.floor(remaining / 3600);
+    const minutes = Math.floor((remaining % 3600) / 60);
+
+    if (hours >= 24) {
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return { text: `${days}d ${remainingHours}h`, hours };
+    }
+    if (hours > 0) {
+      return { text: `${hours}h ${minutes}m`, hours };
+    }
+    return { text: `${minutes}m`, hours: 0 };
+  };
+
+  const getTimeUrgencyColor = (hours) => {
+    if (hours < 6) return 'text-red-600';
+    if (hours < 12) return 'text-orange-600';
+    return 'text-blue-600';
   };
 
   const isAnswered =
     (q) => q.status === 'closed' || q.status === 'answered' || q.answered_at;
 
-// FIXED: Don't show preview if detail panel is already open
-const handleMouseEnter = (question, event) => {
-  // Don't show preview if a question detail is already open
-  if (activeQuestionId) {
-    return;
-  }
-  
-  console.log('🔍 Hovering over question:', question.id);
-  const rect = event.currentTarget.getBoundingClientRect();
-  
-  // Calculate position with better placement logic
-  const previewWidth = 320; // Width of preview card (w-80 = 320px)
-  const padding = 20;
-  const viewportWidth = window.innerWidth;
-  
-  let xPosition = rect.right + padding; // Default: to the right of row
-  
-  // If preview would go off-screen, position it to the left instead
-  if (xPosition + previewWidth > viewportWidth) {
-    xPosition = rect.left - previewWidth - padding;
-  }
-  
-  // If still off-screen on left, center it
-  if (xPosition < 0) {
-    xPosition = (viewportWidth - previewWidth) / 2;
-  }
-  
-  setHoverPosition({ 
-    x: xPosition, 
-    y: rect.top 
-  });
-  
-  const timer = setTimeout(() => {
-    console.log('✅ Setting hover question:', question.id);
-    setHoveredQuestion(question);
-  }, 400);
-  
-  setHoverTimer(timer);
-};
+  const isDeepDiveQuestion = (question) => {
+    // Check question_tier field (correct field name from backend)
+    return question.question_tier === 'deep_dive';
+  };
+
+  // DISABLED: Hover preview handlers
+  /*
+  const handleMouseEnter = (question, event) => {
+    if (activeQuestionId) {
+      return;
+    }
+    
+    console.log('🔍 Hovering over question:', question.id);
+    const rect = event.currentTarget.getBoundingClientRect();
+    
+    const previewWidth = 320;
+    const padding = 20;
+    const viewportWidth = window.innerWidth;
+    
+    let xPosition = rect.right + padding;
+    
+    if (xPosition + previewWidth > viewportWidth) {
+      xPosition = rect.left - previewWidth - padding;
+    }
+    
+    if (xPosition < 0) {
+      xPosition = (viewportWidth - previewWidth) / 2;
+    }
+    
+    setHoverPosition({ 
+      x: xPosition, 
+      y: rect.top 
+    });
+    
+    const timer = setTimeout(() => {
+      console.log('✅ Setting hover question:', question.id);
+      setHoveredQuestion(question);
+    }, 300);
+    
+    setHoverTimer(timer);
+  };
 
   const handleMouseLeave = () => {
     if (hoverTimer) {
@@ -196,6 +228,7 @@ const handleMouseEnter = (question, event) => {
     }
     setHoveredQuestion(null);
   };
+  */
 
   if (questions.length === 0) {
     return (
@@ -208,6 +241,7 @@ const handleMouseEnter = (question, event) => {
       </div>
     );
   }
+
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden question-table-container">
       <div className="flex-1 overflow-y-auto overflow-x-auto min-w-0">
@@ -237,30 +271,24 @@ const handleMouseEnter = (question, event) => {
 
               {/* Question Column */}
               <th
-                className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group"
+                className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
                 style={{ width: `${columnWidths.question}%` }}
               >
                 <div className="flex items-center gap-2">
                   <span>Question</span>
                 </div>
-                <div
-                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-400 group-hover:bg-indigo-300"
-                  onMouseDown={startResize('question')}
-                />
+                {/* DISABLED: Resize handle */}
               </th>
 
               {/* Asker Column */}
               <th
-                className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group"
+                className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
                 style={{ width: `${columnWidths.asker}%` }}
               >
                 <div className="flex items-center gap-2">
                   <span>Asker</span>
                 </div>
-                <div
-                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-400 group-hover:bg-indigo-300"
-                  onMouseDown={startResize('asker')}
-                />
+                {/* DISABLED: Resize handle */}
               </th>
 
               {/* Price Column */}
@@ -271,12 +299,12 @@ const handleMouseEnter = (question, event) => {
                 Price
               </th>
 
-              {/* Time Column */}
+              {/* Time Left Column */}
               <th
                 className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
                 style={{ width: `${columnWidths.time}%` }}
               >
-                Time
+                Time Left
               </th>
             </tr>
           </thead>
@@ -286,6 +314,8 @@ const handleMouseEnter = (question, event) => {
               const isSelected = selectedQuestions.includes(question.id);
               const isActive = activeQuestionId === question.id;
               const answered = isAnswered(question);
+              const isDeepDive = isDeepDiveQuestion(question);
+              const timeLeft = getTimeLeft(question);
 
               return (
                 <tr
@@ -295,21 +325,26 @@ const handleMouseEnter = (question, event) => {
                       onQuestionClick(question);
                     }
                   }}
-                  onMouseEnter={(e) => handleMouseEnter(question, e)}
-                  onMouseLeave={handleMouseLeave}
+                  // DISABLED: Hover handlers
+                  // onMouseEnter={(e) => handleMouseEnter(question, e)}
+                  // onMouseLeave={handleMouseLeave}
                   className={`
-                    transition-colors cursor-pointer border-l-4
-                    ${
-                      isActive
-                        ? 'bg-indigo-50 border-l-indigo-600'
-                        : isSelected
-                        ? 'bg-blue-50 border-l-blue-400'
-                        : 'border-l-transparent hover:bg-gray-50'
-                    }
-                    ${answered ? 'opacity-60' : ''}
-                  `}
+  transition-colors cursor-pointer border-l-4
+  ${
+    isActive
+      ? 'bg-indigo-50 border-l-indigo-600'
+      : isSelected
+      ? 'bg-blue-50 border-l-blue-400'
+      : question.hidden
+      ? 'bg-gray-100 border-l-gray-400 opacity-50'
+      : isDeepDive && !answered
+      ? 'border-l-purple-400 hover:bg-gray-50'
+      : 'border-l-transparent hover:bg-gray-50'
+  }
+  ${answered ? 'opacity-60' : ''}
+`}
                 >
-                  {/* Checkbox - FIXED: Pass event object */}
+                  {/* Checkbox */}
                   <td className="px-3 py-3">
                     <input
                       type="checkbox"
@@ -327,12 +362,23 @@ const handleMouseEnter = (question, event) => {
                         {getMediaIcon(question)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          {/* Type Badge */}
+                          {isDeepDive ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded text-xs font-bold flex-shrink-0">
+                              <Star size={10} />
+                              <span>Deep Dive</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-semibold flex-shrink-0">
+                              <Zap size={10} />
+                              <span>Quick</span>
+                            </span>
+                          )}
                           <span className="text-xs text-gray-400 font-mono">
                             Q-{question.id}
                           </span>
-                          <PriorityBadge question={question} />
-                          {/* ADDED: Pin button */}
+                          {/* Pin button */}
                           {onTogglePin && isPinned && (
                             <PinButton
                               isPinned={isPinned(question.id)}
@@ -349,13 +395,25 @@ const handleMouseEnter = (question, event) => {
 
                   {/* Asker */}
                   <td className="px-3 py-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {question.user_name || question.name || 'Anonymous'}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {question.user_email || question.email || ''}
-                      </p>
+                    <div className="flex items-center gap-1.5 text-xs min-w-0">
+                      <User size={12} className="text-gray-400 flex-shrink-0" />
+                      {(question.user_name || question.name) && (
+                        <span className="font-medium text-gray-900 truncate">
+                          {question.user_name || question.name}
+                        </span>
+                      )}
+                      {(question.user_email || question.email) && (
+                        <>
+                          <span className="text-gray-400 flex-shrink-0">·</span>
+                          <a
+                            href={`mailto:${question.user_email || question.email}`}
+                            className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {question.user_email || question.email}
+                          </a>
+                        </>
+                      )}
                     </div>
                   </td>
 
@@ -370,19 +428,16 @@ const handleMouseEnter = (question, event) => {
                     </span>
                   </td>
 
-                  {/* Time */}
+                  {/* Time Left */}
                   <td className="px-3 py-3">
-                    <div className="flex flex-col gap-1">
-                      {!answered &&
-                      question.sla_hours_snapshot &&
-                      question.sla_hours_snapshot > 0 ? (
-                        <SLAIndicator question={question} compact={true} />
-                      ) : (
-                        <span className="text-xs text-gray-500 whitespace-nowrap">
-                          {getRelativeTime(question.created_at)}
-                        </span>
-                      )}
-                    </div>
+                    {!answered && timeLeft ? (
+                      <div className={`flex items-center gap-1 text-xs font-semibold ${getTimeUrgencyColor(timeLeft.hours)}`}>
+                        <Clock size={12} />
+                        <span className="whitespace-nowrap">{timeLeft.text}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
                   </td>
                 </tr>
               );
@@ -391,19 +446,8 @@ const handleMouseEnter = (question, event) => {
         </table>
       </div>
 
-      {/* Resize overlay */}
-      {isResizing && (
-        <div className="fixed inset-0 z-50 cursor-col-resize" />
-      )}
-
-       {/* FIXED: Hover Preview - Using Portal with Real Component */}
-      {hoveredQuestion && ReactDOM.createPortal(
-        <QuestionPreview
-          question={hoveredQuestion}
-          position={hoverPosition}
-        />,
-        document.body
-      )}
+      {/* DISABLED: Resize overlay */}
+      {/* DISABLED: Hover Preview */}
     </div>
   );
 }

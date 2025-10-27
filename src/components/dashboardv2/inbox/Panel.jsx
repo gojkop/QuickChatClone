@@ -119,7 +119,7 @@ function Panel({
         {children}
       </div>
 
-      {/* Close button overlay (for panels without title) */}
+       {/* DISABLED: Close button overlay (panels use internal back arrows instead)
       {!title && shouldShowClose && width >= 20 && (
         <button
           onClick={onClose}
@@ -137,7 +137,7 @@ function Panel({
           <X size={18} className="text-gray-600 group-hover:text-gray-900" />
         </button>
       )}
-
+      */}
       {/* Subtle darkening overlay for inactive panels */}
       {!isActive && width > 0 && width < 100 && (
         <div

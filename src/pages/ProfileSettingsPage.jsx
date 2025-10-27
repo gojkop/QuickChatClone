@@ -377,7 +377,7 @@ function ProfileSettingsPage() {
   // Enhanced skeleton loading
   if (isLoading) {
     return (
-      <DashboardLayout breadcrumbs={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Profile Settings' }]}>
+      <DashboardLayout breadcrumbs={[{ label: 'Dashboard', path: '/dashboard' }, { label: 'Profile Settings' }]}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header Skeleton */}
           <div className="mb-8">
@@ -411,7 +411,7 @@ function ProfileSettingsPage() {
   }
 
   return (
-    <DashboardLayout breadcrumbs={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Profile Settings' }]}>
+    <DashboardLayout breadcrumbs={[{ label: 'Dashboard', path: '/dashboard' }, { label: 'Profile Settings' }]}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with Completeness Badge */}
         <div className="mb-8">

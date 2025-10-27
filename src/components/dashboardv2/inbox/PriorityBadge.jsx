@@ -3,7 +3,10 @@ import { Star, Zap, Sparkles } from 'lucide-react';
 
 function PriorityBadge({ question }) {
   const priceUsd = (question.price_cents || 0) / 100;
-  const isDeepDive = question.pricing_tier === 'tier2';
+
+  // Check question_tier field (correct field name from backend)
+  const isDeepDive = question.question_tier === 'deep_dive';
+
   const isHighValue = priceUsd >= 100;
   const isPremium = priceUsd >= 500;
 

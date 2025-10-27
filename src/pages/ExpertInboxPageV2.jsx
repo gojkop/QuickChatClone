@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '@/api';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
 import PanelContainer from '@/components/dashboardv2/inbox/PanelContainer';
-import QuestionFilters from '@/components/dashboardv2/inbox/QuestionFilters';
+import UnifiedToolbar from '@/components/dashboardv2/inbox/UnifiedToolbar';
+import PendingOffersBanner from '@/components/dashboardv2/inbox/PendingOffersBanner';
+import AdvancedFiltersPanel from '@/components/dashboardv2/inbox/AdvancedFiltersPanel';
 import QuickActions from '@/components/dashboardv2/inbox/QuickActions';
 import QuestionListView from '@/components/dashboardv2/inbox/QuestionListView';
 import VirtualQuestionTable from '@/components/dashboardv2/inbox/VirtualQuestionTable';
@@ -39,9 +41,11 @@ function ExpertInboxPageV2() {
   const [useVirtualization, setUseVirtualization] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [offerRefreshTrigger, setOfferRefreshTrigger] = useState(0);
 
 
-const metrics = useMetrics(questions);
+  const metrics = useMetrics(questions);
   const {
     filters,
     updateFilter,
@@ -57,8 +61,15 @@ const metrics = useMetrics(questions);
   const { toasts, showToast, hideToast, success, error, info } = useToast();
   const { pinnedIds, togglePin, isPinned, sortWithPinned } = usePinnedQuestions();
   const { undoStack, pushUndo, executeUndo } = useUndoStack();
+  const { 
+    selectedIds,
+    toggleSelect,
+    selectAll,
+    clearSelection,
+    selectedCount
+  } = useBulkSelect(baseFilteredQuestions);
 
-  // Panel stack management (MUST be called before isMobile is used)
+  // Panel stack management
   const {
     panels,
     openPanel,
@@ -74,17 +85,8 @@ const metrics = useMetrics(questions);
   const totalCount = pagination?.total || questions.length;
   const isMobile = screenWidth < 768;
 
-  // FIXED: Sort questions with pinned ones first (no hiding for now)
+  // Sort questions with pinned ones first
   const filteredQuestions = sortWithPinned(baseFilteredQuestions);
-
-  // Use sorted and filtered questions for bulk select
-  const { 
-    selectedIds,
-    toggleSelect,
-    selectAll,
-    clearSelection,
-    selectedCount
-  } = useBulkSelect(filteredQuestions);
 
   // URL synchronization
   const { syncURL } = useURLSync({
@@ -172,6 +174,118 @@ const metrics = useMetrics(questions);
     setUseVirtualization(filteredQuestions.length > 50);
   }, [filteredQuestions.length]);
 
+  // Helper function to enrich questions with media data
+  const enrichQuestionsWithMedia = async (questions) => {
+    if (!questions || questions.length === 0) return questions;
+
+    // Collect all unique media_asset_ids (filter out 0, null, undefined)
+    const mediaAssetIds = [...new Set(
+      questions
+        .map(q => q.media_asset_id)
+        .filter(id => id != null && id !== undefined && id !== 0 && id > 0)
+    )];
+
+    if (mediaAssetIds.length === 0) {
+      return questions;
+    }
+
+    console.log(`📊 Fetching ${mediaAssetIds.length} valid media assets`);
+
+    // Fetch all media assets in parallel
+    const mediaAssetPromises = mediaAssetIds.map(id =>
+      apiClient.get(`/media_asset/${id}`)
+        .then(res => res.data)
+        .catch(err => {
+          console.warn(`Failed to fetch media_asset ${id}:`, err.message);
+          return null;
+        })
+    );
+
+    const mediaAssets = await Promise.all(mediaAssetPromises);
+
+    // Create a Map for O(1) lookup
+    const mediaAssetMap = new Map(
+      mediaAssets
+        .filter(asset => asset !== null)
+        .map(asset => [asset.id, asset])
+    );
+
+    console.log(`✅ Fetched ${mediaAssetMap.size}/${mediaAssetIds.length} media assets`);
+
+    // Enrich questions with recording_segments
+    return questions.map((question) => {
+      // Skip if already has recording_segments
+      if (question.recording_segments && question.recording_segments.length > 0) {
+        return question;
+      }
+
+      // Parse attachments safely
+      let cleanedAttachments = null;
+      if (question.attachments) {
+        try {
+          cleanedAttachments = typeof question.attachments === 'string'
+            ? JSON.parse(question.attachments)
+            : question.attachments;
+        } catch (e) {
+          console.error(`Invalid attachments JSON for question ${question.id}:`, e.message);
+          cleanedAttachments = null;
+        }
+      }
+
+      // Get media asset from map
+      let recordingSegments = [];
+
+      if (question.media_asset_id) {
+        const mediaAsset = mediaAssetMap.get(question.media_asset_id);
+
+        if (mediaAsset) {
+          // Parse metadata if it's a string
+          let metadata = mediaAsset.metadata;
+          if (typeof metadata === 'string') {
+            try {
+              metadata = JSON.parse(metadata);
+            } catch (e) {
+              console.error(`Failed to parse metadata for media_asset ${question.media_asset_id}:`, e);
+              metadata = null;
+            }
+          }
+
+          // Transform media_asset into recording_segments format
+          if (metadata?.type === 'multi-segment' && metadata?.segments) {
+            recordingSegments = metadata.segments.map(seg => ({
+              id: seg.uid,
+              url: seg.playback_url,
+              duration_sec: seg.duration,
+              segment_index: seg.segment_index,
+              metadata: { mode: seg.mode },
+              provider: 'cloudflare_stream',
+              asset_id: seg.uid
+            }));
+          } else {
+            // Single media file (legacy format)
+            recordingSegments = [{
+              id: mediaAsset.id,
+              url: mediaAsset.url,
+              duration_sec: mediaAsset.duration_sec,
+              segment_index: 0,
+              metadata: metadata,
+              provider: mediaAsset.provider,
+              asset_id: mediaAsset.asset_id
+            }];
+          }
+        } else {
+          console.warn(`Media asset ${question.media_asset_id} not found for question ${question.id}`);
+        }
+      }
+
+      return {
+        ...question,
+        attachments: cleanedAttachments,
+        recording_segments: recordingSegments  // Always set, even if empty array
+      };
+    });
+  };
+
   // Load data
   useEffect(() => {
     const loadData = async () => {
@@ -208,7 +322,12 @@ const metrics = useMetrics(questions);
         ]);
 
         setProfile(profileRes.data.expert_profile || {});
-        setQuestions(questionsRes.data?.questions || questionsRes.data || []);
+
+        // Enrich questions with media data
+        const rawQuestions = questionsRes.data?.questions || questionsRes.data || [];
+        const enrichedQuestions = await enrichQuestionsWithMedia(rawQuestions);
+
+        setQuestions(enrichedQuestions);
         setPagination(questionsRes.data?.pagination || null);
       } catch (err) {
         console.error('Failed to load inbox data:', err);
@@ -357,6 +476,100 @@ const metrics = useMetrics(questions);
     }
   };
 
+  // Offer update handler
+  const handleOfferUpdate = () => {
+    // Refresh questions when an offer is accepted or declined
+    refreshQuestions();
+    setOfferRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleAcceptOffer = async (offer) => {
+    if (!window.confirm('Accept this Deep Dive offer? The SLA timer will start immediately.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('qc_token');
+
+      const response = await fetch('/api/offers-accept', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: offer.question_id })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to accept offer');
+      }
+
+      const result = await response.json();
+      console.log('✅ Offer accepted, payment captured:', result);
+
+      // Close detail panel if it's showing this offer
+      const detailPanel = getPanelData('detail');
+      if (detailPanel && detailPanel.id === offer.question_id) {
+        closePanel('detail');
+      }
+
+      handleOfferUpdate();
+      announceToScreenReader('Offer accepted successfully');
+
+    } catch (err) {
+      console.error('Failed to accept offer:', err);
+      announceToScreenReader('Failed to accept offer');
+      alert('Failed to accept offer: ' + err.message);
+    }
+  };
+
+  const handleDeclineOffer = async (offer) => {
+    const reason = window.prompt('Why are you declining this offer? (Optional)');
+
+    if (reason === null) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('qc_token');
+
+      const response = await fetch('/api/offers-decline', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: offer.question_id,
+          decline_reason: reason || 'Expert declined'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to decline offer');
+      }
+
+      const result = await response.json();
+      console.log('✓ Offer declined:', result);
+
+      // Close detail panel if it's showing this offer
+      const detailPanel = getPanelData('detail');
+      if (detailPanel && detailPanel.id === offer.question_id) {
+        closePanel('detail');
+      }
+
+      handleOfferUpdate();
+      announceToScreenReader('Offer declined successfully');
+
+    } catch (err) {
+      console.error('Failed to decline offer:', err);
+      announceToScreenReader('Failed to decline offer');
+      alert('Failed to decline offer: ' + err.message);
+    }
+  };
+
   // Pagination handlers
   const handleNextPage = () => {
     if (pagination?.has_next) {
@@ -378,9 +591,103 @@ const metrics = useMetrics(questions);
   };
 
   // Bulk actions with undo
-  const handleBulkHide = () => {
-  error('Hide functionality is not available yet');
-};
+  const handleBulkHide = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      const idsToHide = [...selectedIds];
+
+      await Promise.all(
+        idsToHide.map(id =>
+          apiClient.post('/question/hidden', {
+            question_id: id,
+            hidden: true
+          })
+        )
+      );
+
+      const undoId = pushUndo({
+        description: `Hidden ${idsToHide.length} question(s)`,
+        undo: async () => {
+          await Promise.all(
+            idsToHide.map(id =>
+              apiClient.post('/question/hidden', {
+                question_id: id,
+                hidden: false
+              })
+            )
+          );
+          await refreshQuestions();
+          success('Questions restored');
+        }
+      });
+
+      await refreshQuestions();
+      clearSelection();
+
+      success(`Hidden ${idsToHide.length} question(s)`, {
+        action: {
+          label: 'Undo',
+          onClick: () => executeUndo(undoId)
+        },
+        duration: 10000
+      });
+
+      announceToScreenReader(`Hidden ${idsToHide.length} questions. Press undo to restore.`);
+    } catch (err) {
+      console.error('Failed to hide questions:', err);
+      error('Failed to hide questions');
+    }
+  };
+
+  const handleBulkUnhide = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      const idsToUnhide = [...selectedIds];
+
+      await Promise.all(
+        idsToUnhide.map(id =>
+          apiClient.post('/question/hidden', {
+            question_id: id,
+            hidden: false
+          })
+        )
+      );
+
+      const undoId = pushUndo({
+        description: `Unhidden ${idsToUnhide.length} question(s)`,
+        undo: async () => {
+          await Promise.all(
+            idsToUnhide.map(id =>
+              apiClient.post('/question/hidden', {
+                question_id: id,
+                hidden: true
+              })
+            )
+          );
+          await refreshQuestions();
+          success('Questions hidden again');
+        }
+      });
+
+      await refreshQuestions();
+      clearSelection();
+
+      success(`Unhidden ${idsToUnhide.length} question(s)`, {
+        action: {
+          label: 'Undo',
+          onClick: () => executeUndo(undoId)
+        },
+        duration: 10000
+      });
+
+      announceToScreenReader(`Unhidden ${idsToUnhide.length} questions.`);
+    } catch (err) {
+      console.error('Failed to unhide questions:', err);
+      error('Failed to unhide questions');
+    }
+  };
 
   const handleExport = () => {
     const selectedQs = questions.filter(q => selectedIds.includes(q.id));
@@ -512,23 +819,35 @@ const metrics = useMetrics(questions);
       case 'list':
         return (
           <div className="h-full flex flex-col overflow-hidden bg-gray-50">
-            {/* Filters */}
-            <div className="flex-shrink-0 overflow-y-auto border-b border-gray-200 bg-white max-h-[30vh] lg:max-h-[35vh]">
-              <QuestionFilters
+            {/* Unified Toolbar */}
+            <div className="flex-shrink-0">
+              <UnifiedToolbar
                 filters={filters}
                 onFilterChange={updateFilter}
                 filteredCount={filteredCount}
                 totalCount={totalCount}
+                onExport={handleExport}
+                onOpenAdvancedFilters={() => setIsFilterPanelOpen(true)}
               />
             </div>
+
+            {/* Pending Offers Banner */}
+            <PendingOffersBanner
+              onOfferUpdate={handleOfferUpdate}
+              onViewDetails={handleQuestionOpen}
+              onAcceptOffer={handleAcceptOffer}
+              onDeclineOffer={handleDeclineOffer}
+            />
 
             {/* Quick Actions */}
             {selectedCount > 0 && (
               <div className="flex-shrink-0 p-3 bg-white border-b border-gray-200">
                 <QuickActions
                   selectedCount={selectedCount}
+                  selectedQuestions={questions.filter(q => selectedIds.includes(q.id))}
                   onClearSelection={clearSelection}
                   onBulkHide={handleBulkHide}
+                  onBulkUnhide={handleBulkUnhide}
                   onExport={handleExport}
                 />
               </div>
@@ -610,6 +929,8 @@ const metrics = useMetrics(questions);
             isPinned={isPinned(panel.data.id)}
             isMobile={screenWidth < 1024}
             hideCloseButton={true}
+            onAcceptOffer={handleAcceptOffer}
+            onDeclineOffer={handleDeclineOffer}
           />
         );
 
@@ -688,6 +1009,14 @@ const metrics = useMetrics(questions);
           isOpen={showKeyboardHelp}
           onClose={() => setShowKeyboardHelp(false)}
         />
+
+        {/* Advanced Filters Panel */}
+        <AdvancedFiltersPanel
+          isOpen={isFilterPanelOpen}
+          onClose={() => setIsFilterPanelOpen(false)}
+          filters={filters}
+          onFilterChange={updateFilter}
+        />
       </DashboardLayout>
     );
   }
@@ -719,6 +1048,14 @@ const metrics = useMetrics(questions);
       <KeyboardShortcutsModal
         isOpen={showKeyboardHelp}
         onClose={() => setShowKeyboardHelp(false)}
+      />
+
+      {/* Advanced Filters Panel */}
+      <AdvancedFiltersPanel
+        isOpen={isFilterPanelOpen}
+        onClose={() => setIsFilterPanelOpen(false)}
+        filters={filters}
+        onFilterChange={updateFilter}
       />
     </DashboardLayout>
   );

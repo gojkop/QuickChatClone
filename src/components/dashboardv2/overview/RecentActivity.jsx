@@ -1,7 +1,7 @@
 // src/components/dashboardv2/overview/RecentActivity.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Clock, Eye, MessageCircle } from 'lucide-react';
+import { MessageSquare, Clock, Eye, MessageCircle, Star, Zap, User } from 'lucide-react';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 
 function RecentActivity({ questions = [] }) {
@@ -13,33 +13,44 @@ function RecentActivity({ questions = [] }) {
     .sort((a, b) => b.created_at - a.created_at)
     .slice(0, 5);
 
-  const getRelativeTime = (timestamp) => {
+  const getTimeLeft = (question) => {
+    if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
+      return null;
+    }
+
     const now = Date.now() / 1000;
-    const createdAt = timestamp > 4102444800 ? timestamp / 1000 : timestamp;
-    const diff = now - createdAt;
-    
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
+    const createdAtSeconds = question.created_at > 4102444800
+      ? question.created_at / 1000
+      : question.created_at;
+
+    const elapsed = now - createdAtSeconds;
+    const slaSeconds = question.sla_hours_snapshot * 3600;
+    const remaining = slaSeconds - elapsed;
+
+    if (remaining <= 0) return null;
+
+    const hours = Math.floor(remaining / 3600);
+    const minutes = Math.floor((remaining % 3600) / 60);
+
+    if (hours >= 24) {
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return { text: `${days}d ${remainingHours}h`, hours };
+    }
+    if (hours > 0) {
+      return { text: `${hours}h ${minutes}m`, hours };
+    }
+    return { text: `${minutes}m`, hours: 0 };
   };
 
-  const getInitials = (name) => {
-    if (!name) return '?';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const getTimeUrgencyColor = (hours) => {
+    if (hours < 6) return 'text-red-600';
+    if (hours < 12) return 'text-orange-600';
+    return 'text-blue-600';
   };
 
-  const getAvatarColor = (name) => {
-    const colors = [
-      'bg-blue-500',
-      'bg-green-500',
-      'bg-purple-500',
-      'bg-pink-500',
-      'bg-indigo-500',
-      'bg-teal-500',
-      'bg-orange-500'
-    ];
-    const index = name ? name.charCodeAt(0) % colors.length : 0;
-    return colors[index];
+  const isDeepDive = (question) => {
+    return question.question_tier === 'deep_dive';
   };
 
   if (recentQuestions.length === 0) {
@@ -65,78 +76,115 @@ function RecentActivity({ questions = [] }) {
       </div>
       
       <div className="flex-1 space-y-1.5 overflow-y-auto">
-        {recentQuestions.map((question) => (
-          <div
-            key={question.id}
-            className="group relative p-2 border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
-            onMouseEnter={() => setHoveredQuestion(question.id)}
-            onMouseLeave={() => setHoveredQuestion(null)}
-            onClick={() => navigate(`/dashboard/inbox#question-${question.id}`)}
-          >
-            <div className="flex items-start gap-2">
-              {/* Avatar - SMALLER */}
-              <div className={`flex-shrink-0 w-7 h-7 rounded-full ${getAvatarColor(question.user_name)} flex items-center justify-center text-white font-bold text-xs shadow-sm`}>
-                {getInitials(question.user_name)}
-              </div>
+        {recentQuestions.map((question) => {
+          const questionIsDeepDive = isDeepDive(question);
+          const timeLeft = getTimeLeft(question);
 
-              {/* Content - COMPACT */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-0.5">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate text-xs">
-                      {question.user_name || 'Anonymous'}
-                    </p>
-                    <p className="text-xs text-gray-700 line-clamp-1">
+          return (
+            <div
+              key={question.id}
+              className={`
+                group relative p-2 border border-l-[3px] rounded-lg hover:shadow-md transition-all cursor-pointer
+                ${questionIsDeepDive ? 'border-l-purple-400 hover:border-purple-300' : 'border-l-transparent hover:border-indigo-300'}
+                border-gray-200
+              `}
+              onMouseEnter={() => setHoveredQuestion(question.id)}
+              onMouseLeave={() => setHoveredQuestion(null)}
+              onClick={() => navigate(`/dashboard/inbox#question-${question.id}`)}
+            >
+              <div className="flex items-start gap-2">
+                {/* Type Icon */}
+                <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center shadow-sm ${
+                  questionIsDeepDive
+                    ? 'bg-gradient-to-br from-purple-100 to-indigo-100 text-purple-700'
+                    : 'bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-700'
+                }`}>
+                  {questionIsDeepDive ? <Star size={14} /> : <Zap size={14} />}
+                </div>
+
+                {/* Content - COMPACT */}
+                <div className="flex-1 min-w-0">
+                  {/* Type Badge + Question Title */}
+                  <div className="flex items-start gap-1.5 mb-0.5">
+                    {questionIsDeepDive ? (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded text-[10px] font-bold flex-shrink-0">
+                        <Star size={8} />
+                        <span>Deep Dive</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-semibold flex-shrink-0">
+                        <Zap size={8} />
+                        <span>Quick</span>
+                      </span>
+                    )}
+                    <p className="text-xs text-gray-700 line-clamp-1 flex-1 min-w-0">
                       {question.question_text || 'Untitled Question'}
                     </p>
                   </div>
-                  <span className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-md bg-green-50 text-green-700 text-xs font-bold border border-green-200">
-                    {formatCurrency(question.price_cents)}
-                  </span>
-                </div>
 
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-0.5">
-                    <Clock size={10} />
-                    {getRelativeTime(question.created_at)}
-                  </span>
-                  {question.tier && (
-                    <>
-                      <span>•</span>
-                      <span className="font-medium capitalize">{question.tier}</span>
-                    </>
-                  )}
+                  {/* Name + Email */}
+                  <div className="flex items-center gap-1 text-[11px] text-gray-600 mb-1">
+                    <User size={10} className="text-gray-400 flex-shrink-0" />
+                    {question.user_name && (
+                      <span className="font-medium truncate">{question.user_name}</span>
+                    )}
+                    {question.user_email && (
+                      <>
+                        <span className="text-gray-400">·</span>
+                        <a
+                          href={`mailto:${question.user_email}`}
+                          className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {question.user_email}
+                        </a>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Price + Time Left */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-green-50 text-green-700 font-bold border border-green-200">
+                      {formatCurrency(question.price_cents)}
+                    </span>
+                    {timeLeft && (
+                      <span className={`flex items-center gap-0.5 font-semibold ${getTimeUrgencyColor(timeLeft.hours)}`}>
+                        <Clock size={10} />
+                        {timeLeft.text}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* Quick Actions - COMPACT */}
+              {hoveredQuestion === question.id && (
+                <div className="absolute top-1.5 right-1.5 flex items-center gap-1 animate-fadeInScale">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/dashboard/inbox#question-${question.id}`);
+                    }}
+                    className="p-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-lg transition-colors"
+                    title="View details"
+                  >
+                    <Eye size={12} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/dashboard/inbox#question-${question.id}/answer`);
+                    }}
+                    className="p-1 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-lg transition-colors"
+                    title="Answer now"
+                  >
+                    <MessageCircle size={12} />
+                  </button>
+                </div>
+              )}
             </div>
-
-            {/* Quick Actions - COMPACT */}
-            {hoveredQuestion === question.id && (
-              <div className="absolute top-1.5 right-1.5 flex items-center gap-1 animate-fadeInScale">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/dashboard/inbox#question-${question.id}`);
-                  }}
-                  className="p-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-lg transition-colors"
-                  title="View details"
-                >
-                  <Eye size={12} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/dashboard/inbox#question-${question.id}`);
-                  }}
-                  className="p-1 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-lg transition-colors"
-                  title="Answer now"
-                >
-                  <MessageCircle size={12} />
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <button

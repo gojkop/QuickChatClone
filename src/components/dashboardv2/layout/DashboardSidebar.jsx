@@ -23,13 +23,25 @@ function DashboardSidebar({ collapsed, onToggle, pendingCount = 0 }) {
         h-16 border-b border-gray-200 flex items-center flex-shrink-0
         ${collapsed ? 'justify-center px-3' : 'px-5'}
       `}>
-        <img
-          src={logo}
-          alt="mindPick"
-          className={`transition-all duration-300 ${
-            collapsed ? 'h-8 w-auto' : 'h-9 w-auto'
-          }`}
-        />
+        <a
+          href="https://mindpick.me"
+          className="flex items-center"
+          title="Go to mindPick home"
+        >
+          {collapsed ? (
+            // Small logo for collapsed sidebar (just "mP")
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 text-white font-black text-sm">
+              mP
+            </div>
+          ) : (
+            // Full logo for expanded sidebar
+            <img
+              src={logo}
+              alt="mindPick"
+              className="h-9 w-auto transition-all duration-300"
+            />
+          )}
+        </a>
       </div>
 
       {/* Navigation - Takes remaining space, prevent horizontal scroll */}

@@ -1,25 +1,127 @@
 // src/components/dashboardv2/inbox/QuestionDetailPanel.jsx
-import React, { useState } from 'react';
-import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Link } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Link, Loader, X } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 import { copyQuestionLink } from '@/utils/clipboard';
+import apiClient from '@/api';
 
-function QuestionDetailPanel({ 
-  question, 
-  onClose, 
-  onAnswer, 
+function QuestionDetailPanel({
+  question,
+  onClose,
+  onAnswer,
+  onCopyLink,
+  onTogglePin,
+  isPinned,
   isMobile = false,
-  hideCloseButton = false
+  hideCloseButton = false,
+  onAcceptOffer,
+  onDeclineOffer
 }) {
   const [showActions, setShowActions] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [mediaAssets, setMediaAssets] = useState([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
 
+  // Fetch media assets when question changes
+  useEffect(() => {
+    if (!question || !question.id) {
+      setMediaAssets([]);
+      return;
+    }
+
+    // If question already has recording_segments, use those (already enriched)
+    if (question.recording_segments !== undefined) {
+      // Even if empty array, it means we already tried to fetch and failed
+      console.log(`✨ Using pre-enriched recording_segments for question ${question.id} (${question.recording_segments.length} segments)`);
+      setMediaAssets(Array.isArray(question.recording_segments) ? question.recording_segments : []);
+      return;
+    }
+
+    // If question has media_asset array, use that
+    if (question.media_asset && Array.isArray(question.media_asset) && question.media_asset.length > 0) {
+      console.log(`📦 Using media_asset array for question ${question.id}`);
+      setMediaAssets(question.media_asset);
+      return;
+    }
+
+    // Only fetch from API if media_asset_id exists and we haven't enriched yet
+    if (question.media_asset_id && question.media_asset_id > 0) {
+      console.log(`🔄 Need to fetch media_asset ${question.media_asset_id} for question ${question.id}`);
+      fetchMediaAssets();
+    } else {
+      console.log(`❌ No media_asset_id for question ${question.id}`);
+      setMediaAssets([]);
+    }
+  }, [question?.id, question?.media_asset_id]);
+
+  const fetchMediaAssets = async () => {
+    setLoadingMedia(true);
+    try {
+      console.log(`🎬 Fetching media_asset ${question.media_asset_id} for question ${question.id}`);
+
+      // Fetch media_asset by ID (FK-only architecture)
+      const response = await apiClient.get(`/media_asset/${question.media_asset_id}`);
+      const mediaAsset = response.data;
+
+      if (!mediaAsset) {
+        console.warn(`⚠️ Media_asset ${question.media_asset_id} returned empty data`);
+        setMediaAssets([]);
+        return;
+      }
+
+      console.log(`✅ Successfully fetched media_asset ${question.media_asset_id}:`, mediaAsset);
+
+      // Parse metadata if it's a string
+      let metadata = mediaAsset.metadata;
+      if (typeof metadata === 'string') {
+        try {
+          metadata = JSON.parse(metadata);
+        } catch (e) {
+          console.error('Failed to parse media_asset metadata:', e);
+          metadata = null;
+        }
+      }
+
+      // Transform media_asset into recording_segments format
+      let recordingSegments = [];
+      if (metadata?.type === 'multi-segment' && metadata?.segments) {
+        // Multi-segment media
+        recordingSegments = metadata.segments.map(seg => ({
+          id: seg.uid,
+          url: seg.playback_url,
+          duration_sec: seg.duration,
+          segment_index: seg.segment_index,
+          metadata: { mode: seg.mode },
+          provider: 'cloudflare_stream',
+          asset_id: seg.uid
+        }));
+      } else {
+        // Single media file (legacy format)
+        recordingSegments = [{
+          id: mediaAsset.id,
+          url: mediaAsset.url,
+          duration_sec: mediaAsset.duration_sec,
+          segment_index: 0,
+          metadata: metadata,
+          provider: mediaAsset.provider,
+          asset_id: mediaAsset.asset_id
+        }];
+      }
+
+      setMediaAssets(recordingSegments);
+    } catch (error) {
+      console.error('Failed to fetch media assets:', error);
+      setMediaAssets([]);
+    } finally {
+      setLoadingMedia(false);
+    }
+  };
 
   // Helper to get media segments
   const getMediaSegments = () => {
-    return question?.recording_segments || question?.media_asset || [];
+    return mediaAssets;
   };
 
   // Helper to safely get attachments array
@@ -83,11 +185,11 @@ function QuestionDetailPanel({
   };
 
   const getAskerName = (question) => {
-    return question.user_name || question.name || 'Anonymous';
+    return question.user_name || question.name || question.payer_name || 'Anonymous';
   };
 
   const getAskerEmail = (question) => {
-    return question.user_email || question.email || '';
+    return question.user_email || question.email || question.payer_email || '';
   };
 
   if (!question) {
@@ -126,6 +228,7 @@ function QuestionDetailPanel({
   };
 
   const isAnswered = question.status === 'closed' || question.status === 'answered' || question.answered_at;
+  const isPendingOffer = question.is_pending_offer || question.status === 'pending_offer';
   
   const questionTitle = getQuestionTitle(question);
   const questionDetails = getQuestionDetails(question);
@@ -137,13 +240,12 @@ function QuestionDetailPanel({
       h-full flex flex-col bg-white w-full overflow-hidden
       ${isMobile ? 'fixed inset-0 z-50' : ''}
     `}>
-      {/* FIXED: Added pt-16 on mobile to avoid navbar overlap */}
+      {/* Header */}
       <div className={`flex-shrink-0 border-b border-gray-200 bg-white ${isMobile ? 'pt-16' : ''}`}>
         <div className="p-3 lg:p-4">
           <div className="flex items-start justify-between gap-3">
             {/* Left: Back Arrow + Title */}
             <div className="flex items-start gap-2 flex-1 min-w-0">
-              {/* CHANGED: Always show back arrow, removed hideCloseButton condition */}
               <button
                 onClick={onClose}
                 className="flex-shrink-0 p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -157,7 +259,7 @@ function QuestionDetailPanel({
               </h2>
             </div>
 
-            {/* Right: Price only (removed X button) */}
+            {/* Right: Price only */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className={`text-lg lg:text-xl font-black whitespace-nowrap ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
                 {formatCurrency(question.price_cents)}
@@ -255,8 +357,16 @@ function QuestionDetailPanel({
             </div>
           )}
 
+          {/* Media Loading Indicator */}
+          {loadingMedia && (
+            <div className="flex items-center justify-center py-8">
+              <Loader className="w-6 h-6 animate-spin text-indigo-600" />
+              <span className="ml-2 text-sm text-gray-600">Loading media...</span>
+            </div>
+          )}
+
           {/* Media Segments */}
-          {mediaSegments && mediaSegments.length > 0 && (
+          {!loadingMedia && mediaSegments && mediaSegments.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Video size={15} className="text-indigo-600" />
@@ -268,20 +378,23 @@ function QuestionDetailPanel({
                 {mediaSegments
                   .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
                   .map((segment, index) => {
-                    const isVideo = segment.metadata?.mode === 'video' ||
-                                    segment.metadata?.mode === 'screen' ||
-                                    segment.metadata?.mode === 'screen-camera' ||
+                    const metadata = typeof segment.metadata === 'string' 
+                      ? JSON.parse(segment.metadata) 
+                      : segment.metadata || {};
+                    
+                    const isVideo = metadata.mode === 'video' ||
+                                    metadata.mode === 'screen' ||
+                                    metadata.mode === 'screen-camera' ||
+                                    segment.provider === 'cloudflare_stream' ||
                                     segment.url?.includes('cloudflarestream.com');
-                    const isAudio = segment.metadata?.mode === 'audio' ||
-                                    segment.url?.includes('.webm') ||
-                                    !isVideo;
+                    const isAudio = metadata.mode === 'audio' || !isVideo;
 
-                    const videoId = isVideo ? getStreamVideoId(segment.url) : null;
+                    const videoId = isVideo ? (segment.asset_id || getStreamVideoId(segment.url)) : null;
                     const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
                     const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
                     
-                    const modeLabel = segment.metadata?.mode === 'screen' ? 'Screen Recording' :
-                                     segment.metadata?.mode === 'screen-camera' ? 'Screen + Camera' :
+                    const modeLabel = metadata.mode === 'screen' ? 'Screen Recording' :
+                                     metadata.mode === 'screen-camera' ? 'Screen + Camera' :
                                      isVideo ? 'Video' : 'Audio';
                     
                     const duration = segment.duration_sec || segment.duration || 0;
@@ -320,7 +433,11 @@ function QuestionDetailPanel({
                               Your browser does not support audio playback.
                             </audio>
                           </div>
-                        ) : null}
+                        ) : (
+                          <div className="p-4 text-center text-gray-400 text-sm">
+                            Media preview unavailable
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -402,57 +519,108 @@ function QuestionDetailPanel({
         </div>
       </div>
 
-      {/* Footer Actions - Fixed - REMOVED THREE DOTS */}
-     {/* Footer Actions - Fixed */}
-<div className="flex-shrink-0 p-3 lg:p-4 border-t border-gray-200 bg-gray-50">
-  {!isAnswered ? (
-    <div className="flex flex-col gap-2">
-      {/* Primary action: Answer */}
-      <button
-        onClick={onAnswer}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
-      >
-        <Play size={18} />
-        <span>Answer This Question</span>
-      </button>
-      
-      {/* ADDED: Copy link for unanswered questions */}
-      <button
-        onClick={() => {
-          copyQuestionLink(question.id).then(() => {
-            setCopySuccess(true);
-            if (onCopyLink) onCopyLink();
-            setTimeout(() => setCopySuccess(false), 2000);
-          });
-        }}
-        className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
-      >
-        <Link size={14} />
-        <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
-      </button>
-    </div>
-  ) : (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-      <div className="flex items-center gap-2 text-sm text-gray-600">
-        <CheckCircle size={15} className="text-green-600" />
-        <span>This question has been answered</span>
+      {/* Footer Actions */}
+      <div className="flex-shrink-0 p-3 lg:p-4 border-t border-gray-200 bg-gray-50">
+        {isPendingOffer ? (
+          <div className="flex flex-col gap-2">
+            {/* Pending Offer Info */}
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-2">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-purple-700 font-bold text-sm">🎯 Deep Dive Offer</span>
+              </div>
+              <p className="text-xs text-purple-600">
+                Accept this offer to start answering. The SLA timer will begin immediately.
+              </p>
+              {question.asker_message && (
+                <div className="mt-2 pt-2 border-t border-purple-200">
+                  <p className="text-xs font-semibold text-purple-700 mb-1">Message from asker:</p>
+                  <p className="text-xs text-gray-700 italic">"{question.asker_message}"</p>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => onAcceptOffer && onAcceptOffer(question)}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-bold hover:from-green-700 hover:to-emerald-700 transition-all shadow-md"
+              >
+                <CheckCircle size={18} />
+                <span>Accept Offer</span>
+              </button>
+
+              <button
+                onClick={() => onDeclineOffer && onDeclineOffer(question)}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all"
+              >
+                <X size={18} />
+                <span>Decline Offer</span>
+              </button>
+            </div>
+
+            {/* Copy Link */}
+            <button
+              onClick={() => {
+                copyQuestionLink(question.id).then(() => {
+                  setCopySuccess(true);
+                  if (onCopyLink) onCopyLink();
+                  setTimeout(() => setCopySuccess(false), 2000);
+                });
+              }}
+              className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Link size={14} />
+              <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
+            </button>
+          </div>
+        ) : !isAnswered ? (
+          <div className="flex flex-col gap-2">
+            {/* Primary action: Answer */}
+            <button
+              onClick={onAnswer}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
+            >
+              <Play size={18} />
+              <span>Answer This Question</span>
+            </button>
+
+            {/* Secondary action: Copy link */}
+            <button
+              onClick={() => {
+                copyQuestionLink(question.id).then(() => {
+                  setCopySuccess(true);
+                  if (onCopyLink) onCopyLink();
+                  setTimeout(() => setCopySuccess(false), 2000);
+                });
+              }}
+              className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Link size={14} />
+              <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <CheckCircle size={15} className="text-green-600" />
+              <span>This question has been answered</span>
+            </div>
+            <button
+              onClick={() => {
+                copyQuestionLink(question.id).then(() => {
+                  setCopySuccess(true);
+                  if (onCopyLink) onCopyLink();
+                  setTimeout(() => setCopySuccess(false), 2000);
+                });
+              }}
+              className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Link size={14} />
+              <span>{copySuccess ? 'Copied!' : 'Copy Link'}</span>
+            </button>
+          </div>
+        )}
       </div>
-      <button
-        onClick={() => {
-          copyQuestionLink(question.id).then(() => {
-            setCopySuccess(true);
-            if (onCopyLink) onCopyLink();
-            setTimeout(() => setCopySuccess(false), 2000);
-          });
-        }}
-        className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2"
-      >
-        <Link size={14} />
-        <span>{copySuccess ? 'Copied!' : 'Copy Link'}</span>
-      </button>
-    </div>
-  )}
-</div>
     </div>
   );
 }
