@@ -57,6 +57,74 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
+  // Helper to render attachment preview based on file type
+  const renderAttachmentPreview = (upload) => {
+    const file = upload.file;
+    const type = file.type || '';
+    const name = file.name || '';
+
+    // Create preview URL for uploaded file
+    const previewUrl = upload.result?.url || (file ? URL.createObjectURL(file) : null);
+
+    if (!previewUrl && !upload.uploading) return null;
+
+    // Video files
+    if (type.startsWith('video/')) {
+      return upload.result?.url ? (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-300">
+          <video
+            controls
+            className="w-full"
+            preload="metadata"
+            style={{ maxHeight: '200px' }}
+          >
+            <source src={upload.result.url} type={type} />
+            Your browser does not support video playback.
+          </video>
+        </div>
+      ) : null;
+    }
+
+    // Audio files
+    if (type.startsWith('audio/')) {
+      return upload.result?.url ? (
+        <div className="mt-2 p-3 bg-gray-900 rounded-lg">
+          <audio controls className="w-full" preload="metadata">
+            <source src={upload.result.url} type={type} />
+            Your browser does not support audio playback.
+          </audio>
+        </div>
+      ) : null;
+    }
+
+    // Image files
+    if (type.startsWith('image/')) {
+      return previewUrl ? (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-300">
+          <img
+            src={previewUrl}
+            alt={name}
+            className="w-full h-32 object-cover"
+          />
+        </div>
+      ) : null;
+    }
+
+    // PDF files - show icon
+    if (type === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
+      return (
+        <div className="mt-2 p-3 bg-red-50 rounded-lg border border-red-200 flex items-center gap-2">
+          <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          <span className="text-sm font-semibold text-red-700">PDF Document</span>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   const hasContent = text.trim().length > 0 || attachmentUpload.uploads.length > 0;
 
   return (
@@ -136,24 +204,27 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
             />
             
             {attachmentUpload.uploads.length > 0 && (
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 space-y-3">
                 {attachmentUpload.uploads.map((upload) => (
-                  <div key={upload.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
-                    <div className="flex-1 min-w-0 mr-3">
-                      <span className="text-gray-700 truncate block">{upload.file.name}</span>
-                      <span className="text-xs text-gray-500">{formatFileSize(upload.file.size)}</span>
+                  <div key={upload.id} className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                    <div className="flex items-center justify-between p-3 bg-gray-50">
+                      <div className="flex-1 min-w-0 mr-3">
+                        <span className="text-gray-700 truncate block font-medium">{upload.file.name}</span>
+                        <span className="text-xs text-gray-500">{formatFileSize(upload.file.size)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {upload.uploading && <span className="text-xs text-indigo-600 font-semibold">Uploading...</span>}
+                        {upload.error && <span className="text-xs text-red-600 font-semibold">Failed</span>}
+                        {upload.result && <span className="text-xs text-green-600 font-semibold">✓ Uploaded</span>}
+                        <button
+                          onClick={() => attachmentUpload.removeUpload(upload.id)}
+                          className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {upload.uploading && <span className="text-xs text-indigo-600">Uploading...</span>}
-                      {upload.error && <span className="text-xs text-red-600">Failed</span>}
-                      {upload.result && <span className="text-xs text-green-600">✓</span>}
-                      <button
-                        onClick={() => attachmentUpload.removeUpload(upload.id)}
-                        className="text-red-500 hover:text-red-700 text-xs font-semibold"
-                      >
-                        Remove
-                      </button>
-                    </div>
+                    {renderAttachmentPreview(upload)}
                   </div>
                 ))}
               </div>

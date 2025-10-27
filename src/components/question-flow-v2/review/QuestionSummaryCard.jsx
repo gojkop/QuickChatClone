@@ -8,6 +8,69 @@ function QuestionSummaryCard({ composeData, onEdit }) {
 
   const { title, recordings, attachments, text } = composeData;
 
+  // Helper to render attachment preview based on MIME type
+  const renderAttachmentPreview = (attachment) => {
+    const type = attachment.type || '';
+    const url = attachment.url || '';
+    const name = attachment.name || attachment.filename || 'Attachment';
+
+    // Video files
+    if (type.startsWith('video/')) {
+      return (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-300 bg-black">
+          <video
+            controls
+            className="w-full"
+            preload="metadata"
+            style={{ maxHeight: '200px' }}
+          >
+            <source src={url} type={type} />
+            Your browser does not support video playback.
+          </video>
+        </div>
+      );
+    }
+
+    // Audio files
+    if (type.startsWith('audio/')) {
+      return (
+        <div className="mt-2 p-3 bg-gray-900 rounded-lg">
+          <audio controls className="w-full" preload="metadata">
+            <source src={url} type={type} />
+            Your browser does not support audio playback.
+          </audio>
+        </div>
+      );
+    }
+
+    // Image files
+    if (type.startsWith('image/')) {
+      return (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-300">
+          <img
+            src={url}
+            alt={name}
+            className="w-full h-32 object-cover"
+          />
+        </div>
+      );
+    }
+
+    // PDF files
+    if (type === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
+      return (
+        <div className="mt-2 p-3 bg-red-50 rounded-lg border border-red-200 flex items-center gap-2">
+          <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          <span className="text-sm font-semibold text-red-700">PDF Document</span>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="review-card-glass rounded-2xl p-6 spacing-md">
       <div className="flex items-center justify-between mb-5">
@@ -55,16 +118,19 @@ function QuestionSummaryCard({ composeData, onEdit }) {
       {attachments && attachments.length > 0 && (
         <div className="spacing-sm">
           <p className="text-sm font-semibold text-gray-700 mb-2.5">Attachments</p>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {attachments.map((attachment, index) => (
-              <div 
-                key={index} 
-                className="flex items-center gap-2.5 text-sm text-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50/50 rounded-lg px-3 py-2.5 border border-blue-200/50"
+              <div
+                key={index}
+                className="bg-gradient-to-r from-blue-50 to-indigo-50/50 rounded-lg p-3 border border-blue-200/50"
               >
-                <svg className="w-4 h-4 flex-shrink-0 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-                <span className="truncate font-medium">{attachment.name || attachment.filename || 'Attachment'}</span>
+                <div className="flex items-center gap-2.5 text-sm text-gray-700">
+                  <svg className="w-4 h-4 flex-shrink-0 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  <span className="truncate font-medium">{attachment.name || attachment.filename || 'Attachment'}</span>
+                </div>
+                {renderAttachmentPreview(attachment)}
               </div>
             ))}
           </div>
