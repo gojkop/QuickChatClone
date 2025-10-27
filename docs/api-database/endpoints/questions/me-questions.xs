@@ -198,6 +198,7 @@ query "me/questions" verb=GET {
                   expert_profile_id: q.expert_profile_id,
                   user_id: q.user_id,
                   question_text: q.question_text,
+                  question_details: q.question_details,
                   title: q.title,
                   status: q.status,
                   pricing_status: q.pricing_status,
@@ -211,6 +212,11 @@ query "me/questions" verb=GET {
                   sla_hours_snapshot: q.sla_hours_snapshot,
                   hidden: q.hidden,
                   user_name: q.user_name,
+                  user_email: q.user_email,
+                  attachments: q.attachments,
+                  asker_message: q.asker_message,
+                  playback_token_hash: q.playback_token_hash,
+                  offer_expires_at: q.offer_expires_at,
                   has_recording: q.media_asset_id != null && q.media_asset_id > 0
                 };
               });
