@@ -73,23 +73,28 @@ function MediaPlayerModal({
   // Check if this is a Cloudflare Stream video (not R2)
   const isCloudflareStream = segment.provider === 'cloudflare_stream' || segment.url?.includes('cloudflarestream.com');
 
-  // Extract Cloudflare video ID and customer code from URL
-  const getCloudflareInfo = (url) => {
-    if (!url) return { videoId: null, customerCode: null };
-
-    // Extract video ID from manifest URL: /videoId/manifest/video.m3u8
-    const videoIdMatch = url.match(/\/([a-f0-9]+)\/manifest\/video\./);
-    const videoId = videoIdMatch ? videoIdMatch[1] : null;
-
-    // Extract customer code from URL: https://customer-xxxxx.cloudflarestream.com/
-    const customerCodeMatch = url.match(/https?:\/\/(customer-[a-z0-9]+)\.cloudflarestream\.com/);
-    const customerCode = customerCodeMatch ? customerCodeMatch[1] : 'customer-o9wvts8h9krvlboh'; // fallback
-
-    return { videoId, customerCode };
+  // Extract video ID from Cloudflare Stream URL (same logic as original)
+  const getStreamVideoId = (url) => {
+    if (!url) return null;
+    const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
+    return match ? match[1] : null;
   };
 
-  const { videoId, customerCode } = getCloudflareInfo(segment.url);
-  const useCloudflarePlayer = isVideo && videoId && isCloudflareStream;
+  // Extract customer code from Cloudflare URL
+  const getCustomerCode = (url) => {
+    if (!url) return null;
+    const match = url.match(/https:\/\/(customer-[a-zA-Z0-9]+)\.cloudflarestream\.com/);
+    return match ? match[1] : null;
+  };
+
+  const CUSTOMER_CODE_OVERRIDE = 'customer-o9wvts8h9krvlboh';
+
+  // Use segment.asset_id first, then fall back to URL extraction (same as original)
+  const videoId = isVideo ? (segment.asset_id || getStreamVideoId(segment.url)) : null;
+  const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
+  const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
+
+  const useCloudflarePlayer = isVideo && videoId && customerCode && isCloudflareStream;
 
   return (
     <AnimatePresence>
