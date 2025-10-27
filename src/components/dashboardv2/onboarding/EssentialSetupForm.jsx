@@ -49,7 +49,7 @@ function EssentialSetupForm({ onComplete, onSkip, userName }) {
     // Debounce for 500ms
     handleCheckTimeout.current = setTimeout(async () => {
       try {
-        const response = await apiClient.get(`/me/check-handle/${handle}`);
+        const response = await apiClient.get(`/expert/profile/check-handle/${handle}`);
         if (response.data.available) {
           setHandleValidation({
             checking: false,
@@ -64,8 +64,11 @@ function EssentialSetupForm({ onComplete, onSkip, userName }) {
           });
         }
       } catch (err) {
-        console.error('Handle check error:', err);
-        // If endpoint doesn't exist yet, assume available
+        // Silently handle 404 - endpoint doesn't exist yet, assume available
+        if (err.response?.status !== 404) {
+          console.error('Handle check error:', err);
+        }
+        // If endpoint doesn't exist or any error, assume available
         setHandleValidation({
           checking: false,
           available: true,
@@ -110,13 +113,54 @@ function EssentialSetupForm({ onComplete, onSkip, userName }) {
 
     try {
       // Call API to update expert profile with essential info
-      const response = await apiClient.patch('/me/profile', {
+      // Match ProfileSettingsPage payload format exactly
+      const priceCents = Math.round(price * 100);
+
+      const payload = {
+        // Legacy fields (required by backend)
+        price_cents: priceCents,
+        sla_hours: sla,
+        bio: '',
+        public: true,
         handle,
-        tier1_price_cents: Math.round(price * 100),
-        tier1_sla_hours: sla,
+
+        // Tier 1 (Quick Consult) fields
         tier1_enabled: true,
-        accepting_questions: true // Make profile visible and available
-      });
+        tier1_price_cents: priceCents,
+        tier1_sla_hours: sla,
+        tier1_description: null,
+
+        // Tier 2 (Deep Dive) fields - disabled
+        tier2_enabled: false,
+        tier2_pricing_mode: 'range',
+        tier2_min_price_cents: null,
+        tier2_max_price_cents: null,
+        tier2_sla_hours: null,
+        tier2_auto_decline_below_cents: null,
+        tier2_description: null,
+
+        // Other fields
+        currency: 'USD',
+        professional_title: '',
+        tagline: '',
+        expertise: [],
+        socials: {},
+        charity_percentage: 0,
+        selected_charity: null,
+        accepting_questions: true,
+        daily_digest_enabled: true
+      };
+
+      const response = await apiClient.put('/me/profile', payload);
+
+      // Update availability status (separate call like ProfileSettingsPage)
+      try {
+        await apiClient.post('/expert/profile/availability', {
+          accepting_questions: true
+        });
+      } catch (availabilityErr) {
+        console.warn('Failed to update availability status:', availabilityErr);
+      }
 
       // Success!
       onComplete({
