@@ -13,15 +13,19 @@ query "internal/diagnostic/questions" verb=GET {
     }
 
     db.query question {
-      return = {type: "list", limit: 10}
-      sort = {field: "created_at", direction: "desc"}
-    } as $recent_questions
+      sort = {question.created_at: "desc"}
+      return = {type: "list"}
+    } as $all_questions
 
     api.lambda {
       code = """
+        // Limit to 10 most recent questions
+        var questions = $var.all_questions || [];
+        var recent = questions.slice(0, 10);
+
         console.log("🔍 DIAGNOSTIC - Recent questions:");
-        for (var i = 0; i < $var.recent_questions.length; i++) {
-          var q = $var.recent_questions[i];
+        for (var i = 0; i < recent.length; i++) {
+          var q = recent[i];
           console.log("Question " + (i+1) + ":");
           console.log("  ID: " + q.id);
           console.log("  payment_intent_id: " + q.payment_intent_id);
@@ -33,12 +37,12 @@ query "internal/diagnostic/questions" verb=GET {
 
         // Return summary for response
         var summary = [];
-        for (var i = 0; i < $var.recent_questions.length; i++) {
+        for (var i = 0; i < recent.length; i++) {
           summary.push({
-            id: $var.recent_questions[i].id,
-            payment_intent_id: $var.recent_questions[i].payment_intent_id,
-            stripe_payment_intent_id: $var.recent_questions[i].stripe_payment_intent_id || "N/A",
-            created_at: $var.recent_questions[i].created_at
+            id: recent[i].id,
+            payment_intent_id: recent[i].payment_intent_id,
+            stripe_payment_intent_id: recent[i].stripe_payment_intent_id || "N/A",
+            created_at: recent[i].created_at
           });
         }
         return summary;
@@ -49,7 +53,7 @@ query "internal/diagnostic/questions" verb=GET {
 
   response = {
     "success": true,
-    "total_questions": $recent_questions.length,
+    "total_questions": $all_questions.length,
     "questions": $question_summary
   }
 }

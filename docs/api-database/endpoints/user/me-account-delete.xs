@@ -32,17 +32,19 @@ query "me/delete-account" verb=DELETE {
       each as $answers {
         conditional {
           if ($answers.media_asset_id != null) {
-            db.bulk.delete media_asset {
-              where = $db.media_asset.id == $answers.media_asset_id
-            } as $media_asset
+            db.del media_asset {
+              field_name = "id"
+              field_value = $answers.media_asset_id
+            }
           }
+        }
+
+        db.del answer {
+          field_name = "id"
+          field_value = $answers.id
         }
       }
     }
-
-    db.bulk.delete answer {
-      where = $db.answer.user_id == $user_id
-    } as $answer_deleted
 
     // Delete user's questions and their media
     db.query question {
@@ -54,28 +56,48 @@ query "me/delete-account" verb=DELETE {
       each as $questions {
         conditional {
           if ($questions.media_asset_id != null) {
-            // ✅ FIXED: Use $questions not $answers
-            db.bulk.delete media_asset {
-              where = $db.media_asset.id == $questions.media_asset_id
-            } as $media_asset
+            db.del media_asset {
+              field_name = "id"
+              field_value = $questions.media_asset_id
+            }
           }
+        }
+
+        db.del question {
+          field_name = "id"
+          field_value = $questions.id
         }
       }
     }
 
-    // ✅ FIXED: Use $expert_profile.id not $user_id
-    db.bulk.delete question {
-      where = $db.question.expert_profile_id == $expert_profile.id
-    } as $question_deleted
-
     // Delete marketing data
-    db.bulk.delete campaign_visit {
+    db.query campaign_visit {
       where = $db.campaign_visit.expert_profile_id == $expert_profile.id
-    } as $campaign_visit
+      return = {type: "list"}
+    } as $campaign_visits
 
-    db.bulk.delete utm_campaign {
+    foreach ($campaign_visits) {
+      each as $visit {
+        db.del campaign_visit {
+          field_name = "id"
+          field_value = $visit.id
+        }
+      }
+    }
+
+    db.query utm_campaign {
       where = $db.utm_campaign.expert_profile_id == $expert_profile.id
-    } as $utm_campaigns
+      return = {type: "list"}
+    } as $campaigns
+
+    foreach ($campaigns) {
+      each as $campaign {
+        db.del utm_campaign {
+          field_name = "id"
+          field_value = $campaign.id
+        }
+      }
+    }
 
     // Delete expert profile
     db.del expert_profile {
