@@ -28,26 +28,26 @@ function CompactMetricCard({
       className="h-full cursor-pointer group"
       onClick={onClick}
     >
-      {/* Mobile: Compact vertical centered layout */}
-      <div className="flex sm:hidden flex-col items-center text-center justify-center h-full gap-1">
+      {/* Mobile: Ultra-compact vertical centered layout */}
+      <div className="flex sm:hidden flex-col items-center text-center justify-center h-full gap-0.5">
         {Icon && (
-          <div className={`p-1.5 rounded-lg shadow-sm ${colorClasses[color]} transition-transform group-hover:scale-110`}>
-            <Icon size={12} strokeWidth={2.5} />
+          <div className={`p-1 rounded shadow-sm ${colorClasses[color]} transition-transform group-hover:scale-110`}>
+            <Icon size={10} strokeWidth={2.5} />
           </div>
         )}
-        <span className="text-[10px] font-medium text-gray-600 leading-tight">{label}</span>
-        <h3 className="text-base font-black text-gray-900 tracking-tight">
+        <span className="text-[9px] font-medium text-gray-600 leading-none mt-0.5">{label}</span>
+        <h3 className="text-sm font-black text-gray-900 tracking-tight leading-none">
           {displayValue}
         </h3>
         {trend !== null && !isNaN(trend) && (
-          <div className={`text-[10px] font-semibold ${
+          <div className={`text-[8px] font-semibold leading-none ${
             trend >= 0 ? 'text-green-600' : 'text-red-600'
           }`}>
             {trend >= 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
           </div>
         )}
         {subtitle && (
-          <p className="text-[9px] text-gray-500 leading-tight">{subtitle}</p>
+          <p className="text-[8px] text-gray-500 leading-none">{subtitle}</p>
         )}
       </div>
 
