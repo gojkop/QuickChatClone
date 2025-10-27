@@ -1,5 +1,6 @@
 // src/components/dashboard/QuestionDetailModal.jsx
 // FIXED: Answer Recorder scroll containment + compact mobile header
+// Build timestamp: Generated for deployment test
 
 import React, { useState, useEffect } from 'react';
 import apiClient from '@/api';
@@ -45,6 +46,8 @@ const ANSWER_STEPS = [
 ];
 
 function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmitted, expertProfile }) {
+  console.log('🚀 [DEPLOYMENT TEST] QuestionDetailModal loaded - Build timestamp:', Date.now());
+
   const [showAnswerRecorder, setShowAnswerRecorder] = useState(false);
   const [answerData, setAnswerData] = useState(null);
   const [showReview, setShowReview] = useState(false);
