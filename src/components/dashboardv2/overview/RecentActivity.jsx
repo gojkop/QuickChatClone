@@ -59,8 +59,18 @@ function RecentActivity({ questions = [] }) {
     return 'text-blue-600';
   };
 
+  const isPendingOffer = (question) => {
+    return question.is_pending_offer || question.status === 'pending_offer';
+  };
+
   const isDeepDive = (question) => {
     return question.question_tier === 'deep_dive';
+  };
+
+  const getQuestionType = (question) => {
+    if (isPendingOffer(question)) return 'pending_offer';
+    if (isDeepDive(question)) return 'accepted_deep_dive';
+    return 'quick';
   };
 
   const handleCopyLink = () => {
@@ -191,15 +201,52 @@ function RecentActivity({ questions = [] }) {
       
       <div className="flex-1 space-y-1.5 overflow-y-auto">
         {recentQuestions.map((question) => {
-          const questionIsDeepDive = isDeepDive(question);
+          const questionType = getQuestionType(question);
           const timeLeft = getTimeLeft(question);
+
+          // Visual config based on question type
+          const typeConfig = {
+            pending_offer: {
+              borderColor: 'border-l-orange-400 hover:border-orange-300',
+              bgGradient: 'bg-gradient-to-br from-orange-100 to-amber-100',
+              textColor: 'text-orange-700',
+              badgeBg: 'bg-gradient-to-r from-orange-100 to-amber-100',
+              badgeText: 'text-orange-700',
+              badgeBorder: 'border-orange-200',
+              icon: Star,
+              label: 'Pending Offer'
+            },
+            accepted_deep_dive: {
+              borderColor: 'border-l-purple-400 hover:border-purple-300',
+              bgGradient: 'bg-gradient-to-br from-purple-100 to-indigo-100',
+              textColor: 'text-purple-700',
+              badgeBg: 'bg-gradient-to-r from-purple-100 to-indigo-100',
+              badgeText: 'text-purple-700',
+              badgeBorder: 'border-purple-200',
+              icon: Star,
+              label: 'Deep Dive'
+            },
+            quick: {
+              borderColor: 'border-l-transparent hover:border-indigo-300',
+              bgGradient: 'bg-gradient-to-br from-blue-100 to-cyan-100',
+              textColor: 'text-blue-700',
+              badgeBg: 'bg-blue-50',
+              badgeText: 'text-blue-700',
+              badgeBorder: 'border-blue-200',
+              icon: Zap,
+              label: 'Quick'
+            }
+          };
+
+          const config = typeConfig[questionType];
+          const IconComponent = config.icon;
 
           return (
             <div
               key={question.id}
               className={`
                 group relative p-2 border border-l-[3px] rounded-lg hover:shadow-md transition-all cursor-pointer
-                ${questionIsDeepDive ? 'border-l-purple-400 hover:border-purple-300' : 'border-l-transparent hover:border-indigo-300'}
+                ${config.borderColor}
                 border-gray-200
               `}
               onMouseEnter={() => setHoveredQuestion(question.id)}
@@ -208,29 +255,18 @@ function RecentActivity({ questions = [] }) {
             >
               <div className="flex items-start gap-2">
                 {/* Type Icon */}
-                <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center shadow-sm ${
-                  questionIsDeepDive
-                    ? 'bg-gradient-to-br from-purple-100 to-indigo-100 text-purple-700'
-                    : 'bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-700'
-                }`}>
-                  {questionIsDeepDive ? <Star size={14} /> : <Zap size={14} />}
+                <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center shadow-sm ${config.bgGradient} ${config.textColor}`}>
+                  <IconComponent size={14} fill={questionType === 'pending_offer' ? 'currentColor' : 'none'} />
                 </div>
 
                 {/* Content - COMPACT */}
                 <div className="flex-1 min-w-0">
                   {/* Type Badge + Question Title */}
                   <div className="flex items-start gap-1.5 mb-0.5">
-                    {questionIsDeepDive ? (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded text-[10px] font-bold flex-shrink-0">
-                        <Star size={8} />
-                        <span>Deep Dive</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-semibold flex-shrink-0">
-                        <Zap size={8} />
-                        <span>Quick</span>
-                      </span>
-                    )}
+                    <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 ${config.badgeBg} ${config.badgeText} border ${config.badgeBorder} rounded text-[10px] font-bold flex-shrink-0`}>
+                      <IconComponent size={8} fill={questionType === 'pending_offer' ? 'currentColor' : 'none'} />
+                      <span>{config.label}</span>
+                    </span>
                     <p className="text-xs text-gray-700 line-clamp-1 flex-1 min-w-0">
                       {question.question_text || 'Untitled Question'}
                     </p>
