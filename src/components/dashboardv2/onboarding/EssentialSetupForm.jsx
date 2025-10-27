@@ -49,7 +49,7 @@ function EssentialSetupForm({ onComplete, onSkip, userName }) {
     // Debounce for 500ms
     handleCheckTimeout.current = setTimeout(async () => {
       try {
-        const response = await apiClient.get(`/me/check-handle/${handle}`);
+        const response = await apiClient.get(`/expert/profile/check-handle/${handle}`);
         if (response.data.available) {
           setHandleValidation({
             checking: false,
@@ -110,12 +110,14 @@ function EssentialSetupForm({ onComplete, onSkip, userName }) {
 
     try {
       // Call API to update expert profile with essential info
-      const response = await apiClient.patch('/me/profile', {
+      // Use PUT and match ProfileSettingsPage payload format
+      const response = await apiClient.put('/me/profile', {
         handle,
         tier1_price_cents: Math.round(price * 100),
         tier1_sla_hours: sla,
-        tier1_enabled: true,
-        accepting_questions: true // Make profile visible and available
+        tier1_enabled: true, // Enable Quick Consult tier
+        accepting_questions: true, // Make profile visible and available
+        tier2_enabled: false // Disable Deep Dive by default
       });
 
       // Success!
