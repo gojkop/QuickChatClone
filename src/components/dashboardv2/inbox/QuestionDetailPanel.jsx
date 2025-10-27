@@ -453,9 +453,10 @@ function QuestionDetailPanel({
       {/* Header */}
       <div className={`flex-shrink-0 border-b border-gray-200 bg-white ${isMobile ? 'pt-16' : ''}`}>
         <div className="p-3 lg:p-4">
-          <div className="flex items-start justify-between gap-3">
-            {/* Left: Back Arrow + Title */}
-            <div className="flex items-start gap-2 flex-1 min-w-0">
+          {/* Mobile: Stack layout */}
+          <div className="md:hidden space-y-2">
+            {/* Row 1: Back button + Price */}
+            <div className="flex items-center justify-between">
               <button
                 onClick={onClose}
                 className="flex-shrink-0 p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -463,42 +464,82 @@ function QuestionDetailPanel({
               >
                 <ArrowLeft size={18} />
               </button>
-              
-              <h2 className="flex-1 text-base lg:text-lg font-bold text-gray-900 line-clamp-2 break-words">
-                {questionTitle}
-              </h2>
-            </div>
-
-            {/* Right: Price only */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <div className={`text-lg lg:text-xl font-black whitespace-nowrap ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
+              <div className={`text-lg font-black whitespace-nowrap ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
                 {formatCurrency(question.price_cents)}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Bottom Row: Q-ID + Badges */}
-        <div className="px-3 lg:px-4 pb-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-400 font-mono">
-              Q-{question.id}
-            </span>
-            <PriorityBadge question={question} />
-            {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
-              <SLAIndicator question={question} showLabel={true} />
-            )}
-            {isAnswered && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
-                ✓ Answered
+            {/* Row 2: Title */}
+            <h2 className="text-base font-bold text-gray-900 line-clamp-2 break-words">
+              {questionTitle}
+            </h2>
+
+            {/* Row 3: Q-ID + Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-400 font-mono">
+                Q-{question.id}
               </span>
-            )}
+              <PriorityBadge question={question} />
+              {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
+                <SLAIndicator question={question} showLabel={true} />
+              )}
+              {isAnswered && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
+                  ✓ Answered
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop: Original horizontal layout */}
+          <div className="hidden md:block">
+            <div className="flex items-start justify-between gap-3">
+              {/* Left: Back Arrow + Title */}
+              <div className="flex items-start gap-2 flex-1 min-w-0">
+                <button
+                  onClick={onClose}
+                  className="flex-shrink-0 p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Back to list"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+
+                <h2 className="flex-1 text-base lg:text-lg font-bold text-gray-900 line-clamp-2 break-words">
+                  {questionTitle}
+                </h2>
+              </div>
+
+              {/* Right: Price only */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className={`text-lg lg:text-xl font-black whitespace-nowrap ${isAnswered ? 'text-gray-500' : 'text-green-600'}`}>
+                  {formatCurrency(question.price_cents)}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row: Q-ID + Badges */}
+            <div className="mt-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-400 font-mono">
+                  Q-{question.id}
+                </span>
+                <PriorityBadge question={question} />
+                {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
+                  <SLAIndicator question={question} showLabel={true} />
+                )}
+                {isAnswered && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-green-100 text-green-700 text-xs font-semibold">
+                    ✓ Answered
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-20 md:pb-0">
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-24 md:pb-0">
         <div className="p-3 lg:p-4 space-y-4">
           
           {/* Question Metadata */}

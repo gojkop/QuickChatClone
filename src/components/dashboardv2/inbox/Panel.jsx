@@ -84,11 +84,11 @@ function Panel({
   const handleDragEnd = (event, info) => {
     if (!enableSwipe) return;
 
-    const threshold = 100; // Swipe distance threshold
+    const threshold = 120; // Swipe distance threshold (increased for slower trigger)
     const velocity = info.velocity.x;
 
-    // Swipe right to close
-    if (info.offset.x > threshold || velocity > 500) {
+    // Swipe right to close (higher velocity threshold for smoother feel)
+    if (info.offset.x > threshold || velocity > 800) {
       onClose?.();
     } else {
       // Snap back
