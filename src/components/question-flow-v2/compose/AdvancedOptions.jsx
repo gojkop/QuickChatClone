@@ -30,13 +30,13 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
       return;
     }
 
-    // Account for base64 encoding overhead (~33% larger when encoded)
-    // Vercel has a 4.5MB payload limit, so we limit files to 3MB
-    const maxFileSize = 3 * 1024 * 1024; // 3MB
+    // Files go to Cloudflare R2 which has no practical size limits
+    // Set reasonable limit to prevent abuse (50MB)
+    const maxFileSize = 50 * 1024 * 1024; // 50MB
 
     for (const file of newFiles) {
       if (file.size > maxFileSize) {
-        alert(`File "${file.name}" is too large (max 3MB). Larger files may fail to upload due to server limits.`);
+        alert(`File "${file.name}" is too large (max 50MB).`);
         e.target.value = '';
         return;
       }
@@ -74,15 +74,15 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
 
     // Video files
     if (type.startsWith('video/')) {
-      return upload.result?.url ? (
-        <div className="mt-2 rounded-lg overflow-hidden border border-gray-300">
+      return previewUrl ? (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-300 bg-black">
           <video
             controls
             className="w-full"
             preload="metadata"
             style={{ maxHeight: '200px' }}
+            src={previewUrl}
           >
-            <source src={upload.result.url} type={type} />
             Your browser does not support video playback.
           </video>
         </div>
@@ -91,10 +91,9 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
 
     // Audio files
     if (type.startsWith('audio/')) {
-      return upload.result?.url ? (
+      return previewUrl ? (
         <div className="mt-2 p-3 bg-gray-900 rounded-lg">
-          <audio controls className="w-full" preload="metadata">
-            <source src={upload.result.url} type={type} />
+          <audio controls className="w-full" preload="metadata" src={previewUrl}>
             Your browser does not support audio playback.
           </audio>
         </div>
@@ -114,15 +113,50 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
       ) : null;
     }
 
-    // PDF files - show icon
+    // PDF files - show clickable icon
     if (type === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
-      return (
-        <div className="mt-2 p-3 bg-red-50 rounded-lg border border-red-200 flex items-center gap-2">
+      return upload.result?.url ? (
+        <a
+          href={upload.result.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 p-3 bg-red-50 rounded-lg border border-red-200 flex items-center gap-2 hover:bg-red-100 transition-colors cursor-pointer"
+        >
           <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
-          <span className="text-sm font-semibold text-red-700">PDF Document</span>
-        </div>
+          <div className="flex-1">
+            <div className="text-sm font-semibold text-red-700">PDF Document</div>
+            <div className="text-xs text-red-600">Click to view</div>
+          </div>
+          <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      ) : null;
+    }
+
+    // Other files - show clickable download
+    if (upload.result?.url) {
+      return (
+        <a
+          href={upload.result.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          download
+          className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2 hover:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          <div className="flex-1">
+            <div className="text-sm font-semibold text-gray-700">File attachment</div>
+            <div className="text-xs text-gray-600">Click to download</div>
+          </div>
+          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </a>
       );
     }
 
@@ -197,7 +231,7 @@ function AdvancedOptions({ text, onTextChange, attachmentUpload, segmentUpload, 
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               Attach Files
-              <span className="text-gray-500 font-normal ml-2">(Max 3, 3MB each)</span>
+              <span className="text-gray-500 font-normal ml-2">(Max 3, 50MB each)</span>
             </label>
             <input
               type="file"

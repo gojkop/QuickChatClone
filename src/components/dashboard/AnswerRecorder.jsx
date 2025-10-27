@@ -201,13 +201,13 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '',
       return;
     }
 
-    // Account for base64 encoding overhead (~33% larger when encoded)
-    // Vercel has a 4.5MB payload limit, so we limit files to 3MB
-    const maxFileSize = 3 * 1024 * 1024; // 3MB
+    // Files go to Cloudflare R2 which has no practical size limits
+    // Set reasonable limit to prevent abuse (50MB)
+    const maxFileSize = 50 * 1024 * 1024; // 50MB
 
     for (const file of newFiles) {
       if (file.size > maxFileSize) {
-        alert(`File "${file.name}" is too large (max 3MB). Larger files may fail to upload due to server limits.`);
+        alert(`File "${file.name}" is too large (max 50MB).`);
         e.target.value = '';
         return;
       }
@@ -1140,7 +1140,7 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '',
         <div>
           <label className="flex items-center text-sm font-semibold text-gray-900 mb-2">
             <span>Attach Supporting Files</span>
-            <span className="text-gray-500 font-normal ml-2">(Optional, max 3, 3MB each)</span>
+            <span className="text-gray-500 font-normal ml-2">(Optional, max 3, 50MB each)</span>
             <HelpButton>
               Attach supporting documents, PDFs, code examples, diagrams, or reference materials that help answer the question thoroughly.
             </HelpButton>
