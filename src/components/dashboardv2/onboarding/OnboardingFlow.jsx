@@ -17,6 +17,13 @@ function OnboardingFlow({ userName, onComplete }) {
     setStep(2);
   };
 
+  const handleSkip = () => {
+    // User skipped - close onboarding without completing
+    if (onComplete) {
+      onComplete(null);
+    }
+  };
+
   const handleSetupComplete = (data) => {
     setSetupData(data);
     setStep(3);
@@ -34,6 +41,7 @@ function OnboardingFlow({ userName, onComplete }) {
         <WelcomeModal
           userName={userName}
           onGetStarted={handleWelcomeComplete}
+          onSkip={handleSkip}
         />
       )}
 
@@ -41,6 +49,7 @@ function OnboardingFlow({ userName, onComplete }) {
         <EssentialSetupForm
           userName={userName}
           onComplete={handleSetupComplete}
+          onSkip={handleSkip}
         />
       )}
 
