@@ -498,7 +498,7 @@ function QuestionDetailPanel({
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-20 md:pb-0">
         <div className="p-3 lg:p-4 space-y-4">
           
           {/* Question Metadata */}

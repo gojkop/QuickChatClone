@@ -75,24 +75,13 @@ function PanelContainer({
         })}
       </AnimatePresence>
 
-      {/* Backdrop overlay when multiple panels are open */}
+      {/* Backdrop overlay when multiple panels are open (desktop only) */}
       {panels.length > 1 && (
         <div
-          className="absolute inset-0 pointer-events-none z-0"
+          className="absolute inset-0 pointer-events-none z-0 hidden lg:block"
           style={{
             background: `rgba(0, 0, 0, ${Math.min(0.05 * (panels.length - 1), 0.15)})`,
             transition: 'background 200ms ease-out'
-          }}
-        />
-      )}
-
-      {/* Click-outside handler for mobile/tablet */}
-      {panels.length > 2 && (
-        <div
-          className="fixed inset-0 z-40 lg:hidden"
-          onClick={onCloseTopPanel}
-          style={{
-            background: 'rgba(0, 0, 0, 0.3)'
           }}
         />
       )}

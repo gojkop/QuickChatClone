@@ -92,7 +92,7 @@ function AnswerComposerPanel({
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-20 md:pb-0">
         <div className="p-4 lg:p-6 max-w-4xl mx-auto">
           {!showReview ? (
             <AnswerRecorder
