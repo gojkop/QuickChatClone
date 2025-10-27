@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
+import DashboardPageHeader from '@/components/dashboardv2/layout/DashboardPageHeader';
+import DashboardPageContent from '@/components/dashboardv2/layout/DashboardPageContent';
 import apiClient from '@/api';
 
 function AccountSettingsPage() {
@@ -147,17 +149,11 @@ function AccountSettingsPage() {
 
   return (
     <DashboardLayout breadcrumbs={[{ label: 'Dashboard', path: '/dashboard' }, { label: 'Account Settings' }]}>
-      {/* Fixed container with max-width to prevent infinite scrolling */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2">
-            Account Settings
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Manage your personal information, payments, and subscription
-          </p>
-        </div>
+      <DashboardPageContent maxWidth="4xl">
+        <DashboardPageHeader
+          title="Account Settings"
+          subtitle="Manage your personal information, payments, and subscription"
+        />
 
         {/* Success Message */}
         {saveSuccess && (
@@ -428,7 +424,7 @@ function AccountSettingsPage() {
             </button>
           </div>
         </div>
-      </div>
+      </DashboardPageContent>
     </DashboardLayout>
   );
 }

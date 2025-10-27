@@ -3,6 +3,8 @@ import React, { useState, useMemo } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { useQuestionsQuery } from '@/hooks/useQuestionsQuery';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
+import DashboardPageHeader from '@/components/dashboardv2/layout/DashboardPageHeader';
+import DashboardPageContent from '@/components/dashboardv2/layout/DashboardPageContent';
 import AnalyticsLayout from '@/components/dashboardv2/analytics/AnalyticsLayout';
 import StatCard from '@/components/dashboardv2/analytics/StatCard';
 import RevenueChart from '@/components/dashboardv2/analytics/RevenueChart';
@@ -139,20 +141,18 @@ function ExpertAnalyticsPage() {
       isAvailable={expertProfile?.accepting_questions ?? true}
       searchData={{ questions }}
     >
-      <AnalyticsLayout>
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">Analytics</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Track your performance and earnings
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <DateRangeSelector value={dateRange} onChange={setDateRange} />
-            <ExportButton questions={questions} />
-          </div>
-        </div>
+      <DashboardPageContent maxWidth="7xl">
+        <AnalyticsLayout>
+          <DashboardPageHeader
+            title="Analytics"
+            subtitle="Track your performance and earnings"
+            actions={
+              <div className="flex items-center gap-3">
+                <DateRangeSelector value={dateRange} onChange={setDateRange} />
+                <ExportButton questions={questions} />
+              </div>
+            }
+          />
 
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -226,6 +226,7 @@ function ExpertAnalyticsPage() {
           <RatingDistribution questions={questions} />
         </div>
       </AnalyticsLayout>
+      </DashboardPageContent>
     </DashboardLayout>
   );
 }

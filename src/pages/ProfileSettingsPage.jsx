@@ -5,6 +5,8 @@ import apiClient from '@/api';
 import { useProfile } from '@/context/ProfileContext';
 import { XANO_PUBLIC_API_URL } from '@/config/xano';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
+import DashboardPageHeader from '@/components/dashboardv2/layout/DashboardPageHeader';
+import DashboardPageContent from '@/components/dashboardv2/layout/DashboardPageContent';
 import AvatarUpload from '@/components/dashboard/AvatarUpload';
 import CharityDonationSelector from '@/components/dashboard/CharityDonationSelector';
 import CharitySelector from '@/components/dashboard/CharitySelector';
@@ -424,50 +426,43 @@ function ProfileSettingsPage() {
 
   return (
     <DashboardLayout breadcrumbs={[{ label: 'Dashboard', path: '/dashboard' }, { label: 'Profile Settings' }]}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header with Completeness Badge */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2">Profile Settings</h1>
-              <p className="text-gray-600">Manage your expert profile and preferences</p>
-            </div>
-
-            {/* Profile Completeness Indicator */}
-            <div className="hidden sm:block">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative w-12 h-12">
-                    <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
-                      <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="#E5E7EB"
-                        strokeWidth="3"
-                      />
-                      <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke={completeness === 100 ? "#10B981" : completeness >= 70 ? "#6366F1" : "#F59E0B"}
-                        strokeWidth="3"
-                        strokeDasharray={`${completeness}, 100`}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs font-bold text-gray-900">{completeness}%</span>
-                    </div>
+      <DashboardPageContent maxWidth="7xl">
+        <DashboardPageHeader
+          title="Profile Settings"
+          subtitle="Manage your expert profile and preferences"
+          actions={
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="relative w-12 h-12">
+                  <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="#E5E7EB"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke={completeness === 100 ? "#10B981" : completeness >= 70 ? "#6366F1" : "#F59E0B"}
+                      strokeWidth="3"
+                      strokeDasharray={`${completeness}, 100`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-bold text-gray-900">{completeness}%</span>
                   </div>
-                  <div>
-                    <div className="text-sm font-bold text-gray-900">Profile Complete</div>
-                    <div className="text-xs text-gray-600">
-                      {completeness === 100 ? 'All done!' : 'Keep going!'}
-                    </div>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-gray-900">Profile Complete</div>
+                  <div className="text-xs text-gray-600">
+                    {completeness === 100 ? 'All done!' : 'Keep going!'}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Success Message */}
         {successMessage && (
@@ -1130,7 +1125,7 @@ function ProfileSettingsPage() {
 
         {/* Add bottom padding for mobile sticky button */}
         <div className="sm:hidden h-20"></div>
-      </div>
+      </DashboardPageContent>
     </DashboardLayout>
   );
 }
