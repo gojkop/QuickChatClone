@@ -4,8 +4,46 @@ import { useMemo } from 'react';
 /**
  * Calculate dashboard metrics from questions data
  * Ensures all values are safe (no NaN, no undefined)
+ *
+ * @param {Array} questions - Array of question objects (optional if using preCalculated)
+ * @param {Object} preCalculated - Pre-calculated metrics from server (optional)
+ * @returns {Object} Metrics object with all dashboard statistics
+ *
+ * Usage:
+ * 1. Client-side calculation (Analytics page with full question list):
+ *    const metrics = useMetrics(questions);
+ *
+ * 2. Server-side pre-calculated (Dashboard with /me/dashboard-analytics):
+ *    const metrics = useMetrics([], serverMetrics);
  */
-export function useMetrics(questions = []) {
+export function useMetrics(questions = [], preCalculated = null) {
+  // If pre-calculated metrics provided, use them directly
+  if (preCalculated) {
+    return {
+      // Core metrics from server
+      thisMonthRevenue: preCalculated.thisMonthRevenue || 0,
+      avgResponseTime: preCalculated.avgResponseTime || 0,
+      avgRating: preCalculated.avgRating || 0,
+      pendingCount: preCalculated.pendingCount || 0,
+      answeredCount: preCalculated.answeredCount || 0,
+      urgentCount: preCalculated.urgentCount || 0,
+
+      // Derived metrics
+      revenueChange: preCalculated.revenueChange || 0,
+      totalQuestions: preCalculated.totalQuestions || 0,
+      thisMonthAnsweredCount: preCalculated.thisMonthAnsweredCount || 0,
+      avgRevenuePerQuestion: preCalculated.avgRevenuePerQuestion || 0,
+      slaComplianceRate: preCalculated.slaComplianceRate || 0,
+
+      // Additional stats (empty for pre-calculated)
+      allQuestions: [],
+      answeredQuestions: [],
+      pendingQuestions: [],
+    };
+  }
+
+  // Otherwise, calculate from questions array (original logic)
+
   return useMemo(() => {
     const safeQuestions = Array.isArray(questions) ? questions : [];
     
@@ -69,7 +107,27 @@ export function useMetrics(questions = []) {
     
     // Calculate revenue change (mock for now - replace with real last month data)
     const revenueChange = thisMonthRevenue > 0 ? 23.5 : 0; // Mock: +23.5%
-    
+
+    // Calculate average revenue per question (this month)
+    const avgRevenuePerQuestion = thisMonthAnswered.length > 0
+      ? thisMonthRevenue / thisMonthAnswered.length
+      : 0;
+
+    // Calculate SLA compliance rate
+    const questionsWithinSLA = answeredQuestions.filter(q => {
+      if (!q.answered_at || !q.created_at || !q.sla_hours_snapshot) return false;
+
+      const created = q.created_at > 4102444800 ? q.created_at / 1000 : q.created_at;
+      const answered = q.answered_at > 4102444800 ? q.answered_at / 1000 : q.answered_at;
+      const hoursTaken = (answered - created) / 3600;
+
+      return hoursTaken <= q.sla_hours_snapshot;
+    }).length;
+
+    const slaComplianceRate = answeredQuestions.length > 0
+      ? (questionsWithinSLA / answeredQuestions.length) * 100
+      : 0;
+
     return {
       // Core metrics
       thisMonthRevenue: parseFloat(thisMonthRevenue.toFixed(2)),
@@ -78,12 +136,14 @@ export function useMetrics(questions = []) {
       pendingCount: pendingQuestions.length,
       answeredCount: answeredQuestions.length,
       urgentCount,
-      
+
       // Derived metrics
       revenueChange: parseFloat(revenueChange.toFixed(1)),
       totalQuestions: safeQuestions.length,
       thisMonthAnsweredCount: thisMonthAnswered.length,
-      
+      avgRevenuePerQuestion: parseFloat(avgRevenuePerQuestion.toFixed(2)),
+      slaComplianceRate: parseFloat(slaComplianceRate.toFixed(1)),
+
       // Additional stats
       allQuestions: safeQuestions,
       answeredQuestions,

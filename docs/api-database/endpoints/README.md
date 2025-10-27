@@ -6,13 +6,14 @@ Complete reference for all QuickChat Xano API endpoint implementations (.xs file
 
 ## 📊 Summary
 
-**Status:** ✅ **100% Complete** (October 27, 2025)
+**Status:** 🔴 **49/50 Complete** (January 2025)
 
-**Total Files:** 49 .xs endpoint implementations
+**Total Files:** 50 .xs endpoint implementations
 - **Questions & Answers:** 9 endpoints
 - **Offers & Payments:** 6 endpoints
 - **Reviews:** 3 endpoints
 - **User & Auth:** 7 endpoints
+- **Analytics:** 1 endpoint (🔴 not yet deployed)
 - **Marketing:** 5 endpoints
 - **Media:** 3 endpoints
 - **Public:** 5 endpoints
@@ -21,6 +22,8 @@ Complete reference for all QuickChat Xano API endpoint implementations (.xs file
 
 **Security:** All endpoints reviewed and validated
 **Tests:** 23 automated security tests (all passing)
+
+**Pending Deployment:** `/me/dashboard-analytics` - See deployment guide
 
 ---
 
@@ -94,6 +97,33 @@ User account and profile management.
 - Handle availability checking (unauthenticated, Public API)
 - GDPR-compliant account deletion
 - Availability toggle for experts
+
+### [`me/`](./me/)
+Expert dashboard and analytics endpoints.
+
+**Endpoints:**
+- `GET-dashboard-analytics.xs` - 🔴 GET /me/dashboard-analytics (Authentication API) - **NOT YET DEPLOYED**
+
+**Status:** Ready for deployment
+**Deployment Guide:** [DEPLOY-dashboard-analytics.md](./me/DEPLOY-dashboard-analytics.md)
+
+**Features:**
+- Pre-calculated dashboard metrics from ALL questions
+- Single optimized query for all metrics
+- Server-side calculation for accuracy and performance
+- Calculates: revenue, response time, ratings, urgent count, SLA compliance
+
+**Metrics Provided:**
+- `thisMonthRevenue` - Total earned this month
+- `avgResponseTime` - Average hours to answer
+- `avgRating` - Average rating (1-5)
+- `urgentCount` - Questions < 2hrs to SLA
+- `pendingCount` - Unanswered paid questions
+- `answeredCount` - Total answered
+- `thisMonthAnsweredCount` - Answered this month
+- `avgRevenuePerQuestion` - Monthly average
+- `slaComplianceRate` - % within SLA
+- `totalQuestions` - Total received
 
 ### [`media/`](./media/)
 Media upload and asset management.

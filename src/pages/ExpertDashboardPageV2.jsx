@@ -19,10 +19,11 @@ import MobileBottomNav from '@/components/dashboardv2/navigation/MobileBottomNav
 import OnboardingFlow from '@/components/dashboardv2/onboarding/OnboardingFlow';
 import ProfileCompletionCard from '@/components/dashboardv2/onboarding/ProfileCompletionCard';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
+import { useDashboardAnalytics } from '@/hooks/useDashboardAnalytics';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
-import { Clock, Star, MessageSquare } from 'lucide-react';
+import { Clock, Star, MessageSquare, AlertCircle, TrendingUp } from 'lucide-react';
 import { formatDuration } from '@/utils/dashboardv2/metricsCalculator';
 import { shouldShowOnboardingCard } from '@/utils/profileStrength';
 
@@ -43,17 +44,30 @@ function ExpertDashboardPageV2() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
 
+  // Fetch pre-calculated analytics from server (accurate metrics from ALL questions)
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+  } = useDashboardAnalytics();
+
+  // Determine if we need to fetch more questions for fallback calculation
+  // If analytics endpoint doesn't exist (404), fetch 100 questions for client-side calculation
+  const shouldUseFallback = analyticsData === null;
+  const questionsPerPage = shouldUseFallback ? 100 : 10;
+
+  // Fetch questions: 10 for widgets, or 100 for fallback calculation
   const {
     data: questionsData,
     isLoading: questionsLoading,
     error: questionsError,
     refetch: refetchQuestions
-  } = useQuestionsQuery({ page: 1, perPage: 10 });
+  } = useQuestionsQuery({ page: 1, perPage: questionsPerPage });
 
-  const { 
-    campaigns, 
-    trafficSources, 
-    insights 
+  const {
+    campaigns,
+    trafficSources,
+    insights
   } = useMarketing();
 
   const marketingFeature = useFeature('marketing_module');
@@ -62,7 +76,10 @@ function ExpertDashboardPageV2() {
   const socialImpactEnabled = socialImpactFeature.isEnabled;
 
   const questions = questionsData?.questions || [];
-  const metrics = useMetrics(questions);
+
+  // Use pre-calculated metrics if available, otherwise calculate client-side
+  // When analytics endpoint is implemented, this will automatically switch to server-side
+  const metrics = useMetrics(shouldUseFallback ? questions : [], analyticsData);
 
   const dashboardData = useMemo(() => ({
     pendingCount: metrics.pendingCount || 0,
@@ -130,7 +147,8 @@ function ExpertDashboardPageV2() {
     setShowProfileCard(false);
   };
 
-  const isInitialLoad = profileLoading || (questionsLoading && questions.length === 0);
+  const isInitialLoad = profileLoading || analyticsLoading || (questionsLoading && questions.length === 0);
+  // Don't treat analytics 404 as error (endpoint not implemented yet)
   const hasError = profileError || questionsError;
 
   if (isInitialLoad) {
@@ -213,42 +231,46 @@ function ExpertDashboardPageV2() {
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Avg Response"
-              value={formatDuration(metrics.avgResponseTime)}
+              value={metrics.avgResponseTime > 0 ? formatDuration(metrics.avgResponseTime) : '—'}
               icon={Clock}
               color="indigo"
-              trend={-12.5}
-              subtitle={metrics.avgResponseTime > 0 ? `${metrics.answeredCount} answered` : 'No data yet'}
+              trend={metrics.avgResponseTime > 0 ? -12.5 : null}
+              subtitle={metrics.avgResponseTime > 0 ? `${metrics.answeredCount} answered` : 'Track how fast you answer'}
+              isZeroState={metrics.avgResponseTime === 0}
             />
           </BentoCard>
 
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Rating"
-              value={metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)}⭐` : 'No ratings'}
+              value={metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)}⭐` : '—'}
               icon={Star}
               color="purple"
               trend={metrics.avgRating > 0 ? 5.2 : null}
-              subtitle={metrics.avgRating > 0 ? 'Average rating' : 'Get rated soon'}
+              subtitle={metrics.avgRating > 0 ? 'Average rating' : 'Rating appears after reviews'}
+              isZeroState={metrics.avgRating === 0}
             />
           </BentoCard>
 
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/inbox')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
-              label="Pending"
-              value={metrics.pendingCount}
-              icon={MessageSquare}
-              color="orange"
-              subtitle={metrics.pendingCount > 0 ? 'Need your answer' : 'All caught up!'}
+              label="Urgent"
+              value={metrics.urgentCount}
+              icon={AlertCircle}
+              color={metrics.urgentCount === 0 ? 'green' : metrics.urgentCount <= 2 ? 'orange' : 'orange'}
+              subtitle={metrics.urgentCount === 0 ? 'All caught up! 🎉' : metrics.urgentCount === 1 ? 'Needs attention now' : 'Need attention now'}
+              isZeroState={metrics.urgentCount === 0 && metrics.pendingCount === 0}
             />
           </BentoCard>
 
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
-              label="Answered"
-              value={metrics.answeredCount}
-              icon={MessageSquare}
+              label="Avg per Question"
+              value={metrics.avgRevenuePerQuestion > 0 ? `$${metrics.avgRevenuePerQuestion.toFixed(0)}` : '—'}
+              icon={TrendingUp}
               color="green"
-              subtitle={`${metrics.thisMonthAnsweredCount} this month`}
+              subtitle={metrics.avgRevenuePerQuestion > 0 ? 'This month average' : 'Tracks pricing effectiveness'}
+              isZeroState={metrics.avgRevenuePerQuestion === 0}
             />
           </BentoCard>
 
