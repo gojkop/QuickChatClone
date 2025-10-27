@@ -72,13 +72,25 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '',
       text: existingData?.text,
       textLength: existingData?.text?.length || 0,
       recordings: existingData?.recordingSegments?.length || 0,
-      attachments: existingData?.attachments?.length || 0
+      attachments: existingData?.attachments?.length || 0,
+      recordingSegmentsArray: existingData?.recordingSegments
     });
 
     if (existingData) {
-      console.log('📦 [ANSWER RECORDER] Updating existing segments/attachments from prop');
-      setExistingSegments(existingData.recordingSegments || []);
-      setExistingAttachments(existingData.attachments || []);
+      const recordingSegments = existingData.recordingSegments || [];
+      const attachments = existingData.attachments || [];
+
+      console.log('📦 [ANSWER RECORDER] Setting existing data:', {
+        segmentsToSet: recordingSegments.length,
+        attachmentsToSet: attachments.length,
+        segmentsArray: recordingSegments,
+        attachmentsArray: attachments
+      });
+
+      setExistingSegments(recordingSegments);
+      setExistingAttachments(attachments);
+
+      console.log('✅ [ANSWER RECORDER] State updated with existing data');
     } else {
       // If existingData becomes null, clear the existing items
       console.log('📦 [ANSWER RECORDER] Clearing existing data (prop is null)');
