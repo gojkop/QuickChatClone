@@ -72,7 +72,7 @@ function MobileDrawer({ isOpen, onClose, pendingCount = 0 }) {
 
           <NavSection title="Business">
             <NavItem
-              to="/expert/marketing"
+              to="/dashboard/marketing"
               icon={<PieChart size={20} />}
               label="Marketing"
               badge={{ count: 'New', variant: 'success' }}
