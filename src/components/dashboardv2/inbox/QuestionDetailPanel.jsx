@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Link, Loader, X } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
+import MediaSegmentCard from './MediaSegmentCard';
+import MediaPlayerModal from './MediaPlayerModal';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 import { copyQuestionLink } from '@/utils/clipboard';
 import apiClient from '@/api';
@@ -26,6 +28,8 @@ function QuestionDetailPanel({
   const [answerData, setAnswerData] = useState(null);
   const [loadingAnswer, setLoadingAnswer] = useState(false);
   const [answerMediaAssets, setAnswerMediaAssets] = useState([]);
+  const [playingSegmentIndex, setPlayingSegmentIndex] = useState(null);
+  const [playingAnswerSegmentIndex, setPlayingAnswerSegmentIndex] = useState(null);
 
   // Fetch media assets when question changes
   useEffect(() => {
@@ -698,102 +702,52 @@ function QuestionDetailPanel({
             </div>
           )}
 
-          {/* Media Segments */}
+          {/* Media Segments - Compact Design */}
           {!loadingMedia && mediaSegments && mediaSegments.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Video size={15} className="text-indigo-600" />
-                <h3 className="text-sm font-semibold text-gray-900">
-                  Media Recordings ({mediaSegments.length})
-                </h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Video size={16} className="text-indigo-600" />
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Media Segments
+                  </h3>
+                </div>
+                <span className="text-xs text-gray-500">
+                  {mediaSegments.length} segment{mediaSegments.length > 1 ? 's' : ''} •
+                  {' '}{Math.floor(mediaSegments.reduce((acc, seg) => acc + (seg.duration_sec || 0), 0) / 60)}m {Math.floor(mediaSegments.reduce((acc, seg) => acc + (seg.duration_sec || 0), 0) % 60)}s total
+                </span>
               </div>
-              <div className="space-y-3">
+
+              <div className="space-y-2">
                 {mediaSegments
                   .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
-                  .map((segment, index) => {
-                    const metadata = typeof segment.metadata === 'string'
-                      ? JSON.parse(segment.metadata)
-                      : segment.metadata || {};
-
-                    // Check metadata.mode first, then fall back to provider/URL detection
-                    const isAudio = metadata.mode === 'audio';
-                    const isVideo = !isAudio && (
-                      metadata.mode === 'video' ||
-                      metadata.mode === 'screen' ||
-                      metadata.mode === 'screen-camera' ||
-                      segment.provider === 'cloudflare_stream' ||
-                      segment.url?.includes('cloudflarestream.com')
-                    );
-
-                    // Check if this is actually a Cloudflare Stream video (not R2)
-                    const isCloudflareStream = segment.provider === 'cloudflare_stream' || segment.url?.includes('cloudflarestream.com');
-
-                    const videoId = isVideo ? (segment.asset_id || getStreamVideoId(segment.url)) : null;
-                    const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
-                    const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-                    
-                    const modeLabel = metadata.mode === 'screen' ? 'Screen Recording' :
-                                     metadata.mode === 'screen-camera' ? 'Screen + Camera' :
-                                     isVideo ? 'Video' : 'Audio';
-                    
-                    const duration = segment.duration_sec || segment.duration || 0;
-
-                    return (
-                      <div key={segment.id || index} className="bg-gray-900 rounded-lg overflow-hidden">
-                        <div className="px-3 py-2 bg-gray-800 flex items-center justify-between">
-                          <span className="text-xs font-semibold text-gray-300">
-                            {mediaSegments.length > 1 ? `Part ${index + 1} - ${modeLabel}` : modeLabel}
-                          </span>
-                          {duration > 0 && (
-                            <span className="text-xs text-gray-400">
-                              {isVideo ? '🎥' : '🎤'} {Math.floor(duration)}s
-                            </span>
-                          )}
-                        </div>
-
-                        {isVideo && videoId && customerCode && isCloudflareStream ? (
-                          <div className="w-full aspect-video bg-black">
-                            <iframe
-                              src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                              style={{ border: 'none', width: '100%', height: '100%' }}
-                              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                              allowFullScreen={true}
-                              title={`Video segment ${index + 1}`}
-                            />
-                          </div>
-                        ) : isVideo && segment.url ? (
-                          <div className="w-full aspect-video bg-black">
-                            <video
-                              controls
-                              className="w-full h-full"
-                              preload="metadata"
-                              style={{ maxHeight: '600px' }}
-                            >
-                              <source src={segment.url} type="video/webm" />
-                              Your browser does not support video playback.
-                            </video>
-                          </div>
-                        ) : isAudio && segment.url ? (
-                          <div className="p-3 flex flex-col items-center justify-center">
-                            <div className="flex items-center gap-2 mb-2 text-gray-300">
-                              <Mic size={15} />
-                              <span className="text-sm font-medium">{modeLabel}</span>
-                            </div>
-                            <audio controls className="w-full max-w-md" preload="metadata">
-                              <source src={segment.url} type="audio/webm" />
-                              Your browser does not support audio playback.
-                            </audio>
-                          </div>
-                        ) : (
-                          <div className="p-4 text-center text-gray-400 text-sm">
-                            Media preview unavailable
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  .map((segment, index) => (
+                    <MediaSegmentCard
+                      key={segment.id || index}
+                      segment={segment}
+                      index={index}
+                      onPlay={() => setPlayingSegmentIndex(index)}
+                      onCopyLink={onCopyLink ? () => onCopyLink(segment) : null}
+                    />
+                  ))}
               </div>
             </div>
+          )}
+
+          {/* Media Player Modal */}
+          {playingSegmentIndex !== null && mediaSegments[playingSegmentIndex] && (
+            <MediaPlayerModal
+              segment={mediaSegments[playingSegmentIndex]}
+              segments={mediaSegments}
+              currentIndex={playingSegmentIndex}
+              onClose={() => setPlayingSegmentIndex(null)}
+              onNavigate={(direction) => {
+                const newIndex = playingSegmentIndex + direction;
+                if (newIndex >= 0 && newIndex < mediaSegments.length) {
+                  setPlayingSegmentIndex(newIndex);
+                }
+              }}
+            />
           )}
 
           {/* Question File Attachments */}
@@ -855,101 +809,52 @@ function QuestionDetailPanel({
             </div>
           )}
 
-          {/* Answer Media Segments */}
+          {/* Answer Media Segments - Compact Design */}
           {isAnswered && answerMediaAssets && answerMediaAssets.length > 0 && (
             <div className="pt-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Video size={15} className="text-green-600" />
-                <h3 className="text-sm font-semibold text-gray-900">
-                  Answer Media Recordings ({answerMediaAssets.length})
-                </h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Video size={16} className="text-green-600" />
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Answer Media
+                  </h3>
+                </div>
+                <span className="text-xs text-gray-500">
+                  {answerMediaAssets.length} segment{answerMediaAssets.length > 1 ? 's' : ''} •
+                  {' '}{Math.floor(answerMediaAssets.reduce((acc, seg) => acc + (seg.duration_sec || 0), 0) / 60)}m {Math.floor(answerMediaAssets.reduce((acc, seg) => acc + (seg.duration_sec || 0), 0) % 60)}s total
+                </span>
               </div>
-              <div className="space-y-3">
+
+              <div className="space-y-2">
                 {answerMediaAssets
                   .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
-                  .map((segment, index) => {
-                    const metadata = typeof segment.metadata === 'string'
-                      ? JSON.parse(segment.metadata)
-                      : segment.metadata || {};
-
-                    const isAudio = metadata.mode === 'audio';
-                    const isVideo = !isAudio && (
-                      metadata.mode === 'video' ||
-                      metadata.mode === 'screen' ||
-                      metadata.mode === 'screen-camera' ||
-                      segment.provider === 'cloudflare_stream' ||
-                      segment.url?.includes('cloudflarestream.com')
-                    );
-
-                    // Check if this is actually a Cloudflare Stream video (not R2)
-                    const isCloudflareStream = segment.provider === 'cloudflare_stream' || segment.url?.includes('cloudflarestream.com');
-
-                    const videoId = isVideo ? (segment.asset_id || getStreamVideoId(segment.url)) : null;
-                    const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
-                    const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-
-                    const modeLabel = metadata.mode === 'screen' ? 'Screen Recording' :
-                                     metadata.mode === 'screen-camera' ? 'Screen + Camera' :
-                                     isVideo ? 'Video' : 'Audio';
-
-                    const duration = segment.duration_sec || segment.duration || 0;
-
-                    return (
-                      <div key={segment.id || index} className="bg-gray-900 rounded-lg overflow-hidden border-2 border-green-500">
-                        <div className="px-3 py-2 bg-green-800 flex items-center justify-between">
-                          <span className="text-xs font-semibold text-white">
-                            {answerMediaAssets.length > 1 ? `Part ${index + 1} - ${modeLabel}` : modeLabel}
-                          </span>
-                          {duration > 0 && (
-                            <span className="text-xs text-green-200">
-                              {isVideo ? '🎥' : '🎤'} {Math.floor(duration)}s
-                            </span>
-                          )}
-                        </div>
-
-                        {isVideo && videoId && customerCode && isCloudflareStream ? (
-                          <div className="w-full aspect-video bg-black">
-                            <iframe
-                              src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                              style={{ border: 'none', width: '100%', height: '100%' }}
-                              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                              allowFullScreen={true}
-                              title={`Answer video segment ${index + 1}`}
-                            />
-                          </div>
-                        ) : isVideo && segment.url ? (
-                          <div className="w-full aspect-video bg-black">
-                            <video
-                              controls
-                              className="w-full h-full"
-                              preload="metadata"
-                              style={{ maxHeight: '600px' }}
-                            >
-                              <source src={segment.url} type="video/webm" />
-                              Your browser does not support video playback.
-                            </video>
-                          </div>
-                        ) : isAudio && segment.url ? (
-                          <div className="p-3 flex flex-col items-center justify-center bg-green-900">
-                            <div className="flex items-center gap-2 mb-2 text-green-200">
-                              <Mic size={15} />
-                              <span className="text-sm font-medium">{modeLabel}</span>
-                            </div>
-                            <audio controls className="w-full max-w-md" preload="metadata">
-                              <source src={segment.url} type="audio/webm" />
-                              Your browser does not support audio playback.
-                            </audio>
-                          </div>
-                        ) : (
-                          <div className="p-4 text-center text-gray-400 text-sm">
-                            Media preview unavailable
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  .map((segment, index) => (
+                    <MediaSegmentCard
+                      key={segment.id || index}
+                      segment={segment}
+                      index={index}
+                      onPlay={() => setPlayingAnswerSegmentIndex(index)}
+                      onCopyLink={onCopyLink ? () => onCopyLink(segment) : null}
+                    />
+                  ))}
               </div>
             </div>
+          )}
+
+          {/* Answer Media Player Modal */}
+          {playingAnswerSegmentIndex !== null && answerMediaAssets[playingAnswerSegmentIndex] && (
+            <MediaPlayerModal
+              segment={answerMediaAssets[playingAnswerSegmentIndex]}
+              segments={answerMediaAssets}
+              currentIndex={playingAnswerSegmentIndex}
+              onClose={() => setPlayingAnswerSegmentIndex(null)}
+              onNavigate={(direction) => {
+                const newIndex = playingAnswerSegmentIndex + direction;
+                if (newIndex >= 0 && newIndex < answerMediaAssets.length) {
+                  setPlayingAnswerSegmentIndex(newIndex);
+                }
+              }}
+            />
           )}
 
           {/* Answer File Attachments */}
