@@ -48,6 +48,17 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   const [showAnswerRecorder, setShowAnswerRecorder] = useState(false);
   const [answerData, setAnswerData] = useState(null);
   const [showReview, setShowReview] = useState(false);
+
+  // Debug: Log every render with current state
+  console.log('🔄 [MODAL RENDER] QuestionDetailModal rendering with state:', {
+    isOpen,
+    showAnswerRecorder,
+    showReview,
+    hasAnswerData: !!answerData,
+    answerDataText: answerData?.text,
+    answerDataTextLength: answerData?.text?.length || 0,
+    questionId: question?.id
+  });
   const [showAnswerSection, setShowAnswerSection] = useState(false);
   const [showQuestionSection, setShowQuestionSection] = useState(false);
   const [answerDetails, setAnswerDetails] = useState(null);
@@ -66,16 +77,25 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   const isAnswered = question?.status === 'answered' || question?.status === 'closed' || !!question?.answered_at;
 
   useEffect(() => {
+    console.log('🔧 [USEEFFECT] isOpen/isAnswered/question?.id changed:', {
+      isOpen,
+      isAnswered,
+      questionId: question?.id,
+      currentAnswerData: answerData
+    });
+
     if (isOpen && isAnswered && question?.id) {
       fetchAnswerDetails();
     } else {
       setAnswerDetails(null);
     }
-    
+
     if (isOpen) {
+      console.log('🔧 [USEEFFECT] isOpen=true, resetting states (NOT answerData)');
       setCurrentStep(1);
       setShowAnswerRecorder(false);
       setShowReview(false);
+      console.log('🔧 [USEEFFECT] After reset - answerData should still be:', answerData);
     }
   }, [isOpen, isAnswered, question?.id]);
 
@@ -193,10 +213,12 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
       textLength: data?.text?.length || 0,
       recordingSegmentsCount: data?.recordingSegments?.length || 0,
       attachmentsCount: data?.attachments?.length || 0,
-      recordingDuration: data?.recordingDuration || 0
+      recordingDuration: data?.recordingDuration || 0,
+      fullData: data
     });
 
     // The recorder already combines existing + new data, so just use it directly
+    console.log('💾 [ANSWER FLOW] Setting answerData to:', data);
     setAnswerData(data);
     setShowReview(true);
     setCurrentStep(3);
@@ -217,11 +239,15 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
       hasText: !!answerData?.text,
       textLength: answerData?.text?.length || 0,
       recordingSegmentsCount: answerData?.recordingSegments?.length || 0,
-      attachmentsCount: answerData?.attachments?.length || 0
+      attachmentsCount: answerData?.attachments?.length || 0,
+      fullAnswerData: answerData
     });
+    console.log('📦 [ANSWER FLOW] answerData value:', answerData);
+
     // DON'T reset answerData - keep it so recorder can restore it
     setShowReview(false);
     setCurrentStep(2);
+
     console.log('✅ [ANSWER FLOW] Switched back to recorder - showReview=false, currentStep=2');
     console.log('⚠️ [ANSWER FLOW] IMPORTANT: answerData preserved for restoration');
   };
