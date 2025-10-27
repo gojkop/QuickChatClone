@@ -2,6 +2,7 @@
 // Fullscreen/modal player for media segments
 
 import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 
@@ -96,14 +97,15 @@ function MediaPlayerModal({
 
   const useCloudflarePlayer = isVideo && videoId && customerCode && isCloudflareStream;
 
-  return (
+  // Render modal using React Portal to ensure it appears at document root
+  const modalContent = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 flex items-center justify-center"
+        className="fixed inset-0 z-[9999] flex items-center justify-center"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}
         onClick={onClose}
       >
@@ -218,7 +220,7 @@ function MediaPlayerModal({
           exit={{ y: '100%' }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
-          className="flex md:hidden flex-col bg-black w-full h-full fixed inset-0 z-50"
+          className="flex md:hidden flex-col bg-black w-full h-full absolute inset-0"
         >
           {/* Header - Fixed */}
           <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-gray-900 text-white z-10">
@@ -321,6 +323,9 @@ function MediaPlayerModal({
       </motion.div>
     </AnimatePresence>
   );
+
+  // Render to document.body using React Portal
+  return ReactDOM.createPortal(modalContent, document.body);
 }
 
 export default MediaPlayerModal;
