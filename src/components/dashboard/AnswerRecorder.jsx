@@ -11,15 +11,23 @@ import SLACountdown from './SLACountdown';
 const MAX_RECORDING_SECONDS = 900; // 15 minutes for answers
 
 function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '', existingData = null }) {
-  const [text, setText] = useState(initialText);
-
-  console.log('🎬 [ANSWER RECORDER] Component initialized:', {
-    hasInitialText: !!initialText,
+  console.log('🎬 [ANSWER RECORDER] Component mounted/updated with props:', {
+    initialText: initialText,
+    initialTextType: typeof initialText,
     initialTextLength: initialText?.length || 0,
+    hasInitialText: !!initialText,
+    existingData: existingData,
     hasExistingData: !!existingData,
+    existingDataText: existingData?.text,
     existingRecordingsCount: existingData?.recordingSegments?.length || 0,
     existingAttachmentsCount: existingData?.attachments?.length || 0
   });
+
+  // IMPORTANT: Prioritize existingData.text over initialText for state initialization
+  const initialTextValue = existingData?.text || initialText || '';
+  const [text, setText] = useState(initialTextValue);
+
+  console.log('🎬 [ANSWER RECORDER] Text state initialized to:', text, 'from:', existingData?.text ? 'existingData.text' : 'initialText');
 
   // For already-uploaded segments, we just track them for display
   const [existingSegments, setExistingSegments] = useState(existingData?.recordingSegments || []);
@@ -36,23 +44,45 @@ function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '',
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
 
-  // Update text when initialText prop changes (e.g., when returning from edit)
+  // Update text when existingData or initialText props change
   useEffect(() => {
-    if (initialText) {
-      console.log('📝 [ANSWER RECORDER] Restoring text from initialText:', initialText.length, 'chars');
-      setText(initialText);
-    }
-  }, [initialText]);
+    console.log('📝 [ANSWER RECORDER] Props changed, checking text updates:', {
+      existingDataText: existingData?.text,
+      initialText: initialText,
+      currentTextState: text
+    });
 
-  // Update existing data when prop changes
+    // Priority: existingData.text > initialText > empty string
+    const newTextValue = existingData?.text || initialText || '';
+
+    if (newTextValue !== text) {
+      console.log('📝 [ANSWER RECORDER] Updating text state from:', newTextValue ? 'existingData.text or initialText' : 'empty');
+      console.log('📝 [ANSWER RECORDER] New value:', newTextValue);
+      setText(newTextValue);
+    } else {
+      console.log('📝 [ANSWER RECORDER] Text unchanged, no update needed');
+    }
+  }, [existingData?.text, initialText]); // Watch both text sources
+
+  // Update existing segments and attachments when existingData changes
   useEffect(() => {
+    console.log('📦 [ANSWER RECORDER] existingData prop changed:', {
+      hasData: !!existingData,
+      text: existingData?.text,
+      textLength: existingData?.text?.length || 0,
+      recordings: existingData?.recordingSegments?.length || 0,
+      attachments: existingData?.attachments?.length || 0
+    });
+
     if (existingData) {
-      console.log('📦 [ANSWER RECORDER] Restoring existing data:', {
-        recordings: existingData.recordingSegments?.length || 0,
-        attachments: existingData.attachments?.length || 0
-      });
+      console.log('📦 [ANSWER RECORDER] Updating existing segments/attachments from prop');
       setExistingSegments(existingData.recordingSegments || []);
       setExistingAttachments(existingData.attachments || []);
+    } else {
+      // If existingData becomes null, clear the existing items
+      console.log('📦 [ANSWER RECORDER] Clearing existing data (prop is null)');
+      setExistingSegments([]);
+      setExistingAttachments([]);
     }
   }, [existingData]);
 

@@ -1131,14 +1131,27 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
               <div className="flex-1 overflow-y-auto overscroll-contain overflow-x-hidden">
                 <div className="p-4 sm:p-6 max-w-full pb-24 sm:pb-6">
                   {!showReview ? (
-                    <AnswerRecorder
-                      question={question}
-                      expert={expertProfile}
-                      onReady={handleRecorderReady}
-                      onCancel={handleRecorderCancel}
-                      initialText={answerData?.text || ''}
-                      existingData={answerData}
-                    />
+                    <>
+                      {/* Debug logging */}
+                      {console.log('🔍 [ANSWER FLOW] Rendering AnswerRecorder with props:', {
+                        hasAnswerData: !!answerData,
+                        answerDataText: answerData?.text,
+                        answerDataTextLength: answerData?.text?.length || 0,
+                        initialText: answerData?.text || '',
+                        existingRecordings: answerData?.recordingSegments?.length || 0,
+                        existingAttachments: answerData?.attachments?.length || 0,
+                        fullAnswerData: answerData
+                      })}
+                      <AnswerRecorder
+                        key={`answer-recorder-${question?.id}`}
+                        question={question}
+                        expert={expertProfile}
+                        onReady={handleRecorderReady}
+                        onCancel={handleRecorderCancel}
+                        initialText={answerData?.text || ''}
+                        existingData={answerData}
+                      />
+                    </>
                   ) : (
                     <div className="space-y-4">
                       {/* Inline Review Summary */}
