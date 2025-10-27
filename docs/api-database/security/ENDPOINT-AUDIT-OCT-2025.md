@@ -47,6 +47,12 @@ Complete audit of all Xano endpoints to identify security testing needs, obsolet
 
 | Endpoint | Method | Security Note | Used? |
 |----------|--------|---------------|-------|
+| `/expert/profile/check-handle/{handle}` | GET | 🟢 Low | Public endpoint, no auth required | ✓ Yes |
+
+### 📖 Other Read-Only Endpoints
+
+| Endpoint | Method | Security Note | Used? |
+|----------|--------|---------------|-------|
 | `/auth/me` | GET | Auth required, returns own data | ✓ Yes |
 | `/me/profile` | GET | Auth required, returns own profile | ✓ Yes |
 | `/me/questions` | GET | Auth required, returns own questions | ✓ Yes |
