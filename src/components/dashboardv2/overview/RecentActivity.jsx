@@ -15,7 +15,13 @@ function RecentActivity({ questions = [] }) {
   const [showShareOptions, setShowShareOptions] = useState(false);
 
   const recentQuestions = questions
-    .filter(q => q.status === 'paid' && !q.answered_at)
+    .filter(q => {
+      // Include paid questions that aren't answered
+      if (q.status === 'paid' && !q.answered_at) return true;
+      // Include pending offers that aren't answered
+      if ((q.status === 'pending_offer' || q.is_pending_offer) && !q.answered_at) return true;
+      return false;
+    })
     .sort((a, b) => b.created_at - a.created_at)
     .slice(0, 5);
 
@@ -251,7 +257,14 @@ function RecentActivity({ questions = [] }) {
               `}
               onMouseEnter={() => setHoveredQuestion(question.id)}
               onMouseLeave={() => setHoveredQuestion(null)}
-              onClick={() => navigate(`/dashboard/inbox#question-${question.id}`)}
+              onClick={() => {
+                // For pending offers, navigate to inbox (they need to be accepted first)
+                if (questionType === 'pending_offer') {
+                  navigate('/dashboard/inbox');
+                } else {
+                  navigate(`/dashboard/inbox#question-${question.id}`);
+                }
+              }}
             >
               <div className="flex items-start gap-2">
                 {/* Type Icon */}
@@ -268,7 +281,7 @@ function RecentActivity({ questions = [] }) {
                       <span>{config.label}</span>
                     </span>
                     <p className="text-xs text-gray-700 line-clamp-1 flex-1 min-w-0">
-                      {question.question_text || 'Untitled Question'}
+                      {question.title || question.question_text || question.text || 'Untitled Question'}
                     </p>
                   </div>
 
@@ -313,23 +326,29 @@ function RecentActivity({ questions = [] }) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/dashboard/inbox#question-${question.id}`);
+                      if (questionType === 'pending_offer') {
+                        navigate('/dashboard/inbox');
+                      } else {
+                        navigate(`/dashboard/inbox#question-${question.id}`);
+                      }
                     }}
                     className="p-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-lg transition-colors"
                     title="View details"
                   >
                     <Eye size={12} />
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/dashboard/inbox#question-${question.id}/answer`);
-                    }}
-                    className="p-1 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-lg transition-colors"
-                    title="Answer now"
-                  >
-                    <MessageCircle size={12} />
-                  </button>
+                  {questionType !== 'pending_offer' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/dashboard/inbox#question-${question.id}/answer`);
+                      }}
+                      className="p-1 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-lg transition-colors"
+                      title="Answer now"
+                    >
+                      <MessageCircle size={12} />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
