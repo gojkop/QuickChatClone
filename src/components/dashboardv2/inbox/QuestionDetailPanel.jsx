@@ -366,7 +366,7 @@ function QuestionDetailPanel({
       return titleText;
     }
     
-    const detailsText = question.text || question.question_details;
+    const detailsText = question.question_text || question.question_details;
     if (detailsText?.trim()) {
       const firstLine = detailsText.split('\n')[0].trim();
       return firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
@@ -384,7 +384,7 @@ function QuestionDetailPanel({
   };
 
   const getQuestionDetails = (question) => {
-    return question.text || question.question_details || '';
+    return question.question_text || question.question_details || '';
   };
 
   const getAskerName = (question) => {
