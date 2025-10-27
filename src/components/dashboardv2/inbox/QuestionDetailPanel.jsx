@@ -643,6 +643,9 @@ function QuestionDetailPanel({
                       segment.url?.includes('cloudflarestream.com')
                     );
 
+                    // Check if this is actually a Cloudflare Stream video (not R2)
+                    const isCloudflareStream = segment.provider === 'cloudflare_stream' || segment.url?.includes('cloudflarestream.com');
+
                     const videoId = isVideo ? (segment.asset_id || getStreamVideoId(segment.url)) : null;
                     const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
                     const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
@@ -666,7 +669,7 @@ function QuestionDetailPanel({
                           )}
                         </div>
 
-                        {isVideo && videoId && customerCode ? (
+                        {isVideo && videoId && customerCode && isCloudflareStream ? (
                           <div className="w-full aspect-video bg-black">
                             <iframe
                               src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
@@ -675,6 +678,18 @@ function QuestionDetailPanel({
                               allowFullScreen={true}
                               title={`Video segment ${index + 1}`}
                             />
+                          </div>
+                        ) : isVideo && segment.url ? (
+                          <div className="w-full aspect-video bg-black">
+                            <video
+                              controls
+                              className="w-full h-full"
+                              preload="metadata"
+                              style={{ maxHeight: '600px' }}
+                            >
+                              <source src={segment.url} type="video/webm" />
+                              Your browser does not support video playback.
+                            </video>
                           </div>
                         ) : isAudio && segment.url ? (
                           <div className="p-3 flex flex-col items-center justify-center">
@@ -792,6 +807,9 @@ function QuestionDetailPanel({
                                     segment.url?.includes('cloudflarestream.com');
                     const isAudio = metadata.mode === 'audio' || !isVideo;
 
+                    // Check if this is actually a Cloudflare Stream video (not R2)
+                    const isCloudflareStream = segment.provider === 'cloudflare_stream' || segment.url?.includes('cloudflarestream.com');
+
                     const videoId = isVideo ? (segment.asset_id || getStreamVideoId(segment.url)) : null;
                     const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
                     const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
@@ -815,7 +833,7 @@ function QuestionDetailPanel({
                           )}
                         </div>
 
-                        {isVideo && videoId && customerCode ? (
+                        {isVideo && videoId && customerCode && isCloudflareStream ? (
                           <div className="w-full aspect-video bg-black">
                             <iframe
                               src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
@@ -824,6 +842,18 @@ function QuestionDetailPanel({
                               allowFullScreen={true}
                               title={`Answer video segment ${index + 1}`}
                             />
+                          </div>
+                        ) : isVideo && segment.url ? (
+                          <div className="w-full aspect-video bg-black">
+                            <video
+                              controls
+                              className="w-full h-full"
+                              preload="metadata"
+                              style={{ maxHeight: '600px' }}
+                            >
+                              <source src={segment.url} type="video/webm" />
+                              Your browser does not support video playback.
+                            </video>
                           </div>
                         ) : isAudio && segment.url ? (
                           <div className="p-3 flex flex-col items-center justify-center bg-green-900">
