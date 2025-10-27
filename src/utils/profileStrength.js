@@ -6,28 +6,27 @@
  */
 
 /**
- * Calculate profile strength score (0-95%)
- * Never reaches 100% to encourage continuous improvement
+ * Calculate profile strength score (0-100%)
+ * MATCHES the calculation in ProfileSettingsPage.jsx for consistency
  */
 export const calculateProfileStrength = (expertProfile) => {
-  if (!expertProfile) return 20;
+  if (!expertProfile) return 0;
 
-  let score = 20; // Start at 20% (endowed progress principle)
+  // Same fields as ProfileSettingsPage
+  const fields = [
+    expertProfile.handle,
+    expertProfile.avatar_url,
+    expertProfile.professional_title,
+    expertProfile.tagline,
+    expertProfile.bio,
+    expertProfile.expertise && expertProfile.expertise.length > 0,
+    (expertProfile.tier1_enabled !== false && expertProfile.tier1_price_cents) ||
+      (expertProfile.tier2_enabled && expertProfile.tier2_min_price_cents),
+    Object.values(expertProfile.socials || {}).some(v => v)
+  ];
 
-  // Essential setup (auto-completed during onboarding)
-  if (expertProfile.tier1_price_cents) score += 10; // ✅ Auto
-  if (expertProfile.tier1_sla_hours) score += 10;   // ✅ Auto
-
-  // Quick wins (checklist items)
-  if (expertProfile.avatar_url) score += 20; // Profile photo
-  if (expertProfile.bio && expertProfile.bio.length >= 50) score += 20; // Bio (minimum 50 chars)
-  if (expertProfile.socials?.linkedin) score += 15; // LinkedIn connection
-
-  // Stand out (progressive disclosure)
-  if (expertProfile.professional_title) score += 10; // Professional title
-  if (expertProfile.expertise && expertProfile.expertise.length > 0) score += 10; // Specialty tags
-
-  return Math.min(score, 95); // Never 100% (always room to improve)
+  const completed = fields.filter(Boolean).length;
+  return Math.round((completed / fields.length) * 100);
 };
 
 /**
@@ -110,7 +109,7 @@ export const generateChecklist = (expertProfile) => {
     });
   }
 
-  // Quick wins
+  // Quick wins - Match ProfileSettingsPage fields
   if (!expertProfile.avatar_url) {
     items.push({
       id: 'photo',
@@ -121,85 +120,80 @@ export const generateChecklist = (expertProfile) => {
       action: 'Add Photo',
       route: '/dashboard/profile',
       category: 'quick-win',
-      timeEstimate: '1 min'
+      timeEstimate: 1 // minutes as number
     });
   }
 
-  if (!expertProfile.bio || expertProfile.bio.length < 50) {
+  if (!expertProfile.professional_title) {
+    items.push({
+      id: 'title',
+      label: 'Add professional title',
+      description: 'e.g., "Senior Product Manager at Google"',
+      completed: false,
+      impact: '+20% credibility',
+      action: 'Add Title',
+      route: '/dashboard/profile',
+      category: 'quick-win',
+      timeEstimate: 1
+    });
+  }
+
+  if (!expertProfile.tagline) {
+    items.push({
+      id: 'tagline',
+      label: 'Write your tagline',
+      description: 'One-line summary of what you do',
+      completed: false,
+      impact: '+30% engagement',
+      action: 'Add Tagline',
+      route: '/dashboard/profile',
+      category: 'quick-win',
+      timeEstimate: 2
+    });
+  }
+
+  if (!expertProfile.bio) {
     items.push({
       id: 'bio',
       label: 'Write your bio',
-      description: 'Describe your expertise in 2-3 sentences',
+      description: 'Describe your expertise in detail',
       completed: false,
       impact: '+60% profile views',
       action: 'Write Bio',
       route: '/dashboard/profile',
       category: 'quick-win',
-      timeEstimate: '3 min'
+      timeEstimate: 3
     });
   }
 
-  if (!expertProfile.socials?.linkedin) {
+  if (!expertProfile.expertise || expertProfile.expertise.length === 0) {
     items.push({
-      id: 'linkedin',
-      label: 'Connect LinkedIn',
-      description: 'Add your LinkedIn profile URL',
+      id: 'expertise',
+      label: 'Add expertise tags',
+      description: 'Help people discover your skills',
+      completed: false,
+      impact: 'Better discovery',
+      action: 'Add Tags',
+      route: '/dashboard/profile',
+      category: 'quick-win',
+      timeEstimate: 2
+    });
+  }
+
+  // Socials (any social network)
+  const hasSocials = Object.values(expertProfile.socials || {}).some(v => v);
+  if (!hasSocials) {
+    items.push({
+      id: 'socials',
+      label: 'Connect social profiles',
+      description: 'LinkedIn, Twitter, or website',
       completed: false,
       impact: '+30% trust',
       action: 'Connect',
       route: '/dashboard/profile',
       category: 'quick-win',
-      timeEstimate: '1 min'
+      timeEstimate: 1
     });
-  }
-
-  // Share link (always show until profile is strong)
-  const profileStrength = calculateProfileStrength(expertProfile);
-  if (profileStrength < 80) {
-    items.push({
-      id: 'share',
-      label: 'Share your link',
-      description: 'Copy your profile link and share it',
-      completed: false,
-      impact: 'Get questions',
-      action: 'Copy Link',
-      route: null, // Custom handler
-      category: 'quick-win',
-      timeEstimate: '30 sec'
-    });
-  }
-
-  // Progressive disclosure - show after quick wins are complete
-  const quickWinsComplete = items.filter(i => i.category === 'quick-win').length === 0;
-
-  if (quickWinsComplete) {
-    if (!expertProfile.professional_title) {
-      items.push({
-        id: 'title',
-        label: 'Add professional title',
-        description: 'e.g., "Senior Product Manager at Google"',
-        completed: false,
-        impact: '+20% credibility',
-        action: 'Add Title',
-        route: '/dashboard/profile',
-        category: 'stand-out',
-        timeEstimate: '1 min'
-      });
-    }
-
-    if (!expertProfile.expertise || expertProfile.expertise.length === 0) {
-      items.push({
-        id: 'tags',
-        label: 'Add specialty tags',
-        description: 'Help people discover your expertise',
-        completed: false,
-        impact: 'Better discovery',
-        action: 'Add Tags',
-        route: '/dashboard/profile',
-        category: 'stand-out',
-        timeEstimate: '2 min'
-      });
-    }
   }
 
   return items;

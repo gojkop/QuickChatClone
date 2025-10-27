@@ -94,8 +94,19 @@ function AccountSettingsPage() {
     if (showDeleteConfirm) {
       setIsDeleting(true);
       try {
-        // Call backend endpoint to delete account
-        await apiClient.delete('/users/delete-account');
+        // Call Vercel endpoint to delete account (handles media cleanup + email)
+        const response = await fetch('/api/users/delete-account', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('qc_token')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete account');
+        }
 
         // Clear authentication and redirect to home
         localStorage.removeItem('qc_token');

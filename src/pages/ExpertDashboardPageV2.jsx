@@ -77,8 +77,9 @@ function ExpertDashboardPageV2() {
   }, [updateAvailability]);
 
   // Check if expert needs onboarding or profile completion card
+  // Re-check whenever expertProfile changes to update card in real-time
   useEffect(() => {
-    if (!profileLoading && expertProfile && !onboardingChecked) {
+    if (!profileLoading && expertProfile) {
       const hasHandle = !!expertProfile.handle;
       const hasPrice = !!expertProfile.tier1_price_cents;
       const hasSLA = !!expertProfile.tier1_sla_hours;
@@ -94,7 +95,9 @@ function ExpertDashboardPageV2() {
         setShowOnboarding(false);
       }
 
-      setOnboardingChecked(true);
+      if (!onboardingChecked) {
+        setOnboardingChecked(true);
+      }
     }
   }, [profileLoading, expertProfile, onboardingChecked]);
 

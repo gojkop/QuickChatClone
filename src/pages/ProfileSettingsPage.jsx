@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '@/api';
+import { useProfile } from '@/context/ProfileContext';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
 import AvatarUpload from '@/components/dashboard/AvatarUpload';
 import CharityDonationSelector from '@/components/dashboard/CharityDonationSelector';
@@ -12,6 +13,7 @@ import { Twitter, Linkedin, Github, Globe, ArrowLeft, AlertCircle, CheckCircle2 
 
 function ProfileSettingsPage() {
   const navigate = useNavigate();
+  const { refetch: refetchProfile } = useProfile();
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -355,6 +357,11 @@ function ProfileSettingsPage() {
       setHasUnsavedChanges(false);
       initialFormData.current = formData;
       setTimeout(() => setSuccessMessage(''), 3000);
+
+      // Refetch profile in ProfileContext to update dashboard card
+      if (refetchProfile) {
+        refetchProfile();
+      }
 
       // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
