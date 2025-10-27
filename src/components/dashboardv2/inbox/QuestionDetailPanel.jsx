@@ -452,9 +452,9 @@ function QuestionDetailPanel({
     `}>
       {/* Header */}
       <div className={`flex-shrink-0 border-b border-gray-200 bg-white ${isMobile ? 'pt-16' : ''}`}>
-        <div className="p-2 md:p-3 lg:p-4">
+        <div className={isMobile ? "p-2" : "p-3 lg:p-4"}>
           {/* Mobile: Stack layout */}
-          <div className="md:hidden space-y-1.5">
+          <div className={isMobile ? "space-y-1.5" : "hidden"}>
             {/* Row 1: Back button + Price */}
             <div className="flex items-center justify-between">
               <button
@@ -492,7 +492,7 @@ function QuestionDetailPanel({
           </div>
 
           {/* Desktop: Original horizontal layout */}
-          <div className="hidden md:block">
+          <div className={isMobile ? "hidden" : "block"}>
             <div className="flex items-start justify-between gap-3">
               {/* Left: Back Arrow + Title */}
               <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -539,7 +539,7 @@ function QuestionDetailPanel({
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-24 md:pb-0">
+      <div className={`flex-1 overflow-y-auto overscroll-contain ${isMobile ? 'pb-24' : 'pb-0'}`}>
         <div className="p-3 lg:p-4 space-y-4">
           
           {/* Question Metadata */}
@@ -898,7 +898,7 @@ function QuestionDetailPanel({
           )}
 
           {/* Mobile: Inline Actions */}
-          <div className="md:hidden mt-4">
+          <div className={isMobile ? "mt-4" : "hidden"}>
             {isPendingOffer ? (
               <div className="flex flex-col gap-2">
                 {/* Pending Offer Info */}
@@ -1004,7 +1004,7 @@ function QuestionDetailPanel({
       </div>
 
       {/* Footer Actions - Desktop Only */}
-      <div className="hidden md:flex flex-shrink-0 p-3 lg:p-4 border-t border-gray-200 bg-gray-50">
+      <div className={isMobile ? "hidden" : "flex flex-shrink-0 p-3 lg:p-4 border-t border-gray-200 bg-gray-50"}>
         {isPendingOffer ? (
           <div className="flex flex-col gap-2">
             {/* Pending Offer Info */}

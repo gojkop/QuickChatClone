@@ -1039,6 +1039,7 @@ function ExpertInboxPageV2() {
             profile={profile}
             onClose={() => closePanel('answer')}
             onAnswerSubmitted={handleAnswerSubmitted}
+            isMobile={screenWidth < 1024}
           />
         );
 

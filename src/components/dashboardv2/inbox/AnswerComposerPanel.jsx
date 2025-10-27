@@ -10,7 +10,8 @@ function AnswerComposerPanel({
   question,
   profile,
   onClose,
-  onAnswerSubmitted
+  onAnswerSubmitted,
+  isMobile = false
 }) {
   const [showReview, setShowReview] = useState(false);
   const [answerData, setAnswerData] = useState(null);
@@ -78,7 +79,7 @@ function AnswerComposerPanel({
     <div className="h-full flex flex-col bg-white relative">
       {/* Header */}
       <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50">
-        <div className="px-3 py-2 md:px-4 md:py-3 flex items-center gap-3">
+        <div className={`${isMobile ? "px-3 py-2" : "px-4 py-3"} flex items-center gap-3`}>
           <button
             onClick={onClose}
             className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
@@ -98,8 +99,8 @@ function AnswerComposerPanel({
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-4 md:pb-0">
-        <div className="p-3 md:p-4 lg:p-6 max-w-4xl mx-auto">
+      <div className={`flex-1 overflow-y-auto overscroll-contain ${isMobile ? 'pb-4' : 'pb-0'}`}>
+        <div className={`${isMobile ? 'p-3' : 'p-4 lg:p-6'} max-w-4xl mx-auto`}>
           {!showReview ? (
             <AnswerRecorder
               question={question}
@@ -145,18 +146,18 @@ function AnswerComposerPanel({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 md:gap-3">
+              <div className={`flex ${isMobile ? 'gap-2' : 'gap-3'}`}>
                 <button
                   onClick={handleEdit}
                   disabled={isSubmitting}
-                  className="flex-1 px-4 py-2.5 md:px-6 md:py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+                  className={`flex-1 ${isMobile ? 'px-4 py-2.5' : 'px-6 py-3'} border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition disabled:opacity-50`}
                 >
                   ← Edit Answer
                 </button>
                 <button
                   onClick={handleSubmitConfirmed}
                   disabled={isSubmitting}
-                  className="flex-1 px-4 py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition disabled:opacity-50"
+                  className={`flex-1 ${isMobile ? 'px-4 py-2.5' : 'px-6 py-3'} bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-lg hover:shadow-lg transition disabled:opacity-50`}
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Answer →'}
                 </button>
