@@ -71,7 +71,8 @@ function AnswerComposerPanel({
   const renderSegmentPreview = (segment, index) => {
     const mode = segment.mode || 'video';
     const duration = segment.duration || 0;
-    const url = segment.playbackUrl || segment.url;
+    // Use blobUrl for immediate playback, fallback to playbackUrl/url after Stream processing
+    const url = segment.blobUrl || segment.playbackUrl || segment.url;
 
     const modeLabel = mode === 'screen' ? 'Screen Recording' :
                      mode === 'audio' ? 'Audio Recording' :
@@ -90,8 +91,7 @@ function AnswerComposerPanel({
         </div>
         {url && mode === 'audio' ? (
           <div className="p-3 bg-gray-900">
-            <audio controls className="w-full" preload="metadata">
-              <source src={url} type="audio/webm" />
+            <audio controls className="w-full" preload="metadata" src={url}>
               Your browser does not support audio playback.
             </audio>
           </div>
@@ -102,8 +102,8 @@ function AnswerComposerPanel({
               className="w-full"
               preload="metadata"
               style={{ maxHeight: '300px' }}
+              src={url}
             >
-              <source src={url} type="video/webm" />
               Your browser does not support video playback.
             </video>
           </div>

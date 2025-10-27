@@ -8,6 +8,41 @@ function QuestionSummaryCard({ composeData, onEdit }) {
 
   const { title, recordings, attachments, text } = composeData;
 
+  // Helper to render recording segment preview
+  const renderRecordingPreview = (recording) => {
+    const mode = recording.mode || 'video';
+    // Use blobUrl for immediate playback, fallback to playbackUrl/url after Stream processing
+    const url = recording.blobUrl || recording.playbackUrl || recording.url;
+
+    if (!url) return null;
+
+    // Audio recording
+    if (mode === 'audio') {
+      return (
+        <div className="mt-2 p-3 bg-gray-900 rounded-lg">
+          <audio controls className="w-full" preload="metadata" src={url}>
+            Your browser does not support audio playback.
+          </audio>
+        </div>
+      );
+    }
+
+    // Video/Screen recording
+    return (
+      <div className="mt-2 rounded-lg overflow-hidden border border-gray-300 bg-black">
+        <video
+          controls
+          className="w-full"
+          preload="metadata"
+          style={{ maxHeight: '250px' }}
+          src={url}
+        >
+          Your browser does not support video playback.
+        </video>
+      </div>
+    );
+  };
+
   // Helper to render attachment preview based on MIME type
   const renderAttachmentPreview = (attachment) => {
     const type = attachment.type || '';
@@ -133,16 +168,19 @@ function QuestionSummaryCard({ composeData, onEdit }) {
       {recordings && recordings.length > 0 && (
         <div className="spacing-sm">
           <p className="text-sm font-semibold text-gray-700 mb-2.5">Recordings</p>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {recordings.map((recording, index) => (
-              <div 
-                key={index} 
-                className="flex items-center gap-2.5 text-sm text-gray-700 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-lg px-3 py-2.5 border border-gray-200/50"
+              <div
+                key={index}
+                className="bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-lg border border-gray-200/50 overflow-hidden"
               >
-                <div className="w-2 h-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full"></div>
-                <span className="capitalize font-medium">{recording.mode || 'recording'}</span>
-                <span className="text-gray-400">•</span>
-                <span className="font-semibold">{Math.floor(recording.duration || 0)}s</span>
+                <div className="flex items-center gap-2.5 text-sm text-gray-700 px-3 py-2.5">
+                  <div className="w-2 h-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full"></div>
+                  <span className="capitalize font-medium">{recording.mode || 'recording'}</span>
+                  <span className="text-gray-400">•</span>
+                  <span className="font-semibold">{Math.floor(recording.duration || 0)}s</span>
+                </div>
+                {renderRecordingPreview(recording)}
               </div>
             ))}
           </div>
