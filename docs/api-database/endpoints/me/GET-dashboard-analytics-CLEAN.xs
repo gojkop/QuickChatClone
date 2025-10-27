@@ -27,6 +27,12 @@ query "me/dashboard-analytics" verb=GET {
         var monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
         var monthStartSeconds = Math.floor(monthStart.getTime() / 1000);
         var monthEndSeconds = Math.floor(monthEnd.getTime() / 1000);
+
+        return {
+          nowSeconds: nowSeconds,
+          monthStartSeconds: monthStartSeconds,
+          monthEndSeconds: monthEndSeconds
+        };
       """
       timeout = 10
     } as $timestamps
@@ -93,6 +99,19 @@ query "me/dashboard-analytics" verb=GET {
         var avgRevenuePerQuestion = thisMonthAnsweredCount > 0 ? parseFloat((thisMonthRevenueCents / 100 / thisMonthAnsweredCount).toFixed(2)) : 0;
         var slaComplianceRate = answeredCount > 0 ? parseFloat(((slaComplianceCount / answeredCount) * 100).toFixed(1)) : 0;
         var thisMonthRevenue = parseFloat((thisMonthRevenueCents / 100).toFixed(2));
+
+        return {
+          thisMonthRevenue: thisMonthRevenue,
+          avgResponseTime: avgResponseTime,
+          avgRating: avgRating,
+          urgentCount: urgentCount,
+          pendingCount: pendingCount,
+          answeredCount: answeredCount,
+          thisMonthAnsweredCount: thisMonthAnsweredCount,
+          avgRevenuePerQuestion: avgRevenuePerQuestion,
+          slaComplianceRate: slaComplianceRate,
+          totalQuestions: questions.length
+        };
       """
       timeout = 10
     } as $metrics
