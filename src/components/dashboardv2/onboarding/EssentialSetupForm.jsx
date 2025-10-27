@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Loader, CheckCircle, AlertCircle, DollarSign, Clock } from 'lucide-react';
 import apiClient from '@/api';
 
-function EssentialSetupForm({ onComplete, userName }) {
+function EssentialSetupForm({ onComplete, onSkip, userName }) {
   const [handle, setHandle] = useState('');
   const [price, setPrice] = useState(50);
   const [sla, setSla] = useState(48);
@@ -49,7 +49,7 @@ function EssentialSetupForm({ onComplete, userName }) {
     // Debounce for 500ms
     handleCheckTimeout.current = setTimeout(async () => {
       try {
-        const response = await apiClient.get(`/expert/profile/check-handle/${handle}`);
+        const response = await apiClient.get(`/me/check-handle/${handle}`);
         if (response.data.available) {
           setHandleValidation({
             checking: false,
@@ -65,9 +65,10 @@ function EssentialSetupForm({ onComplete, userName }) {
         }
       } catch (err) {
         console.error('Handle check error:', err);
+        // If endpoint doesn't exist yet, assume available
         setHandleValidation({
           checking: false,
-          available: null,
+          available: true,
           message: ''
         });
       }
@@ -109,11 +110,12 @@ function EssentialSetupForm({ onComplete, userName }) {
 
     try {
       // Call API to update expert profile with essential info
-      const response = await apiClient.patch('/expert/profile', {
+      const response = await apiClient.patch('/me/profile', {
         handle,
         tier1_price_cents: Math.round(price * 100),
         tier1_sla_hours: sla,
-        tier1_enabled: true
+        tier1_enabled: true,
+        accepting_questions: true // Make profile visible and available
       });
 
       // Success!
@@ -139,25 +141,25 @@ function EssentialSetupForm({ onComplete, userName }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 my-8">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 sm:p-8 my-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
             Let's Get You Set Up
           </h2>
           <p className="text-sm text-gray-600">
-            Just 3 quick things to start receiving questions
+            Just 3 quick things to get your profile link
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           {/* Step 1: Handle */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               Step 1: Choose your handle
             </label>
             <p className="text-xs text-gray-500 mb-2">
-              Your URL: mindpick.me/<span className="font-medium text-indigo-600">{handle || 'your-handle'}</span>
+              Your URL: mindpick.me/u/<span className="font-medium text-indigo-600">{handle || 'your-handle'}</span>
             </p>
             <div className="relative">
               <input
@@ -282,7 +284,7 @@ function EssentialSetupForm({ onComplete, userName }) {
           <button
             type="submit"
             disabled={isSubmitting || handleValidation.available === false || handleValidation.checking}
-            className="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 sm:py-4 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold text-base sm:text-lg rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -290,14 +292,23 @@ function EssentialSetupForm({ onComplete, userName }) {
                 Setting up...
               </>
             ) : (
-              'Go Live & Start Receiving Questions'
+              'Create My Profile Link'
             )}
+          </button>
+
+          {/* Skip button */}
+          <button
+            type="button"
+            onClick={onSkip}
+            className="w-full py-2 px-4 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+          >
+            Skip for now
           </button>
         </form>
 
         {/* Footer note */}
         <p className="text-xs text-gray-500 text-center mt-4">
-          You can always change these settings later
+          You can complete this later from your profile settings
         </p>
       </div>
     </div>

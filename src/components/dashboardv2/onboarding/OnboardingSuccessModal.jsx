@@ -3,7 +3,7 @@ import { CheckCircle, Copy, Linkedin, Mail, ExternalLink } from 'lucide-react';
 
 function OnboardingSuccessModal({ handle, onContinue }) {
   const [copied, setCopied] = useState(false);
-  const profileUrl = `https://mindpick.me/${handle}`;
+  const profileUrl = `https://mindpick.me/u/${handle}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(profileUrl);
@@ -25,7 +25,7 @@ function OnboardingSuccessModal({ handle, onContinue }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 sm:p-8">
         {/* Success Icon */}
         <div className="flex justify-center mb-6">
           <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center animate-scale-in">
@@ -34,12 +34,12 @@ function OnboardingSuccessModal({ handle, onContinue }) {
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-3">
           You're Live! 🎉
         </h1>
 
         {/* Subtitle */}
-        <p className="text-lg text-gray-600 text-center mb-8">
+        <p className="text-base sm:text-lg text-gray-600 text-center mb-6 sm:mb-8">
           Your expert profile is ready to receive questions
         </p>
 
