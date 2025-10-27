@@ -863,12 +863,14 @@ function QuestionDetailPanel({
                       ? JSON.parse(segment.metadata)
                       : segment.metadata || {};
 
-                    const isVideo = metadata.mode === 'video' ||
-                                    metadata.mode === 'screen' ||
-                                    metadata.mode === 'screen-camera' ||
-                                    segment.provider === 'cloudflare_stream' ||
-                                    segment.url?.includes('cloudflarestream.com');
-                    const isAudio = metadata.mode === 'audio' || !isVideo;
+                    const isAudio = metadata.mode === 'audio';
+                    const isVideo = !isAudio && (
+                      metadata.mode === 'video' ||
+                      metadata.mode === 'screen' ||
+                      metadata.mode === 'screen-camera' ||
+                      segment.provider === 'cloudflare_stream' ||
+                      segment.url?.includes('cloudflarestream.com')
+                    );
 
                     // Check if this is actually a Cloudflare Stream video (not R2)
                     const isCloudflareStream = segment.provider === 'cloudflare_stream' || segment.url?.includes('cloudflarestream.com');

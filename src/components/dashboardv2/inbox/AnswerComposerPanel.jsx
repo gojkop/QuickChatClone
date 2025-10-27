@@ -70,11 +70,15 @@ function AnswerComposerPanel({
   // Helper to render recording segment preview
   const renderSegmentPreview = (segment, index) => {
     console.log('🎬 [SEGMENT PREVIEW] Rendering segment:', segment);
+    console.log('🎬 [SEGMENT PREVIEW] segment.blobUrl:', segment.blobUrl);
+    console.log('🎬 [SEGMENT PREVIEW] segment.playbackUrl:', segment.playbackUrl);
+    console.log('🎬 [SEGMENT PREVIEW] segment.url:', segment.url);
     const mode = segment.mode || 'video';
     const duration = segment.duration || 0;
     // Use blobUrl for immediate playback, fallback to playbackUrl/url after Stream processing
     const url = segment.blobUrl || segment.playbackUrl || segment.url;
     console.log('🎬 [SEGMENT PREVIEW] Resolved URL:', url, '| mode:', mode, '| duration:', duration);
+    console.log('🎬 [SEGMENT PREVIEW] Using URL type:', segment.blobUrl ? 'blobUrl' : segment.playbackUrl ? 'playbackUrl' : 'url');
 
     const modeLabel = mode === 'screen' ? 'Screen Recording' :
                      mode === 'audio' ? 'Audio Recording' :
