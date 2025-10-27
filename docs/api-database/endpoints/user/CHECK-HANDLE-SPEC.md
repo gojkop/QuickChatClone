@@ -2,6 +2,8 @@
 
 **Created:** January 27, 2025
 **Endpoint:** `GET /expert/profile/check-handle/{handle}`
+**API Group:** Public API (`api:BQW1GS7L`)
+**Full URL:** `https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L/expert/profile/check-handle/{handle}`
 **File:** `check-handle.xs`
 **Status:** ✅ Production Ready
 
@@ -17,6 +19,7 @@ Checks if an expert profile handle is available for use. This endpoint is used d
 
 **URL:** `/expert/profile/check-handle/{handle}`
 **Method:** `GET`
+**API Group:** Public API (`api:BQW1GS7L`)
 **Authentication:** Public (no auth required)
 
 ### Path Parameters
