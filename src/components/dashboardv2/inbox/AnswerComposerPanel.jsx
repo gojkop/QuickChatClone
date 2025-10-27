@@ -69,10 +69,12 @@ function AnswerComposerPanel({
 
   // Helper to render recording segment preview
   const renderSegmentPreview = (segment, index) => {
+    console.log('🎬 [SEGMENT PREVIEW] Rendering segment:', segment);
     const mode = segment.mode || 'video';
     const duration = segment.duration || 0;
     // Use blobUrl for immediate playback, fallback to playbackUrl/url after Stream processing
     const url = segment.blobUrl || segment.playbackUrl || segment.url;
+    console.log('🎬 [SEGMENT PREVIEW] Resolved URL:', url, '| mode:', mode, '| duration:', duration);
 
     const modeLabel = mode === 'screen' ? 'Screen Recording' :
                      mode === 'audio' ? 'Audio Recording' :
@@ -114,9 +116,11 @@ function AnswerComposerPanel({
 
   // Helper to render attachment preview
   const renderAttachmentPreview = (attachment, index) => {
+    console.log('📎 [ATTACHMENT PREVIEW] Rendering attachment:', attachment);
     const type = attachment.type || '';
     const url = attachment.url || '';
     const name = attachment.name || attachment.filename || `Attachment ${index + 1}`;
+    console.log('📎 [ATTACHMENT PREVIEW] URL:', url, '| type:', type, '| name:', name);
 
     return (
       <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
@@ -211,6 +215,8 @@ function AnswerComposerPanel({
             />
           ) : (
             <div className="space-y-4">
+              {console.log('📋 [ANSWER REVIEW] Showing review with answerData:', answerData)}
+              {console.log('📋 [ANSWER REVIEW] Recording segments:', answerData?.recordingSegments?.length || 0, '| Attachments:', answerData?.attachments?.length || 0)}
               {/* Review Summary */}
               <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Review Your Answer</h3>
@@ -230,6 +236,7 @@ function AnswerComposerPanel({
                       Recording: {answerData.recordingSegments.length} segment(s) • Total: {Math.round(answerData.recordingDuration || 0)}s
                     </h4>
                     <div className="space-y-3">
+                      {console.log('🎬 [RECORDING SEGMENTS] Rendering', answerData.recordingSegments.length, 'segments:', answerData.recordingSegments)}
                       {answerData.recordingSegments.map((segment, index) => renderSegmentPreview(segment, index))}
                     </div>
                   </div>
@@ -241,6 +248,7 @@ function AnswerComposerPanel({
                       Attachments: {answerData.attachments.length} file(s)
                     </h4>
                     <div className="space-y-3">
+                      {console.log('📎 [ATTACHMENTS] Rendering', answerData.attachments.length, 'attachments:', answerData.attachments)}
                       {answerData.attachments.map((attachment, index) => renderAttachmentPreview(attachment, index))}
                     </div>
                   </div>

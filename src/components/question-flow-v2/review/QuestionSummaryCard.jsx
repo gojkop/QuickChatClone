@@ -2,19 +2,27 @@ import React from 'react';
 import { EditIcon } from '../shared/SVGIcons';
 
 function QuestionSummaryCard({ composeData, onEdit }) {
+  console.log('📋 [QUESTION SUMMARY] Component rendered with composeData:', composeData);
+
   if (!composeData) {
     return null;
   }
 
   const { title, recordings, attachments, text } = composeData;
+  console.log('📋 [QUESTION SUMMARY] Extracted data - recordings:', recordings?.length || 0, '| attachments:', attachments?.length || 0);
 
   // Helper to render recording segment preview
   const renderRecordingPreview = (recording) => {
+    console.log('🎬 [RECORDING PREVIEW] Rendering recording:', recording);
     const mode = recording.mode || 'video';
     // Use blobUrl for immediate playback, fallback to playbackUrl/url after Stream processing
     const url = recording.blobUrl || recording.playbackUrl || recording.url;
+    console.log('🎬 [RECORDING PREVIEW] Resolved URL:', url, '| mode:', mode);
 
-    if (!url) return null;
+    if (!url) {
+      console.warn('⚠️ [RECORDING PREVIEW] No URL available for recording:', recording);
+      return null;
+    }
 
     // Audio recording
     if (mode === 'audio') {
@@ -45,9 +53,11 @@ function QuestionSummaryCard({ composeData, onEdit }) {
 
   // Helper to render attachment preview based on MIME type
   const renderAttachmentPreview = (attachment) => {
+    console.log('📎 [ATTACHMENT PREVIEW] Rendering attachment:', attachment);
     const type = attachment.type || '';
     const url = attachment.url || '';
     const name = attachment.name || attachment.filename || 'Attachment';
+    console.log('📎 [ATTACHMENT PREVIEW] URL:', url, '| type:', type, '| name:', name);
 
     // Video files
     if (type.startsWith('video/')) {
@@ -169,6 +179,7 @@ function QuestionSummaryCard({ composeData, onEdit }) {
         <div className="spacing-sm">
           <p className="text-sm font-semibold text-gray-700 mb-2.5">Recordings</p>
           <div className="space-y-3">
+            {console.log('🎬 [RECORDINGS] Rendering', recordings.length, 'recordings:', recordings)}
             {recordings.map((recording, index) => (
               <div
                 key={index}
@@ -192,6 +203,7 @@ function QuestionSummaryCard({ composeData, onEdit }) {
         <div className="spacing-sm">
           <p className="text-sm font-semibold text-gray-700 mb-2.5">Attachments</p>
           <div className="space-y-3">
+            {console.log('📎 [ATTACHMENTS] Rendering', attachments.length, 'attachments:', attachments)}
             {attachments.map((attachment, index) => (
               <div
                 key={index}
