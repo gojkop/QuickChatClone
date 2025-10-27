@@ -581,16 +581,19 @@ function QuestionDetailPanel({
                 {mediaSegments
                   .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
                   .map((segment, index) => {
-                    const metadata = typeof segment.metadata === 'string' 
-                      ? JSON.parse(segment.metadata) 
+                    const metadata = typeof segment.metadata === 'string'
+                      ? JSON.parse(segment.metadata)
                       : segment.metadata || {};
-                    
-                    const isVideo = metadata.mode === 'video' ||
-                                    metadata.mode === 'screen' ||
-                                    metadata.mode === 'screen-camera' ||
-                                    segment.provider === 'cloudflare_stream' ||
-                                    segment.url?.includes('cloudflarestream.com');
-                    const isAudio = metadata.mode === 'audio' || !isVideo;
+
+                    // Check metadata.mode first, then fall back to provider/URL detection
+                    const isAudio = metadata.mode === 'audio';
+                    const isVideo = !isAudio && (
+                      metadata.mode === 'video' ||
+                      metadata.mode === 'screen' ||
+                      metadata.mode === 'screen-camera' ||
+                      segment.provider === 'cloudflare_stream' ||
+                      segment.url?.includes('cloudflarestream.com')
+                    );
 
                     const videoId = isVideo ? (segment.asset_id || getStreamVideoId(segment.url)) : null;
                     const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
