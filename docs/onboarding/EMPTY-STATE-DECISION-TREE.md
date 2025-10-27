@@ -34,7 +34,10 @@ Is profile complete (≥80%)?
 │
 └─ YES (Profile complete)
    ├─ Message: "Share your link to get your first question"
-   └─ CTA: "Share Your Profile →" (navigates to /dashboard/marketing)
+   └─ CTA: "Show Share Options" (expands inline share actions)
+      ├─ Copy Link - Copies profile URL to clipboard
+      ├─ Post on LinkedIn - Opens LinkedIn share dialog
+      └─ Email Signature - Copies signature text to clipboard
 ```
 
 **Logic:**
@@ -45,7 +48,8 @@ const isProfileComplete = profileStrength >= 80;
 if (!isProfileComplete) {
   // Show: Complete Profile CTA
 } else {
-  // Show: Share Your Profile CTA
+  // Show: Inline share options (Copy, LinkedIn, Email)
+  // NOTE: Marketing module is too advanced for new experts
 }
 ```
 
@@ -231,10 +235,15 @@ Priority: Complete profile
 1. **CTA:** Complete Profile
 2. **Messaging:** "Complete your profile to start receiving questions"
 
-### **Profile Complete (≥80%):**
-Priority: Get more questions
-1. **CTA:** Share Your Profile
-2. **Messaging:** "Share your link to get your first question"
+### **Profile Complete (≥80%) - New Expert:**
+Priority: Get first question via simple sharing
+1. **Primary CTA:** Show Share Options (inline)
+2. **Share Actions:**
+   - Copy Link → Clipboard
+   - Post on LinkedIn → Opens share dialog
+   - Email Signature → Copies signature template
+3. **Messaging:** "Share your link to get your first question"
+4. **Note:** Marketing module is too advanced for new experts
 
 ---
 
@@ -253,7 +262,7 @@ Priority: Get more questions
 - Total questions: 0
 - Answered questions: 0
 - **Expected:**
-  - Dashboard widget: "Share Your Profile" CTA
+  - Dashboard widget: "Show Share Options" CTA with inline actions (Copy, LinkedIn, Email)
   - Inbox page: InboxEmptyState with share actions
 
 ### **Test Case 3: Experienced Expert - All Caught Up**
@@ -262,7 +271,7 @@ Priority: Get more questions
 - Answered questions: 15
 - Pending questions: 0
 - **Expected:**
-  - Dashboard widget: "Share Your Profile" CTA
+  - Dashboard widget: "Show Share Options" CTA with inline actions
   - Inbox page: InboxEmptyStateExperienced ("All caught up!")
 
 ### **Test Case 4: Experienced Expert - Filter Active**

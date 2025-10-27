@@ -3,6 +3,8 @@ import { useMarketing } from '@/hooks/useMarketing';
 import { useProfile } from '@/context/ProfileContext';
 import { useQuestionsQuery } from '@/hooks/useQuestionsQuery';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
+import DashboardPageHeader from '@/components/dashboardv2/layout/DashboardPageHeader';
+import DashboardPageContent from '@/components/dashboardv2/layout/DashboardPageContent';
 import MarketingLayout from '@/components/dashboardv2/marketing/MarketingLayout';
 import MarketingDebugger from '@/components/dashboardv2/marketing/MarketingDebugger';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
@@ -87,16 +89,18 @@ console.log('Value:', questions);
       {isLoading ? (
         <LoadingState text="Loading marketing data..." />
       ) : (
-        <>
-          {/* BETA Badge - Optional */}
-          <div className="flex items-center gap-2 mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Marketing</h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-50 border border-yellow-200 rounded-lg text-xs font-bold text-yellow-800">
-              <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
-              BETA
-            </span>
-          </div>
-          
+        <DashboardPageContent maxWidth="7xl">
+          <DashboardPageHeader
+            title="Marketing"
+            subtitle="Track campaign performance and grow your audience"
+            badge={
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-50 border border-yellow-200 rounded-lg text-xs font-bold text-yellow-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
+                BETA
+              </span>
+            }
+          />
+
           <MarketingLayout
             campaigns={campaigns}
             trafficSources={trafficSources}
@@ -107,9 +111,9 @@ console.log('Value:', questions);
             isLoading={isLoading}
             createCampaign={createCampaign}
           />
-          
+
           {import.meta.env.MODE === 'development' && <MarketingDebugger />}
-        </>
+        </DashboardPageContent>
       )}
     </DashboardLayout>
   );
