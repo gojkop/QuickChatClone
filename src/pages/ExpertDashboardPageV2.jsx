@@ -81,13 +81,6 @@ function ExpertDashboardPageV2() {
   // When analytics endpoint is implemented, this will automatically switch to server-side
   const metrics = useMetrics(shouldUseFallback ? questions : [], analyticsData);
 
-  // Debug: Log analytics data and metrics
-  console.log('📊 Dashboard Analytics Debug:', {
-    analyticsData,
-    shouldUseFallback,
-    questionsCount: questions.length,
-    metrics
-  });
 
   const dashboardData = useMemo(() => ({
     pendingCount: metrics.pendingCount || 0,
