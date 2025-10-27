@@ -3,7 +3,7 @@
 
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 
 function MediaPlayerModal({
   segment,
@@ -31,9 +31,12 @@ function MediaPlayerModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose, onNavigate, hasPrevious, hasNext]);
 
-  // Lock body scroll when modal is open
+  // Lock body scroll when modal is open (desktop only to avoid mobile panel issues)
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) {
+      document.body.style.overflow = 'hidden';
+    }
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -67,6 +70,9 @@ function MediaPlayerModal({
   const isVideo = mode === 'video' || mode === 'screen' || mode === 'screen-camera';
   const isAudio = mode === 'audio';
 
+  // Check if this is a Cloudflare Stream video (not R2)
+  const isCloudflareStream = segment.provider === 'cloudflare_stream' || segment.url?.includes('cloudflarestream.com');
+
   // Extract Cloudflare video ID and customer code from URL
   const getCloudflareInfo = (url) => {
     if (!url) return { videoId: null, customerCode: null };
@@ -83,7 +89,7 @@ function MediaPlayerModal({
   };
 
   const { videoId, customerCode } = getCloudflareInfo(segment.url);
-  const useCloudflarePlayer = isVideo && videoId;
+  const useCloudflarePlayer = isVideo && videoId && isCloudflareStream;
 
   return (
     <AnimatePresence>
@@ -210,7 +216,15 @@ function MediaPlayerModal({
           className="flex md:hidden flex-col bg-black w-full h-full"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-900 text-white">
+          <div className="flex items-center gap-3 px-4 py-3 bg-gray-900 text-white">
+            <button
+              onClick={onClose}
+              className="flex-shrink-0 p-2 text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+              style={{ touchAction: 'auto' }}
+              aria-label="Close and go back"
+            >
+              <ArrowLeft size={24} />
+            </button>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold truncate">
                 Part {currentIndex + 1} - {modeLabel}
@@ -219,13 +233,6 @@ function MediaPlayerModal({
                 {formatDuration(duration)}
               </p>
             </div>
-            <button
-              onClick={onClose}
-              className="flex-shrink-0 p-2 text-white hover:bg-gray-800 rounded-lg transition-colors ml-2"
-              style={{ touchAction: 'auto' }}
-            >
-              <X size={20} />
-            </button>
           </div>
 
           {/* Player */}
