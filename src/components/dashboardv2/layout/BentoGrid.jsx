@@ -4,11 +4,11 @@ import React from 'react';
 function BentoGrid({ children, className = '' }) {
   return (
     <div className={`
-      grid 
-      grid-cols-1 
-      sm:grid-cols-2 
-      lg:grid-cols-4 
-      gap-2.5
+      grid
+      grid-cols-2
+      lg:grid-cols-4
+      gap-2
+      sm:gap-2.5
       auto-rows-fr
       ${className}
     `}>

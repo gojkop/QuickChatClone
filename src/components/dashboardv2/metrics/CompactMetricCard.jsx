@@ -24,38 +24,64 @@ function CompactMetricCard({
     : '0';
 
   return (
-    <div 
-      className="h-full flex flex-col justify-between cursor-pointer group"
+    <div
+      className="h-full cursor-pointer group"
       onClick={onClick}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-1.5 flex-shrink-0">
-        <span className="text-xs font-medium text-gray-600">{label}</span>
+      {/* Mobile: Compact vertical centered layout */}
+      <div className="flex sm:hidden flex-col items-center text-center justify-center h-full gap-1">
         {Icon && (
-          <div className={`p-1.5 rounded-lg shadow-sm ${colorClasses[color]} transition-transform group-hover:scale-110 flex-shrink-0`}>
-            <Icon size={13} strokeWidth={2.5} />
+          <div className={`p-1.5 rounded-lg shadow-sm ${colorClasses[color]} transition-transform group-hover:scale-110`}>
+            <Icon size={12} strokeWidth={2.5} />
+          </div>
+        )}
+        <span className="text-[10px] font-medium text-gray-600 leading-tight">{label}</span>
+        <h3 className="text-base font-black text-gray-900 tracking-tight">
+          {displayValue}
+        </h3>
+        {trend !== null && !isNaN(trend) && (
+          <div className={`text-[10px] font-semibold ${
+            trend >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {trend >= 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
+          </div>
+        )}
+        {subtitle && (
+          <p className="text-[9px] text-gray-500 leading-tight">{subtitle}</p>
+        )}
+      </div>
+
+      {/* Desktop: Original horizontal layout */}
+      <div className="hidden sm:flex flex-col justify-between h-full">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-1.5 flex-shrink-0">
+          <span className="text-xs font-medium text-gray-600">{label}</span>
+          {Icon && (
+            <div className={`p-1.5 rounded-lg shadow-sm ${colorClasses[color]} transition-transform group-hover:scale-110 flex-shrink-0`}>
+              <Icon size={13} strokeWidth={2.5} />
+            </div>
+          )}
+        </div>
+
+        {/* Value */}
+        <div className="flex-1 flex flex-col justify-center">
+          <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+            {displayValue}
+          </h3>
+          {subtitle && (
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          )}
+        </div>
+
+        {/* Trend */}
+        {trend !== null && !isNaN(trend) && (
+          <div className={`text-xs font-semibold mt-1 flex-shrink-0 ${
+            trend >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {trend >= 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
           </div>
         )}
       </div>
-
-      {/* Value */}
-      <div className="flex-1 flex flex-col justify-center">
-        <h3 className="text-2xl font-black text-gray-900 tracking-tight">
-          {displayValue}
-        </h3>
-        {subtitle && (
-          <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
-        )}
-      </div>
-
-      {/* Trend */}
-      {trend !== null && !isNaN(trend) && (
-        <div className={`text-xs font-semibold mt-1 flex-shrink-0 ${
-          trend >= 0 ? 'text-green-600' : 'text-red-600'
-        }`}>
-          {trend >= 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
-        </div>
-      )}
     </div>
   );
 }
