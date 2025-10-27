@@ -10,8 +10,13 @@ import SLACountdown from './SLACountdown';
 
 const MAX_RECORDING_SECONDS = 900; // 15 minutes for answers
 
-function AnswerRecorder({ question, onReady, onCancel, expert }) {
-  const [text, setText] = useState('');
+function AnswerRecorder({ question, onReady, onCancel, expert, initialText = '' }) {
+  const [text, setText] = useState(initialText);
+
+  console.log('🎬 [ANSWER RECORDER] Component initialized with initialText:', {
+    hasInitialText: !!initialText,
+    initialTextLength: initialText?.length || 0
+  });
   const [segments, setSegments] = useState([]);
   const [currentSegment, setCurrentSegment] = useState(null);
   const [recordingState, setRecordingState] = useState('idle');
@@ -22,6 +27,14 @@ function AnswerRecorder({ question, onReady, onCancel, expert }) {
 
   const segmentUpload = useRecordingSegmentUpload();
   const attachmentUpload = useAttachmentUpload();
+
+  // Update text when initialText prop changes (e.g., when returning from edit)
+  useEffect(() => {
+    if (initialText) {
+      console.log('📝 [ANSWER RECORDER] Restoring text from initialText:', initialText.length, 'chars');
+      setText(initialText);
+    }
+  }, [initialText]);
 
   const totalDuration = segments.reduce((sum, seg) => {
     const dur = (seg.duration >= 0) ? seg.duration : 0;

@@ -41,6 +41,11 @@ function AskQuestionPage() {
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Track isSubmitting state changes for debugging
+  useEffect(() => {
+    console.log('📊 [PAYMENT FLOW] AskQuestionPage isSubmitting changed:', isSubmitting);
+  }, [isSubmitting]);
+
   useEffect(() => {
     const fetchExpertProfile = async () => {
       const params = new URLSearchParams(location.search);
@@ -136,14 +141,20 @@ function AskQuestionPage() {
 
   const handlePaymentStart = () => {
     // Set submitting state immediately when payment processing begins
-    console.log("💳 Payment processing started, showing loader...");
+    console.log("💳 [PAYMENT FLOW] Payment processing started");
+    console.log("🔄 [PAYMENT FLOW] Setting isSubmitting=true");
     setIsSubmitting(true);
+    console.log("✅ [PAYMENT FLOW] Loader should be visible now");
   };
 
   const handlePaymentSuccess = async (paymentIntentId) => {
+    console.log("💳 [PAYMENT FLOW] handlePaymentSuccess called");
+    console.log("📊 [PAYMENT FLOW] Current isSubmitting:", isSubmitting);
+    console.log("💳 [PAYMENT FLOW] Payment Intent ID:", paymentIntentId);
+
     try {
       // isSubmitting is already true from handlePaymentStart
-      console.log("💳 Payment successful, submitting question with payment ID:", paymentIntentId);
+      console.log("💳 [PAYMENT FLOW] Payment successful, starting question submission...");
 
       // ✅ STEP 1: Create media_asset record if recordings exist
       let mediaAssetId = null;
@@ -293,16 +304,26 @@ function AskQuestionPage() {
         params.append('dev_mode', 'true');
 
         const navigationUrl = `/question-sent?${params.toString()}`;
-        console.log('🚀 Navigating to:', navigationUrl);
+        console.log('🚀 [PAYMENT FLOW] Preparing to navigate to:', navigationUrl);
+        console.log('⚠️ [PAYMENT FLOW] KEEPING isSubmitting=true during navigation');
+        console.log('📊 [PAYMENT FLOW] Final isSubmitting state before navigate:', isSubmitting);
 
         // Keep isSubmitting true during navigation - don't set to false
         // The loader will stay active until the new page loads
+        console.log('🌐 [PAYMENT FLOW] Calling navigate() - page will change now');
         navigate(navigationUrl);
+        console.log('✅ [PAYMENT FLOW] navigate() called, component should unmount soon');
       }
 
     } catch (error) {
-      console.error('Submission error:', error);
+      console.error('❌ [PAYMENT FLOW] Submission error:', error);
+      console.error('❌ [PAYMENT FLOW] Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      console.log('🔄 [PAYMENT FLOW] Setting isSubmitting=false due to error');
       setIsSubmitting(false);
+      console.log('✅ [PAYMENT FLOW] Loader should hide now (error state)');
       alert(`Error: ${error.message}`);
 
       const submitButton = document.querySelector('button[type="submit"]');

@@ -187,57 +187,133 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
   };
 
   const handleRecorderReady = (data) => {
-    console.log('🎬 handleReady called - showing inline review');
-    console.log('📦 Answer data:', data);
-    setAnswerData(data);
+    console.log('🎬 [ANSWER FLOW] handleReady called - showing inline review');
+    console.log('📦 [ANSWER FLOW] New answer data received:', {
+      hasText: !!data?.text,
+      textLength: data?.text?.length || 0,
+      recordingSegmentsCount: data?.recordingSegments?.length || 0,
+      attachmentsCount: data?.attachments?.length || 0,
+      recordingDuration: data?.recordingDuration || 0
+    });
+
+    // If we have existing answerData (user edited and came back), merge it
+    if (answerData) {
+      console.log('📦 [ANSWER FLOW] Existing answerData found, merging data');
+      console.log('📦 [ANSWER FLOW] Existing data:', {
+        hasText: !!answerData?.text,
+        textLength: answerData?.text?.length || 0,
+        recordingSegmentsCount: answerData?.recordingSegments?.length || 0,
+        attachmentsCount: answerData?.attachments?.length || 0
+      });
+
+      // Merge: keep existing recordings/attachments, update text
+      const mergedData = {
+        text: data.text || answerData.text, // Use new text, fallback to old
+        recordingSegments: [
+          ...(answerData.recordingSegments || []),
+          ...(data.recordingSegments || [])
+        ], // Combine segments
+        attachments: [
+          ...(answerData.attachments || []),
+          ...(data.attachments || [])
+        ], // Combine attachments
+        recordingMode: data.recordingMode || answerData.recordingMode,
+        recordingDuration: (answerData.recordingDuration || 0) + (data.recordingDuration || 0)
+      };
+
+      console.log('📦 [ANSWER FLOW] Merged data:', {
+        hasText: !!mergedData.text,
+        textLength: mergedData.text?.length || 0,
+        recordingSegmentsCount: mergedData.recordingSegments?.length || 0,
+        attachmentsCount: mergedData.attachments?.length || 0
+      });
+
+      setAnswerData(mergedData);
+    } else {
+      console.log('📦 [ANSWER FLOW] No existing data, using new data as-is');
+      setAnswerData(data);
+    }
+
     setShowReview(true);
     setCurrentStep(3);
+    console.log('✅ [ANSWER FLOW] State updated - showReview=true, currentStep=3');
   };
 
   const handleRecorderCancel = () => {
+    console.log('🚫 [ANSWER FLOW] Recorder cancelled - resetting to step 1');
     setShowAnswerRecorder(false);
     setShowReview(false);
     setCurrentStep(1);
+    console.log('✅ [ANSWER FLOW] States reset - showAnswerRecorder=false, showReview=false');
   };
 
   const handleEdit = () => {
+    console.log('✏️ [ANSWER FLOW] Edit button clicked - returning to recorder');
+    console.log('📦 [ANSWER FLOW] Current answerData before edit:', {
+      hasText: !!answerData?.text,
+      textLength: answerData?.text?.length || 0,
+      recordingSegmentsCount: answerData?.recordingSegments?.length || 0,
+      attachmentsCount: answerData?.attachments?.length || 0
+    });
+    // DON'T reset answerData - keep it so recorder can restore it
     setShowReview(false);
     setCurrentStep(2);
+    console.log('✅ [ANSWER FLOW] Switched back to recorder - showReview=false, currentStep=2');
+    console.log('⚠️ [ANSWER FLOW] IMPORTANT: answerData preserved for restoration');
   };
 
   const handleSubmitConfirmed = async () => {
-    console.log('✅ User confirmed submission');
+    console.log('✅ [ANSWER FLOW] User confirmed submission');
+    console.log('📦 [ANSWER FLOW] Submitting answer with data:', {
+      questionId: question.id,
+      userId: userId,
+      hasText: !!answerData?.text,
+      textLength: answerData?.text?.length || 0,
+      recordingSegmentsCount: answerData?.recordingSegments?.length || 0,
+      attachmentsCount: answerData?.attachments?.length || 0
+    });
+
     setIsSubmitting(true);
     setSubmitError(null);
+    console.log('🔄 [ANSWER FLOW] isSubmitting=true, loader should appear now');
 
     try {
       if (!userId) {
         throw new Error('User ID not found. Please try logging in again.');
       }
 
-      console.log('🚀 Submitting answer...');
+      console.log('🚀 [ANSWER FLOW] Calling answerUpload.submitAnswer...');
       const result = await answerUpload.submitAnswer(answerData, question.id, userId);
-      console.log('✅ Answer submitted successfully:', result);
+      console.log('✅ [ANSWER FLOW] Answer submitted successfully:', result);
+      console.log('⏳ [ANSWER FLOW] Waiting 800ms before triggering callbacks...');
 
       // Reset states
       setShowReview(false);
       setShowAnswerRecorder(false);
       setAnswerData(null);
       setCurrentStep(1);
+      console.log('✅ [ANSWER FLOW] States reset after submission');
 
       // Trigger parent callback after brief delay
       setTimeout(() => {
-        console.log('📍 Triggering onAnswerSubmitted callback');
+        console.log('📍 [ANSWER FLOW] Triggering onAnswerSubmitted callback');
         if (onAnswerSubmitted) {
           onAnswerSubmitted(question.id);
         }
+        console.log('🚪 [ANSWER FLOW] Closing modal...');
         onClose();
+        console.log('✅ [ANSWER FLOW] Modal closed, component will unmount');
       }, 800);
 
     } catch (error) {
-      console.error('❌ Failed to submit answer:', error);
+      console.error('❌ [ANSWER FLOW] Failed to submit answer:', error);
+      console.error('❌ [ANSWER FLOW] Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
       setSubmitError(error.message || 'Failed to submit answer');
       setIsSubmitting(false);
+      console.log('🔄 [ANSWER FLOW] isSubmitting=false due to error, loader should hide');
     }
   };
 
@@ -1096,6 +1172,7 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                       expert={expertProfile}
                       onReady={handleRecorderReady}
                       onCancel={handleRecorderCancel}
+                      initialText={answerData?.text || ''}
                     />
                   ) : (
                     <div className="space-y-4">
@@ -1103,31 +1180,83 @@ function QuestionDetailModal({ isOpen, onClose, question, userId, onAnswerSubmit
                       <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Review Your Answer</h3>
 
-                        {answerData?.text && (
+                        {/* Text Response */}
+                        {answerData?.text && answerData.text.trim() ? (
                           <div className="mb-4">
                             <h4 className="text-sm font-medium text-gray-700 mb-2">Text Response:</h4>
                             <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                               <p className="text-gray-800 whitespace-pre-wrap">{answerData.text}</p>
                             </div>
+                            <p className="text-xs text-gray-500 mt-1">{answerData.text.length} characters</p>
+                          </div>
+                        ) : (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-gray-500 mb-2">Text Response:</h4>
+                            <p className="text-sm text-gray-400 italic">No written text added</p>
                           </div>
                         )}
 
-                        {answerData?.recordingSegments && answerData.recordingSegments.length > 0 && (
+                        {/* Recording Segments */}
+                        {answerData?.recordingSegments && answerData.recordingSegments.length > 0 ? (
                           <div className="mb-4">
                             <h4 className="text-sm font-medium text-gray-700 mb-2">
-                              Recording: {answerData.recordingSegments.length} segment(s)
+                              Recording Segments ({answerData.recordingSegments.length} total):
                             </h4>
-                            <div className="text-sm text-gray-600">
-                              Total duration: {Math.round(answerData.recordingDuration || 0)}s
+                            <div className="space-y-2">
+                              {answerData.recordingSegments.map((segment, idx) => (
+                                <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                                  <span className="text-xs font-mono text-gray-600">#{idx + 1}</span>
+                                  <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-medium uppercase">
+                                    {segment.mode || 'video'}
+                                  </span>
+                                  <span className="text-xs text-gray-600">
+                                    {Math.round(segment.duration || 0)}s
+                                  </span>
+                                  <span className="text-xs text-gray-400 truncate flex-1">
+                                    {segment.uid?.substring(0, 8)}...
+                                  </span>
+                                </div>
+                              ))}
                             </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Total duration: {Math.round(answerData.recordingDuration || 0)} seconds
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-gray-500 mb-2">Recording Segments:</h4>
+                            <p className="text-sm text-gray-400 italic">No recordings added</p>
                           </div>
                         )}
 
-                        {answerData?.attachments && answerData.attachments.length > 0 && (
+                        {/* Attachments */}
+                        {answerData?.attachments && answerData.attachments.length > 0 ? (
                           <div>
                             <h4 className="text-sm font-medium text-gray-700 mb-2">
-                              Attachments: {answerData.attachments.length} file(s)
+                              Attachments ({answerData.attachments.length} file{answerData.attachments.length > 1 ? 's' : ''}):
                             </h4>
+                            <div className="space-y-2">
+                              {answerData.attachments.map((file, idx) => (
+                                <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                                  <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                  </svg>
+                                  <span className="text-sm text-gray-700 truncate flex-1">
+                                    {file.filename || file.name || 'Unnamed file'}
+                                  </span>
+                                  {file.size && (
+                                    <span className="text-xs text-gray-500">
+                                      {(file.size / 1024).toFixed(1)} KB
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-2">Attachments:</h4>
+                            <p className="text-sm text-gray-400 italic">No files attached</p>
                           </div>
                         )}
                       </div>

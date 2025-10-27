@@ -1,7 +1,7 @@
 // src/components/question-flow-v2/payment/StripePaymentForm.jsx
 // Stripe payment form using Stripe Elements
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 function StripePaymentForm({ clientSecret, amount, currency, payerEmail, onSuccess, onError, isSubmitting, onPaymentStart }) {
@@ -10,23 +10,45 @@ function StripePaymentForm({ clientSecret, amount, currency, payerEmail, onSucce
   const [paymentError, setPaymentError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Track state changes for debugging
+  useEffect(() => {
+    console.log('📊 [PAYMENT FLOW] isProcessing changed:', isProcessing);
+  }, [isProcessing]);
+
+  useEffect(() => {
+    console.log('📊 [PAYMENT FLOW] isSubmitting (from parent) changed:', isSubmitting);
+  }, [isSubmitting]);
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
 
+    console.log('🔘 [PAYMENT FLOW] handleSubmit called');
+    console.log('📊 [PAYMENT FLOW] Current states:', {
+      stripeReady: !!stripe,
+      elementsReady: !!elements,
+      isSubmitting: isSubmitting,
+      isProcessing: isProcessing
+    });
+
     if (!stripe || !elements || isSubmitting || isProcessing) {
+      console.log('⚠️ [PAYMENT FLOW] Blocked - conditions not met');
       return;
     }
 
     // Set processing state and notify parent IMMEDIATELY
+    console.log('🔄 [PAYMENT FLOW] Setting isProcessing=true');
     setIsProcessing(true);
     setPaymentError(null);
+    console.log('📢 [PAYMENT FLOW] Calling onPaymentStart callback');
     onPaymentStart?.();
 
     // Small delay to ensure loader renders before Stripe validation blocks UI
+    console.log('⏳ [PAYMENT FLOW] Waiting 50ms for loader to render...');
     await new Promise(resolve => setTimeout(resolve, 50));
 
     try {
-      console.log('🔍 [STRIPE FORM] Confirming payment with client secret:', clientSecret.substring(0, 20) + '...');
+      console.log('🔍 [PAYMENT FLOW] Confirming payment with Stripe...');
+      console.log('🔍 [PAYMENT FLOW] Client secret:', clientSecret.substring(0, 20) + '...');
 
       // Confirm the payment using PaymentElement
       const { error, paymentIntent } = await stripe.confirmPayment({
@@ -37,32 +59,42 @@ function StripePaymentForm({ clientSecret, amount, currency, payerEmail, onSucce
         redirect: 'if_required', // Don't redirect, handle in the same page
       });
 
-      console.log('🔍 [STRIPE FORM] Payment confirmation result:', {
-        error: error?.message,
+      console.log('✅ [PAYMENT FLOW] Stripe confirmPayment completed');
+      console.log('📊 [PAYMENT FLOW] Payment result:', {
+        hasError: !!error,
+        errorMessage: error?.message,
         paymentIntentId: paymentIntent?.id,
         status: paymentIntent?.status,
         captureMethod: paymentIntent?.capture_method
       });
 
       if (error) {
-        console.error('❌ Payment failed:', error.message);
+        console.error('❌ [PAYMENT FLOW] Payment failed:', error.message);
         setPaymentError(error.message);
+        console.log('🔄 [PAYMENT FLOW] Setting isProcessing=false (error)');
         setIsProcessing(false);  // Reset only on error
+        console.log('📢 [PAYMENT FLOW] Calling onError callback');
         onError?.(error);
       } else if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture')) {
-        console.log('✅ Payment confirmed:', paymentIntent.id, 'Status:', paymentIntent.status);
+        console.log('✅ [PAYMENT FLOW] Payment confirmed:', paymentIntent.id, 'Status:', paymentIntent.status);
+        console.log('⚠️ [PAYMENT FLOW] KEEPING isProcessing=true - will stay true until component unmounts');
         // Keep isProcessing=true until page navigation completes
         // Don't call setIsProcessing(false) here - let the unmount handle it
+        console.log('📢 [PAYMENT FLOW] Calling onSuccess callback with paymentIntent');
         onSuccess?.(paymentIntent);
+        console.log('✅ [PAYMENT FLOW] onSuccess callback completed, parent should handle submission now');
       } else if (paymentIntent) {
-        console.warn('⚠️ Payment status:', paymentIntent.status);
+        console.warn('⚠️ [PAYMENT FLOW] Unexpected payment status:', paymentIntent.status);
         setPaymentError(`Payment status: ${paymentIntent.status}`);
+        console.log('🔄 [PAYMENT FLOW] Setting isProcessing=false (unexpected status)');
         setIsProcessing(false);  // Reset on unexpected status
       }
     } catch (err) {
-      console.error('❌ Payment error:', err);
+      console.error('❌ [PAYMENT FLOW] Payment error:', err);
       setPaymentError(err.message || 'An unexpected error occurred');
+      console.log('🔄 [PAYMENT FLOW] Setting isProcessing=false (exception)');
       setIsProcessing(false);  // Reset only on error
+      console.log('📢 [PAYMENT FLOW] Calling onError callback');
       onError?.(err);
     }
   };
