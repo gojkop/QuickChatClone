@@ -126,7 +126,7 @@ function AccountSettingsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout breadcrumbs={[{ label: 'Dashboard', path: '/dashboard' }, { label: 'Account Settings' }]}>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         </div>
@@ -135,7 +135,7 @@ function AccountSettingsPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout breadcrumbs={[{ label: 'Dashboard', path: '/dashboard' }, { label: 'Account Settings' }]}>
       {/* Fixed container with max-width to prevent infinite scrolling */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
