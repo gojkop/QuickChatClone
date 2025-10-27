@@ -1,11 +1,13 @@
 // src/components/dashboardv2/overview/WelcomeHero.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useProfile } from '@/context/ProfileContext';
 import { useQuestionsQuery } from '@/hooks/useQuestionsQuery';
 import QRCodeModal from '@/components/dashboard/QRCodeModal';
 import { Clock, TrendingUp } from 'lucide-react';
 
 function WelcomeHero() {
+  const navigate = useNavigate();
   const { user, expertProfile } = useProfile();
   const { data: questionsData } = useQuestionsQuery({ page: 1, perPage: 10 });
   const [copied, setCopied] = useState(false);
@@ -146,13 +148,17 @@ function WelcomeHero() {
               <span className="text-xs text-gray-600">total</span>
             </div>
 
-            {/* SLA Countdown */}
+            {/* SLA Countdown - Clickable */}
             {urgentSLA && (
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border shadow-sm ${
-                urgentSLA.isUrgent 
-                  ? 'bg-red-50 border-red-200' 
-                  : 'bg-amber-50 border-amber-200'
-              }`}>
+              <button
+                onClick={() => navigate(`/dashboard/inbox#question-${urgentSLA.question.id}`)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border shadow-sm transition-all hover:scale-105 hover:shadow-md cursor-pointer ${
+                  urgentSLA.isUrgent
+                    ? 'bg-red-50 border-red-200 hover:bg-red-100'
+                    : 'bg-amber-50 border-amber-200 hover:bg-amber-100'
+                }`}
+                title="Click to view urgent question"
+              >
                 <Clock size={14} className={urgentSLA.isUrgent ? 'text-red-600' : 'text-amber-600'} />
                 <div className="text-xs">
                   <span className={`font-bold ${urgentSLA.isUrgent ? 'text-red-900' : 'text-amber-900'}`}>
@@ -162,7 +168,7 @@ function WelcomeHero() {
                     until SLA
                   </span>
                 </div>
-              </div>
+              </button>
             )}
           </div>
         </div>

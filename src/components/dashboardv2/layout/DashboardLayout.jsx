@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDashboardLayout } from '@/hooks/dashboardv2/useDashboardLayout';
 import { useSearch } from '@/hooks/dashboardv2/useSearch';
+import { useQuestionsQuery } from '@/hooks/useQuestionsQuery';
+import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import DashboardSidebar from './DashboardSidebar';
 import DashboardTopBar from './DashboardTopBar';
 import MobileDrawer from './MobileDrawer';
+import MobileBottomNav from '../navigation/MobileBottomNav';
 import DashboardContent from './DashboardContent';
 import SearchModal from '../search/SearchModal';
 
-function DashboardLayout({ 
-  children, 
+function DashboardLayout({
+  children,
   breadcrumbs = [{ label: 'Dashboard', path: '/dashboard' }],
   pendingCount = 0,
   isAvailable = true,
@@ -17,6 +20,7 @@ function DashboardLayout({
   searchData = {}  // NEW: { questions: [] }
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     sidebarCollapsed,
     toggleSidebar,
@@ -24,6 +28,19 @@ function DashboardLayout({
     toggleMobileMenu,
     closeMobileMenu,
   } = useDashboardLayout();
+
+  // Fetch data for mobile bottom nav
+  const { data: questionsData } = useQuestionsQuery({ page: 1, perPage: 10 });
+  const questions = questionsData?.questions || [];
+  const { todayRevenue, avgRating } = useMetrics(questions);
+
+  // Only show mobile bottom nav on these routes
+  const showMobileNav = [
+    '/dashboard',
+    '/dashboard/inbox',
+    '/dashboard/analytics',
+    '/dashboard/profile'
+  ].includes(location.pathname);
 
   const {
     searchQuery,
@@ -118,6 +135,15 @@ function DashboardLayout({
         onRecentSearchClick={(query) => setSearchQuery(query)}
         onClearRecent={clearRecentSearches}
       />
+
+      {/* Mobile Bottom Nav - persists across main dashboard routes */}
+      {showMobileNav && (
+        <MobileBottomNav
+          pendingCount={pendingCount}
+          currentRevenue={todayRevenue}
+          avgRating={avgRating}
+        />
+      )}
     </div>
   );
 }
