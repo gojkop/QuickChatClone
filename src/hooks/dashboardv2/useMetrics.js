@@ -17,34 +17,33 @@ import { useMemo } from 'react';
  *    const metrics = useMetrics([], serverMetrics);
  */
 export function useMetrics(questions = [], preCalculated = null) {
-  // If pre-calculated metrics provided, use them directly
-  if (preCalculated) {
-    return {
-      // Core metrics from server
-      thisMonthRevenue: preCalculated.thisMonthRevenue || 0,
-      avgResponseTime: preCalculated.avgResponseTime || 0,
-      avgRating: preCalculated.avgRating || 0,
-      pendingCount: preCalculated.pendingCount || 0,
-      answeredCount: preCalculated.answeredCount || 0,
-      urgentCount: preCalculated.urgentCount || 0,
-
-      // Derived metrics
-      revenueChange: preCalculated.revenueChange || 0,
-      totalQuestions: preCalculated.totalQuestions || 0,
-      thisMonthAnsweredCount: preCalculated.thisMonthAnsweredCount || 0,
-      avgRevenuePerQuestion: preCalculated.avgRevenuePerQuestion || 0,
-      slaComplianceRate: preCalculated.slaComplianceRate || 0,
-
-      // Additional stats (empty for pre-calculated)
-      allQuestions: [],
-      answeredQuestions: [],
-      pendingQuestions: [],
-    };
-  }
-
-  // Otherwise, calculate from questions array (original logic)
-
   return useMemo(() => {
+    // If pre-calculated metrics provided, use them directly
+    if (preCalculated) {
+      return {
+        // Core metrics from server
+        thisMonthRevenue: preCalculated.thisMonthRevenue || 0,
+        avgResponseTime: preCalculated.avgResponseTime || 0,
+        avgRating: preCalculated.avgRating || 0,
+        pendingCount: preCalculated.pendingCount || 0,
+        answeredCount: preCalculated.answeredCount || 0,
+        urgentCount: preCalculated.urgentCount || 0,
+
+        // Derived metrics
+        revenueChange: preCalculated.revenueChange || 0,
+        totalQuestions: preCalculated.totalQuestions || 0,
+        thisMonthAnsweredCount: preCalculated.thisMonthAnsweredCount || 0,
+        avgRevenuePerQuestion: preCalculated.avgRevenuePerQuestion || 0,
+        slaComplianceRate: preCalculated.slaComplianceRate || 0,
+
+        // Additional stats (empty for pre-calculated)
+        allQuestions: [],
+        answeredQuestions: [],
+        pendingQuestions: [],
+      };
+    }
+
+    // Otherwise, calculate from questions array (original logic)
     const safeQuestions = Array.isArray(questions) ? questions : [];
     
     // Get current date info
@@ -149,5 +148,5 @@ export function useMetrics(questions = [], preCalculated = null) {
       answeredQuestions,
       pendingQuestions,
     };
-  }, [questions]);
+  }, [questions, preCalculated]);
 }
