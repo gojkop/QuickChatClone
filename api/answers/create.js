@@ -87,84 +87,84 @@ export default async function handler(req, res) {
     // No need to make a separate PATCH request
 
     // 1.5. Capture payment (if payment intent exists for this question)
-    try {
-      const paymentIntent = await findPaymentIntentByQuestionId(question_id);
+    // Run in parallel with email preparation
+    const paymentCapturePromise = (async () => {
+      try {
+        const paymentIntent = await findPaymentIntentByQuestionId(question_id);
 
-      if (paymentIntent && !paymentIntent.id.startsWith('pi_mock_')) {
-        if (paymentIntent.status === 'requires_capture') {
-          await capturePaymentIntent(paymentIntent.id);
-          console.log(`✅ Payment captured for question ${question_id}`);
+        if (paymentIntent && !paymentIntent.id.startsWith('pi_mock_')) {
+          if (paymentIntent.status === 'requires_capture') {
+            await capturePaymentIntent(paymentIntent.id);
+            console.log(`✅ Payment captured for question ${question_id}`);
 
-          // Update payment table in Xano
-          const authHeader = req.headers.authorization;
-          if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.replace('Bearer ', '');
-            const updatePaymentResponse = await fetch(
-              `${process.env.XANO_BASE_URL}/payment/capture`,
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question_id }),
+            // Update payment table in Xano
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+              const token = authHeader.replace('Bearer ', '');
+              const updatePaymentResponse = await fetch(
+                `${process.env.XANO_BASE_URL}/payment/capture`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ question_id }),
+                }
+              );
+
+              if (!updatePaymentResponse.ok) {
+                console.warn(`⚠️ Failed to update payment table (status: ${updatePaymentResponse.status})`);
               }
-            );
-
-            if (!updatePaymentResponse.ok) {
-              console.warn(`⚠️ Failed to update payment table (status: ${updatePaymentResponse.status})`);
             }
+          } else if (paymentIntent.status !== 'succeeded') {
+            console.warn(`⚠️ Payment in unexpected status: ${paymentIntent.status} for question ${question_id}`);
           }
-        } else if (paymentIntent.status !== 'succeeded') {
-          console.warn(`⚠️ Payment in unexpected status: ${paymentIntent.status} for question ${question_id}`);
         }
+      } catch (paymentError) {
+        console.error(`❌ Payment capture failed for question ${question_id}:`, paymentError.message);
+        // Continue anyway - the answer is already created
       }
-    } catch (paymentError) {
-      console.error(`❌ Payment capture failed for question ${question_id}:`, paymentError.message);
-      // Continue anyway - the answer is already created
-    }
+    })();
 
     // 2. Extract question data from answer response (embedded by Xano)
     const questionData = answer.question || answer._question;
 
+    // 3. Send email notification in background (don't await)
     if (questionData) {
-      // Extract review token for email link (not exposed to expert)
       const reviewToken = questionData.playback_token_hash;
-      
-      if (!reviewToken) {
-        console.warn('⚠️ Question does not have playback_token_hash - cannot send email link');
-      }
-
-      // 3. Fetch expert details (the person who answered)
-      const expertData = await fetchUserData(user_id);
-      const expertName = expertData?.name || 'Your Expert';
-
-      // 4. Get asker details from question data
       const askerEmail = getAskerEmail(questionData);
       const askerName = getAskerName(questionData);
       const questionTitle = questionData.title;
 
-      // 5. Send email notification to asker
-      if (askerEmail) {
-        try {
-          await sendAnswerReceivedNotification({
-            askerEmail,
-            askerName,
-            expertName,
-            questionTitle,
-            questionId: question_id,
-            reviewToken: reviewToken,
-            answerId: answerId,
-          });
-          console.log('✅ Answer notification sent successfully');
-        } catch (emailErr) {
-          console.error('❌ Failed to send answer notification:', emailErr.message);
-          console.error('❌ Email error stack:', emailErr.stack);
-        }
-      } else {
-        console.warn('⚠️ No asker email found, skipping notification');
+      if (askerEmail && reviewToken) {
+        // Fire and forget - send email in background
+        (async () => {
+          try {
+            const expertData = await fetchUserData(user_id);
+            const expertName = expertData?.name || 'Your Expert';
+
+            await sendAnswerReceivedNotification({
+              askerEmail,
+              askerName,
+              expertName,
+              questionTitle,
+              questionId: question_id,
+              reviewToken: reviewToken,
+              answerId: answerId,
+            });
+            console.log('✅ Answer notification sent successfully');
+          } catch (emailErr) {
+            console.error('❌ Failed to send answer notification:', emailErr.message);
+          }
+        })();
       }
-    } else {
+    }
+
+    // Wait only for payment capture before responding
+    await paymentCapturePromise;
+
+    if (!questionData) {
       console.warn('⚠️ Could not retrieve question details from answer response');
 
       // Fallback: Fetch question directly if not embedded

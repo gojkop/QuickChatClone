@@ -294,7 +294,9 @@ function AskQuestionPage() {
 
         const navigationUrl = `/question-sent?${params.toString()}`;
         console.log('🚀 Navigating to:', navigationUrl);
-        
+
+        // Keep isSubmitting true during navigation - don't set to false
+        // The loader will stay active until the new page loads
         navigate(navigationUrl);
       }
 
@@ -302,7 +304,7 @@ function AskQuestionPage() {
       console.error('Submission error:', error);
       setIsSubmitting(false);
       alert(`Error: ${error.message}`);
-      
+
       const submitButton = document.querySelector('button[type="submit"]');
       if (submitButton) {
         submitButton.disabled = false;
