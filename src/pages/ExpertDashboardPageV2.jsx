@@ -19,6 +19,7 @@ import MobileBottomNav from '@/components/dashboardv2/navigation/MobileBottomNav
 import OnboardingFlow from '@/components/dashboardv2/onboarding/OnboardingFlow';
 import ProfileCompletionCard from '@/components/dashboardv2/onboarding/ProfileCompletionCard';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
+import { useDashboardAnalytics } from '@/hooks/useDashboardAnalytics';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
@@ -43,6 +44,14 @@ function ExpertDashboardPageV2() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
 
+  // Fetch pre-calculated analytics from server (accurate metrics from ALL questions)
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+  } = useDashboardAnalytics();
+
+  // Fetch recent questions for display in widgets (Recent Activity, etc.)
   const {
     data: questionsData,
     isLoading: questionsLoading,
@@ -50,10 +59,10 @@ function ExpertDashboardPageV2() {
     refetch: refetchQuestions
   } = useQuestionsQuery({ page: 1, perPage: 10 });
 
-  const { 
-    campaigns, 
-    trafficSources, 
-    insights 
+  const {
+    campaigns,
+    trafficSources,
+    insights
   } = useMarketing();
 
   const marketingFeature = useFeature('marketing_module');
@@ -62,7 +71,9 @@ function ExpertDashboardPageV2() {
   const socialImpactEnabled = socialImpactFeature.isEnabled;
 
   const questions = questionsData?.questions || [];
-  const metrics = useMetrics(questions);
+
+  // Use pre-calculated metrics from server (accurate, based on ALL questions)
+  const metrics = useMetrics([], analyticsData);
 
   const dashboardData = useMemo(() => ({
     pendingCount: metrics.pendingCount || 0,
@@ -130,8 +141,8 @@ function ExpertDashboardPageV2() {
     setShowProfileCard(false);
   };
 
-  const isInitialLoad = profileLoading || (questionsLoading && questions.length === 0);
-  const hasError = profileError || questionsError;
+  const isInitialLoad = profileLoading || analyticsLoading || (questionsLoading && questions.length === 0);
+  const hasError = profileError || analyticsError || questionsError;
 
   if (isInitialLoad) {
     return (

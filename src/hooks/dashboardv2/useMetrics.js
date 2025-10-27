@@ -4,8 +4,46 @@ import { useMemo } from 'react';
 /**
  * Calculate dashboard metrics from questions data
  * Ensures all values are safe (no NaN, no undefined)
+ *
+ * @param {Array} questions - Array of question objects (optional if using preCalculated)
+ * @param {Object} preCalculated - Pre-calculated metrics from server (optional)
+ * @returns {Object} Metrics object with all dashboard statistics
+ *
+ * Usage:
+ * 1. Client-side calculation (Analytics page with full question list):
+ *    const metrics = useMetrics(questions);
+ *
+ * 2. Server-side pre-calculated (Dashboard with /me/dashboard-analytics):
+ *    const metrics = useMetrics([], serverMetrics);
  */
-export function useMetrics(questions = []) {
+export function useMetrics(questions = [], preCalculated = null) {
+  // If pre-calculated metrics provided, use them directly
+  if (preCalculated) {
+    return {
+      // Core metrics from server
+      thisMonthRevenue: preCalculated.thisMonthRevenue || 0,
+      avgResponseTime: preCalculated.avgResponseTime || 0,
+      avgRating: preCalculated.avgRating || 0,
+      pendingCount: preCalculated.pendingCount || 0,
+      answeredCount: preCalculated.answeredCount || 0,
+      urgentCount: preCalculated.urgentCount || 0,
+
+      // Derived metrics
+      revenueChange: preCalculated.revenueChange || 0,
+      totalQuestions: preCalculated.totalQuestions || 0,
+      thisMonthAnsweredCount: preCalculated.thisMonthAnsweredCount || 0,
+      avgRevenuePerQuestion: preCalculated.avgRevenuePerQuestion || 0,
+      slaComplianceRate: preCalculated.slaComplianceRate || 0,
+
+      // Additional stats (empty for pre-calculated)
+      allQuestions: [],
+      answeredQuestions: [],
+      pendingQuestions: [],
+    };
+  }
+
+  // Otherwise, calculate from questions array (original logic)
+
   return useMemo(() => {
     const safeQuestions = Array.isArray(questions) ? questions : [];
     
