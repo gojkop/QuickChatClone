@@ -135,8 +135,8 @@ function ExpertInboxPageV2() {
         setShowKeyboardHelp(true);
       }
 
-      // Copy link shortcut
-      if (e.key === 'c' && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+      // Copy link shortcut (only when 'c' is pressed alone, not Ctrl+C or Cmd+C)
+      if (e.key === 'c' && !e.ctrlKey && !e.metaKey && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
         const detailPanel = getPanelData('detail');
         if (detailPanel) {
           e.preventDefault();
@@ -410,8 +410,8 @@ function ExpertInboxPageV2() {
         return;
       }
 
-      // c - Copy question link
-      if (e.key === 'c' && isPanelOpen('detail')) {
+      // c - Copy question link (only when 'c' is pressed alone, not Ctrl+C or Cmd+C)
+      if (e.key === 'c' && !e.ctrlKey && !e.metaKey && isPanelOpen('detail')) {
         e.preventDefault();
         const detailPanel = getPanelData('detail');
         if (detailPanel) {
