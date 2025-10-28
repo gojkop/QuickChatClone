@@ -512,12 +512,28 @@ function QuestionDetailPanel({
 
     setIsRefunding(true);
     try {
-      const response = await apiClient.post('/questions/refund', {
-        question_id: question.id,
-        refund_reason: finalReason
+      const token = localStorage.getItem('qc_token');
+
+      const response = await fetch('/api/questions/refund', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          question_id: question.id,
+          refund_reason: finalReason
+        })
       });
 
-      if (response.data.success) {
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to decline question');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
         // Close dialog and detail panel
         setShowRefundDialog(false);
         if (onClose) onClose();
@@ -527,7 +543,7 @@ function QuestionDetailPanel({
       }
     } catch (error) {
       console.error('Refund error:', error);
-      alert(error.response?.data?.error || 'Failed to decline question. Please try again.');
+      alert(error.message || 'Failed to decline question. Please try again.');
     } finally {
       setIsRefunding(false);
     }
@@ -1088,11 +1104,11 @@ function QuestionDetailPanel({
             </div>
           </div>
         ) : !isAnswered ? (
-          <div className="flex items-center gap-2 w-full">
+          <div className="flex items-center gap-2">
             {/* Primary action: Answer */}
             <button
               onClick={onAnswer}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-sm"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-sm"
             >
               <Play size={16} />
               <span>Answer This Question</span>
@@ -1102,7 +1118,7 @@ function QuestionDetailPanel({
             <button
               onClick={() => setShowRefundDialog(true)}
               disabled={question.answered_at || question.status === 'refunded'}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <RefreshCcw size={16} />
               <span>Refund & Decline</span>
@@ -1111,11 +1127,11 @@ function QuestionDetailPanel({
             {/* Tertiary action: Schedule (disabled/future) */}
             <button
               disabled
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg font-medium cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg font-medium cursor-not-allowed"
               title="Coming soon"
             >
               <ClockIcon size={16} />
-              <span>Schedule</span>
+              <span>Schedule Work Time</span>
             </button>
           </div>
         ) : (
