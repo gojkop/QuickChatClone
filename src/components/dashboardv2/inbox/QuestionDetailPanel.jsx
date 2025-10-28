@@ -21,14 +21,6 @@ function QuestionDetailPanel({
   onAcceptOffer,
   onDeclineOffer
 }) {
-  console.log('🟢 QuestionDetailPanel rendered:', {
-    hasQuestion: !!question,
-    questionId: question?.id,
-    questionKeys: question ? Object.keys(question).slice(0, 15) : [],
-    isMobile,
-    hideCloseButton
-  });
-
   const [showActions, setShowActions] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [mediaAssets, setMediaAssets] = useState([]);
@@ -488,7 +480,6 @@ function QuestionDetailPanel({
   };
 
   if (!question) {
-    console.log('🔴 QuestionDetailPanel: No question data - showing empty state');
     return (
       <div className="h-full w-full flex flex-col items-center justify-center text-gray-500 bg-gray-50">
         <MessageSquare size={64} className="mb-4 text-gray-300" />
@@ -497,8 +488,6 @@ function QuestionDetailPanel({
       </div>
     );
   }
-
-  console.log('🟢 QuestionDetailPanel: Rendering question content for Q-' + question.id);
 
   const getRelativeTime = (timestamp) => {
     if (!timestamp) return '';
@@ -534,15 +523,10 @@ function QuestionDetailPanel({
   const askerEmail = getAskerEmail(question);
 
   return (
-    <div
-      className={`
-        h-full flex flex-col bg-white w-full overflow-hidden
-        ${isMobile ? 'fixed inset-0 z-50' : ''}
-      `}
-      data-question-id={question?.id}
-      data-has-question={!!question}
-      style={{ backgroundColor: 'white', minHeight: '100%' }}
-    >
+    <div className={`
+      h-full flex flex-col bg-white w-full overflow-hidden
+      ${isMobile ? 'fixed inset-0 z-50' : ''}
+    `}>
       {/* Header */}
       <div className={`flex-shrink-0 border-b border-gray-200 bg-white ${isMobile ? 'pt-16' : ''}`}>
         <div className={isMobile ? "p-2" : "p-3 lg:p-4"}>

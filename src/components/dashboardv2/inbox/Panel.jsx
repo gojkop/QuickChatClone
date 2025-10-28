@@ -66,17 +66,6 @@ function Panel({
   showCloseButton = true,
   title = null
 }) {
-  // Debug logging
-  console.log(`🔷 Panel [${type}] rendered:`, {
-    id,
-    type,
-    width,
-    zIndex,
-    isActive,
-    isMobile,
-    showCloseButton
-  });
-
   // Don't show close button for list panel
   const shouldShowClose = showCloseButton && type !== 'list' && width > 0;
 
@@ -139,14 +128,6 @@ function Panel({
     }
   };
 
-  console.log(`🔷 Panel [${type}] animation state:`, {
-    id,
-    shouldAnimate,
-    initial: shouldAnimate ? "enter" : false,
-    animate: shouldAnimate ? "center" : false,
-    exit: shouldAnimate ? "exit" : false
-  });
-
   return (
     <motion.div
       key={id}
@@ -154,8 +135,6 @@ function Panel({
       initial={shouldAnimate ? "enter" : false}
       animate={shouldAnimate ? "center" : false}
       exit={shouldAnimate ? "exit" : false}
-      onAnimationStart={() => console.log(`🎬 Panel [${type}] animation START`)}
-      onAnimationComplete={() => console.log(`🎬 Panel [${type}] animation COMPLETE`)}
       drag={enableDragToDismiss ? "x" : false}
       dragConstraints={{ left: 0, right: window.innerWidth }}
       dragElastic={0.2}
@@ -172,10 +151,6 @@ function Panel({
         ${isDragging ? 'cursor-grabbing' : ''}
         ${className}
       `}
-      data-panel-type={type}
-      data-panel-id={id}
-      data-panel-active={isActive}
-      data-panel-width={width}
       style={{
         width: `${width}%`,
         zIndex: zIndex,
@@ -234,10 +209,16 @@ function Panel({
         </button>
       )}
       */}
-      {/* DISABLED: Overlay feature temporarily removed to fix gray screen bug */}
-      {/* This overlay was intended to make compressed panels clickable, but it causes */}
-      {/* issues where the panel content doesn't render properly after closing/reopening */}
-      {/* TODO: Re-implement this feature with proper React key management */}
+      {/* Clickable overlay for inactive compressed panels */}
+      {/* Now safe to use since animations are disabled */}
+      {!isActive && width > 0 && width < 40 && type !== 'list' && (
+        <div
+          onClick={onClose}
+          className="absolute inset-0 bg-black/[0.02] cursor-pointer hidden lg:block hover:bg-black/0 transition-colors"
+          title="Click to return to this view"
+          aria-label="Return to this panel"
+        />
+      )}
     </motion.div>
   );
 }
