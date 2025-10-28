@@ -50,7 +50,7 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
       const detected = detectCalendarService();
       setPreferredService(detected);
 
-      setSelectedSlot(slots[0] || null);
+      setSelectedSlot(null); // Don't pre-select any slot
       setShowCustomTime(false);
       setSlaWarning(null);
     }
@@ -65,7 +65,7 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
         const deadlineDate = new Date(slaDeadlineTimestamp);
         setSlaWarning({
           type: 'error',
-          message: `⚠️ This time is after your SLA deadline (${deadlineDate.toLocaleString('en-US', {
+          message: `This time is after your SLA deadline (${deadlineDate.toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
             hour: 'numeric',
@@ -92,7 +92,7 @@ function ScheduleWorkModal({ isOpen, onClose, question, onScheduled }) {
       const deadlineDate = new Date(slaDeadlineTimestamp);
       setSlaWarning({
         type: 'error',
-        message: `⚠️ This time is after your SLA deadline (${deadlineDate.toLocaleString('en-US', {
+        message: `This time is after your SLA deadline (${deadlineDate.toLocaleString('en-US', {
           month: 'short',
           day: 'numeric',
           hour: 'numeric',
