@@ -218,33 +218,10 @@ function Panel({
         </button>
       )}
       */}
-      {/* Subtle darkening overlay for inactive panels - clickable on desktop to bring panel forward */}
-      {/* Only show overlay when panel is truly compressed (width < 40%) AND not active */}
-      {/* This prevents the gray overlay bug when reopening panels */}
-      {(() => {
-        const shouldShowOverlay = !isActive && width > 0 && width < 40 && type !== 'list';
-        console.log(`🔶 Panel [${type}] overlay check:`, {
-          isActive,
-          width,
-          type,
-          shouldShowOverlay,
-          opacity: shouldShowOverlay ? Math.max(0, (100 - width) / 1000) : 0
-        });
-
-        return shouldShowOverlay && (
-          <div
-            onClick={() => {
-              console.log(`🔶 Panel [${type}] overlay clicked - calling onClose`);
-              onClose();
-            }}
-            className="absolute inset-0 bg-black transition-opacity duration-200 cursor-pointer hidden lg:block hover:opacity-0"
-            style={{
-              opacity: Math.max(0, (100 - width) / 1000) // Very subtle darkening
-            }}
-            title="Click to return to this view"
-          />
-        );
-      })()}
+      {/* DISABLED: Overlay feature temporarily removed to fix gray screen bug */}
+      {/* This overlay was intended to make compressed panels clickable, but it causes */}
+      {/* issues where the panel content doesn't render properly after closing/reopening */}
+      {/* TODO: Re-implement this feature with proper React key management */}
     </motion.div>
   );
 }

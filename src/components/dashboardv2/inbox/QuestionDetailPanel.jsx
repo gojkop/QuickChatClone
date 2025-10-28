@@ -21,6 +21,14 @@ function QuestionDetailPanel({
   onAcceptOffer,
   onDeclineOffer
 }) {
+  console.log('🟢 QuestionDetailPanel rendered:', {
+    hasQuestion: !!question,
+    questionId: question?.id,
+    questionKeys: question ? Object.keys(question).slice(0, 15) : [],
+    isMobile,
+    hideCloseButton
+  });
+
   const [showActions, setShowActions] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [mediaAssets, setMediaAssets] = useState([]);
@@ -480,6 +488,7 @@ function QuestionDetailPanel({
   };
 
   if (!question) {
+    console.log('🔴 QuestionDetailPanel: No question data - showing empty state');
     return (
       <div className="h-full w-full flex flex-col items-center justify-center text-gray-500 bg-gray-50">
         <MessageSquare size={64} className="mb-4 text-gray-300" />
@@ -488,6 +497,8 @@ function QuestionDetailPanel({
       </div>
     );
   }
+
+  console.log('🟢 QuestionDetailPanel: Rendering question content for Q-' + question.id);
 
   const getRelativeTime = (timestamp) => {
     if (!timestamp) return '';
