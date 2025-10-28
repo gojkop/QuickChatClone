@@ -171,7 +171,7 @@ function UnifiedToolbar({
               placeholder="Search..."
               value={searchInput}
               onChange={handleSearchChange}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-12 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             {searchInput && (
               <button
