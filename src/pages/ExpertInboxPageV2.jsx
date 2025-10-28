@@ -447,22 +447,22 @@ function ExpertInboxPageV2() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [filteredQuestions, selectedQuestionIndex, isPanelOpen, getPanelData, togglePin, isPinned, success, closeTopPanel, closeAllPanels, panels, showKeyboardHelp]);
 
-  // Fetch tab counts (optimized - parallel Xano calls)
+  // Fetch tab counts (matches exact filter logic from me/questions endpoint)
   const fetchTabCounts = async () => {
     try {
       console.log('🔍 Fetching tab counts...');
 
-      // Fetch all counts in parallel directly from Xano
+      // Fetch all questions from each filter type to get accurate counts
       const [pendingRes, answeredRes, allRes] = await Promise.all([
-        apiClient.get('/me/questions/count?unanswered=true'),
-        apiClient.get('/me/questions/count?status=answered'),
-        apiClient.get('/me/questions/count')
+        apiClient.get('/me/questions?filter_type=pending&per_page=1000'),
+        apiClient.get('/me/questions?filter_type=answered&per_page=1000'),
+        apiClient.get('/me/questions?filter_type=all&per_page=1000')
       ]);
 
       const counts = {
-        pending: pendingRes.data?.count || 0,
-        answered: answeredRes.data?.count || 0,
-        all: allRes.data?.count || 0
+        pending: (pendingRes.data?.questions || pendingRes.data || []).length,
+        answered: (answeredRes.data?.questions || answeredRes.data || []).length,
+        all: (allRes.data?.questions || allRes.data || []).length
       };
 
       console.log('✅ Tab counts received:', counts);
