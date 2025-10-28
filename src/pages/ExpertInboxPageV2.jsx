@@ -447,13 +447,26 @@ function ExpertInboxPageV2() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [filteredQuestions, selectedQuestionIndex, isPanelOpen, getPanelData, togglePin, isPinned, success, closeTopPanel, closeAllPanels, panels, showKeyboardHelp]);
 
-  // Fetch tab counts (optimized - single API call)
+  // Fetch tab counts (optimized - parallel Xano calls)
   const fetchTabCounts = async () => {
     try {
       console.log('🔍 Fetching tab counts...');
-      const response = await apiClient.get('/me/questions/stats');
-      console.log('✅ Tab counts received:', response.data);
-      setTabCounts(response.data);
+
+      // Fetch all counts in parallel directly from Xano
+      const [pendingRes, answeredRes, allRes] = await Promise.all([
+        apiClient.get('/me/questions/count?unanswered=true'),
+        apiClient.get('/me/questions/count?status=answered'),
+        apiClient.get('/me/questions/count')
+      ]);
+
+      const counts = {
+        pending: pendingRes.data?.count || 0,
+        answered: answeredRes.data?.count || 0,
+        all: allRes.data?.count || 0
+      };
+
+      console.log('✅ Tab counts received:', counts);
+      setTabCounts(counts);
       console.log('📊 Tab counts state updated');
     } catch (err) {
       console.error('❌ Failed to fetch tab counts:', err);

@@ -58,7 +58,6 @@ function UnifiedToolbar({
 
   // Get count for any tab (always show all counts)
   const getTabCount = (tab) => {
-    console.log(`🔢 getTabCount(${tab}) - tabCounts:`, tabCounts);
     if (tab === 'pending') return tabCounts.pending;
     if (tab === 'answered') return tabCounts.answered;
     if (tab === 'all') return tabCounts.all;
@@ -172,7 +171,7 @@ function UnifiedToolbar({
               placeholder="Search..."
               value={searchInput}
               onChange={handleSearchChange}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:pl-1"
+              className="w-full pl-11 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             {searchInput && (
               <button
