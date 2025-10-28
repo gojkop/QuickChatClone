@@ -163,35 +163,46 @@ export const downloadQuestionAsZip = async (question) => {
       question_tier: question.question_tier || 'N/A'
     };
 
-    let questionText = `Question #${questionInfo.id}
-=====================================
+    let questionText = `╔═══════════════════════════════════════════════════════════════╗
+║                      QUESTION #${questionInfo.id.toString().padEnd(44)}║
+╚═══════════════════════════════════════════════════════════════╝
 
-Title: ${questionInfo.title}
+📌 TITLE
+────────────────────────────────────────────────────────────────
+${questionInfo.title}
 
-Question:
-${questionInfo.question_text}
+📝 QUESTION DETAILS
+────────────────────────────────────────────────────────────────
+${questionInfo.question_text || '(No question text provided)'}
 
----
-Asker: ${questionInfo.asker_name}
-Price: ${questionInfo.price}
-Created: ${questionInfo.created_at}
-Status: ${questionInfo.status}
-Tier: ${questionInfo.question_tier}
+╔═══════════════════════════════════════════════════════════════╗
+║                        METADATA                                 ║
+╚═══════════════════════════════════════════════════════════════╝
+
+👤 Asker:          ${questionInfo.asker_name}
+💰 Price:          ${questionInfo.price}
+📅 Created:        ${questionInfo.created_at}
+📊 Status:         ${questionInfo.status}
+⭐ Tier:           ${questionInfo.question_tier === 'quick_consult' ? 'Quick Consult' : questionInfo.question_tier === 'deep_dive' ? 'Deep Dive' : questionInfo.question_tier}
 `;
 
     // Add answer data if it exists
     if (answerData) {
       questionText += `
 
-=====================================
-ANSWER
-=====================================
+╔═══════════════════════════════════════════════════════════════╗
+║                         ANSWER                                  ║
+╚═══════════════════════════════════════════════════════════════╝
 
-Answer Text:
-${answerData.text || '(No text response)'}
+💬 ANSWER TEXT
+────────────────────────────────────────────────────────────────
+${answerData.text || '(No text response provided)'}
 
----
-Answered: ${formatTimestamp(answerData.created_at)}
+╔═══════════════════════════════════════════════════════════════╗
+║                      ANSWER METADATA                            ║
+╚═══════════════════════════════════════════════════════════════╝
+
+✅ Answered:       ${formatTimestamp(answerData.created_at)}
 `;
     }
 
