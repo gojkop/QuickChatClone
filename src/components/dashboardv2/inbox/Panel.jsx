@@ -208,7 +208,9 @@ function Panel({
       )}
       */}
       {/* Subtle darkening overlay for inactive panels - clickable on desktop to bring panel forward */}
-      {!isActive && width > 0 && width < 100 && (
+      {/* Only show overlay when panel is truly compressed (width < 40%) AND not active */}
+      {/* This prevents the gray overlay bug when reopening panels */}
+      {!isActive && width > 0 && width < 40 && type !== 'list' && (
         <div
           onClick={onClose}
           className="absolute inset-0 bg-black transition-opacity duration-200 cursor-pointer hidden lg:block hover:opacity-0"
