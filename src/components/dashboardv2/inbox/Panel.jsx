@@ -211,7 +211,8 @@ function Panel({
       */}
       {/* Clickable overlay for inactive compressed panels */}
       {/* Now safe to use since animations are disabled */}
-      {!isActive && width > 0 && width < 40 && type !== 'list' && (
+      {/* Shows overlay on any inactive panel that's compressed (width < 40%) */}
+      {!isActive && width > 0 && width < 40 && (
         <div
           onClick={onClose}
           className="absolute inset-0 bg-black/[0.02] cursor-pointer hidden lg:block hover:bg-black/0 transition-colors"
