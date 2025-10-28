@@ -6,6 +6,7 @@ function UnifiedToolbar({
   onFilterChange,
   filteredCount,
   totalCount,
+  tabCounts = { pending: 0, answered: 0, all: 0 },
   onExport,
   onOpenAdvancedFilters
 }) {
@@ -55,12 +56,12 @@ function UnifiedToolbar({
     filters.priceMax < 10000 ||
     filters.showHidden;
 
-  // Get count for current tab
+  // Get count for any tab (always show all counts)
   const getTabCount = (tab) => {
-    if (tab === filters.status && filteredCount !== undefined) {
-      return filteredCount;
-    }
-    return null;
+    if (tab === 'pending') return tabCounts.pending;
+    if (tab === 'answered') return tabCounts.answered;
+    if (tab === 'all') return tabCounts.all;
+    return 0;
   };
 
   return (
@@ -105,8 +106,12 @@ function UnifiedToolbar({
                 `}
               >
                 {option.label}
-                {count !== null && filters.status === option.value && (
-                  <span className="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-xs font-bold">
+                {count > 0 && (
+                  <span className={`ml-1.5 px-1.5 py-0.5 rounded text-xs font-bold ${
+                    filters.status === option.value
+                      ? 'bg-white/20'
+                      : 'bg-gray-200'
+                  }`}>
                     {count}
                   </span>
                 )}
@@ -162,18 +167,18 @@ function UnifiedToolbar({
         {/* Row 1: Search + Actions */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
           <div className="flex-1 relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               type="text"
               placeholder="Search..."
               value={searchInput}
               onChange={handleSearchChange}
-              className="w-full pl-9 pr-9 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             {searchInput && (
               <button
                 onClick={handleClearSearch}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                 aria-label="Clear search"
               >
                 <X size={14} />
@@ -184,7 +189,7 @@ function UnifiedToolbar({
           <button
             onClick={onOpenAdvancedFilters}
             className={`
-              p-2 rounded-lg transition-all relative
+              p-2 rounded-lg transition-all relative flex items-center justify-center
               ${hasActiveFilters
                 ? 'bg-indigo-50 text-indigo-700 border border-indigo-300'
                 : 'bg-gray-100 text-gray-700 border border-gray-300'
@@ -199,7 +204,7 @@ function UnifiedToolbar({
 
           <button
             onClick={onExport}
-            className="p-2 rounded-lg bg-gray-100 text-gray-700 border border-gray-300"
+            className="p-2 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 flex items-center justify-center"
           >
             <Download size={16} />
           </button>
@@ -222,7 +227,7 @@ function UnifiedToolbar({
                 `}
               >
                 {option.label}
-                {count !== null && filters.status === option.value && (
+                {count > 0 && (
                   <span className="ml-1 text-xs">({count})</span>
                 )}
               </button>

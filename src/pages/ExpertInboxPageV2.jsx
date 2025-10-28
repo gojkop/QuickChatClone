@@ -46,6 +46,7 @@ function ExpertInboxPageV2() {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [offerRefreshTrigger, setOfferRefreshTrigger] = useState(0);
+  const [tabCounts, setTabCounts] = useState({ pending: 0, answered: 0, all: 0 });
 
 
   const metrics = useMetrics(questions);
@@ -443,6 +444,16 @@ function ExpertInboxPageV2() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [filteredQuestions, selectedQuestionIndex, isPanelOpen, getPanelData, togglePin, isPinned, success, closeTopPanel, closeAllPanels, panels, showKeyboardHelp]);
 
+  // Fetch tab counts (optimized - single API call)
+  const fetchTabCounts = async () => {
+    try {
+      const response = await apiClient.get('/me/questions/stats');
+      setTabCounts(response.data);
+    } catch (err) {
+      console.error('Failed to fetch tab counts:', err);
+    }
+  };
+
   // Refresh questions
   const refreshQuestions = async () => {
     try {
@@ -474,6 +485,9 @@ function ExpertInboxPageV2() {
       const response = await apiClient.get(`/me/questions?${params.toString()}`);
       setQuestions(response.data?.questions || response.data || []);
       setPagination(response.data?.pagination || null);
+
+      // Refresh tab counts after questions are refreshed
+      fetchTabCounts();
     } catch (err) {
       console.error('Failed to refresh questions:', err);
       error('Failed to refresh questions');
@@ -955,6 +969,7 @@ function ExpertInboxPageV2() {
                 onFilterChange={updateFilter}
                 filteredCount={filteredCount}
                 totalCount={totalCount}
+                tabCounts={tabCounts}
                 onExport={handleExport}
                 onOpenAdvancedFilters={() => setIsFilterPanelOpen(true)}
               />
