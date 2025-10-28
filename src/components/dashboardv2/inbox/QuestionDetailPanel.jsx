@@ -5,6 +5,7 @@ import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import MediaSegmentCard from './MediaSegmentCard';
 import MediaPlayerModal from './MediaPlayerModal';
+import ScheduleWorkModal from './ScheduleWorkModal';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
 import apiClient from '@/api';
 
@@ -32,6 +33,7 @@ function QuestionDetailPanel({
   const [refundReason, setRefundReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [isRefunding, setIsRefunding] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   // Fetch media assets when question changes
   useEffect(() => {
@@ -1045,11 +1047,11 @@ function QuestionDetailPanel({
                   <span>Refund & Decline</span>
                 </button>
 
-                {/* Tertiary action: Schedule (disabled/future) */}
+                {/* Tertiary action: Schedule */}
                 <button
-                  disabled
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg font-medium cursor-not-allowed"
-                  title="Coming soon"
+                  onClick={() => setShowScheduleModal(true)}
+                  disabled={question.answered_at || question.status === 'refunded'}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ClockIcon size={18} />
                   <span>Schedule Work Time</span>
@@ -1124,11 +1126,11 @@ function QuestionDetailPanel({
               <span>Refund & Decline</span>
             </button>
 
-            {/* Tertiary action: Schedule (disabled/future) */}
+            {/* Tertiary action: Schedule */}
             <button
-              disabled
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg font-medium cursor-not-allowed"
-              title="Coming soon"
+              onClick={() => setShowScheduleModal(true)}
+              disabled={question.answered_at || question.status === 'refunded'}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ClockIcon size={16} />
               <span>Schedule Work Time</span>
@@ -1226,6 +1228,17 @@ function QuestionDetailPanel({
           </div>
         </div>
       )}
+
+      {/* Schedule Work Time Modal */}
+      <ScheduleWorkModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        question={question}
+        onScheduled={(data) => {
+          console.log('Work time scheduled:', data);
+          setShowScheduleModal(false);
+        }}
+      />
     </div>
   );
 }
