@@ -103,11 +103,30 @@ function RecentActivity({ questions = [] }) {
     window.open(linkedInUrl, '_blank');
   };
 
+  // Format timestamp for when question arrived
+  const formatArrivalTime = (timestamp) => {
+    const date = new Date(timestamp > 4102444800 ? timestamp : timestamp * 1000);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    // For older questions, show date
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   if (recentQuestions.length === 0) {
     return (
       <div className="h-full flex flex-col">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-bold text-gray-900">Recent Questions</h2>
+          <h2 className="text-sm font-bold text-gray-900">Recently Arrived Questions</h2>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center text-center py-6 px-4">
           <div className="w-12 h-12 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl flex items-center justify-center mb-3">
@@ -203,7 +222,7 @@ function RecentActivity({ questions = [] }) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-bold text-gray-900">Recent Questions</h2>
+        <h2 className="text-sm font-bold text-gray-900">Recently Arrived Questions</h2>
         <span className="text-xs text-gray-500 font-medium">
           {recentQuestions.length} pending
         </span>
@@ -213,6 +232,7 @@ function RecentActivity({ questions = [] }) {
         {recentQuestions.map((question) => {
           const questionType = getQuestionType(question);
           const timeLeft = getTimeLeft(question);
+          const arrivalTime = formatArrivalTime(question.created_at);
 
           // Visual config based on question type - minimal colors
           const typeConfig = {
@@ -266,16 +286,21 @@ function RecentActivity({ questions = [] }) {
                     <span>{config.label}</span>
                   </span>
 
-                  {/* Title + Name */}
+                  {/* Title + Name + Arrival Time */}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-gray-900 line-clamp-1 mb-0.5">
                       {question.title || question.question_text || question.text || 'Untitled Question'}
                     </p>
-                    {question.user_name && (
-                      <p className="text-[11px] text-gray-500 truncate">
-                        {question.user_name}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {question.user_name && (
+                        <p className="text-[11px] text-gray-500 truncate">
+                          {question.user_name}
+                        </p>
+                      )}
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        • {arrivalTime}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

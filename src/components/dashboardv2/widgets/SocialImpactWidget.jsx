@@ -7,17 +7,25 @@ import { Heart, TrendingUp, Award } from 'lucide-react';
  * SocialImpactWidget - Shows charity contribution stats
  * Takes up 1x2 space in the Bento Grid (tall card)
  */
-function SocialImpactWidget({ 
+function SocialImpactWidget({
   totalDonated = 0,
   charityPercentage = 0,
-  selectedCharity = null,
-  thisMonthRevenue = 0
+  selectedCharity = null
 }) {
   const navigate = useNavigate();
-  
-  // Calculate this month's donation
-  const thisMonthDonation = (thisMonthRevenue * (charityPercentage / 100)).toFixed(2);
-  
+
+  // Charity mapping
+  const charities = {
+    'unicef': { name: 'UNICEF', category: 'Children & Education' },
+    'doctors-without-borders': { name: 'Doctors Without Borders', category: 'Healthcare' },
+    'malala-fund': { name: 'Malala Fund', category: 'Education' },
+    'wwf': { name: 'WWF', category: 'Environment' },
+    'charity-water': { name: 'charity: water', category: 'Clean Water' }
+  };
+
+  // Get charity info from ID
+  const charityInfo = selectedCharity ? charities[selectedCharity] : null;
+
   // Format currency
   const formatCurrency = (cents) => {
     return `$${(cents / 100).toFixed(2)}`;
@@ -75,27 +83,17 @@ function SocialImpactWidget({
               <span className="text-sm font-bold text-rose-600">{charityPercentage}%</span>
             </div>
 
-            {/* This Month's Donation */}
-            {thisMonthRevenue > 0 && (
-              <div className="flex items-center justify-between p-2 bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-lg">
-                <span className="text-xs text-gray-700">This month</span>
-                <span className="text-sm font-bold text-rose-600">
-                  ${thisMonthDonation}
-                </span>
-              </div>
-            )}
-
             {/* Selected Charity */}
-            {selectedCharity && (
+            {charityInfo && (
               <div className="p-2 bg-white border border-gray-200 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Award size={14} className="text-rose-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-gray-900 truncate">
-                      {selectedCharity.name || 'Selected Charity'}
+                      {charityInfo.name}
                     </p>
                     <p className="text-xs text-gray-600">
-                      {selectedCharity.category || 'Making a difference'}
+                      {charityInfo.category}
                     </p>
                   </div>
                 </div>

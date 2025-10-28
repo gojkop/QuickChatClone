@@ -1122,7 +1122,7 @@ function ExpertInboxPageV2() {
         { label: 'Dashboard', path: '/dashboard' },
         { label: 'Inbox' }
       ]}
-      pendingCount={metrics.pendingCount}
+      pendingCount={tabCounts.pending}
       isAvailable={profile?.accepting_questions ?? true}
       onAvailabilityChange={handleAvailabilityChange}
       searchData={{ questions }}

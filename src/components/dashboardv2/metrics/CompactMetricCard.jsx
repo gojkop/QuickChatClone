@@ -21,7 +21,8 @@ function CompactMetricCard({
   };
 
   // Format value to avoid NaN/undefined display
-  const displayValue = value !== null && value !== undefined && !isNaN(value)
+  // Allow strings (like "4.7 ⭐") and valid numbers, but block null/undefined/NaN numbers
+  const displayValue = value !== null && value !== undefined && !(typeof value === 'number' && isNaN(value))
     ? value
     : '—';
 

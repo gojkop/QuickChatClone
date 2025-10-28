@@ -20,12 +20,14 @@ import OnboardingFlow from '@/components/dashboardv2/onboarding/OnboardingFlow';
 import ProfileCompletionCard from '@/components/dashboardv2/onboarding/ProfileCompletionCard';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { useDashboardAnalytics } from '@/hooks/useDashboardAnalytics';
+import { usePendingCount } from '@/hooks/dashboardv2/usePendingCount';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
 import { Clock, Star, MessageSquare, AlertCircle, TrendingUp } from 'lucide-react';
 import { formatDuration } from '@/utils/dashboardv2/metricsCalculator';
 import { shouldShowOnboardingCard } from '@/utils/profileStrength';
+import apiClient from '@/api';
 
 function ExpertDashboardPageV2() {
   const navigate = useNavigate();
@@ -43,6 +45,12 @@ function ExpertDashboardPageV2() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
+
+  // Ratings state
+  const [ratings, setRatings] = useState([]);
+
+  // Fetch accurate pending count
+  const { data: accuratePendingCount } = usePendingCount();
 
   // Fetch pre-calculated analytics from server (accurate metrics from ALL questions)
   const {
@@ -81,18 +89,43 @@ function ExpertDashboardPageV2() {
   // When analytics endpoint is implemented, this will automatically switch to server-side
   const metrics = useMetrics(shouldUseFallback ? questions : [], analyticsData);
 
+  // Calculate average rating from ratings array (same logic as old dashboard)
+  const avgRating = useMemo(() => {
+    const ratedAnswers = ratings.filter(r => r && r.rating && r.rating > 0);
+    const avg = ratedAnswers.length > 0
+      ? ratedAnswers.reduce((sum, r) => sum + r.rating, 0) / ratedAnswers.length
+      : 0;
+    return avg;
+  }, [ratings]);
 
   const dashboardData = useMemo(() => ({
-    pendingCount: metrics.pendingCount || 0,
+    pendingCount: accuratePendingCount ?? metrics.pendingCount ?? 0,
     urgentCount: metrics.urgentCount || 0,
     isAvailable: expertProfile?.accepting_questions ?? true,
     currentRevenue: metrics.thisMonthRevenue || 0,
-    avgRating: metrics.avgRating || 0,
-  }), [metrics, expertProfile?.accepting_questions]);
+    avgRating: avgRating || 0,
+  }), [accuratePendingCount, metrics, expertProfile?.accepting_questions, avgRating]);
 
   const handleAvailabilityChange = React.useCallback((newStatus) => {
     updateAvailability(newStatus);
   }, [updateAvailability]);
+
+  // Fetch ratings from /me/answers endpoint
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const response = await apiClient.get('/me/answers');
+        const ratingsData = response.data;
+        if (Array.isArray(ratingsData)) {
+          setRatings(ratingsData);
+        }
+      } catch (err) {
+        console.error('Failed to fetch ratings:', err);
+        setRatings([]);
+      }
+    };
+    fetchRatings();
+  }, []);
 
   // Check if expert needs onboarding or profile completion card
   // Re-check whenever expertProfile changes to update card in real-time
@@ -244,12 +277,12 @@ function ExpertDashboardPageV2() {
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Rating"
-              value={metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)}⭐` : '—'}
+              value={avgRating > 0 ? `${avgRating.toFixed(1)} ⭐` : '—'}
               icon={Star}
               color="purple"
-              trend={metrics.avgRating > 0 ? 5.2 : null}
-              subtitle={metrics.avgRating > 0 ? 'Average rating' : 'Rating appears after reviews'}
-              isZeroState={metrics.avgRating === 0}
+              trend={avgRating > 0 ? 5.2 : null}
+              subtitle={avgRating > 0 ? 'Average rating' : 'Rating appears after reviews'}
+              isZeroState={avgRating === 0}
             />
           </BentoCard>
 
@@ -278,7 +311,10 @@ function ExpertDashboardPageV2() {
           {/* Row 2: Quick Actions (1x2) + Recent Activity (2x2) + Conditional (1x2) */}
           
           <BentoCard size="tall" className="shadow-premium-sm">
-            <QuickActionsWidget pendingCount={dashboardData.pendingCount} />
+            <QuickActionsWidget
+              pendingCount={dashboardData.pendingCount}
+              expertHandle={expertProfile?.handle}
+            />
           </BentoCard>
 
           <BentoCard size="large" className="shadow-premium-sm">
@@ -292,7 +328,6 @@ function ExpertDashboardPageV2() {
                 totalDonated={expertProfile?.total_donated || 0}
                 charityPercentage={expertProfile?.charity_percentage || 0}
                 selectedCharity={expertProfile?.selected_charity}
-                thisMonthRevenue={metrics.thisMonthRevenue}
               />
             </BentoCard>
           ) : (

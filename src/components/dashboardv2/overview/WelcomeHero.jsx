@@ -9,7 +9,8 @@ import { Clock, TrendingUp } from 'lucide-react';
 function WelcomeHero() {
   const navigate = useNavigate();
   const { user, expertProfile } = useProfile();
-  const { data: questionsData } = useQuestionsQuery({ page: 1, perPage: 10 });
+  // Fetch more questions to ensure we get all pending ones for accurate SLA calculation
+  const { data: questionsData } = useQuestionsQuery({ page: 1, perPage: 50 });
   const [copied, setCopied] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -37,20 +38,32 @@ function WelcomeHero() {
 
   const getNextUrgentSLA = () => {
     const questions = questionsData?.questions || [];
-    const pendingQuestions = questions.filter(q => q.status === 'paid' && !q.answered_at);
-    
+
+    // Filter for pending questions: paid status, not answered, not pending deep dive offers, not declined offers
+    const pendingQuestions = questions.filter(q =>
+      q.status === 'paid' &&
+      !q.answered_at &&
+      !q.pending_deep_dive_offer_id && // Exclude pending deep dive offers
+      q.pricing_status !== 'offer_declined' // Exclude declined offers
+    );
+
     if (pendingQuestions.length === 0) return null;
 
-    const slaHours = expertProfile?.sla_hours || 24;
-    
     let closestDeadline = null;
     let closestQuestion = null;
 
     pendingQuestions.forEach(q => {
+      // Use question's specific SLA snapshot, fallback to expert's default SLA
+      const slaHours = q.sla_hours_snapshot || expertProfile?.sla_hours || 24;
       const createdAt = q.created_at > 4102444800 ? q.created_at / 1000 : q.created_at;
       const deadline = new Date((createdAt + slaHours * 3600) * 1000);
-      
-      if (!closestDeadline || deadline < closestDeadline) {
+
+      const now = new Date();
+      const diff = deadline - now;
+
+      // Only consider questions with future deadlines (diff > 0)
+      // AND either no closest deadline yet, or this deadline is sooner
+      if (diff > 0 && (!closestDeadline || deadline < closestDeadline)) {
         closestDeadline = deadline;
         closestQuestion = q;
       }

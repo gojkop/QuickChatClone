@@ -53,7 +53,7 @@ function QuestionListView({
     <div className="h-full w-full overflow-y-auto">
       {isMobile ? (
         // Mobile: Card-based layout
-        <div className="h-full">
+        <div className="h-full pb-24">
           {questions.map((question) => (
             <MobileQuestionCard
               key={question.id}
