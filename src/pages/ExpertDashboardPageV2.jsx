@@ -92,6 +92,7 @@ function ExpertDashboardPageV2() {
       ? ratedAnswers.reduce((sum, r) => sum + r.rating, 0) / ratedAnswers.length
       : 0;
     console.log('⭐ Calculated avgRating:', avg, 'from', ratedAnswers.length, 'rated answers');
+    console.log('⭐ Value for card:', avg > 0 ? `${avg.toFixed(1)} ⭐` : '—');
     return avg;
   }, [ratings]);
 
@@ -279,7 +280,7 @@ function ExpertDashboardPageV2() {
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
             <CompactMetricCard
               label="Rating"
-              value={avgRating > 0 ? `${avgRating.toFixed(1)}⭐` : '—'}
+              value={avgRating > 0 ? `${avgRating.toFixed(1)} ⭐` : '—'}
               icon={Star}
               color="purple"
               trend={avgRating > 0 ? 5.2 : null}
