@@ -379,6 +379,7 @@ function QuestionDetailPanel({
       return (
         <video
           controls
+          controlsList="nodownload"
           className="w-full h-full object-cover"
           src={proxyUrl}
           type={videoType}

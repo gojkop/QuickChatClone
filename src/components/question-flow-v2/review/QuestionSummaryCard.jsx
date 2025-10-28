@@ -76,6 +76,7 @@ function QuestionSummaryCard({ composeData, onEdit }) {
         <div className="mt-2 rounded-lg overflow-hidden border border-gray-300 bg-black">
           <video
             controls
+            controlsList="nodownload"
             className="w-full"
             src={proxyUrl}
             type={videoType}
