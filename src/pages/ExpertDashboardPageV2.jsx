@@ -91,14 +91,8 @@ function ExpertDashboardPageV2() {
     const avg = ratedAnswers.length > 0
       ? ratedAnswers.reduce((sum, r) => sum + r.rating, 0) / ratedAnswers.length
       : 0;
-    console.log('⭐ Calculated avgRating:', avg, 'from', ratedAnswers.length, 'rated answers');
-    console.log('⭐ Value for card:', avg > 0 ? `${avg.toFixed(1)} ⭐` : '—');
-    console.log('⭐ Ratings array length:', ratings.length);
     return avg;
   }, [ratings]);
-
-  // Debug: Log when component renders
-  console.log('🎨 Dashboard component rendering, avgRating:', avgRating, 'ratings.length:', ratings.length);
 
   const dashboardData = useMemo(() => ({
     pendingCount: metrics.pendingCount || 0,
@@ -116,19 +110,13 @@ function ExpertDashboardPageV2() {
   useEffect(() => {
     const fetchRatings = async () => {
       try {
-        console.log('📊 Fetching ratings from /me/answers...');
         const response = await apiClient.get('/me/answers');
         const ratingsData = response.data;
-        console.log('📊 Ratings response:', ratingsData);
         if (Array.isArray(ratingsData)) {
-          console.log(`📊 Found ${ratingsData.length} total answers`);
-          const ratedAnswers = ratingsData.filter(r => r && r.rating && r.rating > 0);
-          console.log(`📊 Found ${ratedAnswers.length} rated answers`);
           setRatings(ratingsData);
-          console.log('📊 State updated with ratings');
         }
       } catch (err) {
-        console.error('❌ Failed to fetch ratings:', err);
+        console.error('Failed to fetch ratings:', err);
         setRatings([]);
       }
     };
