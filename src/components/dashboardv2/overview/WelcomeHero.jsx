@@ -37,12 +37,16 @@ function WelcomeHero() {
 
   const getNextUrgentSLA = () => {
     const questions = questionsData?.questions || [];
+    console.log('🔍 All questions:', questions.length);
+
     // Filter for pending questions: paid status, not answered, not pending deep dive offers
     const pendingQuestions = questions.filter(q =>
       q.status === 'paid' &&
       !q.answered_at &&
       !q.pending_deep_dive_offer_id // Exclude pending deep dive offers
     );
+
+    console.log('🔍 Pending questions (filtered):', pendingQuestions.length);
 
     if (pendingQuestions.length === 0) return null;
 
@@ -54,6 +58,12 @@ function WelcomeHero() {
       const slaHours = q.sla_hours_snapshot || expertProfile?.sla_hours || 24;
       const createdAt = q.created_at > 4102444800 ? q.created_at / 1000 : q.created_at;
       const deadline = new Date((createdAt + slaHours * 3600) * 1000);
+
+      const now = new Date();
+      const diff = deadline - now;
+      const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
+
+      console.log(`📊 Q#${q.id}: SLA=${slaHours}h, created=${new Date(createdAt * 1000).toLocaleString()}, deadline=${deadline.toLocaleString()}, hours_left=${hoursLeft}h, status=${q.status}, answered=${!!q.answered_at}, pending_offer=${!!q.pending_deep_dive_offer_id}`);
 
       if (!closestDeadline || deadline < closestDeadline) {
         closestDeadline = deadline;
@@ -67,6 +77,8 @@ function WelcomeHero() {
     const diff = closestDeadline - now;
     const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
     const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    console.log(`✅ Selected most urgent: Q#${closestQuestion.id} with ${hoursLeft}h ${minutesLeft}m left`);
 
     return {
       hoursLeft,
