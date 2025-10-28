@@ -33,13 +33,28 @@ Run the `enable-all-downloads` utility script to bulk-enable downloads for all C
 
 ### Usage
 
-#### Option 1: Via npm script (recommended)
+#### Option 1: Via curl (easiest - no local setup needed)
+
+```bash
+curl -X POST "https://your-domain.vercel.app/api/utils/enable-all-downloads-endpoint?x_api_key=YOUR_INTERNAL_API_KEY"
+```
+
+Or with header:
+```bash
+curl -X POST \
+  -H "x-api-key: YOUR_INTERNAL_API_KEY" \
+  https://your-domain.vercel.app/api/utils/enable-all-downloads-endpoint
+```
+
+**Security:** Requires `XANO_INTERNAL_API_KEY` for authentication.
+
+#### Option 2: Via npm script (local execution)
 
 ```bash
 npm run enable-downloads
 ```
 
-#### Option 2: Direct execution
+#### Option 3: Direct Node.js execution
 
 ```bash
 node api/utils/enable-all-downloads.js
@@ -60,6 +75,30 @@ node api/utils/enable-all-downloads.js
 ---
 
 ## Expected Output
+
+### Via curl (API endpoint):
+
+```json
+{
+  "success": true,
+  "message": "Processed 45 videos. Newly enabled: 12",
+  "results": {
+    "total": 45,
+    "alreadyEnabled": 30,
+    "newlyEnabled": 12,
+    "notReady": 2,
+    "failed": 1
+  },
+  "details": [
+    { "videoId": "abc123def456", "status": "already_enabled" },
+    { "videoId": "xyz789ghi012", "status": "newly_enabled" },
+    { "videoId": "mno345pqr678", "status": "not_ready", "videoStatus": "inprogress" },
+    { "videoId": "stu901vwx234", "status": "failed", "error": "Rate limit exceeded" }
+  ]
+}
+```
+
+### Via npm/node (CLI):
 
 ```
 🚀 Starting bulk download enablement for Cloudflare Stream videos
