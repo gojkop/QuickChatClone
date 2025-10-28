@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "vercel:dev": "vercel dev",
-    "vercel:deploy": "vercel --prod"
+    "vercel:deploy": "vercel --prod",
+    "enable-downloads": "node api/utils/enable-all-downloads.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",
