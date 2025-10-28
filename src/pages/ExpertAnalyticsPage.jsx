@@ -11,6 +11,9 @@ import RevenueChart from '@/components/dashboardv2/analytics/RevenueChart';
 import ResponseTimeChart from '@/components/dashboardv2/analytics/ResponseTimeChart';
 import RatingDistribution from '@/components/dashboardv2/analytics/RatingDistribution';
 import RecentFeedback from '@/components/dashboardv2/analytics/RecentFeedback';
+import ResponseTimeByType from '@/components/dashboardv2/analytics/ResponseTimeByType';
+import ResponseTimeDistribution from '@/components/dashboardv2/analytics/ResponseTimeDistribution';
+import ResponseTimeExtremes from '@/components/dashboardv2/analytics/ResponseTimeExtremes';
 import InsightsPanel from '@/components/dashboardv2/analytics/InsightsPanel';
 import DateRangeSelector from '@/components/dashboardv2/analytics/DateRangeSelector';
 import ExportButton from '@/components/dashboardv2/analytics/ExportButton';
@@ -243,6 +246,13 @@ function ExpertAnalyticsPage() {
         {/* Insights Panel */}
         <div className="mb-6">
           <InsightsPanel questions={questions} metrics={analyticsMetrics} />
+        </div>
+
+        {/* Response Time Deep Dive */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <ResponseTimeByType questions={questions} />
+          <ResponseTimeDistribution questions={questions} />
+          <ResponseTimeExtremes questions={questions} />
         </div>
 
         {/* Ratings & Feedback Section */}
