@@ -698,9 +698,20 @@ function QuestionDetailPanel({
                     ) : (
                       <>
                         <span>{question.sla_hours_snapshot}h response time</span>
-                        {!isAnswered && question.created_at && (
+                        {!isAnswered && question.created_at && question.sla_hours_snapshot && (
                           <span className="text-orange-600 font-medium text-xs">
-                            Expires {formatDate(question.created_at + question.sla_hours_snapshot * 3600)}
+                            Expires {(() => {
+                              // Calculate the same way SLAIndicator does
+                              const now = Date.now() / 1000;
+                              const createdAtSeconds = question.created_at > 4102444800
+                                ? question.created_at / 1000
+                                : question.created_at;
+                              const elapsed = now - createdAtSeconds;
+                              const slaSeconds = question.sla_hours_snapshot * 3600;
+                              const remaining = slaSeconds - elapsed;
+                              const deadlineSeconds = now + remaining;
+                              return formatDate(deadlineSeconds);
+                            })()}
                           </span>
                         )}
                       </>

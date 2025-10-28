@@ -521,7 +521,14 @@ function ExpertInboxPageV2() {
         closePanel('detail');
       }
 
+      // Refresh offers banner and questions list
       handleOfferUpdate();
+
+      // Add a small delay to ensure backend has processed the update, then refresh again
+      setTimeout(() => {
+        refreshQuestions();
+      }, 500);
+
       announceToScreenReader('Offer accepted successfully');
 
     } catch (err) {
@@ -570,7 +577,14 @@ function ExpertInboxPageV2() {
         closePanel('detail');
       }
 
+      // Refresh offers banner and questions list
       handleOfferUpdate();
+
+      // Add a small delay to ensure backend has processed the update, then refresh again
+      setTimeout(() => {
+        refreshQuestions();
+      }, 500);
+
       announceToScreenReader('Offer declined successfully');
 
     } catch (err) {
