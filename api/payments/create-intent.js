@@ -72,6 +72,9 @@ export default async function handler(req, res) {
     console.log(`   Stripe enabled: ${isEnabled()}`);
     console.log(`   Client IP: ${clientIp}`);
 
+    // Filter out tier_type from incoming metadata (we don't want it stored)
+    const { tier_type, ...cleanMetadata } = metadata || {};
+
     // Create payment intent (real or mock depending on STRIPE_ENABLED flag)
     const paymentIntent = await createPaymentIntent({
       amount,
@@ -80,7 +83,7 @@ export default async function handler(req, res) {
       captureMethod,
       customerEmail, // Pass customer email for receipts
       metadata: {
-        ...metadata,
+        ...cleanMetadata,
         expert_handle: expertHandle,
         expert_profile_id: String(expertProfile.id),
         client_ip: clientIp,

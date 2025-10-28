@@ -156,6 +156,8 @@ async function applyRateLimit(req, res) {
  */
 async function verifyQuestionOwnership(token, questionId, baseUrl) {
   try {
+    console.log(`🔍 [REFUND] Verifying ownership for question ${questionId}...`);
+
     // Get the authenticated user's profile
     const userResponse = await fetch(`${baseUrl}/auth/me`, {
       headers: {
@@ -164,12 +166,13 @@ async function verifyQuestionOwnership(token, questionId, baseUrl) {
     });
 
     if (!userResponse.ok) {
-      console.error('Failed to fetch user profile');
+      console.error(`❌ [REFUND] Failed to fetch user profile: ${userResponse.status}`);
       return false;
     }
 
     const userData = await userResponse.json();
     const authenticatedUserId = userData.id;
+    console.log(`✓ [REFUND] Authenticated user ID: ${authenticatedUserId}`);
 
     // Get the question details
     const questionResponse = await fetch(`${baseUrl}/question/${questionId}`, {
@@ -179,17 +182,18 @@ async function verifyQuestionOwnership(token, questionId, baseUrl) {
     });
 
     if (!questionResponse.ok) {
-      console.error('Failed to fetch question details');
+      console.error(`❌ [REFUND] Failed to fetch question details: ${questionResponse.status}`);
       return false;
     }
 
     const questionData = await questionResponse.json();
+    console.log(`✓ [REFUND] Question expert_profile_id: ${questionData.expert_profile_id}`);
 
     // Check if the authenticated user is the expert for this question
     const expertProfileId = questionData.expert_profile_id;
 
     if (!expertProfileId) {
-      console.error('Question has no expert_profile_id');
+      console.error('❌ [REFUND] Question has no expert_profile_id');
       return false;
     }
 
@@ -201,15 +205,16 @@ async function verifyQuestionOwnership(token, questionId, baseUrl) {
     });
 
     if (!expertProfileResponse.ok) {
-      console.error('Failed to fetch expert profile');
+      console.error(`❌ [REFUND] Failed to fetch expert profile: ${expertProfileResponse.status}`);
       return false;
     }
 
     const expertProfile = await expertProfileResponse.json();
     const expertUserId = expertProfile.user_id || expertProfile._user?.id;
+    console.log(`✓ [REFUND] Expert user ID: ${expertUserId}`);
 
     if (!expertUserId) {
-      console.error('Expert profile has no user_id');
+      console.error('❌ [REFUND] Expert profile has no user_id');
       return false;
     }
 
@@ -217,13 +222,16 @@ async function verifyQuestionOwnership(token, questionId, baseUrl) {
     const isOwner = expertUserId === authenticatedUserId;
 
     if (!isOwner) {
-      console.warn(`Ownership verification failed: expert_user_id=${expertUserId}, authenticated_user_id=${authenticatedUserId}`);
+      console.warn(`⚠️ [REFUND] Ownership verification failed: expert_user_id=${expertUserId}, authenticated_user_id=${authenticatedUserId}`);
+    } else {
+      console.log(`✅ [REFUND] Ownership verified successfully`);
     }
 
     return isOwner;
 
   } catch (error) {
-    console.error('Error verifying ownership:', error.message);
+    console.error('❌ [REFUND] Error verifying ownership:', error.message);
+    console.error('❌ [REFUND] Stack:', error.stack);
     return false;
   }
 }

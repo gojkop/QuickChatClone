@@ -93,18 +93,34 @@ export default async function handler(req, res) {
     // Don't block the response - these can happen asynchronously
     (async () => {
       try {
+        console.log(`💳 [CAPTURE] Starting payment capture for question ${question_id}...`);
+
         // Capture payment in background
         const paymentIntent = await findPaymentIntentByQuestionId(question_id);
 
+        console.log(`💳 [CAPTURE] Payment intent search result:`, {
+          found: !!paymentIntent,
+          id: paymentIntent?.id,
+          status: paymentIntent?.status,
+          isMock: paymentIntent?.id?.startsWith('pi_mock_')
+        });
+
         if (paymentIntent && !paymentIntent.id.startsWith('pi_mock_')) {
           if (paymentIntent.status === 'requires_capture') {
-            await capturePaymentIntent(paymentIntent.id);
-            console.log(`✅ Payment captured for question ${question_id}`);
+            console.log(`💳 [CAPTURE] Capturing payment intent: ${paymentIntent.id}`);
+            const capturedPayment = await capturePaymentIntent(paymentIntent.id);
+            console.log(`✅ [CAPTURE] Payment captured successfully:`, {
+              id: capturedPayment.id,
+              status: capturedPayment.status,
+              amount: capturedPayment.amount
+            });
 
             // Update payment table in Xano
             const authHeader = req.headers.authorization;
             if (authHeader && authHeader.startsWith('Bearer ')) {
               const token = authHeader.replace('Bearer ', '');
+              console.log(`💳 [CAPTURE] Updating payment table in Xano...`);
+
               const updatePaymentResponse = await fetch(
                 `${process.env.XANO_BASE_URL}/payment/capture`,
                 {
@@ -118,12 +134,21 @@ export default async function handler(req, res) {
               );
 
               if (!updatePaymentResponse.ok) {
-                console.warn(`⚠️ Failed to update payment table (status: ${updatePaymentResponse.status})`);
+                const errorText = await updatePaymentResponse.text();
+                console.error(`❌ [CAPTURE] Failed to update payment table (status: ${updatePaymentResponse.status}):`, errorText);
+              } else {
+                console.log(`✅ [CAPTURE] Payment table updated in Xano`);
               }
             }
-          } else if (paymentIntent.status !== 'succeeded') {
-            console.warn(`⚠️ Payment in unexpected status: ${paymentIntent.status} for question ${question_id}`);
+          } else if (paymentIntent.status === 'succeeded') {
+            console.log(`✅ [CAPTURE] Payment already captured (status: succeeded)`);
+          } else {
+            console.warn(`⚠️ [CAPTURE] Payment in unexpected status: ${paymentIntent.status} for question ${question_id}`);
           }
+        } else if (paymentIntent?.id?.startsWith('pi_mock_')) {
+          console.log(`💳 [CAPTURE] Skipping capture for mock payment intent`);
+        } else {
+          console.warn(`⚠️ [CAPTURE] No payment intent found for question ${question_id}`);
         }
 
         // Send email notification
@@ -150,7 +175,8 @@ export default async function handler(req, res) {
           }
         }
       } catch (bgError) {
-        console.error('❌ Background task error:', bgError.message);
+        console.error('❌ [CAPTURE] Background task error:', bgError.message);
+        console.error('❌ [CAPTURE] Stack:', bgError.stack);
       }
     })();
 
