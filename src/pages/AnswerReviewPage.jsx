@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import JSZip from 'jszip';
 import logo from '@/assets/images/logo-mindpick.svg';
+import MediaSegmentCard from '@/components/dashboardv2/inbox/MediaSegmentCard';
+import MediaPlayerModal from '@/components/dashboardv2/inbox/MediaPlayerModal';
 
 const XANO_BASE_URL = import.meta.env.VITE_XANO_BASE_URL || 'https://xlho-4syv-navp.n7e.xano.io/api:BQW1GS7L';
 
@@ -40,6 +42,8 @@ function AnswerReviewPage() {
   const [showPrivacyReminder, setShowPrivacyReminder] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [playingSegmentIndex, setPlayingSegmentIndex] = useState(null);
+  const [playingAnswerSegmentIndex, setPlayingAnswerSegmentIndex] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -752,57 +756,22 @@ function AnswerReviewPage() {
                 </div>
               )}
 
-              {/* Media Assets */}
+              {/* Media Segments */}
               {data.answer?.media_assets && data.answer.media_assets.length > 0 && (
                 <div className="space-y-3">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    Answer Media {data.answer.media_assets.length > 1 ? `(${data.answer.media_assets.length} segments)` : ''}
+                  </p>
                   {data.answer.media_assets
                     .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
-                    .map((segment, arrayIndex) => {
-                      const isVideo = segment.metadata?.mode === 'video' || 
-                                      segment.metadata?.mode === 'screen' || 
-                                      segment.metadata?.mode === 'screen-camera' ||
-                                      segment.url?.includes('cloudflarestream.com');
-                      const isAudio = segment.metadata?.mode === 'audio' || 
-                                      segment.url?.includes('.webm') || 
-                                      !isVideo;
-                      
-                      const videoId = isVideo ? getStreamVideoId(segment.url) : null;
-                      const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
-                      const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-                      
-                      return (
-                        <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
-                          {data.answer.media_assets.length > 1 && (
-                            <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
-                              <span className="text-xs font-semibold text-gray-300">
-                                Part {arrayIndex + 1}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
-                              </span>
-                            </div>
-                          )}
-                          
-                          {isVideo && videoId && customerCode ? (
-                            <div className="w-full aspect-video bg-black">
-                              <iframe
-                                src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                                style={{ border: 'none', width: '100%', height: '100%' }}
-                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                                allowFullScreen={true}
-                                title={`Answer video ${arrayIndex + 1}`}
-                              />
-                            </div>
-                          ) : isAudio && segment.url ? (
-                            <div className="p-4 flex items-center justify-center">
-                              <audio controls className="w-full max-w-md" preload="metadata">
-                                <source src={segment.url} type="audio/webm" />
-                              </audio>
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })}
+                    .map((segment, index) => (
+                      <MediaSegmentCard
+                        key={segment.id || index}
+                        segment={segment}
+                        index={index}
+                        onPlay={() => setPlayingAnswerSegmentIndex(index)}
+                      />
+                    ))}
                 </div>
               )}
 
@@ -993,63 +962,30 @@ function AnswerReviewPage() {
                 </div>
               )}
 
-              {/* Question Attachments - Combined Media & Files */}
-              {((data.media_assets && data.media_assets.length > 0) || (data.attachments && data.attachments.length > 0)) && (
+              {/* Question Media and Attachments */}
+              {data.media_assets && data.media_assets.length > 0 && (
                 <div className="space-y-3">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Question Attachments</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    Media Segments {data.media_assets.length > 1 ? `(${data.media_assets.length} segments)` : ''}
+                  </p>
+                  {data.media_assets
+                    .sort((a, b) => (a.segment_index || 0) - (b.segment_index || 0))
+                    .map((segment, index) => (
+                      <MediaSegmentCard
+                        key={segment.id || index}
+                        segment={segment}
+                        index={index}
+                        onPlay={() => setPlayingSegmentIndex(index)}
+                      />
+                    ))}
+                </div>
+              )}
 
-                  {/* Media (videos/audio) */}
-                  {data.media_assets && data.media_assets.length > 0 && data.media_assets
-                    .sort((a, b) => a.segment_index - b.segment_index)
-                    .map((segment, arrayIndex) => {
-                      const isVideo = segment.metadata?.mode === 'video' ||
-                                      segment.metadata?.mode === 'screen' ||
-                                      segment.metadata?.mode === 'screen-camera' ||
-                                      segment.url?.includes('cloudflarestream.com');
-                      const isAudio = segment.metadata?.mode === 'audio' ||
-                                      segment.url?.includes('.webm') ||
-                                      !isVideo;
-
-                      const videoId = isVideo ? getStreamVideoId(segment.url) : null;
-                      const extractedCustomerCode = isVideo ? getCustomerCode(segment.url) : null;
-                      const customerCode = CUSTOMER_CODE_OVERRIDE || extractedCustomerCode;
-
-                      return (
-                        <div key={segment.id} className="bg-gray-900 rounded-xl overflow-hidden">
-                          {data.media_assets.length > 1 && (
-                            <div className="px-4 py-2.5 bg-gray-800 flex items-center justify-between">
-                              <span className="text-xs font-semibold text-gray-300">
-                                Part {arrayIndex + 1}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {isVideo ? '🎥' : '🎤'} {segment.duration_sec}s
-                              </span>
-                            </div>
-                          )}
-
-                          {isVideo && videoId && customerCode ? (
-                            <div className="w-full aspect-video bg-black">
-                              <iframe
-                                src={`https://${customerCode}.cloudflarestream.com/${videoId}/iframe`}
-                                style={{ border: 'none', width: '100%', height: '100%' }}
-                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                                allowFullScreen={true}
-                                title={`Video segment ${arrayIndex + 1}`}
-                              />
-                            </div>
-                          ) : isAudio && segment.url ? (
-                            <div className="p-4 flex items-center justify-center">
-                              <audio controls className="w-full max-w-md" preload="metadata">
-                                <source src={segment.url} type="audio/webm" />
-                              </audio>
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-
-                  {/* File Attachments */}
-                  {data.attachments && data.attachments.length > 0 && data.attachments.map((file, index) => (
+              {/* File Attachments */}
+              {data.attachments && data.attachments.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Question Attachments ({data.attachments.length})</p>
+                  {data.attachments.map((file, index) => (
                     <div key={index} className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
                       <a
                         href={file.url}
@@ -1328,11 +1264,42 @@ function AnswerReviewPage() {
             transform: translateY(0);
           }
         }
-        
+
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-in-out;
         }
       `}</style>
+
+      {/* Media Player Modals */}
+      {playingSegmentIndex !== null && data?.media_assets && (
+        <MediaPlayerModal
+          segment={data.media_assets[playingSegmentIndex]}
+          segments={data.media_assets}
+          currentIndex={playingSegmentIndex}
+          onClose={() => setPlayingSegmentIndex(null)}
+          onNavigate={(direction) => {
+            const newIndex = playingSegmentIndex + direction;
+            if (newIndex >= 0 && newIndex < data.media_assets.length) {
+              setPlayingSegmentIndex(newIndex);
+            }
+          }}
+        />
+      )}
+
+      {playingAnswerSegmentIndex !== null && data?.answer?.media_assets && (
+        <MediaPlayerModal
+          segment={data.answer.media_assets[playingAnswerSegmentIndex]}
+          segments={data.answer.media_assets}
+          currentIndex={playingAnswerSegmentIndex}
+          onClose={() => setPlayingAnswerSegmentIndex(null)}
+          onNavigate={(direction) => {
+            const newIndex = playingAnswerSegmentIndex + direction;
+            if (newIndex >= 0 && newIndex < data.answer.media_assets.length) {
+              setPlayingAnswerSegmentIndex(newIndex);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
