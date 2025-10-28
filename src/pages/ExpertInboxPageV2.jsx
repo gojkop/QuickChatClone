@@ -495,13 +495,16 @@ function ExpertInboxPageV2() {
     try {
       const token = localStorage.getItem('qc_token');
 
+      // Extract question_id: could be offer.question_id (from banner) or offer.id (from detail panel)
+      const questionId = offer.question_id || offer.id;
+
       const response = await fetch('/api/offers-accept', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ id: offer.question_id })
+        body: JSON.stringify({ id: questionId })
       });
 
       if (!response.ok) {
@@ -538,6 +541,9 @@ function ExpertInboxPageV2() {
     try {
       const token = localStorage.getItem('qc_token');
 
+      // Extract question_id: could be offer.question_id (from banner) or offer.id (from detail panel)
+      const questionId = offer.question_id || offer.id;
+
       const response = await fetch('/api/offers-decline', {
         method: 'POST',
         headers: {
@@ -545,7 +551,7 @@ function ExpertInboxPageV2() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          id: offer.question_id,
+          id: questionId,
           decline_reason: reason || 'Expert declined'
         })
       });

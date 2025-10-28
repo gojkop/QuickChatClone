@@ -1,12 +1,11 @@
 // src/components/dashboardv2/inbox/QuestionDetailPanel.jsx
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Link, Loader, X } from 'lucide-react';
+import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Loader, X } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import MediaSegmentCard from './MediaSegmentCard';
 import MediaPlayerModal from './MediaPlayerModal';
 import { formatCurrency } from '@/utils/dashboardv2/metricsCalculator';
-import { copyQuestionLink } from '@/utils/clipboard';
 import apiClient from '@/api';
 
 function QuestionDetailPanel({
@@ -22,7 +21,6 @@ function QuestionDetailPanel({
   onDeclineOffer
 }) {
   const [showActions, setShowActions] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
   const [mediaAssets, setMediaAssets] = useState([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [answerData, setAnswerData] = useState(null);
@@ -681,16 +679,29 @@ function QuestionDetailPanel({
                 </div>
               )}
 
-              {question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
+              {(question.sla_hours_snapshot && question.sla_hours_snapshot > 0) || isPendingOffer ? (
                 <div className="flex items-start gap-2 text-gray-700">
                   <Clock size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
                   <span className="font-medium min-w-[60px] flex-shrink-0">SLA:</span>
                   <div className="flex flex-col">
-                    <span>{question.sla_hours_snapshot}h response time</span>
-                    {!isAnswered && question.created_at && (
-                      <span className="text-orange-600 font-medium text-xs">
-                        Expires {formatDate(question.created_at + question.sla_hours_snapshot * 3600)}
-                      </span>
+                    {isPendingOffer ? (
+                      <>
+                        <span>24h response time</span>
+                        {question.offer_expires_at && (
+                          <span className="text-red-600 font-medium text-xs">
+                            Expires {formatDate(question.offer_expires_at)}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span>{question.sla_hours_snapshot}h response time</span>
+                        {!isAnswered && question.created_at && (
+                          <span className="text-orange-600 font-medium text-xs">
+                            Expires {formatDate(question.created_at + question.sla_hours_snapshot * 3600)}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -951,21 +962,6 @@ function QuestionDetailPanel({
                     <span>Decline Offer</span>
                   </button>
                 </div>
-
-                {/* Copy Link */}
-                <button
-                  onClick={() => {
-                    copyQuestionLink(question.id).then(() => {
-                      setCopySuccess(true);
-                      if (onCopyLink) onCopyLink();
-                      setTimeout(() => setCopySuccess(false), 2000);
-                    });
-                  }}
-                  className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Link size={14} />
-                  <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
-                </button>
               </div>
             ) : !isAnswered ? (
               <div className="flex flex-col gap-2">
@@ -977,21 +973,6 @@ function QuestionDetailPanel({
                   <Play size={18} />
                   <span>Answer This Question</span>
                 </button>
-
-                {/* Secondary action: Copy link */}
-                <button
-                  onClick={() => {
-                    copyQuestionLink(question.id).then(() => {
-                      setCopySuccess(true);
-                      if (onCopyLink) onCopyLink();
-                      setTimeout(() => setCopySuccess(false), 2000);
-                    });
-                  }}
-                  className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Link size={14} />
-                  <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
-                </button>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -999,20 +980,6 @@ function QuestionDetailPanel({
                   <CheckCircle size={18} />
                   <span className="text-sm font-semibold">Question Answered</span>
                 </div>
-
-                <button
-                  onClick={() => {
-                    copyQuestionLink(question.id).then(() => {
-                      setCopySuccess(true);
-                      if (onCopyLink) onCopyLink();
-                      setTimeout(() => setCopySuccess(false), 2000);
-                    });
-                  }}
-                  className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Link size={14} />
-                  <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
-                </button>
               </div>
             )}
           </div>
@@ -1057,21 +1024,6 @@ function QuestionDetailPanel({
                 <span>Decline Offer</span>
               </button>
             </div>
-
-            {/* Copy Link */}
-            <button
-              onClick={() => {
-                copyQuestionLink(question.id).then(() => {
-                  setCopySuccess(true);
-                  if (onCopyLink) onCopyLink();
-                  setTimeout(() => setCopySuccess(false), 2000);
-                });
-              }}
-              className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <Link size={14} />
-              <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
-            </button>
           </div>
         ) : !isAnswered ? (
           <div className="flex flex-col gap-2">
@@ -1083,41 +1035,11 @@ function QuestionDetailPanel({
               <Play size={18} />
               <span>Answer This Question</span>
             </button>
-
-            {/* Secondary action: Copy link */}
-            <button
-              onClick={() => {
-                copyQuestionLink(question.id).then(() => {
-                  setCopySuccess(true);
-                  if (onCopyLink) onCopyLink();
-                  setTimeout(() => setCopySuccess(false), 2000);
-                });
-              }}
-              className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <Link size={14} />
-              <span>{copySuccess ? 'Copied!' : 'Copy Question Link'}</span>
-            </button>
           </div>
         ) : (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <CheckCircle size={15} className="text-green-600" />
-              <span>This question has been answered</span>
-            </div>
-            <button
-              onClick={() => {
-                copyQuestionLink(question.id).then(() => {
-                  setCopySuccess(true);
-                  if (onCopyLink) onCopyLink();
-                  setTimeout(() => setCopySuccess(false), 2000);
-                });
-              }}
-              className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2"
-            >
-              <Link size={14} />
-              <span>{copySuccess ? 'Copied!' : 'Copy Link'}</span>
-            </button>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <CheckCircle size={15} className="text-green-600" />
+            <span>This question has been answered</span>
           </div>
         )}
       </div>
