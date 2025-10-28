@@ -517,7 +517,7 @@ function ExpertInboxPageV2() {
 
       // Close detail panel if it's showing this offer
       const detailPanel = getPanelData('detail');
-      if (detailPanel && detailPanel.id === offer.question_id) {
+      if (detailPanel && (detailPanel.id === offer.question_id || detailPanel.id === offer.id)) {
         closePanel('detail');
       }
 
@@ -566,7 +566,7 @@ function ExpertInboxPageV2() {
 
       // Close detail panel if it's showing this offer
       const detailPanel = getPanelData('detail');
-      if (detailPanel && detailPanel.id === offer.question_id) {
+      if (detailPanel && (detailPanel.id === offer.question_id || detailPanel.id === offer.id)) {
         closePanel('detail');
       }
 

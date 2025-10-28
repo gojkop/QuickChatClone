@@ -576,7 +576,7 @@ function QuestionDetailPanel({
                 Q-{question.id}
               </span>
               <PriorityBadge question={question} />
-              {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
+              {!isAnswered && ((question.sla_hours_snapshot && question.sla_hours_snapshot > 0) || (isPendingOffer && question.offer_expires_at)) && (
                 <SLAIndicator question={question} showLabel={true} />
               )}
               {isAnswered && (
@@ -620,7 +620,7 @@ function QuestionDetailPanel({
                   Q-{question.id}
                 </span>
                 <PriorityBadge question={question} />
-                {!isAnswered && question.sla_hours_snapshot && question.sla_hours_snapshot > 0 && (
+                {!isAnswered && ((question.sla_hours_snapshot && question.sla_hours_snapshot > 0) || (isPendingOffer && question.offer_expires_at)) && (
                   <SLAIndicator question={question} showLabel={true} />
                 )}
                 {isAnswered && (
