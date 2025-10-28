@@ -534,10 +534,15 @@ function QuestionDetailPanel({
   const askerEmail = getAskerEmail(question);
 
   return (
-    <div className={`
-      h-full flex flex-col bg-white w-full overflow-hidden
-      ${isMobile ? 'fixed inset-0 z-50' : ''}
-    `}>
+    <div
+      className={`
+        h-full flex flex-col bg-white w-full overflow-hidden
+        ${isMobile ? 'fixed inset-0 z-50' : ''}
+      `}
+      data-question-id={question?.id}
+      data-has-question={!!question}
+      style={{ backgroundColor: 'white', minHeight: '100%' }}
+    >
       {/* Header */}
       <div className={`flex-shrink-0 border-b border-gray-200 bg-white ${isMobile ? 'pt-16' : ''}`}>
         <div className={isMobile ? "p-2" : "p-3 lg:p-4"}>

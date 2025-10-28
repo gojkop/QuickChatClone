@@ -83,8 +83,8 @@ function Panel({
   // Determine if panel should be visible
   const isVisible = width > 0;
 
-  // CHANGED: Disable animation for list panel (it should always be present)
-  const shouldAnimate = type !== 'list';
+  // TEMPORARY: Disable ALL animations to test if animation is causing the gray screen bug
+  const shouldAnimate = false; // type !== 'list';
 
   // Drag-to-dismiss functionality for mobile
   const dragX = useMotionValue(0);
@@ -172,6 +172,10 @@ function Panel({
         ${isDragging ? 'cursor-grabbing' : ''}
         ${className}
       `}
+      data-panel-type={type}
+      data-panel-id={id}
+      data-panel-active={isActive}
+      data-panel-width={width}
       style={{
         width: `${width}%`,
         zIndex: zIndex,
