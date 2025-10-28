@@ -40,11 +40,12 @@ function WelcomeHero() {
     const questions = questionsData?.questions || [];
     console.log('🔍 All questions:', questions.length);
 
-    // Filter for pending questions: paid status, not answered, not pending deep dive offers
+    // Filter for pending questions: paid status, not answered, not pending deep dive offers, not declined offers
     const pendingQuestions = questions.filter(q =>
       q.status === 'paid' &&
       !q.answered_at &&
-      !q.pending_deep_dive_offer_id // Exclude pending deep dive offers
+      !q.pending_deep_dive_offer_id && // Exclude pending deep dive offers
+      q.pricing_status !== 'offer_declined' // Exclude declined offers
     );
 
     console.log('🔍 Pending questions (filtered):', pendingQuestions.length);
@@ -64,9 +65,11 @@ function WelcomeHero() {
       const diff = deadline - now;
       const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
 
-      console.log(`📊 Q#${q.id}: SLA=${slaHours}h, created=${new Date(createdAt * 1000).toLocaleString()}, deadline=${deadline.toLocaleString()}, hours_left=${hoursLeft}h, status=${q.status}, answered=${!!q.answered_at}, pending_offer=${!!q.pending_deep_dive_offer_id}`);
+      console.log(`📊 Q#${q.id}: SLA=${slaHours}h, created=${new Date(createdAt * 1000).toLocaleString()}, deadline=${deadline.toLocaleString()}, hours_left=${hoursLeft}h, status=${q.status}, answered=${!!q.answered_at}, pending_offer=${!!q.pending_deep_dive_offer_id}, pricing_status=${q.pricing_status}`);
 
-      if (!closestDeadline || deadline < closestDeadline) {
+      // Only consider questions with future deadlines (hoursLeft > 0)
+      // AND either no closest deadline yet, or this deadline is sooner
+      if (diff > 0 && (!closestDeadline || deadline < closestDeadline)) {
         closestDeadline = deadline;
         closestQuestion = q;
       }
