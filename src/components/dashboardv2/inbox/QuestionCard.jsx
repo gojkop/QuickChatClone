@@ -68,11 +68,12 @@ function QuestionCard({
       `}
       onClick={onClick}
     >
-      {/* Selection Checkbox - Mobile optimized */}
-      <div
-        className="absolute top-3 left-3 z-10 flex items-center justify-center w-5 h-5"
+      {/* Selection Checkbox */}
+      <label
+        className="absolute top-3 left-3 z-10 flex items-center justify-center cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
+          console.log('Checkbox clicked for question:', question.id);
           onSelect(question.id);
         }}
       >
@@ -82,12 +83,13 @@ function QuestionCard({
           onChange={(e) => {
             e.stopPropagation();
           }}
-          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 transition-all duration-200 cursor-pointer pointer-events-none"
+          className="w-4 h-4 sm:w-5 sm:h-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+          style={{ WebkitAppearance: 'checkbox', appearance: 'checkbox' }}
         />
-      </div>
+      </label>
 
       {/* Main Content */}
-      <div className="ml-7 sm:ml-8">
+      <div className="ml-8 sm:ml-10">
         {/* Header Row: Type Badge + Title + Price + Time */}
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
