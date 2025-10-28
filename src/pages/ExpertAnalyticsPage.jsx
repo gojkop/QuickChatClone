@@ -1,5 +1,5 @@
 // src/pages/ExpertAnalyticsPage.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useProfile } from '@/context/ProfileContext';
 import { useQuestionsQuery } from '@/hooks/useQuestionsQuery';
 import DashboardLayout from '@/components/dashboardv2/layout/DashboardLayout';
@@ -16,15 +16,34 @@ import ExportButton from '@/components/dashboardv2/analytics/ExportButton';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
 import { DollarSign, Clock, Star, MessageSquare } from 'lucide-react';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
+import apiClient from '@/api';
 
 function ExpertAnalyticsPage() {
   const { expertProfile, isLoading: profileLoading } = useProfile();
-  const { data: questionsData, isLoading: questionsLoading } = useQuestionsQuery({ 
-    page: 1, 
+  const { data: questionsData, isLoading: questionsLoading } = useQuestionsQuery({
+    page: 1,
     perPage: 100 // Get more questions for analytics
   });
 
   const [dateRange, setDateRange] = useState('30d'); // 30d, 90d, 1y, all
+  const [ratings, setRatings] = useState([]);
+
+  // Fetch ratings from /me/answers endpoint
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const response = await apiClient.get('/me/answers');
+        const ratingsData = response.data;
+        if (Array.isArray(ratingsData)) {
+          setRatings(ratingsData);
+        }
+      } catch (err) {
+        console.error('Failed to fetch ratings:', err);
+        setRatings([]);
+      }
+    };
+    fetchRatings();
+  }, []);
 
   const questions = questionsData?.questions || [];
   const metrics = useMetrics(questions);
@@ -55,7 +74,8 @@ function ExpertAnalyticsPage() {
   // Calculate analytics metrics with safe handling
   const analyticsMetrics = useMemo(() => {
     const safeQuestions = Array.isArray(questions) ? questions : [];
-    
+    const safeRatings = Array.isArray(ratings) ? ratings : [];
+
     // Total revenue (all time)
     const totalRevenue = safeQuestions
       .filter(q => q.answered_at && q.price_cents)
@@ -65,12 +85,12 @@ function ExpertAnalyticsPage() {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    
+
     const thisMonthRevenue = safeQuestions
       .filter(q => {
         if (!q.answered_at) return false;
         const answeredDate = new Date(q.answered_at * 1000);
-        return answeredDate.getMonth() === currentMonth && 
+        return answeredDate.getMonth() === currentMonth &&
                answeredDate.getFullYear() === currentYear;
       })
       .reduce((sum, q) => sum + (q.price_cents || 0), 0);
@@ -88,13 +108,10 @@ function ExpertAnalyticsPage() {
       ? responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length
       : 0;
 
-    // Average rating
-    const ratingsWithScores = safeQuestions.filter(q => 
-      q.rating !== null && q.rating !== undefined && q.rating > 0
-    );
-    
-    const avgRating = ratingsWithScores.length > 0
-      ? ratingsWithScores.reduce((sum, q) => sum + q.rating, 0) / ratingsWithScores.length
+    // Average rating (from /me/answers endpoint, same logic as old dashboard)
+    const ratedAnswers = safeRatings.filter(r => r && r.rating && r.rating > 0);
+    const avgRating = ratedAnswers.length > 0
+      ? ratedAnswers.reduce((sum, r) => sum + r.rating, 0) / ratedAnswers.length
       : 0;
 
     // Total questions answered
@@ -111,7 +128,7 @@ function ExpertAnalyticsPage() {
       totalAnswered: totalAnswered || 0,
       pendingCount: pendingCount || 0,
     };
-  }, [questions]);
+  }, [questions, ratings]);
 
   const isLoading = profileLoading || questionsLoading;
 
@@ -223,7 +240,7 @@ function ExpertAnalyticsPage() {
           <div className="lg:col-span-2">
             <InsightsPanel questions={questions} metrics={analyticsMetrics} />
           </div>
-          <RatingDistribution questions={questions} />
+          <RatingDistribution ratings={ratings} />
         </div>
       </AnalyticsLayout>
       </DashboardPageContent>
