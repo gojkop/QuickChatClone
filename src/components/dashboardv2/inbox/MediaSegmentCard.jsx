@@ -2,9 +2,9 @@
 // Compact media segment card with play button
 
 import React from 'react';
-import { Video, Mic, Monitor, PlayCircle, Link as LinkIcon } from 'lucide-react';
+import { Video, Mic, Monitor, PlayCircle } from 'lucide-react';
 
-function MediaSegmentCard({ segment, index, onPlay, onCopyLink }) {
+function MediaSegmentCard({ segment, index, onPlay }) {
   const getMediaIcon = (mode) => {
     switch (mode) {
       case 'video':
@@ -101,20 +101,6 @@ function MediaSegmentCard({ segment, index, onPlay, onCopyLink }) {
             <PlayCircle size={16} />
             <span>Play</span>
           </button>
-
-          {/* Copy Link Button */}
-          {onCopyLink && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onCopyLink(segment);
-              }}
-              className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-white rounded transition-colors"
-              title="Copy media link"
-            >
-              <LinkIcon size={16} />
-            </button>
-          )}
         </div>
       </div>
 

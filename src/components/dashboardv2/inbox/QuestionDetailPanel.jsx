@@ -727,7 +727,6 @@ function QuestionDetailPanel({
                       segment={segment}
                       index={index}
                       onPlay={() => setPlayingSegmentIndex(index)}
-                      onCopyLink={onCopyLink ? () => onCopyLink(segment) : null}
                     />
                   ))}
               </div>
@@ -834,7 +833,6 @@ function QuestionDetailPanel({
                       segment={segment}
                       index={index}
                       onPlay={() => setPlayingAnswerSegmentIndex(index)}
-                      onCopyLink={onCopyLink ? () => onCopyLink(segment) : null}
                     />
                   ))}
               </div>
