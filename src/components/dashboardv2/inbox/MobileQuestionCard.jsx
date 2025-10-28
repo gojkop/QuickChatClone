@@ -99,7 +99,7 @@ function MobileQuestionCard({
               console.log('Mobile checkbox clicked:', question.id);
               e.stopPropagation();
             }}
-            className="w-5 h-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            className="w-4 h-4 rounded border-2 border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
           />
         </div>
 
