@@ -2,7 +2,7 @@
 // Container for cascading panel layout (Linear-style)
 
 import React, { useEffect, useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Panel from './Panel';
 
 /**
@@ -64,6 +64,24 @@ function PanelContainer({
 
   return (
     <div className={`panel-container relative flex w-full h-full overflow-hidden ${className}`}>
+      {/* Backdrop overlay when multiple panels are open (desktop only) */}
+      {/* IMPORTANT: This must be OUTSIDE AnimatePresence but should fade smoothly */}
+      <AnimatePresence>
+        {panels.length > 1 && (
+          <motion.div
+            key="panel-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="absolute inset-0 pointer-events-none z-0 hidden lg:block"
+            style={{
+              background: `rgba(0, 0, 0, ${Math.min(0.05 * (panels.length - 1), 0.15)})`
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Panels */}
       <AnimatePresence mode="sync">
         {panels.map((panel, index) => {
@@ -87,17 +105,6 @@ function PanelContainer({
           );
         })}
       </AnimatePresence>
-
-      {/* Backdrop overlay when multiple panels are open (desktop only) */}
-      {panels.length > 1 && (
-        <div
-          className="absolute inset-0 pointer-events-none z-0 hidden lg:block"
-          style={{
-            background: `rgba(0, 0, 0, ${Math.min(0.05 * (panels.length - 1), 0.15)})`,
-            transition: 'background 200ms ease-out'
-          }}
-        />
-      )}
     </div>
   );
 }
