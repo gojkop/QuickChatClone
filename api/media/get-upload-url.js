@@ -26,16 +26,8 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           maxDurationSeconds,
           requireSignedURLs: false,
-          // Enable downloads for payers and experts
-          allowedOrigins: [
-            'mindpick.me',           // ✅ Add this
-            'localhost:3000',
-            'localhost:3001',
-            'localhost:5173',        // ✅ Add if you use Vite
-            '*.vercel.app',
-          ],
-          // Enable downloads so videos can be downloaded by payers and experts
-          downloadedVideoAllowed: true,
+          // Note: Downloads must be enabled separately via /api/media/enable-downloads
+          // after the TUS upload completes (Cloudflare API limitation)
         }),
       }
     );

@@ -80,6 +80,28 @@ export function useAnswerUpload() {
       throw new Error('Failed to upload video to Stream');
     }
 
+    // Enable downloads for this video
+    try {
+      console.log('🔓 Enabling downloads for answer video:', uid);
+      const enableResponse = await fetch('/api/media/enable-downloads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId: uid }),
+      });
+
+      if (enableResponse.ok) {
+        const enableResult = await enableResponse.json();
+        if (enableResult.downloadsEnabled) {
+          console.log('✅ Downloads enabled for answer video:', uid);
+        } else {
+          console.warn('⚠️ Downloads could not be enabled, but video uploaded successfully');
+        }
+      }
+    } catch (error) {
+      // Don't fail the upload if downloads can't be enabled
+      console.warn('⚠️ Failed to enable downloads for answer:', error.message);
+    }
+
     const accountId = import.meta.env.VITE_CLOUDFLARE_ACCOUNT_ID;
     const result = {
       uid,
