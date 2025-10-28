@@ -9,7 +9,7 @@ import {
   Eye
 } from 'lucide-react';
 
-function QuickActionsWidget({ pendingCount = 0 }) {
+function QuickActionsWidget({ pendingCount = 0, expertHandle = '' }) {
   const navigate = useNavigate();
 
   const actions = [
@@ -29,15 +29,21 @@ function QuickActionsWidget({ pendingCount = 0 }) {
     {
       icon: Eye,
       label: 'Preview Profile',
-      onClick: () => window.open(`/u/${window.location.pathname.split('/')[1]}`, '_blank'),
+      onClick: () => {
+        if (expertHandle) {
+          window.open(`/u/${expertHandle}`, '_blank');
+        }
+      },
       color: 'blue'
     },
     {
       icon: Share2,
       label: 'Share Profile',
       onClick: () => {
-        const url = window.location.origin + `/u/${window.location.pathname.split('/')[1]}`;
-        navigator.clipboard.writeText(url);
+        if (expertHandle) {
+          const url = window.location.origin + `/u/${expertHandle}`;
+          navigator.clipboard.writeText(url);
+        }
       },
       color: 'green'
     },

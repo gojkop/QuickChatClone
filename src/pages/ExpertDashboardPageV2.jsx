@@ -307,7 +307,10 @@ function ExpertDashboardPageV2() {
           {/* Row 2: Quick Actions (1x2) + Recent Activity (2x2) + Conditional (1x2) */}
           
           <BentoCard size="tall" className="shadow-premium-sm">
-            <QuickActionsWidget pendingCount={dashboardData.pendingCount} />
+            <QuickActionsWidget
+              pendingCount={dashboardData.pendingCount}
+              expertHandle={expertProfile?.handle}
+            />
           </BentoCard>
 
           <BentoCard size="large" className="shadow-premium-sm">
@@ -321,7 +324,6 @@ function ExpertDashboardPageV2() {
                 totalDonated={expertProfile?.total_donated || 0}
                 charityPercentage={expertProfile?.charity_percentage || 0}
                 selectedCharity={expertProfile?.selected_charity}
-                thisMonthRevenue={metrics.thisMonthRevenue}
               />
             </BentoCard>
           ) : (
