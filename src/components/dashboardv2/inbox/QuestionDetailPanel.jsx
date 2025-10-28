@@ -943,10 +943,7 @@ function QuestionDetailPanel({
               <div className="flex flex-col gap-2">
                 {/* Pending Offer Info */}
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-purple-700 font-bold text-sm">🎯 Deep Dive Offer</span>
-                  </div>
-                  <p className="text-xs text-purple-600">
+                  <p className="text-xs text-purple-700">
                     Accept this offer to start answering. The SLA timer will begin immediately.
                   </p>
                   {question.asker_message && (
@@ -1005,10 +1002,7 @@ function QuestionDetailPanel({
           <div className="flex flex-col gap-2">
             {/* Pending Offer Info */}
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-2">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-purple-700 font-bold text-sm">🎯 Deep Dive Offer</span>
-              </div>
-              <p className="text-xs text-purple-600">
+              <p className="text-xs text-purple-700">
                 Accept this offer to start answering. The SLA timer will begin immediately.
               </p>
               {question.asker_message && (
