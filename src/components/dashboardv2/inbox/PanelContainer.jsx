@@ -74,8 +74,10 @@ function PanelContainer({
 
   return (
     <div className={`panel-container relative flex w-full h-full overflow-hidden ${className}`}>
-      {/* Backdrop overlay when multiple panels are open (desktop only) */}
-      {/* IMPORTANT: This must be OUTSIDE AnimatePresence but should fade smoothly */}
+      {/* DISABLED: Backdrop overlay temporarily removed - it was causing the dark gray screen bug */}
+      {/* The backdrop was showing a dark overlay (rgba(0, 0, 0, 0.05-0.15)) that persisted */}
+      {/* during panel transitions, creating a "dark gray empty background" effect */}
+      {/*
       <AnimatePresence>
         {panels.length > 1 && (
           <motion.div
@@ -91,12 +93,15 @@ function PanelContainer({
           />
         )}
       </AnimatePresence>
+      */}
 
       {/* Panels */}
       <AnimatePresence mode="sync">
         {panels.map((panel, index) => {
           const isActive = panel.id === activePanel?.id;
-          const zIndex = index;
+          // IMPORTANT: zIndex must increase with index so newer panels are on top
+          // Use base of 10 to avoid conflicts with other elements
+          const zIndex = 10 + index;
 
           return (
             <Panel
