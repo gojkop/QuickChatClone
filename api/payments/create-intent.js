@@ -83,7 +83,6 @@ export default async function handler(req, res) {
         ...metadata,
         expert_handle: expertHandle,
         expert_profile_id: String(expertProfile.id),
-        tier_type: tierType,
         client_ip: clientIp,
         created_at: new Date().toISOString(),
         ...(customerEmail && { customer_email: customerEmail })
