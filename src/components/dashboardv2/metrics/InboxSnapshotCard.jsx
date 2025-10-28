@@ -43,11 +43,11 @@ function InboxSnapshotCard({ counts = {} }) {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="p-2 bg-gradient-to-br from-indigo-50 to-blue-100 rounded-lg shadow-sm">
-          <Inbox size={16} className="text-indigo-600" strokeWidth={2.5} />
+      <div className="flex items-start justify-between mb-3 flex-shrink-0">
+        <span className="text-xs font-medium text-gray-600">Inbox Overview</span>
+        <div className="p-1.5 bg-gradient-to-br from-indigo-50 to-blue-100 rounded-lg shadow-sm flex-shrink-0">
+          <Inbox size={13} className="text-indigo-600" strokeWidth={2.5} />
         </div>
-        <h3 className="text-xs font-bold text-gray-900">Inbox Overview</h3>
       </div>
 
       {/* Stats Grid */}
