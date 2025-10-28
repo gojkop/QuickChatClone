@@ -509,8 +509,15 @@ function AnswerReviewPage() {
           <video
             controls
             className="w-full"
-            preload="metadata"
+            preload="auto"
+            crossOrigin="anonymous"
             style={{ maxHeight: '300px' }}
+            onError={(e) => {
+              console.error('❌ Video load error:', e.target.error);
+              console.error('Video src:', e.target.currentSrc);
+            }}
+            onLoadStart={() => console.log('📹 Video load started:', proxyUrl)}
+            onLoadedMetadata={() => console.log('✅ Video metadata loaded')}
           >
             <source src={proxyUrl} type={videoType} />
             Your browser does not support video playback.
