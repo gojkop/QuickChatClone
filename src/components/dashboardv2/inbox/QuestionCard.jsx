@@ -68,16 +68,21 @@ function QuestionCard({
       `}
       onClick={onClick}
     >
-      {/* Selection Checkbox - Touch optimized */}
-      <div className="absolute top-3 left-3 z-10 touch-target">
+      {/* Selection Checkbox - Mobile optimized */}
+      <div
+        className="absolute top-3 left-3 z-10 flex items-center justify-center w-5 h-5"
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect(question.id);
+        }}
+      >
         <input
           type="checkbox"
           checked={isSelected}
           onChange={(e) => {
             e.stopPropagation();
-            onSelect(question.id);
           }}
-          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 transition-all duration-200 cursor-pointer"
+          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 transition-all duration-200 cursor-pointer pointer-events-none"
         />
       </div>
 
