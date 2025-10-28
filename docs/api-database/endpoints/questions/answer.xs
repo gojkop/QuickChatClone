@@ -17,31 +17,31 @@ query answer verb=POST {
         }
       }
     }
-  
+
     db.get question {
       field_name = "id"
       field_value = $input.question_id
     } as $question
-  
+
     conditional {
       if ($question == null) {
         debug.stop {
           value = '404 error "Question not found"'
         }
       }
-    
+
       elseif ($question.answered_at != null) {
         debug.stop {
           value = '400 error "Question already answered"'
         }
       }
     }
-  
+
     db.get expert_profile {
       field_name = "user_id"
       field_value = $input.user_id
     } as $expert_profile
-  
+
     conditional {
       if ($expert_profile == null) {
         debug.stop {
@@ -49,7 +49,7 @@ query answer verb=POST {
         }
       }
     }
-  
+
     conditional {
       if ($question.expert_profile_id != $expert_profile.id) {
         debug.stop {
@@ -57,7 +57,7 @@ query answer verb=POST {
         }
       }
     }
-  
+
     db.add answer {
       data = {
         created_at    : "now"
@@ -77,13 +77,17 @@ query answer verb=POST {
         feedback_at   : null
       }
     } as $created_answer
-  
+
     db.edit question {
       field_name = "id"
       field_value = $input.question_id
-      data = {status: "closed", answered_at: now}
+      data = {
+        status: "closed",
+        answered_at: now,
+        media_asset_id: $question.media_asset_id
+      }
     } as $question_updated
-  
+
     api.lambda {
       code = """
           var safe_question = {
@@ -102,9 +106,9 @@ query answer verb=POST {
             created_at: $var.question_updated.created_at,
             answered_at: $var.question_updated.answered_at,
             sla_deadline: $var.question_updated.sla_deadline
-            
+
           };
-        
+
           return safe_question;
         """
         timeout = 10
