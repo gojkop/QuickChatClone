@@ -856,31 +856,40 @@ function QuestionDetailPanel({
                 </h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {attachments.map((attachment, index) => (
-                  <div
-                    key={index}
-                    className="relative group border border-gray-200 rounded-lg overflow-hidden hover:border-indigo-300 transition-colors"
-                  >
-                    {renderAttachmentPreview(attachment, index, false)}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <a
-                        href={attachment.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 bg-white rounded-lg"
-                        download
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Download size={18} className="text-gray-900" />
-                      </a>
+                {attachments.map((attachment, index) => {
+                  const type = attachment.type || '';
+                  const name = attachment.name || '';
+                  const isVideo = type.startsWith('video/') || name.toLowerCase().match(/\.(mp4|mov|webm|avi|mkv|m4v)$/);
+
+                  return (
+                    <div
+                      key={index}
+                      className="relative group border border-gray-200 rounded-lg overflow-hidden hover:border-indigo-300 transition-colors"
+                    >
+                      {renderAttachmentPreview(attachment, index, false)}
+                      {/* Only show download overlay for non-video files */}
+                      {!isVideo && (
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 bg-white rounded-lg"
+                            download
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Download size={18} className="text-gray-900" />
+                          </a>
+                        </div>
+                      )}
+                      {attachment.name && (
+                        <div className="px-2 py-1 text-xs text-gray-600 truncate bg-white border-t border-gray-200">
+                          {attachment.name}
+                        </div>
+                      )}
                     </div>
-                    {attachment.name && (
-                      <div className="px-2 py-1 text-xs text-gray-600 truncate bg-white border-t border-gray-200">
-                        {attachment.name}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -962,31 +971,40 @@ function QuestionDetailPanel({
                 </h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {answerAttachments.map((attachment, index) => (
-                  <div
-                    key={index}
-                    className="relative group border border-green-200 rounded-lg overflow-hidden hover:border-green-400 transition-colors"
-                  >
-                    {renderAttachmentPreview(attachment, index, true)}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <a
-                        href={attachment.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 bg-white rounded-lg"
-                        download
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Download size={18} className="text-gray-900" />
-                      </a>
+                {answerAttachments.map((attachment, index) => {
+                  const type = attachment.type || '';
+                  const name = attachment.name || '';
+                  const isVideo = type.startsWith('video/') || name.toLowerCase().match(/\.(mp4|mov|webm|avi|mkv|m4v)$/);
+
+                  return (
+                    <div
+                      key={index}
+                      className="relative group border border-green-200 rounded-lg overflow-hidden hover:border-green-400 transition-colors"
+                    >
+                      {renderAttachmentPreview(attachment, index, true)}
+                      {/* Only show download overlay for non-video files */}
+                      {!isVideo && (
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 bg-white rounded-lg"
+                            download
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Download size={18} className="text-gray-900" />
+                          </a>
+                        </div>
+                      )}
+                      {attachment.name && (
+                        <div className="px-2 py-1 text-xs text-gray-600 truncate bg-white border-t border-green-200">
+                          {attachment.name}
+                        </div>
+                      )}
                     </div>
-                    {attachment.name && (
-                      <div className="px-2 py-1 text-xs text-gray-600 truncate bg-white border-t border-green-200">
-                        {attachment.name}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
