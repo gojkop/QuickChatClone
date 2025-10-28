@@ -334,6 +334,9 @@ function ExpertInboxPageV2() {
 
         setQuestions(enrichedQuestions);
         setPagination(questionsRes.data?.pagination || null);
+
+        // Fetch tab counts
+        fetchTabCounts();
       } catch (err) {
         console.error('Failed to load inbox data:', err);
         error('Failed to load questions');
@@ -447,10 +450,14 @@ function ExpertInboxPageV2() {
   // Fetch tab counts (optimized - single API call)
   const fetchTabCounts = async () => {
     try {
+      console.log('🔍 Fetching tab counts...');
       const response = await apiClient.get('/me/questions/stats');
+      console.log('✅ Tab counts received:', response.data);
       setTabCounts(response.data);
+      console.log('📊 Tab counts state updated');
     } catch (err) {
-      console.error('Failed to fetch tab counts:', err);
+      console.error('❌ Failed to fetch tab counts:', err);
+      console.error('Error details:', err.response?.data || err.message);
     }
   };
 

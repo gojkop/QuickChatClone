@@ -58,6 +58,7 @@ function UnifiedToolbar({
 
   // Get count for any tab (always show all counts)
   const getTabCount = (tab) => {
+    console.log(`🔢 getTabCount(${tab}) - tabCounts:`, tabCounts);
     if (tab === 'pending') return tabCounts.pending;
     if (tab === 'answered') return tabCounts.answered;
     if (tab === 'all') return tabCounts.all;
@@ -106,15 +107,13 @@ function UnifiedToolbar({
                 `}
               >
                 {option.label}
-                {count > 0 && (
-                  <span className={`ml-1.5 px-1.5 py-0.5 rounded text-xs font-bold ${
-                    filters.status === option.value
-                      ? 'bg-white/20'
-                      : 'bg-gray-200'
-                  }`}>
-                    {count}
-                  </span>
-                )}
+                <span className={`ml-1.5 px-1.5 py-0.5 rounded text-xs font-bold ${
+                  filters.status === option.value
+                    ? 'bg-white/20'
+                    : 'bg-gray-200'
+                }`}>
+                  {count}
+                </span>
               </button>
             );
           })}
@@ -173,7 +172,7 @@ function UnifiedToolbar({
               placeholder="Search..."
               value={searchInput}
               onChange={handleSearchChange}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:pl-1"
             />
             {searchInput && (
               <button
@@ -227,9 +226,7 @@ function UnifiedToolbar({
                 `}
               >
                 {option.label}
-                {count > 0 && (
-                  <span className="ml-1 text-xs">({count})</span>
-                )}
+                <span className="ml-1 text-xs">({count})</span>
               </button>
             );
           })}
