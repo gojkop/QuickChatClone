@@ -43,16 +43,18 @@ const getStripeClient = () => {
  * @param {string} params.description - Payment description
  * @param {Object} params.metadata - Additional metadata
  * @param {boolean} params.captureMethod - 'automatic' or 'manual' (default: 'automatic')
+ * @param {string} params.customerEmail - Customer email address (optional)
  * @returns {Promise<Object>} Payment intent object
  */
-export async function createPaymentIntent({ amount, currency = 'usd', description, metadata = {}, captureMethod = 'automatic' }) {
+export async function createPaymentIntent({ amount, currency = 'usd', description, metadata = {}, captureMethod = 'automatic', customerEmail = null }) {
   if (!isStripeEnabled()) {
     console.log('💳 [MOCK MODE] Creating mock payment intent:', {
       amount,
       currency,
       description,
       metadata,
-      captureMethod
+      captureMethod,
+      customerEmail
     });
 
     // Return mock payment intent
@@ -65,6 +67,7 @@ export async function createPaymentIntent({ amount, currency = 'usd', descriptio
       description,
       metadata,
       capture_method: captureMethod,
+      receipt_email: customerEmail,
       isMock: true
     };
   }
@@ -78,7 +81,8 @@ export async function createPaymentIntent({ amount, currency = 'usd', descriptio
     amount,
     currency,
     description,
-    captureMethod
+    captureMethod,
+    customerEmail
   });
 
   const createParams = {
@@ -90,6 +94,11 @@ export async function createPaymentIntent({ amount, currency = 'usd', descriptio
     payment_method_types: ['card', 'link', 'amazon_pay'], // Enable Link and Amazon Pay
   };
 
+  // Add customer email if provided (for receipts and customer lookup)
+  if (customerEmail) {
+    createParams.receipt_email = customerEmail;
+  }
+
   console.log('📤 [STRIPE] Sending to Stripe API:', JSON.stringify(createParams, null, 2));
 
   try {
@@ -100,7 +109,8 @@ export async function createPaymentIntent({ amount, currency = 'usd', descriptio
       status: paymentIntent.status,
       capture_method: paymentIntent.capture_method,
       amount: paymentIntent.amount,
-      currency: paymentIntent.currency
+      currency: paymentIntent.currency,
+      receipt_email: paymentIntent.receipt_email
     });
 
     return paymentIntent;

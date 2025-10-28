@@ -86,12 +86,16 @@ export default async function handler(req, res) {
     const questionId = result.question_id;
     const reviewToken = result.playback_token_hash || result.review_token;
 
-    // Update payment intent metadata with question ID (for later retrieval)
+    // Update payment intent metadata with question ID and description (for later retrieval)
     if (stripe_payment_intent_id) {
       try {
         console.log(`💳 Updating payment intent ${stripe_payment_intent_id} with question_id: ${questionId}`);
         await updatePaymentIntentMetadata(stripe_payment_intent_id, {
-          question_id: String(questionId)
+          question_id: String(questionId),
+          description: `Question #${questionId} - DD`, // DD = Deep Dive
+          question_type: 'deep_dive',
+          question_title: title,
+          proposed_price_cents: String(proposed_price_cents)
         });
         console.log('✅ Payment intent metadata updated');
       } catch (metadataError) {

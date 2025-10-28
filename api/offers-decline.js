@@ -1,7 +1,7 @@
 // api/offers-decline.js
 // Decline a Deep Dive offer and cancel/refund the payment
 
-import { cancelPaymentIntent, findPaymentIntentByQuestionId } from './lib/stripe.js';
+import { cancelPaymentIntent, findPaymentIntentByQuestionId, updatePaymentIntentMetadata } from './lib/stripe.js';
 import { rateLimit } from './lib/rate-limit.js';
 
 export default async function handler(req, res) {
@@ -109,12 +109,27 @@ export default async function handler(req, res) {
 
     // Cancel/refund the payment (if not mock)
     let paymentCanceled = false;
+    const declineDate = new Date().toISOString();
+
     if (paymentIntentId && !paymentIntentId.startsWith('pi_mock_')) {
       try {
         console.log(`💳 Canceling payment intent: ${paymentIntentId}`);
         const canceledPayment = await cancelPaymentIntent(paymentIntentId);
         console.log(`✅ Payment canceled: ${canceledPayment.id}, status: ${canceledPayment.status}`);
         paymentCanceled = true;
+
+        // Update payment intent metadata with decline information
+        try {
+          await updatePaymentIntentMetadata(paymentIntentId, {
+            decline_date: declineDate,
+            decline_reason: decline_reason || 'Expert declined',
+            declined: 'true'
+          });
+          console.log('✅ Payment intent metadata updated with decline info');
+        } catch (metadataError) {
+          console.error('⚠️ Failed to update decline metadata:', metadataError.message);
+          // Non-critical error - payment was already canceled
+        }
       } catch (paymentError) {
         console.error('❌ Failed to cancel payment:', paymentError.message);
         // Payment cancellation failed, but offer was already declined
