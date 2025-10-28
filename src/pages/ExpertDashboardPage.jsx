@@ -323,11 +323,16 @@ function ExpertDashboardPage() {
         ]);
 
         // Update tab counts from the parallel fetches
-        setTabCounts({
+        // Note: pendingResult is from fetchQuestionsPage (returns {questions, pagination})
+        // answeredResult and allResult are axios responses (have .data property)
+        const counts = {
           pending: pendingResult?.pagination?.total || 0,
-          answered: answeredResult.data?.pagination?.total || 0,
-          all: allResult.data?.pagination?.total || 0
-        });
+          answered: answeredResult?.data?.pagination?.total || 0,
+          all: allResult?.data?.pagination?.total || 0
+        };
+
+        console.log('📊 Initial tab counts:', counts);
+        setTabCounts(counts);
 
         const fetchTime = Date.now() - startTime;
         console.log(`✅ Parallel fetch completed in ${fetchTime}ms`);
