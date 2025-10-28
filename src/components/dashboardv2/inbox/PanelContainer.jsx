@@ -23,6 +23,12 @@ function PanelContainer({
   renderPanel,
   className = ''
 }) {
+  // Debug logging
+  console.log('🔵 PanelContainer rendered:', {
+    panelCount: panels.length,
+    panels: panels.map(p => ({ id: p.id, type: p.type, width: p.width }))
+  });
+
   // Detect mobile
   const [isMobile, setIsMobile] = useState(false);
 
@@ -54,10 +60,14 @@ function PanelContainer({
   // Create click handler for inactive panels
   // Closes all panels above the clicked panel
   const handleInactivePanelClick = (clickedPanelType) => {
+    console.log('🔵 PanelContainer - handleInactivePanelClick:', clickedPanelType);
+
     // For list panel, close all panels above it
     if (clickedPanelType === 'list') {
+      console.log('🔵 Closing detail panel (and answer if open)');
       onClosePanel('detail'); // This also closes answer panel per usePanelStack logic
     } else if (clickedPanelType === 'detail') {
+      console.log('🔵 Closing answer panel only');
       onClosePanel('answer'); // Only close answer panel
     }
   };
@@ -97,7 +107,16 @@ function PanelContainer({
               zIndex={zIndex}
               isActive={isActive}
               isMobile={isMobile}
-              onClose={isActive ? () => onClosePanel(panel.type) : () => handleInactivePanelClick(panel.type)}
+              onClose={isActive
+                ? () => {
+                    console.log(`🔵 Active panel [${panel.type}] close clicked`);
+                    onClosePanel(panel.type);
+                  }
+                : () => {
+                    console.log(`🔵 Inactive panel [${panel.type}] clicked`);
+                    handleInactivePanelClick(panel.type);
+                  }
+              }
               showCloseButton={panel.type !== 'list'}
             >
               {renderPanel(panel)}
