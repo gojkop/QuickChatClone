@@ -59,12 +59,12 @@ const shouldAnimate = false;  // ✅ Disabled all animations
 
 ### 1. Re-implemented Clickable Inactive Panels
 
-Now that animations are disabled, it's safe to re-enable the feature where clicking on a compressed panel (like the question list when detail is open) brings you back to that view.
+Now that animations are disabled, it's safe to re-enable the feature where clicking on a compressed panel brings you back to that view.
 
-**File:** `src/components/dashboardv2/inbox/Panel.jsx` (lines 237-246)
+**File:** `src/components/dashboardv2/inbox/Panel.jsx` (lines 215-222)
 
 ```javascript
-{!isActive && width > 0 && width < 40 && type !== 'list' && (
+{!isActive && width > 0 && width < 40 && (
   <div
     onClick={onClose}
     className="absolute inset-0 bg-black/[0.02] cursor-pointer hidden lg:block hover:bg-black/0 transition-colors"
@@ -77,7 +77,14 @@ Now that animations are disabled, it's safe to re-enable the feature where click
 - Very subtle overlay (2% black) on compressed inactive panels
 - Invisible on hover for clean UX
 - Only appears when panel width < 40%
-- Clicking anywhere on the panel closes the active panel above it
+- Clicking anywhere on the panel closes the active panel(s) above it
+
+**Navigation flows:**
+- **Question detail open:** Click question list (30% width) → Closes detail panel
+- **Answer open:** Click question list (10% width) → Closes answer AND detail panels
+- **Answer open:** Click detail panel (20% width) → Closes only answer panel
+
+**Key fix:** Initially excluded list panel with `type !== 'list'`, but this prevented clicks on the compressed list. Removed this restriction since `!isActive` already ensures only inactive panels have the overlay.
 
 ### 2. Removed Debug Logging
 
@@ -117,12 +124,15 @@ Removed debug artifacts:
 ✅ Open question → Detail panel appears instantly
 ✅ Click back arrow → Returns to list
 ✅ Click another question → Opens immediately (no gray screen)
-✅ Click on compressed question list → Closes detail panel
+✅ Click on compressed question list (when detail open) → Closes detail panel
+✅ Click on compressed question list (when answer open) → Closes answer AND detail
+✅ Click on compressed detail panel (when answer open) → Closes only answer
 ✅ Open answer composer → Works correctly
 ✅ Navigate back from answer → Works correctly
 ✅ Open answer again → No issues
 ✅ No console errors
 ✅ No visual artifacts
+✅ All navigation paths work smoothly
 
 ## Future Considerations
 
@@ -148,4 +158,14 @@ For now, **instant panels without animations is the right choice** for productio
 
 The gray screen bug was caused by overlapping panel animations creating DOM elements that blocked new content. Disabling animations completely resolved the issue and provides a snappier, more reliable user experience.
 
-**Result:** Bug fixed, feature restored (clickable inactive panels), code cleaned up.
+The clickable inactive panels feature was successfully re-implemented, allowing users to click anywhere on compressed panels to navigate back. This works for all navigation scenarios:
+- From detail panel back to inbox
+- From answer panel back to detail
+- From answer panel all the way back to inbox
+
+**Result:** ✅ Bug fixed, ✅ Feature fully restored, ✅ Code cleaned up, ✅ All navigation paths working perfectly.
+
+---
+
+**Last Updated:** October 28, 2025
+**Status:** Production Ready ✅
