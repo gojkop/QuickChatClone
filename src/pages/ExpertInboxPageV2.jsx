@@ -27,7 +27,7 @@ import { useBulkSelect } from '@/hooks/dashboardv2/useBulkSelect';
 import { usePinnedQuestions } from '@/hooks/dashboardv2/usePinnedQuestions';
 import { useUndoStack } from '@/hooks/useUndoStack';
 import { useToast } from '@/components/common/Toast';
-import { useSwipeGesture } from '@/hooks/useSwipeGesture';
+// import { useSwipeGesture } from '@/hooks/useSwipeGesture'; // DISABLED: Now using drag-to-dismiss on Panel
 import { copyToClipboard, getQuestionLink } from '@/utils/clipboard';
 import { announceToScreenReader } from '@/utils/accessibility';
 
@@ -157,19 +157,20 @@ function ExpertInboxPageV2() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [getPanelData]);
 
-  // Mobile swipe gesture
-  useSwipeGesture(
-    () => {
-      // Swipe right - go back
-      if (isPanelOpen('answer')) {
-        closePanel('answer');
-      } else if (isPanelOpen('detail')) {
-        closePanel('detail');
-      }
-    },
-    null, // No left swipe action
-    { enabled: isMobile }
-  );
+  // Mobile swipe gesture - DISABLED: Now using drag-to-dismiss on Panel component
+  // This provides better UX with visual feedback as the user drags
+  // useSwipeGesture(
+  //   () => {
+  //     // Swipe right - go back
+  //     if (isPanelOpen('answer')) {
+  //       closePanel('answer');
+  //     } else if (isPanelOpen('detail')) {
+  //       closePanel('detail');
+  //     }
+  //   },
+  //   null, // No left swipe action
+  //   { enabled: isMobile }
+  // );
 
   // Enable virtualization for large lists
   useEffect(() => {

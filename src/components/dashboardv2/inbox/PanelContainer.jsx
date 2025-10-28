@@ -1,7 +1,7 @@
 // src/components/dashboardv2/inbox/PanelContainer.jsx
 // Container for cascading panel layout (Linear-style)
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Panel from './Panel';
 
@@ -23,6 +23,18 @@ function PanelContainer({
   renderPanel,
   className = ''
 }) {
+  // Detect mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   // Keyboard navigation: Esc to close top panel
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -66,6 +78,7 @@ function PanelContainer({
               width={panel.width}
               zIndex={zIndex}
               isActive={isActive}
+              isMobile={isMobile}
               onClose={isActive ? () => onClosePanel(panel.type) : () => handleInactivePanelClick(panel.type)}
               showCloseButton={panel.type !== 'list'}
             >
