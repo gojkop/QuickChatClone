@@ -46,10 +46,33 @@ export default async function handler(req, res) {
     }
 
     // Get the content type from the R2 response
-    const contentType = response.headers.get('content-type') || 'application/octet-stream';
+    let contentType = response.headers.get('content-type') || 'application/octet-stream';
     const contentLength = response.headers.get('content-length');
     const contentRange = response.headers.get('content-range');
     const acceptRanges = response.headers.get('accept-ranges');
+
+    // Extract file extension from URL to detect video files
+    const urlPath = new URL(url).pathname;
+    const extension = urlPath.split('.').pop().toLowerCase();
+
+    // Map common video extensions to MIME types
+    const videoExtensions = {
+      'mp4': 'video/mp4',
+      'mov': 'video/quicktime',
+      'webm': 'video/webm',
+      'avi': 'video/x-msvideo',
+      'mkv': 'video/x-matroska',
+      'm4v': 'video/x-m4v'
+    };
+
+    // Check if this is a video file (by content-type OR extension)
+    const isVideo = contentType.startsWith('video/') || videoExtensions.hasOwnProperty(extension);
+
+    // Override content-type if R2 returned wrong type for known video extensions
+    if (isVideo && videoExtensions[extension] && contentType === 'application/octet-stream') {
+      contentType = videoExtensions[extension];
+      console.log(`🔧 Fixed content-type for .${extension} file: ${contentType}`);
+    }
 
     // Set response status first (before headers in some cases)
     const statusCode = contentRange ? 206 : 200;
@@ -58,8 +81,8 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
 
-    // For video streaming, set proper headers
-    if (contentType.startsWith('video/')) {
+    // For video streaming, set proper headers (NO download header)
+    if (isVideo) {
       res.setHeader('Accept-Ranges', acceptRanges || 'bytes');
       if (contentLength) {
         res.setHeader('Content-Length', contentLength);
@@ -67,9 +90,10 @@ export default async function handler(req, res) {
       if (contentRange) {
         res.setHeader('Content-Range', contentRange);
       }
+      // IMPORTANT: Do NOT set Content-Disposition for videos (allows inline playback)
       console.log(`📹 Serving video: status=${statusCode}, contentType=${contentType}, contentLength=${contentLength}`);
     } else {
-      // For other files, force download
+      // For other files (PDFs, documents), force download
       res.setHeader('Content-Disposition', 'attachment');
       if (contentLength) {
         res.setHeader('Content-Length', contentLength);

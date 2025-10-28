@@ -382,7 +382,7 @@ function QuestionDetailPanel({
           className="w-full h-full object-cover"
           src={proxyUrl}
           type={videoType}
-          preload="auto"
+          preload="metadata"
           crossOrigin="anonymous"
           style={{ maxHeight: '200px' }}
         >
