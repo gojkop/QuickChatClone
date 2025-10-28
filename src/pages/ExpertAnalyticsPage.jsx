@@ -17,6 +17,7 @@ import ExportButton from '@/components/dashboardv2/analytics/ExportButton';
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
 import { DollarSign, Clock, Star, MessageSquare } from 'lucide-react';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
+import { usePendingCount } from '@/hooks/dashboardv2/usePendingCount';
 import apiClient from '@/api';
 
 function ExpertAnalyticsPage() {
@@ -28,6 +29,9 @@ function ExpertAnalyticsPage() {
 
   const [dateRange, setDateRange] = useState('30d'); // 30d, 90d, 1y, all
   const [ratings, setRatings] = useState([]);
+
+  // Fetch accurate pending count
+  const { data: accuratePendingCount } = usePendingCount();
 
   // Fetch ratings from /me/answers endpoint
   useEffect(() => {
@@ -155,7 +159,7 @@ function ExpertAnalyticsPage() {
         { label: 'Dashboard', path: '/dashboard' },
         { label: 'Analytics' }
       ]}
-      pendingCount={analyticsMetrics.pendingCount}
+      pendingCount={accuratePendingCount ?? analyticsMetrics.pendingCount ?? 0}
       isAvailable={expertProfile?.accepting_questions ?? true}
       searchData={{ questions }}
     >
@@ -215,7 +219,7 @@ function ExpertAnalyticsPage() {
           />
           <StatCard
             label="Pending Questions"
-            value={formatNumber(analyticsMetrics.pendingCount)}
+            value={formatNumber(accuratePendingCount ?? analyticsMetrics.pendingCount ?? 0)}
             icon={MessageSquare}
             color="orange"
           />

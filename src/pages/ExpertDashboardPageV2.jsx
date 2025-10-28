@@ -20,6 +20,7 @@ import OnboardingFlow from '@/components/dashboardv2/onboarding/OnboardingFlow';
 import ProfileCompletionCard from '@/components/dashboardv2/onboarding/ProfileCompletionCard';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { useDashboardAnalytics } from '@/hooks/useDashboardAnalytics';
+import { usePendingCount } from '@/hooks/dashboardv2/usePendingCount';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
@@ -47,6 +48,9 @@ function ExpertDashboardPageV2() {
 
   // Ratings state
   const [ratings, setRatings] = useState([]);
+
+  // Fetch accurate pending count
+  const { data: accuratePendingCount } = usePendingCount();
 
   // Fetch pre-calculated analytics from server (accurate metrics from ALL questions)
   const {
@@ -95,12 +99,12 @@ function ExpertDashboardPageV2() {
   }, [ratings]);
 
   const dashboardData = useMemo(() => ({
-    pendingCount: metrics.pendingCount || 0,
+    pendingCount: accuratePendingCount ?? metrics.pendingCount ?? 0,
     urgentCount: metrics.urgentCount || 0,
     isAvailable: expertProfile?.accepting_questions ?? true,
     currentRevenue: metrics.thisMonthRevenue || 0,
     avgRating: avgRating || 0,
-  }), [metrics, expertProfile?.accepting_questions, avgRating]);
+  }), [accuratePendingCount, metrics, expertProfile?.accepting_questions, avgRating]);
 
   const handleAvailabilityChange = React.useCallback((newStatus) => {
     updateAvailability(newStatus);
