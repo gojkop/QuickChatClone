@@ -3,6 +3,46 @@
 import { useState, useCallback } from 'react';
 import apiClient from '@/api';
 
+// Helper to detect MIME type from file extension
+const getMimeTypeFromExtension = (filename) => {
+  const ext = filename.toLowerCase().split('.').pop();
+  const mimeTypes = {
+    // Video
+    'mp4': 'video/mp4',
+    'mov': 'video/quicktime',
+    'avi': 'video/x-msvideo',
+    'webm': 'video/webm',
+    'mkv': 'video/x-matroska',
+    'm4v': 'video/x-m4v',
+    // Audio
+    'mp3': 'audio/mpeg',
+    'wav': 'audio/wav',
+    'ogg': 'audio/ogg',
+    'm4a': 'audio/mp4',
+    // Images
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'svg': 'image/svg+xml',
+    // Documents
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'ppt': 'application/vnd.ms-powerpoint',
+    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'txt': 'text/plain',
+    'csv': 'text/csv',
+    'json': 'application/json',
+    'zip': 'application/zip',
+    'rar': 'application/x-rar-compressed',
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
+};
+
 export function useAnswerUpload() {
   const [uploadState, setUploadState] = useState({
     uploading: false,
@@ -186,7 +226,10 @@ export function useAnswerUpload() {
           throw new Error(`Invalid file object: ${typeof file}`);
         }
 
-        console.log(`📤 Uploading answer attachment: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+        // Detect MIME type from file extension if not provided
+        const contentType = file.type || getMimeTypeFromExtension(file.name);
+
+        console.log(`📤 Uploading answer attachment: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, type: ${contentType})`);
 
         // Step 1: Get presigned upload URL
         const urlResponse = await fetch('/api/media/get-attachment-upload-url', {
@@ -194,7 +237,7 @@ export function useAnswerUpload() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             filename: file.name,
-            contentType: file.type || 'application/octet-stream',
+            contentType: contentType,
             size: file.size,
           }),
         });
@@ -224,7 +267,7 @@ export function useAnswerUpload() {
         const result = {
           name: file.name,
           url: uploadData.publicUrl,
-          type: file.type || 'application/octet-stream',
+          type: contentType,  // Use detected contentType instead of file.type
           size: file.size,
         };
 

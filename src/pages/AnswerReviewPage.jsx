@@ -470,12 +470,39 @@ function AnswerReviewPage() {
     const url = file.url || '';
     const name = file.name || 'Attachment';
 
+    // Check if this is a video file (by MIME type OR file extension)
+    const isVideo = type.startsWith('video/') ||
+                    name.toLowerCase().match(/\.(mp4|mov|webm|avi|mkv|m4v)$/);
+
+    console.log('🎬 [renderAttachmentPreview] Processing attachment:', {
+      name,
+      type,
+      url: url.substring(0, 50) + '...',
+      isVideo,
+      hasR2URL: url.includes('r2.dev') || url.includes('r2.cloudflarestorage.com')
+    });
+
     // Video files - proxy through backend to handle large files and CORS
-    if (type.startsWith('video/')) {
+    if (isVideo) {
       // For R2-hosted videos, proxy through backend
       const proxyUrl = url.includes('r2.dev') || url.includes('r2.cloudflarestorage.com')
         ? `/api/media/download-attachment?url=${encodeURIComponent(url)}`
         : url;
+
+      console.log('🎥 [renderAttachmentPreview] Video detected - using proxy:', {
+        originalUrl: url.substring(0, 50) + '...',
+        proxyUrl: proxyUrl.substring(0, 80) + '...'
+      });
+
+      // Determine proper MIME type for video tag
+      let videoType = type;
+      if (!videoType || videoType === 'application/octet-stream') {
+        if (name.toLowerCase().endsWith('.mp4')) videoType = 'video/mp4';
+        else if (name.toLowerCase().endsWith('.mov')) videoType = 'video/quicktime';
+        else if (name.toLowerCase().endsWith('.webm')) videoType = 'video/webm';
+        else if (name.toLowerCase().endsWith('.avi')) videoType = 'video/x-msvideo';
+        else videoType = 'video/mp4'; // fallback
+      }
 
       return (
         <div className="mt-2 rounded-lg overflow-hidden border border-gray-300 bg-black">
@@ -485,7 +512,7 @@ function AnswerReviewPage() {
             preload="metadata"
             style={{ maxHeight: '300px' }}
           >
-            <source src={proxyUrl} type={type} />
+            <source src={proxyUrl} type={videoType} />
             Your browser does not support video playback.
           </video>
         </div>
