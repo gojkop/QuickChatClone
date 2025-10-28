@@ -9,7 +9,8 @@ import { Clock, TrendingUp } from 'lucide-react';
 function WelcomeHero() {
   const navigate = useNavigate();
   const { user, expertProfile } = useProfile();
-  const { data: questionsData } = useQuestionsQuery({ page: 1, perPage: 10 });
+  // Fetch more questions to ensure we get all pending ones for accurate SLA calculation
+  const { data: questionsData } = useQuestionsQuery({ page: 1, perPage: 50 });
   const [copied, setCopied] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
