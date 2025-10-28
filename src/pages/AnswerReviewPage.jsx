@@ -778,8 +778,8 @@ function AnswerReviewPage() {
             <div className="p-5 space-y-4">
               {/* Text Response */}
               {data.answer?.text && (
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap">{data.answer.text}</p>
+                <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+                  <p className="text-sm sm:text-base text-gray-800 whitespace-pre-wrap">{data.answer.text}</p>
                 </div>
               )}
 
