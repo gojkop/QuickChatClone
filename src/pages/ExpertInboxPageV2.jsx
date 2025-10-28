@@ -135,8 +135,8 @@ function ExpertInboxPageV2() {
         setShowKeyboardHelp(true);
       }
 
-      // Copy link shortcut
-      if (e.key === 'c' && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+      // Copy link shortcut (only when 'c' is pressed alone, not Ctrl+C or Cmd+C)
+      if (e.key === 'c' && !e.ctrlKey && !e.metaKey && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
         const detailPanel = getPanelData('detail');
         if (detailPanel) {
           e.preventDefault();
@@ -410,8 +410,8 @@ function ExpertInboxPageV2() {
         return;
       }
 
-      // c - Copy question link
-      if (e.key === 'c' && isPanelOpen('detail')) {
+      // c - Copy question link (only when 'c' is pressed alone, not Ctrl+C or Cmd+C)
+      if (e.key === 'c' && !e.ctrlKey && !e.metaKey && isPanelOpen('detail')) {
         e.preventDefault();
         const detailPanel = getPanelData('detail');
         if (detailPanel) {
@@ -495,13 +495,16 @@ function ExpertInboxPageV2() {
     try {
       const token = localStorage.getItem('qc_token');
 
+      // Extract question_id: could be offer.question_id (from banner) or offer.id (from detail panel)
+      const questionId = offer.question_id || offer.id;
+
       const response = await fetch('/api/offers-accept', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ id: offer.question_id })
+        body: JSON.stringify({ id: questionId })
       });
 
       if (!response.ok) {
@@ -514,11 +517,18 @@ function ExpertInboxPageV2() {
 
       // Close detail panel if it's showing this offer
       const detailPanel = getPanelData('detail');
-      if (detailPanel && detailPanel.id === offer.question_id) {
+      if (detailPanel && (detailPanel.id === offer.question_id || detailPanel.id === offer.id)) {
         closePanel('detail');
       }
 
+      // Refresh offers banner and questions list
       handleOfferUpdate();
+
+      // Add a small delay to ensure backend has processed the update, then refresh again
+      setTimeout(() => {
+        refreshQuestions();
+      }, 500);
+
       announceToScreenReader('Offer accepted successfully');
 
     } catch (err) {
@@ -538,6 +548,9 @@ function ExpertInboxPageV2() {
     try {
       const token = localStorage.getItem('qc_token');
 
+      // Extract question_id: could be offer.question_id (from banner) or offer.id (from detail panel)
+      const questionId = offer.question_id || offer.id;
+
       const response = await fetch('/api/offers-decline', {
         method: 'POST',
         headers: {
@@ -545,7 +558,7 @@ function ExpertInboxPageV2() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          id: offer.question_id,
+          id: questionId,
           decline_reason: reason || 'Expert declined'
         })
       });
@@ -560,11 +573,18 @@ function ExpertInboxPageV2() {
 
       // Close detail panel if it's showing this offer
       const detailPanel = getPanelData('detail');
-      if (detailPanel && detailPanel.id === offer.question_id) {
+      if (detailPanel && (detailPanel.id === offer.question_id || detailPanel.id === offer.id)) {
         closePanel('detail');
       }
 
+      // Refresh offers banner and questions list
       handleOfferUpdate();
+
+      // Add a small delay to ensure backend has processed the update, then refresh again
+      setTimeout(() => {
+        refreshQuestions();
+      }, 500);
+
       announceToScreenReader('Offer declined successfully');
 
     } catch (err) {

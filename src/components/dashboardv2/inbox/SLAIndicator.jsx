@@ -6,15 +6,30 @@ function SLAIndicator({ question, showLabel = true, compact = false }) {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
+      // Check if this is a pending offer - use offer_expires_at instead of SLA
+      const isPendingOffer = question.is_pending_offer || question.status === 'pending_offer';
+
+      if (isPendingOffer && question.offer_expires_at) {
+        // For pending offers, calculate time until offer expires
+        const now = Date.now() / 1000;
+        const expiresAtSeconds = question.offer_expires_at > 4102444800
+          ? question.offer_expires_at / 1000
+          : question.offer_expires_at;
+
+        const remaining = expiresAtSeconds - now;
+        return remaining;
+      }
+
+      // For regular questions, use SLA calculation
       if (!question.sla_hours_snapshot || question.sla_hours_snapshot <= 0) {
         return null;
       }
 
       const now = Date.now() / 1000;
-      const createdAtSeconds = question.created_at > 4102444800 
-        ? question.created_at / 1000 
+      const createdAtSeconds = question.created_at > 4102444800
+        ? question.created_at / 1000
         : question.created_at;
-      
+
       const elapsed = now - createdAtSeconds;
       const slaSeconds = question.sla_hours_snapshot * 3600;
       const remaining = slaSeconds - elapsed;
@@ -69,7 +84,21 @@ function SLAIndicator({ question, showLabel = true, compact = false }) {
 
   const styles = getStyles();
   const Icon = styles.icon;
-  const progressPercentage = Math.max(0, Math.min(100, (timeLeft / (question.sla_hours_snapshot * 3600)) * 100));
+
+  // Calculate progress percentage based on question type
+  const isPendingOffer = question.is_pending_offer || question.status === 'pending_offer';
+  let progressPercentage;
+
+  if (isPendingOffer && question.offer_expires_at && question.created_at) {
+    // For pending offers: progress from created_at to offer_expires_at (24h window)
+    const createdAtSeconds = question.created_at > 4102444800 ? question.created_at / 1000 : question.created_at;
+    const expiresAtSeconds = question.offer_expires_at > 4102444800 ? question.offer_expires_at / 1000 : question.offer_expires_at;
+    const totalTime = expiresAtSeconds - createdAtSeconds;
+    progressPercentage = Math.max(0, Math.min(100, (timeLeft / totalTime) * 100));
+  } else {
+    // For regular questions: progress based on SLA
+    progressPercentage = Math.max(0, Math.min(100, (timeLeft / (question.sla_hours_snapshot * 3600)) * 100));
+  }
 
   const formatTime = () => {
     if (hours >= 24) {
