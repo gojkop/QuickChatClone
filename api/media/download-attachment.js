@@ -28,7 +28,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('📥 Fetching attachment from:', url);
+    console.log('========================================');
+    console.log('📥 DOWNLOAD-ATTACHMENT PROXY REQUEST');
+    console.log('========================================');
+    console.log('Full URL:', url);
 
     // Forward range header for video streaming support
     const fetchHeaders = {};
@@ -41,7 +44,7 @@ export default async function handler(req, res) {
     const response = await fetch(url, { headers: fetchHeaders });
 
     if (!response.ok && response.status !== 206) {
-      console.error(`Failed to fetch attachment: ${response.status}`);
+      console.error(`❌ Failed to fetch attachment: ${response.status}`);
       throw new Error(`Failed to fetch attachment: ${response.status}`);
     }
 
@@ -51,9 +54,16 @@ export default async function handler(req, res) {
     const contentRange = response.headers.get('content-range');
     const acceptRanges = response.headers.get('accept-ranges');
 
+    console.log('📦 R2 Response Headers:');
+    console.log('  - Content-Type:', contentType);
+    console.log('  - Content-Length:', contentLength);
+    console.log('  - Accept-Ranges:', acceptRanges);
+    console.log('  - Content-Range:', contentRange);
+
     // Extract file extension from URL to detect video files
     const urlPath = new URL(url).pathname;
     const extension = urlPath.split('.').pop().toLowerCase();
+    console.log('🔍 Detected file extension:', extension);
 
     // Map common video extensions to MIME types
     const videoExtensions = {
@@ -66,16 +76,29 @@ export default async function handler(req, res) {
     };
 
     // Check if this is a video file (by content-type OR extension)
-    const isVideo = contentType.startsWith('video/') || videoExtensions.hasOwnProperty(extension);
+    const isVideoByContentType = contentType.startsWith('video/');
+    const isVideoByExtension = videoExtensions.hasOwnProperty(extension);
+    const isVideo = isVideoByContentType || isVideoByExtension;
+
+    console.log('🎬 Video Detection:');
+    console.log('  - Is video by content-type?', isVideoByContentType);
+    console.log('  - Is video by extension?', isVideoByExtension);
+    console.log('  - Final isVideo:', isVideo);
 
     // Override content-type if R2 returned wrong type for known video extensions
     if (isVideo && videoExtensions[extension] && contentType === 'application/octet-stream') {
+      const oldContentType = contentType;
       contentType = videoExtensions[extension];
-      console.log(`🔧 Fixed content-type for .${extension} file: ${contentType}`);
+      console.log(`🔧 Fixed content-type: ${oldContentType} → ${contentType}`);
     }
 
     // Set response status first (before headers in some cases)
     const statusCode = contentRange ? 206 : 200;
+
+    console.log('📤 Response Headers Being Set:');
+    console.log('  - Status Code:', statusCode);
+    console.log('  - Content-Type:', contentType);
+    console.log('  - Cache-Control: public, max-age=31536000');
 
     // Set response headers
     res.setHeader('Content-Type', contentType);
@@ -83,22 +106,28 @@ export default async function handler(req, res) {
 
     // For video streaming, set proper headers (NO download header)
     if (isVideo) {
+      console.log('  - Accept-Ranges:', acceptRanges || 'bytes');
       res.setHeader('Accept-Ranges', acceptRanges || 'bytes');
       if (contentLength) {
+        console.log('  - Content-Length:', contentLength);
         res.setHeader('Content-Length', contentLength);
       }
       if (contentRange) {
+        console.log('  - Content-Range:', contentRange);
         res.setHeader('Content-Range', contentRange);
       }
-      // IMPORTANT: Do NOT set Content-Disposition for videos (allows inline playback)
-      console.log(`📹 Serving video: status=${statusCode}, contentType=${contentType}, contentLength=${contentLength}`);
+      console.log('  - Content-Disposition: NOT SET (inline playback)');
+      console.log('✅ VIDEO MODE - Serving for inline playback');
     } else {
-      // For other files (PDFs, documents), force download
+      console.log('  - Content-Disposition: attachment (force download)');
       res.setHeader('Content-Disposition', 'attachment');
       if (contentLength) {
+        console.log('  - Content-Length:', contentLength);
         res.setHeader('Content-Length', contentLength);
       }
+      console.log('📄 NON-VIDEO MODE - Forcing download');
     }
+    console.log('========================================');
 
     // Stream the R2 response to the client
     const buffer = await response.arrayBuffer();
