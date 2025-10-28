@@ -681,7 +681,7 @@ function QuestionDetailPanel({
                 </div>
               )}
 
-              {(question.sla_hours_snapshot && question.sla_hours_snapshot > 0) || isPendingOffer ? (
+              {((question.sla_hours_snapshot && question.sla_hours_snapshot > 0) || isPendingOffer) && (
                 <div className="flex items-start gap-2 text-gray-700">
                   <Clock size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
                   <span className="font-medium min-w-[60px] flex-shrink-0">SLA:</span>
