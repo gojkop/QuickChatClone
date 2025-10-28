@@ -331,11 +331,9 @@ function ExpertDashboardPage() {
           all: allResult?.data?.pagination?.total || 0
         };
 
-        console.log('📊 Initial tab counts:', counts);
         setTabCounts(counts);
 
         const fetchTime = Date.now() - startTime;
-        console.log(`✅ Parallel fetch completed in ${fetchTime}ms`);
 
         // Process profile
         const expertProfile = profileResponse.data.expert_profile || {};

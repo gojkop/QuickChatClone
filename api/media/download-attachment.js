@@ -28,16 +28,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('========================================');
-    console.log('📥 DOWNLOAD-ATTACHMENT PROXY REQUEST');
-    console.log('========================================');
-    console.log('Full URL:', url);
-
     // Forward range header for video streaming support
     const fetchHeaders = {};
     if (req.headers.range) {
       fetchHeaders['Range'] = req.headers.range;
-      console.log('📹 Video streaming - Range request:', req.headers.range);
     }
 
     // Fetch the attachment file from R2
@@ -54,16 +48,9 @@ export default async function handler(req, res) {
     const contentRange = response.headers.get('content-range');
     const acceptRanges = response.headers.get('accept-ranges');
 
-    console.log('📦 R2 Response Headers:');
-    console.log('  - Content-Type:', contentType);
-    console.log('  - Content-Length:', contentLength);
-    console.log('  - Accept-Ranges:', acceptRanges);
-    console.log('  - Content-Range:', contentRange);
-
     // Extract file extension from URL to detect video files
     const urlPath = new URL(url).pathname;
     const extension = urlPath.split('.').pop().toLowerCase();
-    console.log('🔍 Detected file extension:', extension);
 
     // Map common video extensions to MIME types
     const videoExtensions = {
@@ -80,25 +67,13 @@ export default async function handler(req, res) {
     const isVideoByExtension = videoExtensions.hasOwnProperty(extension);
     const isVideo = isVideoByContentType || isVideoByExtension;
 
-    console.log('🎬 Video Detection:');
-    console.log('  - Is video by content-type?', isVideoByContentType);
-    console.log('  - Is video by extension?', isVideoByExtension);
-    console.log('  - Final isVideo:', isVideo);
-
     // Override content-type if R2 returned wrong type for known video extensions
     if (isVideo && videoExtensions[extension] && contentType === 'application/octet-stream') {
-      const oldContentType = contentType;
       contentType = videoExtensions[extension];
-      console.log(`🔧 Fixed content-type: ${oldContentType} → ${contentType}`);
     }
 
     // Set response status first (before headers in some cases)
     const statusCode = contentRange ? 206 : 200;
-
-    console.log('📤 Response Headers Being Set:');
-    console.log('  - Status Code:', statusCode);
-    console.log('  - Content-Type:', contentType);
-    console.log('  - Cache-Control: public, max-age=31536000');
 
     // Set response headers
     res.setHeader('Content-Type', contentType);
@@ -106,34 +81,24 @@ export default async function handler(req, res) {
 
     // For video streaming, set proper headers (NO download header)
     if (isVideo) {
-      console.log('  - Accept-Ranges:', acceptRanges || 'bytes');
       res.setHeader('Accept-Ranges', acceptRanges || 'bytes');
       if (contentLength) {
-        console.log('  - Content-Length:', contentLength);
         res.setHeader('Content-Length', contentLength);
       }
       if (contentRange) {
-        console.log('  - Content-Range:', contentRange);
         res.setHeader('Content-Range', contentRange);
       }
-      console.log('  - Content-Disposition: NOT SET (inline playback)');
-      console.log('✅ VIDEO MODE - Serving for inline playback');
+      // No Content-Disposition header for videos - allows inline playback
     } else {
-      console.log('  - Content-Disposition: attachment (force download)');
       res.setHeader('Content-Disposition', 'attachment');
       if (contentLength) {
-        console.log('  - Content-Length:', contentLength);
         res.setHeader('Content-Length', contentLength);
       }
-      console.log('📄 NON-VIDEO MODE - Forcing download');
     }
-    console.log('========================================');
 
     // Stream the R2 response to the client
     const buffer = await response.arrayBuffer();
     res.status(statusCode).send(Buffer.from(buffer));
-
-    console.log('✅ Attachment streamed successfully');
 
   } catch (error) {
     console.error('Error proxying attachment:', error);

@@ -211,7 +211,7 @@ db.edit question {
 ## Affected Endpoints
 
 ### ✅ Fixed
-- `POST /answer` (questions/answer.xs) - media_asset_id and attachments now preserved
+- `POST /answer` (questions/answer.xs) - media_asset_id and attachments now preserved (Jan 28, 2025)
 
 ### ⚠️ Review Needed
 All endpoints that use `db.edit` should be reviewed for this pattern:
@@ -220,6 +220,8 @@ All endpoints that use `db.edit` should be reviewed for this pattern:
 - `POST /offers/{id}/decline`
 - `POST /question/{id}/refund`
 - Any other endpoint that updates records
+
+**Note:** Review completed October 2025 - No other high-risk endpoints found.
 
 ---
 

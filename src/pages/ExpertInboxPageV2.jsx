@@ -450,8 +450,6 @@ function ExpertInboxPageV2() {
   // Fetch tab counts (matches exact filter logic from me/questions endpoint)
   const fetchTabCounts = async () => {
     try {
-      console.log('🔍 Fetching tab counts...');
-
       // Fetch all questions from each filter type to get accurate counts
       const [pendingRes, answeredRes, allRes] = await Promise.all([
         apiClient.get('/me/questions?filter_type=pending&per_page=1000'),
@@ -465,12 +463,9 @@ function ExpertInboxPageV2() {
         all: (allRes.data?.questions || allRes.data || []).length
       };
 
-      console.log('✅ Tab counts received:', counts);
       setTabCounts(counts);
-      console.log('📊 Tab counts state updated');
     } catch (err) {
-      console.error('❌ Failed to fetch tab counts:', err);
-      console.error('Error details:', err.response?.data || err.message);
+      console.error('Failed to fetch tab counts:', err.message);
     }
   };
 
