@@ -512,12 +512,28 @@ function QuestionDetailPanel({
 
     setIsRefunding(true);
     try {
-      const response = await apiClient.post('/questions/refund', {
-        question_id: question.id,
-        refund_reason: finalReason
+      const token = localStorage.getItem('qc_token');
+
+      const response = await fetch('/api/questions/refund', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          question_id: question.id,
+          refund_reason: finalReason
+        })
       });
 
-      if (response.data.success) {
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to decline question');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
         // Close dialog and detail panel
         setShowRefundDialog(false);
         if (onClose) onClose();
@@ -527,7 +543,7 @@ function QuestionDetailPanel({
       }
     } catch (error) {
       console.error('Refund error:', error);
-      alert(error.response?.data?.error || 'Failed to decline question. Please try again.');
+      alert(error.message || 'Failed to decline question. Please try again.');
     } finally {
       setIsRefunding(false);
     }
