@@ -139,6 +139,14 @@ function Panel({
     }
   };
 
+  console.log(`🔷 Panel [${type}] animation state:`, {
+    id,
+    shouldAnimate,
+    initial: shouldAnimate ? "enter" : false,
+    animate: shouldAnimate ? "center" : false,
+    exit: shouldAnimate ? "exit" : false
+  });
+
   return (
     <motion.div
       key={id}
@@ -146,6 +154,8 @@ function Panel({
       initial={shouldAnimate ? "enter" : false}
       animate={shouldAnimate ? "center" : false}
       exit={shouldAnimate ? "exit" : false}
+      onAnimationStart={() => console.log(`🎬 Panel [${type}] animation START`)}
+      onAnimationComplete={() => console.log(`🎬 Panel [${type}] animation COMPLETE`)}
       drag={enableDragToDismiss ? "x" : false}
       dragConstraints={{ left: 0, right: window.innerWidth }}
       dragElastic={0.2}
@@ -165,6 +175,8 @@ function Panel({
       style={{
         width: `${width}%`,
         zIndex: zIndex,
+        // IMPORTANT: Ensure panel is positioned relative so z-index works
+        position: 'relative',
         // Apply subtle backdrop on compressed panels
         filter: !isActive && width < 40 ? 'brightness(0.98)' : 'none',
         // Prevent browser swipe-back on desktop
