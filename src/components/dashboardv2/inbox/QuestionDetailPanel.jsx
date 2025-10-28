@@ -376,10 +376,12 @@ function QuestionDetailPanel({
         <video
           controls
           className="w-full h-full object-cover"
-          preload="metadata"
+          src={proxyUrl}
+          type={videoType}
+          preload="auto"
+          crossOrigin="anonymous"
           style={{ maxHeight: '200px' }}
         >
-          <source src={proxyUrl} type={videoType} />
           Your browser does not support video playback.
         </video>
       );

@@ -77,10 +77,12 @@ function QuestionSummaryCard({ composeData, onEdit }) {
           <video
             controls
             className="w-full"
-            preload="metadata"
+            src={proxyUrl}
+            type={videoType}
+            preload="auto"
+            crossOrigin="anonymous"
             style={{ maxHeight: '200px' }}
           >
-            <source src={proxyUrl} type={videoType} />
             Your browser does not support video playback.
           </video>
         </div>
