@@ -84,7 +84,8 @@ query answer verb=POST {
       data = {
         status: "closed",
         answered_at: now,
-        media_asset_id: $question.media_asset_id
+        media_asset_id: $question.media_asset_id,
+        attachments: $question.attachments
       }
     } as $question_updated
 
