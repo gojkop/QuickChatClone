@@ -407,20 +407,20 @@ function QuestionTable({
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-1.5 text-xs min-w-0">
                       <User size={12} className="text-gray-400 flex-shrink-0" />
-                      {(question.user_name || question.name) && (
+                      {(question.payer_first_name || question.payer_last_name) && (
                         <span className="font-medium text-gray-900 truncate">
-                          {question.user_name || question.name}
+                          {`${question.payer_first_name || ''} ${question.payer_last_name || ''}`.trim()}
                         </span>
                       )}
-                      {(question.user_email || question.email) && (
+                      {question.payer_email && (
                         <>
                           <span className="text-gray-400 flex-shrink-0">·</span>
                           <a
-                            href={`mailto:${question.user_email || question.email}`}
+                            href={`mailto:${question.payer_email}`}
                             className="text-indigo-600 hover:text-indigo-700 hover:underline truncate"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {question.user_email || question.email}
+                            {question.payer_email}
                           </a>
                         </>
                       )}
