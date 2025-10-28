@@ -18,32 +18,59 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('📥 Downloading attachment from:', url);
+    console.log('📥 Fetching attachment from:', url);
+
+    // Forward range header for video streaming support
+    const fetchHeaders = {};
+    if (req.headers.range) {
+      fetchHeaders['Range'] = req.headers.range;
+      console.log('📹 Video streaming - Range request:', req.headers.range);
+    }
 
     // Fetch the attachment file from R2
-    const response = await fetch(url);
+    const response = await fetch(url, { headers: fetchHeaders });
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 206) {
       console.error(`Failed to fetch attachment: ${response.status}`);
       throw new Error(`Failed to fetch attachment: ${response.status}`);
     }
 
     // Get the content type from the R2 response
     const contentType = response.headers.get('content-type') || 'application/octet-stream';
+    const contentLength = response.headers.get('content-length');
+    const contentRange = response.headers.get('content-range');
+    const acceptRanges = response.headers.get('accept-ranges');
 
-    // Stream the file to the client with proper headers
+    // Set response headers
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', 'attachment'); // Force download
     res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
 
-    // Pipe the R2 response to the client
+    // For video streaming, set proper headers
+    if (contentType.startsWith('video/')) {
+      res.setHeader('Accept-Ranges', acceptRanges || 'bytes');
+      if (contentLength) {
+        res.setHeader('Content-Length', contentLength);
+      }
+      if (contentRange) {
+        res.setHeader('Content-Range', contentRange);
+        res.status(206); // Partial Content
+      }
+    } else {
+      // For other files, force download
+      res.setHeader('Content-Disposition', 'attachment');
+      if (contentLength) {
+        res.setHeader('Content-Length', contentLength);
+      }
+    }
+
+    // Stream the R2 response to the client
     const buffer = await response.arrayBuffer();
     res.send(Buffer.from(buffer));
 
-    console.log('✅ Attachment download completed');
+    console.log('✅ Attachment streamed successfully');
 
   } catch (error) {
-    console.error('Error proxying attachment download:', error);
-    res.status(500).json({ error: 'Failed to download attachment file', details: error.message });
+    console.error('Error proxying attachment:', error);
+    res.status(500).json({ error: 'Failed to stream attachment file', details: error.message });
   }
 }
