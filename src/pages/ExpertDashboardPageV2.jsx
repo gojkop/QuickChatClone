@@ -93,8 +93,12 @@ function ExpertDashboardPageV2() {
       : 0;
     console.log('⭐ Calculated avgRating:', avg, 'from', ratedAnswers.length, 'rated answers');
     console.log('⭐ Value for card:', avg > 0 ? `${avg.toFixed(1)} ⭐` : '—');
+    console.log('⭐ Ratings array length:', ratings.length);
     return avg;
   }, [ratings]);
+
+  // Debug: Log when component renders
+  console.log('🎨 Dashboard component rendering, avgRating:', avgRating, 'ratings.length:', ratings.length);
 
   const dashboardData = useMemo(() => ({
     pendingCount: metrics.pendingCount || 0,
@@ -121,6 +125,7 @@ function ExpertDashboardPageV2() {
           const ratedAnswers = ratingsData.filter(r => r && r.rating && r.rating > 0);
           console.log(`📊 Found ${ratedAnswers.length} rated answers`);
           setRatings(ratingsData);
+          console.log('📊 State updated with ratings');
         }
       } catch (err) {
         console.error('❌ Failed to fetch ratings:', err);

@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
-import { Star, MessageSquare } from 'lucide-react';
+import { Star, MessageSquare, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-function RecentFeedback({ ratings = [], maxItems = 5 }) {
+function RecentFeedback({ ratings = [], maxItems = 6 }) {
+  const navigate = useNavigate();
   const recentFeedback = useMemo(() => {
     const ratingsArray = Array.isArray(ratings) ? ratings : [];
 
@@ -46,11 +48,24 @@ function RecentFeedback({ ratings = [], maxItems = 5 }) {
         {recentFeedback.map((feedback, index) => {
           const timestamp = feedback.feedback_at || feedback.created_at || 0;
           const date = new Date(timestamp > 4102444800 ? timestamp : timestamp * 1000);
+          const questionId = feedback.question_id;
+          const hasQuestionLink = questionId !== null && questionId !== undefined;
+
+          const handleClick = () => {
+            if (hasQuestionLink) {
+              navigate(`/dashboard/inbox#question-${questionId}`);
+            }
+          };
 
           return (
             <div
               key={index}
-              className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all"
+              onClick={hasQuestionLink ? handleClick : undefined}
+              className={`bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4 transition-all ${
+                hasQuestionLink
+                  ? 'cursor-pointer hover:shadow-md hover:border-indigo-300 hover:from-indigo-50'
+                  : ''
+              }`}
             >
               <div className="flex items-start justify-between mb-2 gap-2">
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -69,13 +84,18 @@ function RecentFeedback({ ratings = [], maxItems = 5 }) {
                     {feedback.rating ? feedback.rating.toFixed(1) : '—'}
                   </span>
                 </div>
-                <span className="text-xs text-gray-500 flex-shrink-0">
-                  {date.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 flex-shrink-0">
+                    {date.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </span>
+                  {hasQuestionLink && (
+                    <ExternalLink size={12} className="text-indigo-400" />
+                  )}
+                </div>
               </div>
 
               <p className="text-sm text-gray-700 leading-relaxed">
