@@ -23,7 +23,8 @@ export default async function handler(req, res) {
       metadata = {},
       captureMethod = 'automatic', // 'automatic' or 'manual'
       expertHandle, // Required for validation
-      tierType // 'quick_consult' or 'deep_dive'
+      tierType, // 'quick_consult' or 'deep_dive'
+      customerEmail // Optional: customer email for receipts
     } = req.body;
 
     // Security: Validate required fields
@@ -77,13 +78,15 @@ export default async function handler(req, res) {
       currency,
       description,
       captureMethod,
+      customerEmail, // Pass customer email for receipts
       metadata: {
         ...metadata,
         expert_handle: expertHandle,
         expert_profile_id: String(expertProfile.id),
         tier_type: tierType,
         client_ip: clientIp,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        ...(customerEmail && { customer_email: customerEmail })
       }
     });
 

@@ -1,7 +1,7 @@
 // api/questions/refund.js
 // Refund a question by canceling the payment intent and updating question status
 
-import { cancelPaymentIntent, findPaymentIntentByQuestionId } from '../lib/stripe.js';
+import { cancelPaymentIntent, findPaymentIntentByQuestionId, updatePaymentIntentMetadata } from '../lib/stripe.js';
 import { sendEmail } from '../lib/zeptomail.js';
 import { getOfferExpiredTemplate } from '../lib/email-templates/offer-expired.js';
 import { rateLimit } from '../lib/rate-limit.js';
@@ -49,6 +49,7 @@ export default async function handler(req, res) {
     // Step 1: Find and cancel payment intent in Stripe
     let paymentCanceled = false;
     let paymentIntentId = null;
+    const refundDate = new Date().toISOString();
 
     try {
       const paymentIntent = await findPaymentIntentByQuestionId(question_id);
@@ -59,6 +60,19 @@ export default async function handler(req, res) {
         if (paymentIntent.status === 'requires_capture' || paymentIntent.status === 'requires_payment_method') {
           await cancelPaymentIntent(paymentIntentId);
           paymentCanceled = true;
+
+          // Update payment intent metadata with refund information
+          try {
+            await updatePaymentIntentMetadata(paymentIntentId, {
+              refund_date: refundDate,
+              refund_reason: refund_reason || 'Expert declined',
+              refunded: 'true'
+            });
+            console.log('✅ Payment intent metadata updated with refund info');
+          } catch (metadataError) {
+            console.error('⚠️ Failed to update refund metadata:', metadataError.message);
+            // Non-critical error - payment was already canceled
+          }
         } else if (paymentIntent.status === 'canceled') {
           paymentCanceled = true;
         } else if (paymentIntent.status === 'succeeded') {
