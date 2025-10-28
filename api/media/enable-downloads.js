@@ -1,6 +1,50 @@
 // api/media/enable-downloads.js
 // Enable downloads for Cloudflare Stream videos after TUS upload completes
 
+async function waitForVideoReady(accountId, apiToken, videoId, maxAttempts = 10) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`🔍 Checking video status (attempt ${attempt}/${maxAttempts}):`, videoId);
+
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.warn(`⚠️ Failed to check video status: ${response.status}`);
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+      continue;
+    }
+
+    const data = await response.json();
+    const status = data.result?.status?.state;
+
+    console.log(`📹 Video status: ${status}`);
+
+    if (status === 'ready') {
+      console.log('✅ Video is ready for download enablement');
+      return true;
+    }
+
+    if (status === 'error' || status === 'failed') {
+      console.error('❌ Video processing failed');
+      return false;
+    }
+
+    // Wait before next attempt (exponential backoff)
+    const waitTime = Math.min(1000 * Math.pow(1.5, attempt), 10000); // Max 10 seconds
+    console.log(`⏳ Waiting ${waitTime}ms before next check...`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+  }
+
+  console.warn('⚠️ Video not ready after maximum attempts');
+  return false;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -23,7 +67,19 @@ export default async function handler(req, res) {
 
     console.log(`🔓 Enabling downloads for video: ${videoId}`);
 
-    // Call Cloudflare API to enable downloads
+    // Step 1: Wait for video to be ready (with timeout)
+    const isReady = await waitForVideoReady(accountId, apiToken, videoId, 10);
+
+    if (!isReady) {
+      console.warn(`⚠️ Video ${videoId} not ready, downloads cannot be enabled yet`);
+      return res.status(200).json({
+        success: true,
+        downloadsEnabled: false,
+        warning: 'Video is still processing. Downloads will need to be enabled later.',
+      });
+    }
+
+    // Step 2: Enable downloads
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
       {
