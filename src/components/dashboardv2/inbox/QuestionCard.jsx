@@ -73,7 +73,6 @@ function QuestionCard({
         className="absolute top-3 left-3 z-10 flex items-center justify-center cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
-          console.log('Checkbox clicked for question:', question.id);
           onSelect(question.id);
         }}
       >
