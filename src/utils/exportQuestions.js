@@ -14,12 +14,54 @@ const getStreamVideoId = (url) => {
 };
 
 /**
+ * Fetch complete answer data for a question
+ */
+const fetchAnswerData = async (questionId) => {
+  try {
+    console.log(`  📥 Fetching answer data for question ${questionId}...`);
+    const response = await apiClient.get(`/answer?question_id=${questionId}`);
+
+    if (!response.data || !response.data.answer) {
+      console.log(`  ⚠️ No answer found for question ${questionId}`);
+      return null;
+    }
+
+    const answer = response.data.answer;
+    console.log(`  ✅ Found answer (id: ${answer.id})`);
+
+    // Parse attachments
+    let attachments = [];
+    if (answer.attachments) {
+      try {
+        attachments = typeof answer.attachments === 'string'
+          ? JSON.parse(answer.attachments)
+          : answer.attachments;
+      } catch (e) {
+        console.error('Failed to parse answer attachments:', e);
+      }
+    }
+
+    return {
+      id: answer.id,
+      text: answer.text_response || '',
+      created_at: answer.created_at,
+      media_asset_id: answer.media_asset_id,
+      attachments: attachments
+    };
+  } catch (error) {
+    console.error('Failed to fetch answer data:', error);
+    return null;
+  }
+};
+
+/**
  * Fetch and parse answer media asset to get recording segments
  */
 const fetchAnswerMediaSegments = async (mediaAssetId) => {
   if (!mediaAssetId) return [];
 
   try {
+    console.log(`  📥 Fetching answer media asset ${mediaAssetId}...`);
     const response = await apiClient.get(`/media_asset/${mediaAssetId}`);
     const mediaAsset = response.data;
 
@@ -38,7 +80,7 @@ const fetchAnswerMediaSegments = async (mediaAssetId) => {
 
     // Check if this is a multi-segment recording
     if (metadata?.type === 'multi-segment' && metadata?.segments) {
-      return metadata.segments.map(segment => ({
+      const segments = metadata.segments.map(segment => ({
         id: segment.uid,
         url: segment.playback_url,
         duration_sec: segment.duration,
@@ -47,9 +89,12 @@ const fetchAnswerMediaSegments = async (mediaAssetId) => {
           mode: segment.mode
         }
       }));
+      console.log(`  ✅ Found ${segments.length} answer media segment(s)`);
+      return segments;
     }
 
     // Otherwise return the main asset as a single item
+    console.log(`  ✅ Found 1 answer media segment`);
     return [{
       id: mediaAsset.id,
       url: mediaAsset.url,
@@ -76,12 +121,16 @@ export const downloadQuestionAsZip = async (question) => {
 
     console.log(`📦 Creating export for question ${question.id}...`);
 
-    // Fetch answer media segments if answer exists
+    // Fetch complete answer data if question is answered
+    let answerData = null;
     let answerMediaSegments = [];
-    if (question.answer_media_asset_id) {
-      console.log(`  📥 Fetching answer media asset ${question.answer_media_asset_id}...`);
-      answerMediaSegments = await fetchAnswerMediaSegments(question.answer_media_asset_id);
-      console.log(`  ✅ Found ${answerMediaSegments.length} answer segment(s)`);
+
+    if (question.answered_at || question.status === 'answered' || question.status === 'closed') {
+      answerData = await fetchAnswerData(question.id);
+
+      if (answerData && answerData.media_asset_id) {
+        answerMediaSegments = await fetchAnswerMediaSegments(answerData.media_asset_id);
+      }
     }
 
     // Format timestamp correctly (Xano returns Unix timestamps in seconds)
@@ -131,7 +180,7 @@ Tier: ${questionInfo.question_tier}
 `;
 
     // Add answer data if it exists
-    if (question.answer_text || question.answered_at) {
+    if (answerData) {
       questionText += `
 
 =====================================
@@ -139,10 +188,10 @@ ANSWER
 =====================================
 
 Answer Text:
-${question.answer_text || '(No text response)'}
+${answerData.text || '(No text response)'}
 
 ---
-Answered: ${formatTimestamp(question.answered_at)}
+Answered: ${formatTimestamp(answerData.created_at)}
 `;
     }
 
@@ -247,12 +296,9 @@ Answered: ${formatTimestamp(question.answered_at)}
     }
 
     // Add answer attachments if they exist
-    if (question.answer_attachments && question.answer_attachments.length > 0) {
-      const answerAttachmentsArray = typeof question.answer_attachments === 'string'
-        ? JSON.parse(question.answer_attachments)
-        : question.answer_attachments;
-
-      answerAttachmentsArray.forEach((file) => {
+    if (answerData && answerData.attachments && answerData.attachments.length > 0) {
+      console.log(`  📎 Adding ${answerData.attachments.length} answer attachment(s)`);
+      answerData.attachments.forEach((file) => {
         // Proxy attachments through backend to avoid CORS
         const proxyUrl = `/api/media/download-attachment?url=${encodeURIComponent(file.url)}`;
         downloads.push({
