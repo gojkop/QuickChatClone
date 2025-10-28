@@ -1,6 +1,6 @@
 // src/components/dashboardv2/inbox/QuestionDetailPanel.jsx
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Loader, X } from 'lucide-react';
+import { ArrowLeft, Play, Download, FileText, Image as ImageIcon, Clock, User, Calendar, MessageSquare, Mail, Video, Mic, CheckCircle, Loader, X, RefreshCcw, Clock as ClockIcon } from 'lucide-react';
 import SLAIndicator from './SLAIndicator';
 import PriorityBadge from './PriorityBadge';
 import MediaSegmentCard from './MediaSegmentCard';
@@ -28,6 +28,10 @@ function QuestionDetailPanel({
   const [answerMediaAssets, setAnswerMediaAssets] = useState([]);
   const [playingSegmentIndex, setPlayingSegmentIndex] = useState(null);
   const [playingAnswerSegmentIndex, setPlayingAnswerSegmentIndex] = useState(null);
+  const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [refundReason, setRefundReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [isRefunding, setIsRefunding] = useState(false);
 
   // Fetch media assets when question changes
   useEffect(() => {
@@ -496,6 +500,37 @@ function QuestionDetailPanel({
 
   const getAskerEmail = (question) => {
     return question.payer_email || question.user_email || question.email || '';
+  };
+
+  const handleRefundDecline = async () => {
+    const finalReason = refundReason === 'Other' ? customReason : refundReason;
+
+    if (!finalReason) {
+      alert('Please select or enter a decline reason');
+      return;
+    }
+
+    setIsRefunding(true);
+    try {
+      const response = await apiClient.post('/questions/refund', {
+        question_id: question.id,
+        refund_reason: finalReason
+      });
+
+      if (response.data.success) {
+        // Close dialog and detail panel
+        setShowRefundDialog(false);
+        if (onClose) onClose();
+
+        // Show success message (you can replace with toast notification)
+        alert('Question declined and asker refunded successfully');
+      }
+    } catch (error) {
+      console.error('Refund error:', error);
+      alert(error.response?.data?.error || 'Failed to decline question. Please try again.');
+    } finally {
+      setIsRefunding(false);
+    }
   };
 
   if (!question) {
@@ -983,6 +1018,26 @@ function QuestionDetailPanel({
                   <Play size={18} />
                   <span>Answer This Question</span>
                 </button>
+
+                {/* Secondary action: Refund & Decline */}
+                <button
+                  onClick={() => setShowRefundDialog(true)}
+                  disabled={question.answered_at || question.status === 'refunded'}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCcw size={18} />
+                  <span>Refund & Decline</span>
+                </button>
+
+                {/* Tertiary action: Schedule (disabled/future) */}
+                <button
+                  disabled
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg font-medium cursor-not-allowed"
+                  title="Coming soon"
+                >
+                  <ClockIcon size={18} />
+                  <span>Schedule Work Time</span>
+                </button>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -1033,14 +1088,34 @@ function QuestionDetailPanel({
             </div>
           </div>
         ) : !isAnswered ? (
-          <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 w-full">
             {/* Primary action: Answer */}
             <button
               onClick={onAnswer}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-sm"
             >
-              <Play size={18} />
+              <Play size={16} />
               <span>Answer This Question</span>
+            </button>
+
+            {/* Secondary action: Refund & Decline */}
+            <button
+              onClick={() => setShowRefundDialog(true)}
+              disabled={question.answered_at || question.status === 'refunded'}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCcw size={16} />
+              <span>Refund & Decline</span>
+            </button>
+
+            {/* Tertiary action: Schedule (disabled/future) */}
+            <button
+              disabled
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg font-medium cursor-not-allowed"
+              title="Coming soon"
+            >
+              <ClockIcon size={16} />
+              <span>Schedule</span>
             </button>
           </div>
         ) : (
@@ -1050,6 +1125,91 @@ function QuestionDetailPanel({
           </div>
         )}
       </div>
+
+      {/* Refund & Decline Confirmation Dialog */}
+      {showRefundDialog && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50" onClick={() => setShowRefundDialog(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">Decline Question?</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                This will immediately refund the asker and close the question. You won't be able to answer it later.
+              </p>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-4 space-y-4">
+              {/* Reason Dropdown */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Reason for declining <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Cannot provide quality answer">Cannot provide quality answer</option>
+                  <option value="Outside my expertise">Outside my expertise</option>
+                  <option value="Not enough time available">Not enough time available</option>
+                  <option value="Question too complex/vague">Question too complex/vague</option>
+                  <option value="Other">Other (please specify)</option>
+                </select>
+              </div>
+
+              {/* Custom Reason Text Area */}
+              {refundReason === 'Other' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Please specify <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    placeholder="Enter your reason..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowRefundDialog(false);
+                  setRefundReason('');
+                  setCustomReason('');
+                }}
+                disabled={isRefunding}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRefundDecline}
+                disabled={isRefunding || !refundReason || (refundReason === 'Other' && !customReason)}
+                className="px-4 py-2 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isRefunding ? (
+                  <>
+                    <Loader size={16} className="animate-spin" />
+                    <span>Declining...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCcw size={16} />
+                    <span>Decline & Refund</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
