@@ -86,19 +86,23 @@ function MobileQuestionCard({
       `}
     >
       <div className="flex items-start gap-2.5">
-        {/* Checkbox */}
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={(e) => {
-            e.stopPropagation();
-            onSelect(question.id);
-          }}
-          onClick={(e) => e.stopPropagation()}
-          className="mt-0.5 w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0 cursor-pointer"
-          style={{ touchAction: 'auto' }}
-        />
-        
+        {/* Checkbox - Touch optimized */}
+        <div className="flex items-center justify-center flex-shrink-0 mt-0.5 min-w-[32px]">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => {
+              console.log('Mobile checkbox changed:', question.id, e.target.checked);
+              onSelect(question, e);
+            }}
+            onClick={(e) => {
+              console.log('Mobile checkbox clicked:', question.id);
+              e.stopPropagation();
+            }}
+            className="w-5 h-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+          />
+        </div>
+
         <div className="flex-1 min-w-0 pr-6">
           {/* Question Title + Q-ID */}
           <div className="flex items-start gap-1.5 mb-2">
