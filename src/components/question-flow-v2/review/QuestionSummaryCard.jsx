@@ -51,8 +51,13 @@ function QuestionSummaryCard({ composeData, onEdit }) {
     const url = attachment.url || '';
     const name = attachment.name || attachment.filename || 'Attachment';
 
-    // Video files
+    // Video files - proxy through backend to handle large files and CORS
     if (type.startsWith('video/')) {
+      // For R2-hosted videos, proxy through backend
+      const proxyUrl = url.includes('r2.dev') || url.includes('r2.cloudflarestorage.com')
+        ? `/api/media/download-attachment?url=${encodeURIComponent(url)}`
+        : url;
+
       return (
         <div className="mt-2 rounded-lg overflow-hidden border border-gray-300 bg-black">
           <video
@@ -61,7 +66,7 @@ function QuestionSummaryCard({ composeData, onEdit }) {
             preload="metadata"
             style={{ maxHeight: '200px' }}
           >
-            <source src={url} type={type} />
+            <source src={proxyUrl} type={type} />
             Your browser does not support video playback.
           </video>
         </div>
