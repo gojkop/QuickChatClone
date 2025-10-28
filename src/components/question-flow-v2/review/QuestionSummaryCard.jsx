@@ -79,7 +79,7 @@ function QuestionSummaryCard({ composeData, onEdit }) {
             className="w-full"
             src={proxyUrl}
             type={videoType}
-            preload="auto"
+            preload="none"
             crossOrigin="anonymous"
             style={{ maxHeight: '200px' }}
           >
