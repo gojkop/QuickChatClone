@@ -722,12 +722,10 @@ function ExpertInboxPageV2() {
   };
 
   const handleQuestionClick = (question, event) => {
-    console.log('📋 handleQuestionClick:', { questionId: question?.id, hasEvent: !!event });
     toggleSelect(question.id, event);
   };
 
   const handleQuestionOpen = (question) => {
-    console.log('📋 handleQuestionOpen:', { questionId: question?.id, hasQuestion: !!question });
     openPanel('detail', question);
     announceToScreenReader(`Opened question ${question.id}`);
   };
@@ -918,13 +916,6 @@ function ExpertInboxPageV2() {
 
   // Render panel content
   const renderPanel = (panel) => {
-    console.log('📋 renderPanel called:', {
-      type: panel.type,
-      hasData: !!panel.data,
-      dataId: panel.data?.id,
-      dataKeys: panel.data ? Object.keys(panel.data).slice(0, 10) : []
-    });
-
     switch (panel.type) {
       case 'list':
         return (
