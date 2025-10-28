@@ -2,6 +2,16 @@
 // Proxies attachment file downloads from R2 to avoid CORS issues
 
 export default async function handler(req, res) {
+  // Set CORS headers to allow video element to load the content
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Range');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -41,6 +51,9 @@ export default async function handler(req, res) {
     const contentRange = response.headers.get('content-range');
     const acceptRanges = response.headers.get('accept-ranges');
 
+    // Set response status first (before headers in some cases)
+    const statusCode = contentRange ? 206 : 200;
+
     // Set response headers
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
@@ -53,8 +66,8 @@ export default async function handler(req, res) {
       }
       if (contentRange) {
         res.setHeader('Content-Range', contentRange);
-        res.status(206); // Partial Content
       }
+      console.log(`📹 Serving video: status=${statusCode}, contentType=${contentType}, contentLength=${contentLength}`);
     } else {
       // For other files, force download
       res.setHeader('Content-Disposition', 'attachment');
@@ -65,7 +78,7 @@ export default async function handler(req, res) {
 
     // Stream the R2 response to the client
     const buffer = await response.arrayBuffer();
-    res.send(Buffer.from(buffer));
+    res.status(statusCode).send(Buffer.from(buffer));
 
     console.log('✅ Attachment streamed successfully');
 
