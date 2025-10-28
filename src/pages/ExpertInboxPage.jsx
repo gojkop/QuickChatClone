@@ -10,6 +10,7 @@ import QuestionDetailPanel from '@/components/dashboardv2/inbox/QuestionDetailPa
 import LoadingState from '@/components/dashboardv2/shared/LoadingState';
 import { useInbox } from '@/hooks/dashboardv2/useInbox';
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
+import { downloadQuestionsAsZip } from '@/utils/exportQuestions';
 
 // Import modal for answering (reuse from old dashboard)
 import QuestionDetailModal from '@/components/dashboard/QuestionDetailModal';
@@ -213,28 +214,25 @@ function ExpertInboxPage() {
     }
   };
 
-  const handleExport = () => {
-    const selectedQs = questions.filter(q => selectedQuestions.includes(q.id));
-    
-    const csv = [
-      ['ID', 'Question', 'User', 'Price', 'Created', 'Status'].join(','),
-      ...selectedQs.map(q => [
-        q.id,
-        `"${(q.question_text || '').replace(/"/g, '""')}"`,
-        q.user_name || '',
-        (q.price_cents || 0) / 100,
-        new Date(q.created_at * 1000).toISOString(),
-        q.status,
-      ].join(','))
-    ].join('\n');
+  const handleExport = async () => {
+    if (selectedQuestions.length === 0) {
+      alert('No questions selected');
+      return;
+    }
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `questions-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const selectedQs = questions.filter(q => selectedQuestions.includes(q.id));
+
+    try {
+      // Export questions as ZIP files
+      await downloadQuestionsAsZip(selectedQs, (current, total) => {
+        console.log(`📦 Progress: ${current}/${total}`);
+      });
+
+      alert(`Exported ${selectedQs.length} question(s) as ZIP`);
+    } catch (err) {
+      console.error('Failed to export questions:', err);
+      alert('Failed to export questions. Please try again.');
+    }
   };
 
   const handleQuestionClick = (question) => {

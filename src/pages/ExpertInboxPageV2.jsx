@@ -30,6 +30,7 @@ import { useToast } from '@/components/common/Toast';
 // import { useSwipeGesture } from '@/hooks/useSwipeGesture'; // DISABLED: Now using drag-to-dismiss on Panel
 import { copyToClipboard, getQuestionLink } from '@/utils/clipboard';
 import { announceToScreenReader } from '@/utils/accessibility';
+import { downloadQuestionsAsZip } from '@/utils/exportQuestions';
 
 function ExpertInboxPageV2() {
   const navigate = useNavigate();
@@ -692,31 +693,32 @@ function ExpertInboxPageV2() {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    if (selectedIds.length === 0) {
+      error('No questions selected');
+      return;
+    }
+
     const selectedQs = questions.filter(q => selectedIds.includes(q.id));
 
-    const csv = [
-      ['ID', 'Question', 'User', 'Price', 'Created', 'Status'].join(','),
-      ...selectedQs.map(q => [
-        q.id,
-        `"${(q.question_text || '').replace(/"/g, '""')}"`,
-        q.user_name || '',
-        (q.price_cents || 0) / 100,
-        new Date(q.created_at * 1000).toISOString(),
-        q.status,
-      ].join(','))
-    ].join('\n');
+    try {
+      // Show loading toast
+      const loadingToast = info(`Exporting ${selectedQs.length} question(s)...`, { duration: 0 });
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `questions-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      // Export questions as ZIP files
+      await downloadQuestionsAsZip(selectedQs, (current, total) => {
+        console.log(`📦 Progress: ${current}/${total}`);
+      });
 
-    success(`Exported ${selectedIds.length} questions`);
-    announceToScreenReader(`Exported ${selectedIds.length} questions to CSV`);
+      // Hide loading toast and show success
+      hideToast(loadingToast);
+      success(`Exported ${selectedQs.length} question(s) as ZIP`);
+      announceToScreenReader(`Exported ${selectedQs.length} questions as ZIP archives`);
+    } catch (err) {
+      console.error('Failed to export questions:', err);
+      error('Failed to export questions');
+      announceToScreenReader('Failed to export questions');
+    }
   };
 
   const handleQuestionClick = (question, event) => {
