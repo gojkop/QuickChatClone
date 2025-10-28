@@ -66,6 +66,17 @@ function Panel({
   showCloseButton = true,
   title = null
 }) {
+  // Debug logging
+  console.log(`🔷 Panel [${type}] rendered:`, {
+    id,
+    type,
+    width,
+    zIndex,
+    isActive,
+    isMobile,
+    showCloseButton
+  });
+
   // Don't show close button for list panel
   const shouldShowClose = showCloseButton && type !== 'list' && width > 0;
 
@@ -210,16 +221,30 @@ function Panel({
       {/* Subtle darkening overlay for inactive panels - clickable on desktop to bring panel forward */}
       {/* Only show overlay when panel is truly compressed (width < 40%) AND not active */}
       {/* This prevents the gray overlay bug when reopening panels */}
-      {!isActive && width > 0 && width < 40 && type !== 'list' && (
-        <div
-          onClick={onClose}
-          className="absolute inset-0 bg-black transition-opacity duration-200 cursor-pointer hidden lg:block hover:opacity-0"
-          style={{
-            opacity: Math.max(0, (100 - width) / 1000) // Very subtle darkening
-          }}
-          title="Click to return to this view"
-        />
-      )}
+      {(() => {
+        const shouldShowOverlay = !isActive && width > 0 && width < 40 && type !== 'list';
+        console.log(`🔶 Panel [${type}] overlay check:`, {
+          isActive,
+          width,
+          type,
+          shouldShowOverlay,
+          opacity: shouldShowOverlay ? Math.max(0, (100 - width) / 1000) : 0
+        });
+
+        return shouldShowOverlay && (
+          <div
+            onClick={() => {
+              console.log(`🔶 Panel [${type}] overlay clicked - calling onClose`);
+              onClose();
+            }}
+            className="absolute inset-0 bg-black transition-opacity duration-200 cursor-pointer hidden lg:block hover:opacity-0"
+            style={{
+              opacity: Math.max(0, (100 - width) / 1000) // Very subtle darkening
+            }}
+            title="Click to return to this view"
+          />
+        );
+      })()}
     </motion.div>
   );
 }
