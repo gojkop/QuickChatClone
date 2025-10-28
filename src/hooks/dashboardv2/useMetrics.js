@@ -56,8 +56,11 @@ export function useMetrics(questions = [], preCalculated = null) {
       q.answered_at && q.status === 'paid'
     );
     
-    const pendingQuestions = safeQuestions.filter(q => 
-      !q.answered_at && q.status === 'paid'
+    const pendingQuestions = safeQuestions.filter(q =>
+      !q.answered_at &&
+      q.status === 'paid' &&
+      !q.pending_deep_dive_offer_id &&
+      q.pricing_status !== 'offer_declined'
     );
     
     // This month's answered questions
