@@ -305,6 +305,52 @@ export async function updatePaymentIntentMetadata(paymentIntentId, metadata) {
 }
 
 /**
+ * Update payment intent description and metadata
+ *
+ * @param {string} paymentIntentId - Payment intent ID
+ * @param {Object} params - Parameters to update
+ * @param {string} params.description - Description (shows in Stripe dashboard)
+ * @param {Object} params.metadata - Metadata to add/update
+ * @returns {Promise<Object>} Updated payment intent
+ */
+export async function updatePaymentIntent(paymentIntentId, { description, metadata }) {
+  // Handle mock payment intents
+  if (paymentIntentId.startsWith('pi_mock_')) {
+    console.log('💳 [MOCK MODE] Skipping payment intent update for mock payment intent');
+    return { id: paymentIntentId, description, metadata, isMock: true };
+  }
+
+  if (!isStripeEnabled()) {
+    throw new Error('Cannot update real payment intent when Stripe is disabled');
+  }
+
+  const stripe = getStripeClient();
+  if (!stripe) {
+    throw new Error('Stripe is not properly configured');
+  }
+
+  try {
+    console.log(`💳 [STRIPE] Updating payment intent: ${paymentIntentId}`);
+    const updateParams = {};
+
+    if (description) {
+      updateParams.description = description;
+    }
+
+    if (metadata) {
+      updateParams.metadata = metadata;
+    }
+
+    const paymentIntent = await stripe.paymentIntents.update(paymentIntentId, updateParams);
+    console.log(`✅ [STRIPE] Payment intent updated: description="${paymentIntent.description}"`);
+    return paymentIntent;
+  } catch (error) {
+    console.error('❌ [STRIPE] Failed to update payment intent:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Find payment intent by question ID in metadata
  *
  * @param {number} questionId - Question ID to search for
