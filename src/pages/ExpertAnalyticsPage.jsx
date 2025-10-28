@@ -10,6 +10,7 @@ import StatCard from '@/components/dashboardv2/analytics/StatCard';
 import RevenueChart from '@/components/dashboardv2/analytics/RevenueChart';
 import ResponseTimeChart from '@/components/dashboardv2/analytics/ResponseTimeChart';
 import RatingDistribution from '@/components/dashboardv2/analytics/RatingDistribution';
+import RecentFeedback from '@/components/dashboardv2/analytics/RecentFeedback';
 import InsightsPanel from '@/components/dashboardv2/analytics/InsightsPanel';
 import DateRangeSelector from '@/components/dashboardv2/analytics/DateRangeSelector';
 import ExportButton from '@/components/dashboardv2/analytics/ExportButton';
@@ -235,12 +236,15 @@ function ExpertAnalyticsPage() {
           <ResponseTimeChart questions={questions} dateRange={dateRange} />
         </div>
 
-        {/* Charts Row 2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
-            <InsightsPanel questions={questions} metrics={analyticsMetrics} />
-          </div>
+        {/* Insights Panel */}
+        <div className="mb-6">
+          <InsightsPanel questions={questions} metrics={analyticsMetrics} />
+        </div>
+
+        {/* Ratings & Feedback Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <RatingDistribution ratings={ratings} />
+          <RecentFeedback ratings={ratings} maxItems={5} />
         </div>
       </AnalyticsLayout>
       </DashboardPageContent>
