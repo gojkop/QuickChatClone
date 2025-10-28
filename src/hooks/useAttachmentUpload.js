@@ -19,49 +19,74 @@ export function useAttachmentUpload() {
     }]);
 
     try {
-      console.log('Uploading file:', {
+      console.log('📤 Uploading file:', {
         name: file.name,
         type: file.type,
-        size: file.size
+        size: file.size,
+        sizeMB: (file.size / 1024 / 1024).toFixed(2)
       });
 
-      // Use FormData instead of base64 to bypass Vercel's 4.5MB body limit
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('name', file.name);
-      formData.append('type', file.type || 'application/octet-stream');
+      // Step 1: Get presigned upload URL from backend
+      console.log('📝 Getting presigned URL...');
+      setUploads(prev => prev.map(upload =>
+        upload.id === uploadId ? { ...upload, progress: 10 } : upload
+      ));
 
-      const response = await fetch('/api/media/upload-attachment', {
+      const urlResponse = await fetch('/api/media/get-attachment-upload-url', {
         method: 'POST',
-        body: formData, // Send FormData directly, no Content-Type header needed
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || 'application/octet-stream',
+          size: file.size,
+        }),
       });
 
-      if (!response.ok) {
-        let errorMessage = `Upload failed (${response.status})`;
-        
-        try {
-          // Clone response to avoid "body consumed" error
-          const errorData = await response.clone().json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          console.error('Could not parse error response');
-          errorMessage = `Server error (${response.status})`;
-        }
-        
-        throw new Error(errorMessage);
+      if (!urlResponse.ok) {
+        const errorData = await urlResponse.json();
+        throw new Error(errorData.error || `Failed to get upload URL (${urlResponse.status})`);
       }
 
-      const result = await response.json();
-      console.log('File uploaded successfully:', result.data);
+      const { data: uploadData } = await urlResponse.json();
+      console.log('✅ Got presigned URL:', { key: uploadData.key });
+
+      // Step 2: Upload directly to R2 using presigned URL
+      console.log('📤 Uploading to R2...');
+      setUploads(prev => prev.map(upload =>
+        upload.id === uploadId ? { ...upload, progress: 30 } : upload
+      ));
+
+      const uploadResponse = await fetch(uploadData.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error('❌ R2 upload failed:', errorText);
+        throw new Error(`Upload failed: ${uploadResponse.status}`);
+      }
+
+      console.log('✅ File uploaded successfully to R2');
+
+      const result = {
+        name: file.name,
+        url: uploadData.publicUrl,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+      };
 
       // Update upload state
-      setUploads(prev => prev.map(upload => 
+      setUploads(prev => prev.map(upload =>
         upload.id === uploadId
-          ? { ...upload, uploading: false, progress: 100, result: result.data }
+          ? { ...upload, uploading: false, progress: 100, result: result }
           : upload
       ));
 
-      return result.data;
+      return result;
 
     } catch (error) {
       console.error('Upload error:', error);

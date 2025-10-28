@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 /**
  * Upload file to Cloudflare R2
@@ -78,4 +79,61 @@ export async function uploadMultipleToR2(files, prefix = 'attachments') {
   });
 
   return Promise.all(uploadPromises);
+}
+
+/**
+ * Generate presigned URL for direct upload to R2
+ * @param {string} key - Storage key/path
+ * @param {string} contentType - MIME type
+ * @param {number} expiresIn - URL expiration in seconds (default 3600 = 1 hour)
+ * @returns {Promise<{uploadUrl: string, publicUrl: string, key: string}>}
+ */
+export async function getPresignedUploadUrl(key, contentType, expiresIn = 3600) {
+  const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY;
+  const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_KEY;
+  const bucket = process.env.CLOUDFLARE_R2_BUCKET;
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const publicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL;
+
+  if (!accessKeyId || !secretAccessKey || !bucket || !accountId) {
+    throw new Error('Cloudflare R2 credentials not configured');
+  }
+
+  if (!publicUrl) {
+    throw new Error('CLOUDFLARE_R2_PUBLIC_URL environment variable not configured');
+  }
+
+  const r2Client = new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+
+  try {
+    const command = new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ContentType: contentType,
+    });
+
+    const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn });
+
+    const finalPublicUrl = publicUrl.endsWith('/')
+      ? `${publicUrl}${key}`
+      : `${publicUrl}/${key}`;
+
+    console.log('✅ Generated presigned URL for:', key);
+
+    return {
+      uploadUrl,
+      publicUrl: finalPublicUrl,
+      key,
+    };
+  } catch (error) {
+    console.error('❌ Failed to generate presigned URL:', error);
+    throw new Error(`Failed to generate presigned URL: ${error.message}`);
+  }
 }

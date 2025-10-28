@@ -186,28 +186,49 @@ export function useAnswerUpload() {
           throw new Error(`Invalid file object: ${typeof file}`);
         }
 
-        const base64 = await fileToBase64(file);
+        console.log(`📤 Uploading answer attachment: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
 
-        const response = await fetch('/api/media/upload-attachment', {
+        // Step 1: Get presigned upload URL
+        const urlResponse = await fetch('/api/media/get-attachment-upload-url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            file: {
-              name: file.name,
-              type: file.type || 'application/octet-stream',
-              data: base64.split(',')[1],
-            },
+            filename: file.name,
+            contentType: file.type || 'application/octet-stream',
+            size: file.size,
           }),
         });
 
-        if (!response.ok) {
-          console.error(`Failed to upload ${file.name}`);
+        if (!urlResponse.ok) {
+          const errorData = await urlResponse.json();
+          console.error(`Failed to get upload URL for ${file.name}:`, errorData.error);
           continue;
         }
 
-        const result = await response.json();
-        results.push(result.data);
+        const { data: uploadData } = await urlResponse.json();
 
+        // Step 2: Upload directly to R2
+        const uploadResponse = await fetch(uploadData.uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': file.type || 'application/octet-stream',
+          },
+          body: file,
+        });
+
+        if (!uploadResponse.ok) {
+          console.error(`Failed to upload ${file.name} to R2`);
+          continue;
+        }
+
+        const result = {
+          name: file.name,
+          url: uploadData.publicUrl,
+          type: file.type || 'application/octet-stream',
+          size: file.size,
+        };
+
+        results.push(result);
         console.log(`✅ Uploaded: ${file.name}`);
       } catch (error) {
         console.error(`Error uploading ${file.name}:`, error);
