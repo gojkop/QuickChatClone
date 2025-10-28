@@ -9,6 +9,7 @@ import BentoCard from '@/components/dashboardv2/layout/BentoCard';
 import WelcomeHero from '@/components/dashboardv2/overview/WelcomeHero';
 import FeaturedRevenueCard from '@/components/dashboardv2/metrics/FeaturedRevenueCard';
 import CompactMetricCard from '@/components/dashboardv2/metrics/CompactMetricCard';
+import InboxSnapshotCard from '@/components/dashboardv2/metrics/InboxSnapshotCard';
 import QuickActionsWidget from '@/components/dashboardv2/widgets/QuickActionsWidget';
 import SocialImpactWidget from '@/components/dashboardv2/widgets/SocialImpactWidget';
 import SLACountdownWidget from '@/components/dashboardv2/widgets/SLACountdownWidget';
@@ -21,10 +22,11 @@ import ProfileCompletionCard from '@/components/dashboardv2/onboarding/ProfileCo
 import { useMetrics } from '@/hooks/dashboardv2/useMetrics';
 import { useDashboardAnalytics } from '@/hooks/useDashboardAnalytics';
 import { usePendingCount } from '@/hooks/dashboardv2/usePendingCount';
+import { useInboxCounts } from '@/hooks/dashboardv2/useInboxCounts';
 import { useFeature } from '@/hooks/useFeature';
 import { useMarketing } from '@/hooks/useMarketing';
 import MarketingPreview from '@/components/dashboardv2/marketing/MarketingPreview';
-import { Clock, Star, MessageSquare, AlertCircle, TrendingUp } from 'lucide-react';
+import { Clock, Star, MessageSquare, TrendingUp } from 'lucide-react';
 import { formatDuration } from '@/utils/dashboardv2/metricsCalculator';
 import { shouldShowOnboardingCard } from '@/utils/profileStrength';
 import apiClient from '@/api';
@@ -51,6 +53,9 @@ function ExpertDashboardPageV2() {
 
   // Fetch accurate pending count
   const { data: accuratePendingCount } = usePendingCount();
+
+  // Fetch inbox counts for overview card
+  const { data: inboxCounts } = useInboxCounts();
 
   // Fetch pre-calculated analytics from server (accurate metrics from ALL questions)
   const {
@@ -287,14 +292,7 @@ function ExpertDashboardPageV2() {
           </BentoCard>
 
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/inbox')} className="shadow-premium-sm hover:shadow-premium-md">
-            <CompactMetricCard
-              label="Urgent"
-              value={metrics.urgentCount}
-              icon={AlertCircle}
-              color={metrics.urgentCount === 0 ? 'green' : metrics.urgentCount <= 2 ? 'orange' : 'orange'}
-              subtitle={metrics.urgentCount === 0 ? 'All caught up! 🎉' : metrics.urgentCount === 1 ? 'Needs attention now' : 'Need attention now'}
-              isZeroState={metrics.urgentCount === 0 && metrics.pendingCount === 0}
-            />
+            <InboxSnapshotCard counts={inboxCounts} />
           </BentoCard>
 
           <BentoCard size="small" hoverable onClick={() => navigate('/dashboard/analytics')} className="shadow-premium-sm hover:shadow-premium-md">
