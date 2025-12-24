@@ -84,7 +84,7 @@ async function getFeedback(req, res, session, feedbackId) {
       'WHERE (fs.feedback_id_1 = $1 OR fs.feedback_id_2 = $1) AND fs.similarity_score > 0.7 AND f.deleted_at IS NULL ' +
       'ORDER BY fs.similarity_score DESC LIMIT 5';
     
-    const similar = await sql(similarQuery, [feedbackId]);
+    const similar = await sql.query(similarQuery, [feedbackId]);
 
     const result = feedback[0];
     result.tags = tags;
@@ -147,7 +147,7 @@ async function updateFeedback(req, res, session, feedbackId) {
     const updateQuery = 'UPDATE feedback SET ' + updates.join(', ') + ', updated_at = NOW() ' +
       'WHERE id = $1 AND deleted_at IS NULL RETURNING *';
 
-    const updated = await sql(updateQuery, values);
+    const updated = await sql.query(updateQuery, values);
 
     if (updated.length === 0) {
       return err(res, 404, 'Feedback not found', {}, req);

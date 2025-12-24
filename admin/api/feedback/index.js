@@ -116,7 +116,7 @@ async function listFeedback(req, res) {
     }
 
     const countQuery = 'SELECT COUNT(*) as total FROM feedback ' + whereClause;
-    const countResult = await sql(countQuery, params);
+    const countResult = await sql.query(countQuery, params);
     const total = parseInt(countResult[0].total);
     
     const mainQueryText = 'SELECT f.*, ' +
@@ -128,7 +128,7 @@ async function listFeedback(req, res) {
       ' LIMIT $' + paramIndex + ' OFFSET $' + (paramIndex + 1);
     
     const mainQueryParams = params.concat([limitNum, offset]);
-    const feedback = await sql(mainQueryText, mainQueryParams);
+    const feedback = await sql.query(mainQueryText, mainQueryParams);
 
     for (let i = 0; i < feedback.length; i++) {
       const item = feedback[i];

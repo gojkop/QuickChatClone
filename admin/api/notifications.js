@@ -188,7 +188,7 @@ async function updateConfig(req, res, session) {
         RETURNING *
       `;
 
-      config = await sql(query, values);
+      config = await sql.query(query, values);
     }
 
     // Log to audit

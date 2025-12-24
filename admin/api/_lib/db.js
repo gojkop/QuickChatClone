@@ -15,14 +15,14 @@ if (!DATABASE_URL) {
 export const sql = neon(DATABASE_URL);
 
 // Usage examples:
-// 
-// 1. Tagged template (parameterized):
+//
+// 1. Tagged template (parameterized) - PREFERRED:
 //    await sql`SELECT * FROM users WHERE id = ${userId}`
 //
-// 2. Raw query with params (what we need for dynamic ORDER BY):
-//    await sql('SELECT * FROM users WHERE id = $1 ORDER BY name ASC', [userId])
+// 2. Raw query with params (for dynamic ORDER BY, etc.) - use sql.query():
+//    await sql.query('SELECT * FROM users WHERE id = $1 ORDER BY name ASC', [userId])
 //
-// 3. Raw query without params:
-//    await sql('SELECT * FROM users ORDER BY created_at DESC')
+// 3. Unsafe interpolation (for trusted table/column names only):
+//    await sql.unsafe(`SELECT * FROM ${tableName}`)
 
 export default sql;
